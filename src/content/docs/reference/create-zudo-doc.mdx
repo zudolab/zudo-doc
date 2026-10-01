@@ -139,6 +139,9 @@ Because `--respect-system-preference` defaults to `true`, a first visit without 
 | `--[no-]doc-history` | Document edit history | on |
 | `--[no-]body-foot-util` | Right-aligned strip below each doc: doc history trigger + View source on GitHub link | off |
 | `--[no-]llms-txt` | Generate llms.txt for LLM consumption | on |
+| `--[no-]agent-export` | Publish the versioned static agent-readable corpus | off |
+| `--[no-]mcp` | Add read-only MCP `search` and `fetch` tools | off |
+| `--mcp-deploy cloudflare` | Cloudflare Workers deployment preset for MCP; requires MCP | — |
 | `--[no-]skill-symlinker` | Symlink documentation skills into Claude Code or Codex | off |
 | `--[no-]tauri` | Tauri desktop app (Mode 1) — macOS offline reader with in-page search | off |
 | `--[no-]tauri-dev` | Tauri dev wrapper (Mode 2) — configurable desktop dev wrapper for any project | off |
@@ -160,6 +163,31 @@ Because `--respect-system-preference` defaults to `true`, a first visit without 
 | `--preset <path>` | Load settings from a JSON preset file (use `"-"` for stdin) |
 
 The `--preset` flag accepts the JSON output from the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). When a preset is loaded, all prompts are skipped (same as `--yes`). Individual CLI flags override preset values. In particular, `--additional-langs ja,de` replaces (rather than appends to) a preset's `additionalLangs` list. A non-empty explicit list enables i18n even if the preset or CLI also contains `--no-i18n`; the CLI prints a warning when it overrides that explicit disable.
+
+### Agent export and MCP choices
+
+`agentExport` and `mcp` are feature keys in JSON presets and the programmatic API. `mcpDeploy` is the generator-only top-level property; its sole supported value is `"cloudflare"`. It is not a `zudoDoc` package setting. The same choices are available in the interactive prompts and CLI flags. MCP with omitted export enables it automatically, and MCP with omitted target selects Cloudflare. Generated config makes both choices visible; `--yes`, barebone, and legacy convenience presets leave both features off unless requested. `llmsTxt` remains on by default in the initializer.
+
+```json
+{
+  "features": ["agentExport", "mcp"],
+  "mcpDeploy": "cloudflare"
+}
+```
+
+```bash
+pnpm create zudo-doc my-docs --mcp --mcp-deploy cloudflare --yes
+```
+
+The programmatic `createZudoDoc` options accept `features: ["agentExport", "mcp"]` and `mcpDeploy: "cloudflare"` with the same validation. Explicitly disabling export while enabling MCP is rejected before files are written. A deploy target without MCP is rejected, and unsupported targets are rejected even when MCP is disabled. The errors are:
+
+```text
+MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.
+Unsupported mcpDeploy value. Supported value: cloudflare.
+mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.
+```
+
+See [Agent-readable export](../guides/agent-export.mdx) and [MCP server](../guides/mcp-server.mdx) for build output, deployment, and an existing-project recipe.
 
 ### General
 

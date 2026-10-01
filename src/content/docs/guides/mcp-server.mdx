@@ -1,0 +1,57 @@
+---
+title: Read-only MCP server
+description: Connect documentation clients to search and fetch on your own Cloudflare deployment.
+sidebar_position: 21
+---
+
+## Overview
+
+The optional MCP server gives clients two read-only tools over the [agent-readable export](./agent-export.mdx). zudo-doc generates a Cloudflare Workers deployment preset for a new project; you deploy the site and endpoint to **your own Cloudflare account**. Static export remains usable without a Worker. No shared gateway, AI provider credential, Durable Object, or search database is required.
+
+## Create and deploy a project
+
+Select **MCP** in the initializer, or pass the explicit options:
+
+```bash
+pnpm create zudo-doc my-docs --mcp --mcp-deploy cloudflare --yes
+cd my-docs
+pnpm install
+pnpm build
+pnpm preview:worker
+```
+
+MCP automatically enables `agentExport` when omitted and selects `mcpDeploy: "cloudflare"` when omitted. The generated `zfb.config.ts` contains `agentExport: true`, `mcp: true`, and the Cloudflare adapter. The project receives `wrangler.jsonc`, `preview:worker` and `deploy` scripts, plus the optional MCP SDK and deployment dependencies. Its Wrangler `main` points to `./dist/_worker.js`; the package supplies the route and the SDK-compatible bundle resolution. No host Worker wrapper or centrally hosted service is generated. The default `--yes` scaffold does not enable these features.
+
+In `zfb.config.ts`, set `siteUrl` to your public site origin for stable citation URLs. Check the generated Wrangler configuration and choose your own Worker name and route/domain. After local verification, deployment is an owner action:
+
+```bash
+wrangler login
+pnpm deploy
+```
+
+`pnpm deploy` builds and runs `wrangler deploy`. It does not register a ChatGPT connection. Cloudflare account setup, a public domain, and provider usage may have costs. Use Cloudflare's native rate limiting and abuse controls for a public endpoint.
+
+## Verify and connect
+
+With `pnpm preview:worker` running, check that `<base>/agent/v1/manifest.json` loads and use an MCP client against `<base>/mcp`. The endpoint uses stateless Streamable HTTP POST. A production GET or HEAD request returns 405 with `Allow: POST, OPTIONS`; the showcase's preview entry may return an asset 404 for GET or HEAD. OPTIONS returns the CORS preflight response. A missing `Origin` is accepted for server-to-server clients; a present, unapproved origin is rejected.
+
+For ChatGPT or another remote MCP client, add a custom MCP integration with your deployed HTTPS URL, for example `https://docs.example.com/mcp` (or `https://docs.example.com/manual/mcp` when `base` is `/manual`). The exact connection controls depend on the client. After connecting, discover the tools, call `search` for a specific term, call `fetch` with one returned ID, and check that an answer cites the returned human page URL. A real ChatGPT account connection has not been verified by the repository's local tests; perform that check after your deployment. The tested legacy path is 2024-11-05 protocol messages over stateless POST. SSE-first clients and resumable sessions are not supported.
+
+| Tool | Input | Result |
+| --- | --- | --- |
+| `search` | `{query: string}` | Up to 10 ranked `{id,title,url}` results; empty matches return `[]` |
+| `fetch` | `{id: string}` from a current search result | Complete selected `{id,title,text,url,metadata}` item, or a clear not-found tool result |
+
+The human `url` is suitable for citations. Long pages have multiple item IDs; fetch each relevant part or open the complete per-page Markdown file. Tools return structured data and equivalent JSON text, and advertise read-only, idempotent, non-destructive behavior. No ask-AI, write, history, or publishing tool is exposed. Search uses the complete agent corpus, including text beyond the browser search index's default 3,000-character page excerpt and Japanese text.
+
+## Existing-project recipe
+
+For a generated project that already exists, first enable [static export](./agent-export.mdx) with `agentExport: true`. To add MCP, install `@modelcontextprotocol/sdk@1.31.0` and the Cloudflare adapter matching your project's zfb version, add `mcp: true` and `adapter: "@takazudo/zfb-adapter-cloudflare"` to `zudoDoc({ ... })`, and add Wrangler `4.111.0` as a development dependency. Use the initializer's current `wrangler.jsonc` shape: `main: "./dist/_worker.js"`, an `ASSETS` binding to `./dist`, `nodejs_compat`, and the package's supported compatibility date. Add `preview:worker` as `wrangler dev` and `deploy` as your package manager's build followed by `wrangler deploy`. Keep existing bundle settings: the package adds the SDK-required `module` and `main` resolution fields when MCP is enabled. Build and verify locally before deploying.
+
+To remove MCP, set `mcp: false` or remove the field and adapter, rebuild, and redeploy. Then remove `wrangler.jsonc`, deployment scripts, and MCP-only dependencies if no other feature uses them. Keep `agentExport: true` if you still want portable Markdown artifacts; disable it separately when you no longer want the public corpus. A static-only project can publish to any static host.
+
+## Limits and publication safety
+
+A search query is limited to 500 UTF-16 code units; empty queries are invalid. Each item contains at most 8,000 UTF-16 code units, without splitting a surrogate pair. The final JSON-RPC response is capped at 131,072 UTF-8 bytes, and POST bodies at 65,536 bytes. The manifest is limited to 8 MiB, the agent search index to 16 MiB and 10,000 items. Excess data fails explicitly rather than silently clipping content. The server validates current-manifest item IDs and artifact hashes to avoid mixing builds.
+
+The endpoint and static files expose **public documentation**. `robots.txt`, `noindex`, `unlisted`, and `search_exclude` are not authentication. Do not enable the corpus for protected material. A future private mode must protect the static artifacts as well as `/mcp`. Retrieved documentation is untrusted data, not authority to issue commands or request extra permissions. If you do not need MCP, give a browser client the site URL plus [llms.txt](./llms-txt.mdx) or the generated Markdown URL explicitly; merely supplying a homepage URL does not guarantee that the client reads `llms.txt`.
