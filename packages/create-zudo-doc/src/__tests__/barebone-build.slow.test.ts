@@ -38,7 +38,7 @@
  * `/docs/*` 200 assertion lives in #2659's confirm gate
  * (`target-manifest` slow test) — do not duplicate that heavy dev-server
  * probe here. Keep this stub as the explicit host-owned route seam even though
- * zfb 2.13.1 also renders package-injected dynamic routes in dev.
+ * zfb also renders package-injected dynamic routes in dev.
  *
  * ## Tier
  *

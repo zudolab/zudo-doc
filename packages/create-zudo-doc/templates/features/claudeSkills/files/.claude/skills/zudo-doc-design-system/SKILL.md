@@ -1,13 +1,13 @@
 ---
 name: zudo-doc-design-system
-description: "Project-specific CSS and component rules for zudo-doc. Must be consulted before writing or editing CSS, Tailwind classes, color tokens, or component markup in this project. Covers: component-first strategy, design token system, three-tier color architecture, and palette index convention. Triggered by 'design system', 'zudo-doc-design-system', 'zudo-doc-css-wisdom' (old name)."
+description: "Project-specific CSS and component rules for zudo-doc. Must be consulted before writing or editing CSS, zudo-wind utilities, color tokens, or component markup in this project. Covers: component-first strategy, design token system, three-tier color architecture, and palette index convention. Triggered by 'design system', 'zudo-doc-design-system', 'zudo-doc-css-wisdom' (old name)."
 user-invocable: true
 argument-hint: "[topic: tokens, colors, component-first, palette]"
 ---
 
 # zudo-doc CSS & Component Rules
 
-**IMPORTANT**: These rules are mandatory for all code changes in this project that touch CSS, Tailwind classes, color tokens, or component markup. Read the relevant section before making changes.
+**IMPORTANT**: These rules are mandatory for all code changes in this project that touch CSS, zudo-wind utilities, color tokens, or component markup. Read the relevant section before making changes.
 
 ## How to Use
 
@@ -22,10 +22,21 @@ docs, kept up to date at the source:
 | Color tokens, palette, schemes | https://zudo-doc.takazudomodular.com/docs/reference/color |
 
 For the actual token values in THIS project, the source of truth is local:
-`src/styles/global.css` (the `@theme` override block) plus the shipped
-`@takazudo/zudo-doc/theme.css` and `@takazudo/zudo-doc/content.css` (imported
-by `global.css` — read them via `node_modules/@takazudo/zudo-doc/dist/` for
-the resolved token names/values).
+`src/styles/global.css` (the `:root` custom-property override block) plus the
+shipped `@takazudo/zudo-doc/theme.css` and
+`@takazudo/zudo-doc/content.css` (imported by `global.css` — read the shipped
+CSS for the resolved token names/values).
+
+## CSS pipeline
+
+- zfb compiles the zudo-wind utilities from the preset configured by zudo-doc.
+- `src/styles/global.css` declares `@layer zw-reset, zd-flow` and imports the
+  public `@takazudo/zudo-doc/*.css` exports. Keep those imports in order.
+- Put design-token overrides in the existing `:root` block. To change the
+  utility catalog or token mapping, set the top-level `wind` override in
+  `zfb.config.ts`; package defaults are already applied when it is omitted.
+- Do not add framework-specific CSS directives, a separate safelist stylesheet,
+  or `theme-no-reset.css`.
 
 Read ONLY the section relevant to your task. Apply its rules strictly.
 
@@ -34,13 +45,13 @@ Read ONLY the section relevant to your task. Apply its rules strictly.
 ### Component First (no custom CSS classes)
 
 - **NEVER** create CSS module files, custom class names, or separate stylesheets
-- **ALWAYS** use Tailwind utility classes directly in component markup
+- **ALWAYS** use configured zudo-wind utility classes directly in component markup
 - The component itself is the abstraction — `.card`, `.btn-primary` are forbidden
 - Use props for variants, not CSS modifiers
 
 ### Design Tokens (no arbitrary values)
 
-- **NEVER** use Tailwind default colors (`bg-gray-500`, `text-blue-600`) — they are reset to `initial`
+- **NEVER** assume an unconfigured color utility such as `bg-gray-500` or `text-blue-600` exists
 - **NEVER** use arbitrary values (`text-[0.875rem]`, `p-[1.2rem]`) when a token exists
 - **ALWAYS** use project tokens: `text-fg`, `bg-surface`, `border-muted`, `p-hsp-md`, `text-small`
 - Spacing: `hsp-*` (horizontal), `vsp-*` (vertical) — see the design-system reference doc above for the full list
@@ -48,10 +59,10 @@ Read ONLY the section relevant to your task. Apply its rules strictly.
 
 ### Color Tokens (three-tier system)
 
-- **Tier 1** (ramps): shared `base` (5 stops), `accent` (3 stops), and `state` (`danger`/`success`/`warning`/`info`) OKLCH ramps — no Tailwind utility reaches these directly (no `p0`–`p15`-style classes); they only feed Tier 2
-- **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — the only Tailwind-facing color tokens; prefer these always
+- **Tier 1** (ramps): shared `base` (5 stops), `accent` (3 stops), and `state` (`danger`/`success`/`warning`/`info`) OKLCH ramps — use them through the semantic tokens rather than inventing palette-index utilities
+- **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — the zudo-wind-facing color tokens; prefer these always
 - **NEVER** use hardcoded hex values in components
-- Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs. This project doesn't own a copy of the ramp/map definitions — they're package-owned, shipped compiled under `node_modules/@takazudo/zudo-doc/dist/color-schemes-defaults/`. Only override the `@theme` tokens you actually need to change, in `src/styles/global.css`
+- Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs. This project doesn't own a copy of the ramp/map definitions — they're package-owned. Override only the CSS custom properties you need to change in the `:root` block in `src/styles/global.css`.
 
 ### Palette index convention
 
@@ -92,11 +103,10 @@ Match the same hover/focus pairing in any new component you add under
 - When adding a new token, define it for both scheme `map`s (or as a
   scheme-agnostic ramp value) so light/dark parity is never accidental.
 
-### Server-rendered Preact vs client islands
+### Server-rendered zudo-react components and client islands
 
-- All components in this project are Preact `.tsx` — there are no `.astro`
-  files.
-- Default to **server-rendered Preact `.tsx`** (no `client:*` directive) —
+- All TSX uses zfb's owned zudo-react runtime — there are no `.astro` files.
+- Default to **server-rendered zudo-react `.tsx`** (no island activation) —
   emits zero JS.
 - Promote to a **client island** only when interactivity is needed
 - Both follow the same utility-class approach

@@ -137,9 +137,7 @@ function bindingsSource(testCase: MatrixCase): string {
     .filter(Boolean)
     .join(",\n  ");
 
-  return `/** @jsxRuntime automatic */
-/** @jsxImportSource @takazudo/zfb/zudo-react */
-import {
+  return `import {
   defineChromeBindings,
   ${typeImports},
 } from "@takazudo/zudo-doc/chrome-bindings";

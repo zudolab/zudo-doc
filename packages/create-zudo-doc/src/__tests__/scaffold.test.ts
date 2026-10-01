@@ -395,6 +395,14 @@ describe("scaffold — i18n locale doc stub threads isFallback + per-locale cont
     );
   });
 
+  it("inherits zudo-react JSX source without a page pragma", () => {
+    expect(stub).not.toContain("@jsxRuntime");
+    expect(stub).not.toContain("@jsxImportSource");
+    expect(stub).toContain(
+      'import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";',
+    );
+  });
+
   it("keeps the two docHistory-patch anchor lines intact (so the docHistory postProcess still applies)", () => {
     expect(stub).toContain(
       'import { createChrome } from "@takazudo/zudo-doc/chrome";',
@@ -1535,14 +1543,16 @@ describe("scaffold — pnpm-workspace.yaml (#2923)", () => {
 });
 
 describe("scaffold — tsconfig.json extends the package base config", () => {
-  it("extends @takazudo/zudo-doc/tsconfig.base.json and declares the preact-compat paths block", async () => {
+  it("extends @takazudo/zudo-doc/tsconfig.base.json and keeps only the project path alias", async () => {
     await scaffold(baseChoices);
     const tsconfig = await fs.readJson(projectPath("test-doc", "tsconfig.json"));
     expect(tsconfig.extends).toBe("@takazudo/zudo-doc/tsconfig.base.json");
     expect(tsconfig.include).toEqual(["src", "pages", "zfb.config.ts"]);
     expect(tsconfig.compilerOptions.baseUrl).toBe(".");
     expect(tsconfig.compilerOptions.paths["@/*"]).toEqual(["src/*"]);
-    expect(tsconfig.compilerOptions.paths["react"]).toBeDefined();
+    expect(tsconfig.compilerOptions.paths).not.toHaveProperty("react");
+    expect(tsconfig.compilerOptions.paths).not.toHaveProperty("react/jsx-runtime");
+    expect(tsconfig.compilerOptions.paths).not.toHaveProperty("react-dom");
   });
 
   it("does NOT carry the old 183-line inline zfb/config ambient shim block", async () => {
@@ -1554,12 +1564,11 @@ describe("scaffold — tsconfig.json extends the package base config", () => {
 });
 
 describe("scaffold — global.css", () => {
-  it("imports the 5 package-shipped stylesheets in the documented order and scans project source", async () => {
+  it("imports public package styles in order and uses the zudo-wind root override contract", async () => {
     await scaffold(baseChoices);
     const css = await fs.readFile(projectPath("test-doc", "src/styles/global.css"), "utf-8");
     const importOrder = [
       "@takazudo/zudo-doc/theme.css",
-      "@takazudo/zudo-doc/safelist.css",
       "@takazudo/zudo-doc/content.css",
       "@takazudo/zudo-doc/page-loading.css",
       "@takazudo/zudo-doc/features.css",
@@ -1571,8 +1580,12 @@ describe("scaffold — global.css", () => {
       expect(idx, `${imp} must appear in order`).toBeGreaterThan(lastIndex);
       lastIndex = idx;
     }
-    expect(css).toContain("@layer zd-preflight, zd-flow;");
-    expect(css).toContain('@source "src/content/**/*.{mdx,md}"');
+    expect(css).toContain("@layer zw-reset, zd-flow;");
+    expect(css).toContain(":root {");
+    expect(css).not.toContain("tailwindcss/");
+    expect(css).not.toContain("safelist.css");
+    expect(css).not.toContain("@source");
+    expect(css).not.toContain("@theme");
   });
 
   it("does NOT import @takazudo/zdtp/styles.css when designTokenPanel is off", async () => {
@@ -1584,7 +1597,7 @@ describe("scaffold — global.css", () => {
     expect(css).not.toContain('@import "@takazudo/zdtp/styles.css";');
   });
 
-  it("inserts the @takazudo/zdtp/styles.css import right after the @layer line when designTokenPanel is on", async () => {
+  it("inserts the public @takazudo/zdtp/styles.css import after the package theme when enabled", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-zdtp-css",
@@ -1595,7 +1608,7 @@ describe("scaffold — global.css", () => {
       "utf-8",
     );
     expect(css).toContain(
-      '@layer zd-preflight, zd-flow;\n@import "@takazudo/zdtp/styles.css";',
+      '@import "@takazudo/zudo-doc/theme.css";\n@import "@takazudo/zdtp/styles.css";',
     );
   });
 });
@@ -1687,7 +1700,7 @@ describe("scaffold — bodyFootUtil auto-enables docHistory (#1795 behavior, re-
 });
 
 describe("scaffold — CLAUDE.md generation", () => {
-  it("creates CLAUDE.md with project name, tech stack, and commands", async () => {
+  it("creates CLAUDE.md with the current engines and generated-project commands", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-claudemd",
@@ -1700,11 +1713,19 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).toContain("pnpm dev");
     expect(content).toContain("pnpm build");
     expect(content).toContain("MDX content");
+    expect(content).toContain("**zudo-react**");
+    expect(content).toContain("**zudo-wind**");
+    expect(content).not.toContain("Tailwind CSS v4");
+    expect(content).not.toContain("Preact islands");
   });
 
   it("describes the minimal shape: one config file, package owns the rest", async () => {
     await scaffold(baseChoices);
     const content = await fs.readFile(projectPath("test-doc", "CLAUDE.md"), "utf-8");
+    const introduction = await fs.readFile(
+      projectPath("test-doc", "src/content/docs/getting-started/introduction.mdx"),
+      "utf-8",
+    );
     expect(content).toContain("zfb.config.ts");
     expect(content).toContain("node_modules/@takazudo/zudo-doc");
     expect(content).toContain("zudo-doc eject");
@@ -1712,9 +1733,16 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).toContain("headerRightComponents");
     expect(content).toContain("do not fork a route stub");
     expect(content).toContain("**zfb semantic highlighting**");
+    expect(content).toContain("**zudo-react**");
+    expect(content).toContain("**zudo-wind**");
+    expect(content).toContain("@takazudo/zudo-doc/*.css");
+    expect(content).toContain(":root");
+    expect(content).not.toContain("@theme");
     expect(content).toContain("@takazudo/zfb-md-wasm");
     expect(content).not.toContain("**Shiki**");
     expect(content).not.toContain("syntect");
+    expect(introduction).toContain("zudo-react, zudo-wind, and MDX");
+    expect(introduction).not.toContain("Tailwind CSS");
   });
 
   it("does NOT reference deleted directories (src/components/, pages/lib/*, src/layouts/)", async () => {
@@ -1891,8 +1919,8 @@ describe("scaffold — generated package.json", () => {
   });
 
   it("does NOT include @types/react in devDependencies", async () => {
-    // tsconfig.base.json's react-jsx + jsxImportSource: preact flip (#3182)
-    // makes @types/react unnecessary even after ejecting components (#3181/#3183).
+    // The shared tsconfig base selects zfb's owned JSX runtime, so generated
+    // source has no need for the global React JSX namespace.
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.devDependencies["@types/react"]).toBeUndefined();
@@ -1928,6 +1956,7 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
     expect(pkg.dependencies["diff"]).toBeUndefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeUndefined();
+    expect(pkg.dependencies["preact"]).toBeUndefined();
     expect(pkg.dependencies["astro"]).toBeUndefined();
     expect(pkg.dependencies["shiki"]).toBeUndefined();
     expect(pkg.dependencies["@shikijs/transformers"]).toBeUndefined();
@@ -1983,6 +2012,7 @@ describe("scaffold — generated package.json", () => {
     });
     const pkg = await fs.readJson(projectPath("test-doc-dtp", "package.json"));
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
+    expect(pkg.dependencies["preact"]).toBe("^10.29.1");
   });
 
   // #4286: `bundleZdtp` (the sibling that decouples zdtp BUNDLING from
@@ -2006,7 +2036,7 @@ describe("scaffold — generated package.json", () => {
     expect(config).not.toContain("bundleZdtp");
   });
 
-  it("includes zod and preact-render-to-string as always-on runtime deps, but never katex by default", async () => {
+  it("includes zod but not the zfb-owned renderer or katex by default", async () => {
     // `math` is not a create-zudo-doc feature — DEFAULT_SETTINGS.math is
     // `false`, and @takazudo/zudo-doc loads katex via a rejection-handled
     // dynamic import that stays non-build-fatal without it (#4206 / #4209).
@@ -2015,7 +2045,8 @@ describe("scaffold — generated package.json", () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.dependencies["zod"]).toBe("^4.3.6");
-    expect(pkg.dependencies["preact-render-to-string"]).toBeDefined();
+    expect(pkg.dependencies["preact-render-to-string"]).toBeUndefined();
+    expect(pkg.dependencies["preact"]).toBeUndefined();
     expect(pkg.dependencies["katex"]).toBeUndefined();
   });
 
@@ -2298,6 +2329,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       port: "shell passthrough — dev/preview server port, not a scaffold prompt",
       adapter: "shell passthrough — deploy-target wiring, project-specific",
       bundle: "shell passthrough — raw esbuild bundler options",
+      wind: "shell passthrough — zudo-wind preset override in zfb.config.ts; no generator prompt",
       strictContentBridge: "shell passthrough — build-only zfb gate, hand-set knob not a scaffold prompt",
       chromeBindingsModule:
         "shell passthrough — host-callables module path is hand-authored after scaffold; generated doc routes consume it automatically",

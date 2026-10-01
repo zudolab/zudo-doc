@@ -18,24 +18,15 @@
 # via `findInPage: true`, so those template files no longer exist to diff.)
 
 # ── src/styles/global.css ───────────────────────────────────────────────────
-# The template ships a fixed ~29-line @import chain (Tailwind preflight +
-# utilities, the five @takazudo/zudo-doc/*.css artifacts, three @source scan
-# roots, and an empty @theme token-override slot) — see #2655/#2660. The
-# showcase now shares the template's package-theme contract by importing both
-# `@takazudo/zudo-doc/theme.css` and `@takazudo/zudo-doc/safelist.css`. Its
-# remaining intentional differences are extra @source roots for
-# packages/zudo-doc/**, packages/create-zudo-doc/templates/**, src/hooks/**,
-# and src/utils/** (paths the minimal template's own scan roots don't need),
-# an unconditional `@takazudo/zdtp/styles.css` import because the showcase
-# always enables the design token panel, and the single
-# `--color-page-loading-overlay` token in a trailing @theme override block.
-# Byte parity is therefore neither expected nor desired; the separate,
-# unconditional check_global_css_legacy_tokens() guard in
-# scripts/check-template-drift.sh
-# (#2621, rewritten for the minimal form by #2663) still catches the drift
-# classes that matter: a legacy pre-ramp-restructure token reference, or the
-# loss of the `@import "@takazudo/zudo-doc/theme.css"` default token-set
-# import.
+# The template declares `@layer zw-reset, zd-flow`, imports the four public
+# `@takazudo/zudo-doc/*.css` artifacts, and has a `:root` custom-property
+# override slot. zfb's configured zudo-wind preset owns the reset and utility
+# generation; the template has no framework directives, safelist stylesheet,
+# or source scan roots. The showcase shares the public imports and layer order,
+# then adds its own CSS and token overrides. Byte parity is therefore neither
+# expected nor desired; the unconditional global CSS contract guard in
+# scripts/check-template-drift.sh checks for the required layer/import shape,
+# root override slot, removed legacy imports/directives, and old palette tokens.
 src/styles/global.css
 
 # scripts/check-links.js
@@ -47,8 +38,9 @@ scripts/check-links.js
 # packages/zudo-doc/CLAUDE.md's "Shipped ambient type shims + tsconfig base"
 # section: `extends: "@takazudo/zudo-doc/tsconfig.base.json"`, `include:
 # ["src", "pages", "zfb.config.ts"]`, and a `compilerOptions` block carrying
-# only `baseUrl` + the `@/*`/react-compat `paths` (see that file's GOTCHA for
-# why those two must live in the PROJECT tsconfig, not the shared base). The
+# only `baseUrl` + the `@/*` `paths` alias (see that file's GOTCHA for why
+# project aliases live here). The package base owns the zfb zudo-react JSX
+# source; the template has no React/Preact compatibility aliases. The
 # showcase's own tsconfig.json is a genuine superset, not accidental drift:
 # `$schema`, an `include` that adds `scripts` (typechecks the contrast/tags
 # audit CLIs) plus an `exclude` for `src/**/__tests__`, `noUncheckedIndexedAccess`
@@ -75,7 +67,7 @@ pages/index.tsx
 # ── pages/docs/[[...slug]].tsx ──────────────────────────────────────────────
 # ── pages/[locale]/docs/[[...slug]].tsx ─────────────────────────────────────
 # Both are self-contained doc-route stubs (#2653 Decision 4; locked form
-# #2660) retained as explicit host-owned seams. zfb 2.13.1 renders injected
+# #2660) retained as explicit host-owned seams. zfb renders package-injected
 # static and dynamic routes in dev and build; see each file's own header
 # comment for the current ownership rationale. The template's copies use only
 # the sanctioned package

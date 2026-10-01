@@ -120,13 +120,13 @@ sidebar_position: 1
 
 ## What is ${siteName}?
 
-${siteName} is a documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc), a minimal documentation framework powered by zfb, MDX, and Tailwind CSS.
+${siteName} is a documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc), a minimal documentation framework powered by zfb, zudo-react, zudo-wind, and MDX.
 
 ## Key Features
 
 - MDX authoring with rich component support
 - Fast static site generation via zfb
-- Tailwind CSS v4 for styling
+- zudo-wind utilities, package-owned reset, and design tokens; customize the wind preset in \`zfb.config.ts\`
 - Optional i18n, search, and more
 `;
 
@@ -137,13 +137,13 @@ sidebar_position: 1
 
 ## ${siteName} とは？
 
-${siteName} は [zudo-doc](https://github.com/zudolab/zudo-doc) で構築されたドキュメントサイトです。zfb・MDX・Tailwind CSS を使ったミニマルなドキュメントフレームワークです。
+${siteName} は [zudo-doc](https://github.com/zudolab/zudo-doc) で構築されたドキュメントサイトです。zfb・zudo-react・zudo-wind・MDX を使ったミニマルなドキュメントフレームワークです。
 
 ## 主な機能
 
 - MDX によるリッチなコンポーネントサポート
 - zfb による高速な静的サイト生成
-- スタイリングには Tailwind CSS v4
+- zudo-wind のユーティリティ、パッケージ管理のリセットとデザイントークン（\`zfb.config.ts\` でプリセットを調整できます）
 - i18n・検索などオプション機能も充実
 `;
 
@@ -704,8 +704,8 @@ function generatePackageJson(
   const deps: Record<string, string> = {
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
-    // @takazudo/zfb-<platform>); pinned to the pre-release the scaffold
-    // targets (per #500).
+    // @takazudo/zfb-<platform>); pinned to the exact stable 3.1.0 package
+    // family required by the zfb v3 migration lock.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
@@ -1013,18 +1013,6 @@ function generatePackageJson(
     // import without the runtime dep; W6B (#1735) consumer-build
     // verification was the first to actually exercise it.
     zod: "^4.3.6", // floor matches @takazudo/zudo-doc's peer dep (package.json peerDependencies)
-    // ^10.29.1 floor satisfies @takazudo/zdtp's preact peer range so the app
-    // and zdtp resolve a single preact instance — a lower floor can split into
-    // two copies and crash hook-using SSR islands with "undefined reading __H".
-    // See the designTokenPanel dep block below (~line 443) for the coupling.
-    preact: "^10.29.1",
-    // preact-render-to-string — zfb's emitted entry.mjs imports
-    // `renderToString` from this package as `__zfb_renderToString` to
-    // SSR each page. Without it, esbuild fails at the bundler step with
-    // "Could not resolve 'preact-render-to-string'" before any page
-    // compiles. Same pin as host. Caught by W6B (#1735) consumer-build
-    // verification.
-    "preact-render-to-string": "^6.6.6",
     // katex is intentionally ABSENT here. `math` is not a create-zudo-doc
     // feature (it defaults to `false` in DEFAULT_SETTINGS) and
     // @takazudo/zudo-doc now loads katex via a rejection-handled dynamic
@@ -1046,9 +1034,6 @@ function generatePackageJson(
     // @takazudo/zudo-doc, leaving only a rejection-handled
     // `import("@takazudo/zdtp")` that esbuild tolerates when the package is
     // absent, so the dep is now genuinely conditional (#4009).
-    // `preact` stays unconditional (the app needs it regardless); its
-    // ^10.29.1 floor is still chosen so a designTokenPanel-ON project shares
-    // one preact instance with zdtp — see the floor comment above.)
     // (@takazudo/zudo-doc-history-server is NOT here — it is gated on the
     // docHistory or assetViewer features, see the block below. It was briefly unconditional
     // (#3080) to work around doc-history-area importing its `/exclude` subpath
@@ -1062,15 +1047,9 @@ function generatePackageJson(
   const devDeps: Record<string, string> = {
     typescript: "^5.9.0",
     "@types/node": "^22.0.0",
-    // @types/react is intentionally ABSENT (#3181/#3183). tsconfig.base.json
-    // now sets `jsx: "react-jsx"` + `jsxImportSource: "preact"`, so TypeScript
-    // resolves `JSX.IntrinsicElements` from preact/jsx-runtime's own types —
-    // not from a global @types/react namespace. Ejected components (e.g.
-    // `src/components/zudo-doc/theme-toggle/`) typecheck cleanly under
-    // `zfb check` without it; verified by the create-zudo-doc `test:slow`
-    // post-eject build. Do not re-add this dep to work around a typecheck
-    // failure — that would mean the react-jsx flip regressed, which is worth
-    // reporting against #3181, not papering over here.
+    // @types/react is intentionally absent: the package tsconfig base selects
+    // zfb's owned JSX runtime and declarations. Generated page stubs import
+    // JSX types from @takazudo/zfb/zudo-react/jsx-runtime.
     // html-validate dropped — check:html is no longer a default script
     // (see the scripts block below; `.htmlvalidate.json` no longer ships).
   };
@@ -1099,6 +1078,10 @@ function generatePackageJson(
     // no-ops with the feature off, so an OFF project must not carry the dep
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
     deps["@takazudo/zdtp"] = "0.8.5";
+    // zdtp still ships a Preact bundle and declares it as a peer. Preact is
+    // otherwise unnecessary because zfb renders generated sites with
+    // zudo-react.
+    deps.preact = "^10.29.1";
   }
 
   if (

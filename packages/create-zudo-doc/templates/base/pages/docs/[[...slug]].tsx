@@ -1,6 +1,5 @@
-/** @jsxRuntime automatic */
 // Locked manifest (#2653 Decision 4): a SELF-CONTAINED doc-route stub retained
-// for explicit host route ownership. zfb 2.13.1 also serves injected dynamic
+// for explicit host route ownership. zfb also serves package-injected dynamic
 // routes in dev. This stub reconstructs the doc route from scratch using ONLY the
 // sanctioned package entrypoints — no `pages/lib`, no `@/config`:
 //   1. the `virtual:zudo-doc-route-context` virtual module (serializable

@@ -9,7 +9,7 @@ CLI scaffold tool for creating new zudo-doc documentation sites. Generates a pro
 The generator emits the **locked ~18-file minimal manifest** — one config file
 (`zfb.config.ts`, `zudoDoc({ ...only fields you chose })`) plus markdown
 content plus a handful of unavoidable root files. Everything else (layout,
-chrome, islands, default `@theme` tokens, even the doc ROUTES themselves via
+chrome, islands, default design-token custom properties, even the doc ROUTES themselves via
 `packageOwnedRoutes`) ships from `@takazudo/zudo-doc` in `node_modules`.
 
 1. Copy the minimal **base template** (`templates/base/`) — no injection
