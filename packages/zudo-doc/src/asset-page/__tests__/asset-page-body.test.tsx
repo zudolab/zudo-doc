@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import type { AssetRecord } from "../../plugins/internal/asset-viewer/types.js";
 import { AssetPageBody, resolveAssetPageLabels } from "../body.js";
 
@@ -133,5 +133,20 @@ describe("AssetPageBody (plain props, no ChromeContext)", () => {
     expect(html).toContain("zd-asset-media-grid");
     // `viewSourceUrl` is null, so `BodyFootUtilArea` self-suppresses even though `showViewSource` is true.
     expect(html).not.toContain("View source on GitHub");
+  });
+
+  it("keeps video controls and preload while escaping dynamic media attributes", () => {
+    const html = render(
+      <AssetPageBody
+        entry={asset({ path: "movie.mp4", name: "movie.mp4", dir: "", kind: "video", mime: "video/mp4", width: 640, height: 360 })}
+        locale="en"
+        rawUrl={'/assets/movie.mp4?next="><script>bad</script>&part=1'}
+        labels={labels}
+        showViewSource={false}
+      />,
+    );
+
+    expect(html).toContain('<video controls="" preload="metadata" src="/assets/movie.mp4?next=&quot;&gt;&lt;script&gt;bad&lt;/script&gt;&amp;part=1" width="640" height="360" class="max-w-full"></video>');
+    expect(html).not.toContain("<script>bad</script>");
   });
 });

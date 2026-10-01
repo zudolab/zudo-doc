@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { describe, expect, it } from "vitest";
 import type { AssetIndexEntry } from "../../route-context-payload/types.js";
 import { AssetIndexPageBody, resolveAssetIndexPageLabels } from "../body.js";

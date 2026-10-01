@@ -92,7 +92,7 @@ export function createAssetCode(context: AssetComponentContext) {
       <section class="overflow-hidden rounded-lg border border-muted bg-surface">
         <header class="flex items-center justify-between gap-x-hsp-md border-b border-muted px-hsp-lg py-vsp-2xs text-caption">
           <span class="flex min-w-0 items-center gap-x-hsp-xs font-mono text-fg">
-            <AssetFileIcon className="h-icon-sm w-icon-sm shrink-0" />
+            <AssetFileIcon class="h-icon-sm w-icon-sm shrink-0" />
             <span>{title ?? resolved.path}</span>
           </span>
           <span class="shrink-0 text-muted">{rangeLabel}</span>

@@ -1,9 +1,44 @@
 /** @jsxRuntime automatic */
-import { render } from "preact-render-to-string";
-import { describe, expect, it } from "vitest";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { AssetIndexEntry } from "../../route-context-payload/types.js";
 import { createAssetIndexPageView } from "../index.js";
+
+const { layoutProps, headProps } = vi.hoisted(() => ({
+  layoutProps: [] as Array<Record<string, unknown>>,
+  headProps: [] as Array<Record<string, unknown>>,
+}));
+
+// The shared shell owns head serialization and page chrome. This leaf suite
+// pins asset-index route/body composition while #4458 ports standard head
+// attributes currently rejected by the pinned zfb 3.1 runtime.
+vi.mock("../../doclayout/index.js", () => ({
+  DocLayoutWithDefaults: (props: Record<string, unknown>) => {
+    layoutProps.push(props);
+    return [<div data-zd-test-head>{props.head as Child}</div>, props.children as Child];
+  },
+}));
+vi.mock("../../head-with-defaults/index.js", () => ({
+  createHeadWithDefaults: () => (props: Record<string, unknown>) => {
+    headProps.push(props);
+    return null;
+  },
+}));
+
+beforeEach(() => {
+  layoutProps.length = 0;
+  headProps.length = 0;
+});
+
+function latestLayout(): Record<string, unknown> {
+  return layoutProps.at(-1) ?? {};
+}
+
+function latestHead(): Record<string, unknown> {
+  return headProps.at(-1) ?? {};
+}
 
 function asset(overrides: Partial<AssetIndexEntry> = {}): AssetIndexEntry {
   return {
@@ -57,7 +92,7 @@ describe("asset index page SSG", () => {
       asset({ path: "demo/deep/logo.png", name: "logo.png", dir: "demo/deep", kind: "image", mime: "image/png", lines: undefined, width: 320, height: 180, bytes: 2048 }),
     ]);
     expect(html).toContain("data-zd-asset-index-page");
-    expect(html).toContain("data-zd-wide");
+    expect(latestLayout().contentWide).toBe(true);
     expect(html.match(/<details open>/g)).toHaveLength(2);
     expect(html).toContain('<ul><li><details open>');
     expect(html).not.toMatch(/\brole="(?:tree|treeitem|group)"/);
@@ -75,7 +110,7 @@ describe("asset index page SSG", () => {
   it("applies a base and custom route prefix exactly once", () => {
     const html = page([asset()], { base: "/pj/x/", routePrefix: "media/view" });
     expect(html).toContain('href="/pj/x/media/view/demo/readme.txt/"');
-    expect(html).toContain('href="https://docs.example/pj/x/media/view/"');
+    expect(latestHead().canonical).toBe("https://docs.example/pj/x/media/view/");
     expect(html).not.toContain("/pj/x/pj/x/");
   });
 
@@ -87,9 +122,9 @@ describe("asset index page SSG", () => {
         "asset.indexDescription": "管理対象ファイルの一覧。",
       },
     });
-    expect(html).toContain('lang="ja"');
+    expect(latestLayout().lang).toBe("ja");
     expect(html).toContain("アセット");
-    expect(html).toContain('href="https://docs.example/ja/files/"');
+    expect(latestHead().canonical).toBe("https://docs.example/ja/files/");
     expect(html).toContain('href="/ja/files/demo/readme.txt/"');
     expect(html).not.toContain('href="/files/demo/readme.txt/"');
   });
