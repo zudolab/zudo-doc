@@ -37,7 +37,7 @@ consumer relationship. This adds no unique formatter package to the lockfile.
 | `minimist`, `fs-extra`, `picocolors` | Live CLI, scaffolding, eject, theme, and audit consumers. No handwritten replacements attempted. |
 | `diff`, `katex`, `@takazudo/zdtp`, `@takazudo/zfb-md-wasm` | Framework peer contracts enable history comparison, math, design-token controls, and browser highlighting. Imports alone are not a sufficient removal oracle. |
 | `preact`, `zod`, zfb packages | Preact remains installed for `@takazudo/zdtp`'s peer and opaque bundle; zod is the runtime schema contract; zfb packages are engine contracts, and the Cloudflare adapter also has a direct import in `pages/api/ai-chat.tsx`. |
-| `preact-render-to-string`, `vite` | Direct browser-embed fixture imports. These are not obsolete renderer/build dependencies. |
+| `preact-render-to-string`, `vite` | The browser-embed fixture now uses zfb's public zudo-react server renderer; removing the now-unused renderer dependency from the root manifest is assigned to #4467. Vite remains the direct fixture build dependency. |
 | `pluralize`, `@types/pluralize`, `culori`, `@types/culori` | Tag tests and contrast tooling import these directly. Retention elsewhere does not replace a direct declaration. |
 | `@takazudo/zudo-design-token-lint`, `html-validate`, `wrangler` | Depcheck false positives: binary names and script/CI consumers differ from import usage. |
 | `minisearch` in `packages/search-worker` | Direct import in `src/search.ts`; the optional search Worker still needs it even though default site search does not. |

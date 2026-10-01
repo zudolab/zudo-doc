@@ -101,7 +101,7 @@ function loadTagsForLocale(lang: string) {
 // hostBindings.mdxExtras; the package factory merges them over its defaults.
 // ---------------------------------------------------------------------------
 
-/** MDX-tag stub: renders nothing (Preact null-vnode path). */
+/** MDX-tag stub: renders nothing as a zudo-react null child. */
 const MdxStub = (_props: unknown) => null;
 
 /** SSR pass-through for `<Island when=…>` — renders children, ignores `when`. */

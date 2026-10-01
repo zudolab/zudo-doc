@@ -23,11 +23,9 @@
 // page → helper → real component and registers the constructor under
 // the SSR marker name.
 //
-// Pattern mirrors `_header-with-defaults.tsx`: the JSX-shim widens
-// `Island`'s return type to `unknown`, so call-sites cast through
-// `as unknown as VNode` at the boundary.
+// `Island` returns an owned Description that is passed directly into the
+// surrounding zudo-react tree.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
@@ -105,10 +103,10 @@ export function BodyEndIslands({
   // the SPA page-transition feature is off, neither the router bootstrap
   // island marker nor the page-loading overlay should reach the SSG output.
   const clientRouterBootstrap = settings.dynamicPageTransition
-    ? (Island({
+    ? Island({
         when: "load",
         children: <ClientRouterBootstrap />,
-      }) as unknown as Description)
+      })
     : null;
 
   // Gated on `settings.aiAssistant` (zudolab/zudo-doc#2058): when the AI
@@ -135,7 +133,7 @@ export function BodyEndIslands({
         Island({
           ssrFallback: <p class="sr-only">{aiChatBodyLabel}</p>,
           children: <AiChatModal basePath={basePath} />,
-        }) as unknown as Description
+        })
       }
     </>
   ) : null;
@@ -151,11 +149,11 @@ export function BodyEndIslands({
   // empty divs) and the no-JS path has no dialog at all. Hydration replaces
   // this shell with the real ImageEnlarge component when the page goes idle.
   const imageEnlarge = settings.imageEnlarge
-    ? (Island({
+    ? Island({
         when: "idle",
         ssrFallback: <ImageEnlargeSsrFallback />,
         children: <ImageEnlarge />,
-      }) as unknown as Description)
+      })
     : null;
 
   // Gated on `settings.mermaid` (issue #2176 / #2178). Mirrors the imageEnlarge
@@ -165,11 +163,11 @@ export function BodyEndIslands({
   // MDX paragraph override), mermaid renders client-side, so this island injects
   // the enlarge button into each rendered diagram container itself.
   const mermaidEnlarge = settings.mermaid
-    ? (Island({
+    ? Island({
         when: "idle",
         ssrFallback: <MermaidEnlargeSsrFallback />,
         children: <MermaidEnlarge />,
-      }) as unknown as Description)
+      })
     : null;
 
   return (
