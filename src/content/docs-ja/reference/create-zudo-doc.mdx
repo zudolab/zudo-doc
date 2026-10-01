@@ -139,6 +139,9 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]doc-history` | ドキュメント編集履歴 | オン |
 | `--[no-]body-foot-util` | ドキュメント下部の右寄せストリップ: ドキュメント履歴トリガー + GitHub でソースを表示リンク | オフ |
 | `--[no-]llms-txt` | LLM 向け llms.txt を生成 | オン |
+| `--[no-]agent-export` | バージョン付きの静的なエージェント向けコーパスを公開 | オフ |
+| `--[no-]mcp` | 読み取り専用のMCP `search`と`fetch`ツールを追加 | オフ |
+| `--mcp-deploy cloudflare` | MCP用のCloudflare Workersデプロイ設定。MCPが必要 | — |
 | `--[no-]skill-symlinker` | ドキュメントスキルをClaude CodeまたはCodexへシンボリックリンク | オフ |
 | `--[no-]tauri` | Tauri デスクトップアプリ（Mode 1）— ページ内検索付き macOS オフラインリーダー | オフ |
 | `--[no-]tauri-dev` | Tauri 開発ラッパー（Mode 2）— 任意プロジェクト向けの設定可能なデスクトップ開発ラッパー | オフ |
@@ -160,6 +163,31 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--preset <path>` | JSON プリセットファイルから設定を読み込み（`"-"` で標準入力） |
 
 `--preset` フラグは[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)の JSON 出力を受け付けます。プリセットを読み込むと、すべてのプロンプトがスキップされます（`--yes` と同様）。個別の CLI フラグはプリセットの値を上書きします。特に `--additional-langs ja,de` はプリセットの `additionalLangs` リストに追加するのではなく置き換えます。空でない明示リストは、プリセットまたは CLI に `--no-i18n` が含まれていても i18n を有効にします。明示的な無効化を上書きする場合、CLI は警告を表示します。
+
+### エージェント向けエクスポートとMCPの選択肢
+
+JSONプリセットとプログラムAPIでは、`agentExport`と`mcp`を機能キーとして指定します。`mcpDeploy`はイニシャライザー専用のトップレベルのプロパティで、対応する値は`"cloudflare"`だけです。`zudoDoc`のパッケージ設定ではありません。対話式プロンプトとCLIフラグでも同じ選択ができます。MCPを指定してエクスポートを省略すると自動的に有効になり、デプロイ先を省略するとCloudflareが選ばれます。生成される設定には両方が明示されます。`--yes`、barebone、従来の簡易プリセットでは、指定しない限り両機能は無効です。イニシャライザーの`llmsTxt`既定値は引き続き有効です。
+
+```json
+{
+  "features": ["agentExport", "mcp"],
+  "mcpDeploy": "cloudflare"
+}
+```
+
+```bash
+pnpm create zudo-doc my-docs --mcp --mcp-deploy cloudflare --yes
+```
+
+プログラムAPIの`createZudoDoc`でも、`features: ["agentExport", "mcp"]`と`mcpDeploy: "cloudflare"`を同じ検証規則で指定できます。エクスポートを明示的に無効化しながらMCPを有効化すると、ファイル書き込み前に拒否されます。MCPなしのデプロイ先指定も拒否され、未対応の値はMCPが無効でも拒否されます。エラーは次のとおりです。
+
+```text
+MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.
+Unsupported mcpDeploy value. Supported value: cloudflare.
+mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.
+```
+
+ビルド成果物、デプロイ、既存プロジェクトへの追加方法は[エージェント向けエクスポート](../guides/agent-export.mdx)と[MCPサーバー](../guides/mcp-server.mdx)を参照してください。
 
 ### 一般
 
