@@ -4,6 +4,12 @@ Owner: [#4463](https://github.com/zudolab/zudo-doc/issues/4463). Status: **pendi
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
+## Round-2 locked spec (3.1.0)
+
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
+
+Void temporary physical package/zdtp CSS imports, #3364 comments and the claim that public imports await a future fix. Generated global.css uses public `@takazudo/zudo-doc/<name>.css` exports; the DesignTokenPanel feature emits `@takazudo/zdtp/styles.css`. #4479 Z06/D01 proves packed-consumer resolution on 3.1.0. Generated zfb family pins follow #4436's exact 3.1.0 lock and peer compatibility floor; keep zdtp's Preact peer because its packaging is still partial. Preserve owned JSX, manifest and removed safelist/theme-no-reset changes. Test template/emitter strings and request the packed generated-consumer build with relative CSS assets plus hydration/interaction from #4475.
+
 ## Files and symbols
 
 | File | Symbol | v2 construct → required v3 review | Status / spec / evidence |

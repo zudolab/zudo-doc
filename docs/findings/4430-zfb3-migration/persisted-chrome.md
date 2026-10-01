@@ -4,6 +4,16 @@ Owner: [#4442](https://github.com/zudolab/zudo-doc/issues/4442). Status: **pendi
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
+## Round-2 locked spec (3.1.0)
+
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
+
+Void the round-1 unconditional `data-zfb-island-remount`, post-teardown metadata copier and accepted loss of unchanged local state. #4479 Z04 proves unchanged nested roots keep a live handle and signal through packed swap. Use native 3.1.0 reconciliation; unchanged effective identity/exact props keep DOM/handle/state, changed props or identity recreate with render. Keep the existing install/ensure/dispose helper signatures and eager document singleton, now limited to the existing zudo-doc host preserve-props policy and safe incoming-structure preparation. This topic remains necessary.
+
+Packed router teardown calls `unmountIslands(oldBody, incomingBody)` before `event.swap`; a post-teardown mutation cannot decide native retention. BEFORE_SWAP may read live state and prepare only the detached incoming document. For live `data-zd-props-preserve` on a root/ancestor, retain old props only when component/root kind/transport/protocol/build agrees. Do not mask changed identity. Pair only unique ancestor keys/names; ambiguous matches, added/removed roots, changed chrome structure or unsupported scheduling-metadata refresh must opt that incoming ancestor out of persistence so the native lifecycle replaces it safely. Never replace a structurally unchanged subtree to evade the same-handle test. Cancelled navigation must leave live DOM/handles untouched; any composed swap delegates exactly once and preserves receiver/args/result/errors.
+
+Test actual packed native lifecycle via the harness: mutated unchanged state (one activation, zero cleanup), changed identity/props, preserve policy, normal/skip-SSR roots, metadata removal, delayed imports, cancellation, duplicate names/keys and incoming structure. No fabricated root-persist API (#3363), hand-authored wrappers or patch. If native required behavior fails, file it and re-block release instead of silently restoring a remount shim. #4468/#4475 still own real-browser navigation, focus and nonzero-scroll proof.
+
 ## Files and symbols
 
 | File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
