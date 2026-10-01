@@ -1059,6 +1059,18 @@ function generatePackageJson(
     // packages/zudo-doc/src/__tests__/optional-peer-reachability.test.ts.)
   };
 
+  if (choices.features.includes("mcp")) {
+    // MCP is the only generated deployment preset in v1. These runtime
+    // packages are installed only for MCP consumers; agent-export-only and
+    // barebone sites remain provider-independent.
+    // Keep the adapter in lockstep with the zfb family (and root pin), checked
+    // by scripts/check-pin-parity.mjs.
+    deps["@takazudo/zfb-adapter-cloudflare"] = "2.22.1";
+    // Match @takazudo/zudo-doc's optional peer exactly. The package-owned MCP
+    // route imports the SDK only when this feature is enabled.
+    deps["@modelcontextprotocol/sdk"] = "1.31.0";
+  }
+
   const devDeps: Record<string, string> = {
     typescript: "^5.9.0",
     "@types/node": "^22.0.0",
@@ -1074,6 +1086,12 @@ function generatePackageJson(
     // html-validate dropped — check:html is no longer a default script
     // (see the scripts block below; `.htmlvalidate.json` no longer ships).
   };
+
+  if (choices.features.includes("mcp")) {
+    // Match the root Wrangler dev pin. Wrangler is never installed or invoked
+    // by scaffolding itself; preview and deployment remain owner-controlled.
+    devDeps["wrangler"] = "4.111.0";
+  }
 
   // search ships as @takazudo/zudo-doc's own self-contained generated
   // search-widget script (custom word-match scorer) — no third-party search
@@ -1216,6 +1234,11 @@ function generatePackageJson(
   }
 
   const pm = choices.packageManager;
+
+  if (choices.features.includes("mcp")) {
+    scripts["preview:worker"] = "wrangler dev";
+    scripts.deploy = `${pmRunCommand(pm, "build")} && wrangler deploy`;
+  }
 
   // claudeSkills ships the zudo-doc-version-bump skill, whose release workflow
   // calls `<pm> b4push`. Emit a minimal stub so the skill does not hit a

@@ -30,6 +30,7 @@ import { tagGovernanceFeature } from "./tag-governance.js";
 import { footerTaglistFeature } from "./footer-taglist.js";
 import { bodyFootUtilFeature } from "./body-foot-util.js";
 import { docTagsFeature } from "./doc-tags.js";
+import { mcpFeature } from "./mcp.js";
 
 /**
  * All feature modules keyed by their feature name.
@@ -51,6 +52,7 @@ export const featureModules: Record<string, FeatureModule> = {
   docHistory: docHistoryFeature,
   bodyFootUtil: bodyFootUtilFeature,
   llmsTxt: llmsTxtFeature,
+  mcp: mcpFeature,
   tauri: tauriFeature,
   tauriDev: tauriDevFeature,
   imageEnlarge: imageEnlargeFeature,

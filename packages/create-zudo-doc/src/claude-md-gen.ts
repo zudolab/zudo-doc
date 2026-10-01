@@ -38,6 +38,9 @@ export function generateCLAUDEFile(
 
   const defaultLocaleLabel = localeDisplayName(localePlan.defaultLang);
   const additionalLocales = localePlan.i18n ? localePlan.additionalLangs : [];
+  const componentsReference = choices.features.includes("mcp")
+    ? "https://github.com/zudolab/zudo-doc/tree/main/src/content/docs/components/"
+    : "https://zudo-doc.takazudomodular.com/docs/components/";
 
   lines.push(`# ${siteName}`);
   lines.push(``);
@@ -88,6 +91,14 @@ export function generateCLAUDEFile(
   lines.push(`- \`${pmRunCommand(pm, "build")}\` — static HTML export to \`dist/\``);
   lines.push(`- \`${pmRunCommand(pm, "check")}\` — TypeScript type checking`);
   lines.push(`- \`${pmRunCommand(pm, "preview")}\` — serve the built \`dist/\``);
+  if (choices.features.includes("mcp")) {
+    lines.push(
+      `- \`${pmRunCommand(pm, "preview:worker")}\` — run the built site and MCP endpoint in Wrangler's local Worker runtime`,
+    );
+    lines.push(
+      `- \`${pmRunCommand(pm, "deploy")}\` — build and explicitly deploy this project to the Cloudflare account selected by Wrangler`,
+    );
+  }
   lines.push(``);
 
   // Key directories
@@ -179,7 +190,7 @@ export function generateCLAUDEFile(
   );
   lines.push(``);
   lines.push(
-    `Admonitions (above), tabbed content (\`<Tabs>\` / \`<TabItem>\`, \`<CodeGroup>\`), and block math (\`<MathBlock>\`) work the same way — no import. Full reference: https://zudo-doc.takazudomodular.com/docs/components/`,
+    `Admonitions (above), tabbed content (\`<Tabs>\` / \`<TabItem>\`, \`<CodeGroup>\`), and block math (\`<MathBlock>\`) work the same way — no import. Full reference: ${componentsReference}`,
   );
   lines.push(``);
 
@@ -215,6 +226,9 @@ export function generateCLAUDEFile(
     versioning: "Multi-version documentation support",
     docHistory: "Document edit history",
     llmsTxt: "Generates llms.txt for LLM consumption",
+    agentExport:
+      "Generates the static agent documentation manifest, search index, and Markdown pages",
+    mcp: "Adds public read-only search and fetch tools through a Cloudflare Workers MCP endpoint",
     claudeResources: "Auto-generated docs for Claude Code resources",
     codexResources: "Auto-generated docs for Codex resources (.codex/, AGENTS.md)",
     changelog:
