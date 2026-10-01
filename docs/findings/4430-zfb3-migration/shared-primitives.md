@@ -1,79 +1,31 @@
-# Port the shared primitives first: useModalDialog, island-types, Icons, tree-nav-shared and hydration-pending
+# Shared primitives port (#4441)
 
-Owner: [#4441](https://github.com/zudolab/zudo-doc/issues/4441). Status: **pending port**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4441](https://github.com/zudolab/zudo-doc/issues/4441). Target: zfb 3.1.0. Binding rules: [conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md), especially Runtime, Props, and the locked modal API. Baseline: zudo-doc 5.28.2 at `337b9f110`.
 
-Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
+## Symbol gap table
 
-## Files and symbols
-
-| File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
-| --- | --- | --- | --- |
-| `packages/zudo-doc/src/hydration-pending.ts` | `useHydrationPending` | useState → signal; useEffect → activation/effect | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `IconProps` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `ChevronRight` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `ChevronLeft` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `Search` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `History` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `Close` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `ArrowLeft` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `GitHub` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `Folder` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FolderOpen` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FileGeneric` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FileCode` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FileText` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FileImage` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FileVideo` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FilePdf` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/icons/index.tsx` | `FileArchive` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/island-types/index.ts` | `ChatMessage` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/island-types/index.ts` | `DocHistoryEntry` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/island-types/index.ts` | `DocHistoryData` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/island-types/index.ts` | `ENLARGE_DIALOG_STYLE` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/island-types/index.ts` | `IMAGE_ENLARGE_DIALOG_CLASS` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/island-types/index.ts` | `MERMAID_ENLARGE_DIALOG_CLASS` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/island-types/index.ts` | `EnlargeDialogProps` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tree-nav-shared/index.tsx` | `INDENT` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tree-nav-shared/index.tsx` | `CONNECTOR_OFFSET` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tree-nav-shared/index.tsx` | `CONNECTOR_WIDTH` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tree-nav-shared/index.tsx` | `BASE_PAD` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tree-nav-shared/index.tsx` | `connectorLeft` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tree-nav-shared/index.tsx` | `CategoryLinkIcon` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tree-nav-shared/index.tsx` | `ConnectorLines` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/use-modal-dialog/index.ts` | `useModalDialog` | useEffect → activation/effect; useRef → Ref; event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-
-## Raw HTML sites to review
-
-| File and baseline line | Payload/context review | Trust, parser context, cleanup and test |
+| Owned symbols | v2 construct → v3 form | Status and evidence |
 | --- | --- | --- |
-| No direct site in initial source scan | Check imported helpers and newly introduced rawHtml | pending confirmation; add each new site explicitly |
+| `hydration-pending.ts`: `useHydrationPending` | Preact `useState`/`useEffect` hook → `hydrationPending(scope, enabled)` with a signal and `scope.onActivate` | Ported. Hydration test asserts SSR/activation agreement. Subsequent leaf ports change callers. [R-SCOPE](../../../_temp-resource/4430-zfb3-migration/v3-contract.md). |
+| `use-modal-dialog/index.ts`: `useModalDialog` and option/result types | Preact hooks, React refs and mouse event → setup-only `modalDialog(scope, options)`, `Scope.effect`, activation listeners, `Ref`, `Listener<Event>`, `ReadonlySignal<boolean>` | Ported per [locked public API](../../../_temp-resource/4430-zfb3-migration/conventions.md#zudo-doc-600-public-api-change-list). Tests cover hydration, state synchronization, native close (Escape's browser action), backdrop, navigation, focus, and disposal. Leaf owners migrate all six callers. |
+| `island-types/index.ts`: `ChatMessage`, `DocHistoryEntry`, `DocHistoryData` | Plain data interfaces → unchanged | Reviewed; no engine dependency or behavior change. |
+| `island-types/index.ts`: `ENLARGE_DIALOG_STYLE`, `EnlargeDialogProps` | Object style with `inset`, `className` → CSS string, `class` | Ported. #3375 workaround; source comment marks release gate. String preserves fixed/inset/margin declaration values. Shared style test covers the literal. |
+| `island-types/index.ts`: `IMAGE_ENLARGE_DIALOG_CLASS`, `MERMAID_ENLARGE_DIALOG_CLASS` | Existing class strings → unchanged | Reviewed; leaf CSS audit and computed-style parity are #4440/#4468. |
+| `icons/index.tsx`: `IconProps`, `ChevronRight`, `ChevronLeft`, `Search`, `History`, `Close`, `ArrowLeft`, `GitHub`, `Folder`, `FolderOpen`, `FileGeneric`, `FileCode`, `FileText`, `FileImage`, `FileVideo`, `FilePdf`, `FileArchive` | `className` prop → `class` prop, aliases locally to a legal identifier; CSS-spelled SVG attributes retained; Preact return annotation → zudo-react `Child` | Ported per [R-JSX/R-PROPS](../../../_temp-resource/4430-zfb3-migration/v3-contract.md). Icon SSR tests cover all file/folder icons, decorative ARIA, class forwarding and omission. No redundant `xmlns`/`focusable` present. |
+| `tree-nav-shared/index.tsx`: `INDENT`, `CONNECTOR_OFFSET`, `CONNECTOR_WIDTH`, `BASE_PAD`, `connectorLeft`, `CategoryLinkIcon`, `ConnectorLines` | Constants and calculation unchanged; icon `className` → `class`; JSX and CSS-spelled style attributes remain | Ported. SSR tests cover depth zero, connector clipping and icon markup. Existing class strings and layout calculations remain. |
 
-## Utility/token and authored rewrite rows
+## Raw HTML review
 
-| File | Original utility or CSS construct | Required disposition / review | Status and test |
-| --- | --- | --- | --- |
-| Owned source set | No mapped gap in planning TSV | Confirm generated candidate or matching shipped authored selector; unknown ordinary class is not proof | pending scan confirmation |
+No owned source file calls `rawHtml` or injects HTML. SVG icons and tree connectors are intrinsic JSX. There are no script/style payloads, parser-context exclusions, or subtree cleanup obligations in this topic.
 
-## Tests and completion evidence
+## Utility and behavior review
 
-Existing candidate test files (ownership exceptions in the issue still apply):
+No utility class was changed or introduced. Existing `zd-enlarge-dialog`, `zd-mermaid-dialog`, `z-modal`, `backdrop:z-modal-backdrop`, `shrink-0`, and connector classes remain for #4440's manifest and #4468's computed-style parity. Deliberate DOM/class differences: none. The new modal helper keeps the prior dialog behavior but requires a dialog whose lifetime matches its owning scope. The CSS style string is equivalent to the former declarations. The public `class` and modal API changes are locked migration changes; leaf callers must switch together. The hydration helper returns a signal instead of a boolean hook snapshot.
 
-- `packages/zudo-doc/src/icons/__tests__/icons.test.tsx` — pending port/run result.
+## Verification and handoff
 
-Run the exact source-resolution and port-check commands from the conventions with this topic’s paths. Record command, result, version and remaining diagnostics. Required behavioral coverage: initial SSR, active updates, cleanup/disposal, relevant navigation and parser/prop failures. CSS changes require computed-style evidence from the verification owner; a green build is insufficient.
-
-| Completion field | Owner must fill |
-| --- | --- |
-| Port-check / unit evidence | pending |
-| RawHtml review verdict per site | pending (or verified none) |
-| Deliberate DOM/class/behavior differences and cause | pending (or verified none) |
-| Upstream issue/shim and removal version | pending (or verified none) |
-| Browser/visual cases handed to #4468/#4475 | pending |
-| Final commit / reviewer / date | pending |
-
-## Remaining Preact runtime imports after #4437
-
-The following files still import Preact runtime APIs for their assigned semantic port. The mechanical codemod removed Preact type imports and JSX pragmas.
-
-- `packages/zudo-doc/src/hydration-pending.ts`
-- `packages/zudo-doc/src/use-modal-dialog/index.ts`
+- `node scripts/zfb3-port-check.mjs` with all nine owned source and test paths: **0 owned diagnostics**, 878 unrelated migration-window diagnostics for #4467.
+- Source-resolution Vitest: 4 files, 26 tests pass (modal, hydration, icons, tree, island types). Root client-export-name unit test: 8 pass. The standalone `node scripts/check-client-export-names.mjs` remains red on six unported entries owned by later topics; it reports no owned file.
+- Visual checks for #4468/#4475: focus capture and restore in real browsers, backdrop vs child click, Escape close, navigation close, enlarge dialog centering and top-layer stacking, all icons and tree connectors at mobile/desktop widths. Happy DOM cannot establish computed style or native keyboard default behavior.
+- Upstream issue used: [#3375](https://github.com/Takazudo/zudo-front-builder/issues/3375). Recheck and remove the marked style-string workaround after a published fix before release; explicit CSS units remain.
+- Final commit and foreground self-review recorded in the topic report.

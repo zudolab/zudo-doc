@@ -1,29 +1,18 @@
 /** @jsxRuntime automatic */
-// Shared icon module — thin server-rendered Preact components.
-//
-// All icons accept an optional `className` prop for sizing and colour
-// classes; callers in Preact (`class`) and React-compat (`className`)
-// contexts both work because the prop name here is `className` (the
-// React/compat convention), which Preact's compat layer also passes
-// through transparently.
-//
-// The SVG elements inside use `class=` (Preact JSX attribute name for
-// the DOM `class` attribute). `aria-hidden="true"` is set on all icons
-// so screen-readers skip them; callers should pair them with visible or
-// sr-only text labels.
+// Shared server-rendered icons. All are decorative and need a nearby text label.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export interface IconProps {
   /** CSS class string forwarded to the root `<svg>` element. */
-  className?: string;
+  class?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Chevron — right-pointing (d="M9 5l7 7-7 7")
 // ---------------------------------------------------------------------------
 
-export function ChevronRight({ className }: IconProps): Description {
+export function ChevronRight({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -42,7 +31,7 @@ export function ChevronRight({ className }: IconProps): Description {
 // Chevron — left-pointing (d="M15 19l-7-7 7-7")
 // ---------------------------------------------------------------------------
 
-export function ChevronLeft({ className }: IconProps): Description {
+export function ChevronLeft({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -61,7 +50,7 @@ export function ChevronLeft({ className }: IconProps): Description {
 // Search (magnifying glass)
 // ---------------------------------------------------------------------------
 
-export function Search({ className }: IconProps): Description {
+export function Search({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -80,7 +69,7 @@ export function Search({ className }: IconProps): Description {
 // History (clock with a circular arrow)
 // ---------------------------------------------------------------------------
 
-export function History({ className }: IconProps): Description {
+export function History({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -102,7 +91,7 @@ export function History({ className }: IconProps): Description {
 // Close (×)
 // ---------------------------------------------------------------------------
 
-export function Close({ className }: IconProps): Description {
+export function Close({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -123,7 +112,7 @@ export function Close({ className }: IconProps): Description {
 // ArrowLeft (← with horizontal bar)
 // ---------------------------------------------------------------------------
 
-export function ArrowLeft({ className }: IconProps): Description {
+export function ArrowLeft({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -146,7 +135,7 @@ export function ArrowLeft({ className }: IconProps): Description {
 // The path is the canonical mark used throughout this project.
 // ---------------------------------------------------------------------------
 
-export function GitHub({ className }: IconProps): Description {
+export function GitHub({ class: className }: IconProps): Child {
   return (
     <svg
       width="20"
@@ -165,7 +154,7 @@ export function GitHub({ className }: IconProps): Description {
 // Folder (closed)
 // ---------------------------------------------------------------------------
 
-export function Folder({ className }: IconProps): Description {
+export function Folder({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -188,7 +177,7 @@ export function Folder({ className }: IconProps): Description {
 // Folder — open
 // ---------------------------------------------------------------------------
 
-export function FolderOpen({ className }: IconProps): Description {
+export function FolderOpen({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -216,7 +205,7 @@ export function FolderOpen({ className }: IconProps): Description {
 // File — generic
 // ---------------------------------------------------------------------------
 
-export function FileGeneric({ className }: IconProps): Description {
+export function FileGeneric({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -240,7 +229,7 @@ export function FileGeneric({ className }: IconProps): Description {
 // File — code
 // ---------------------------------------------------------------------------
 
-export function FileCode({ className }: IconProps): Description {
+export function FileCode({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -266,7 +255,7 @@ export function FileCode({ className }: IconProps): Description {
 // File — text
 // ---------------------------------------------------------------------------
 
-export function FileText({ className }: IconProps): Description {
+export function FileText({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -292,7 +281,7 @@ export function FileText({ className }: IconProps): Description {
 // File — image
 // ---------------------------------------------------------------------------
 
-export function FileImage({ className }: IconProps): Description {
+export function FileImage({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -313,7 +302,7 @@ export function FileImage({ className }: IconProps): Description {
 // File — video
 // ---------------------------------------------------------------------------
 
-export function FileVideo({ className }: IconProps): Description {
+export function FileVideo({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -333,7 +322,7 @@ export function FileVideo({ className }: IconProps): Description {
 // File — PDF
 // ---------------------------------------------------------------------------
 
-export function FilePdf({ className }: IconProps): Description {
+export function FilePdf({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}
@@ -367,7 +356,7 @@ export function FilePdf({ className }: IconProps): Description {
 // File — archive
 // ---------------------------------------------------------------------------
 
-export function FileArchive({ className }: IconProps): Description {
+export function FileArchive({ class: className }: IconProps): Child {
   return (
     <svg
       class={className || undefined}

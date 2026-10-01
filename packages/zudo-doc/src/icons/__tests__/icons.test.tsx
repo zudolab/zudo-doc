@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import render from "preact-render-to-string";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import { describe, expect, it } from "vitest";
 import {
   FileArchive,
@@ -27,7 +27,7 @@ const icons = [
 
 describe("file and folder icons", () => {
   it.each(icons)("$name uses the shared SVG presentation", (Icon) => {
-    const html = render(<Icon className="h-icon-sm w-icon-sm" />);
+    const html = renderSsr(<Icon class="h-icon-sm w-icon-sm" />);
 
     expect(html).toContain('viewBox="0 0 24 24"');
     expect(html).toContain('fill="none"');
@@ -37,8 +37,8 @@ describe("file and folder icons", () => {
     expect(html).toContain('class="h-icon-sm w-icon-sm"');
   });
 
-  it.each(icons)("$name omits class when className is not supplied", (Icon) => {
-    const html = render(<Icon />);
+  it.each(icons)("$name omits class when class is not supplied", (Icon) => {
+    const html = renderSsr(<Icon />);
 
     expect(html).not.toMatch(/\sclass=/);
   });
