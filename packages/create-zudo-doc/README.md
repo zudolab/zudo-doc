@@ -1,6 +1,6 @@
 # create-zudo-doc
 
-Scaffold a new [zudo-doc](https://zudo-doc.takazudomodular.com) documentation site in seconds. Generates a ready-to-run project powered by [zfb](https://github.com/zudolab/zudo-doc), MDX, Tailwind CSS v4, and Preact — with optional features (search, i18n, sidebar, doc history, design token panel, and more).
+Scaffold a new [zudo-doc](https://zudo-doc.takazudomodular.com) documentation site in seconds. Generates a ready-to-run project powered by [zfb](https://github.com/zudolab/zudo-doc), zudo-react, zudo-wind, and MDX — with optional features (search, i18n, sidebar, doc history, design token panel, and more).
 
 ## Quick Start
 

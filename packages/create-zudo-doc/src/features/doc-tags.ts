@@ -10,7 +10,7 @@ import type { FeatureModule } from "../compose.js";
  * since the host catch-all stubs were retired in favor of package
  * injection — there is nothing left to copy or postProcess.
  *
- * zfb 2.13.1 renders these injected tag routes in both dev and build. This
+ * zfb renders these injected tag routes in both dev and build. This
  * feature has no host stubs because package injection owns the routes.
  */
 export const docTagsFeature: FeatureModule = () => ({

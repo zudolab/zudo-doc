@@ -75,7 +75,7 @@ const SKILLS = [
 
 // Recognized repo-relative path shapes. Deliberately narrow — the goal is
 // to catch backtick-wrapped tokens that read as a real file/dir reference,
-// not every backtick span in the document (most are CLI commands, Tailwind
+// not every backtick span in the document (most are CLI commands, utility
 // classes, or conventional-commit prefixes).
 const PATH_PREFIXES = ["src/", "scripts/", "pages/", "packages/", ".claude/"];
 const KNOWN_ROOT_FILES = new Set([
@@ -210,6 +210,23 @@ async function collectRefVerdicts(
 }
 
 describe("claude-skills scaffold refs — generated-scaffold integration guard (#2949)", () => {
+  it("ships the zudo-wind CSS and token guidance with the design-system skill", async () => {
+    const features = ["claudeSkills"];
+    const dir = await scaffoldShape("shape-design-system-engine-guidance", features);
+    const skill = await fs.readFile(
+      path.join(dir, ".claude/skills/zudo-doc-design-system/SKILL.md"),
+      "utf-8",
+    );
+
+    expect(skill).toContain("zudo-wind");
+    expect(skill).toContain("zfb.config.ts");
+    expect(skill).toContain("`:root`");
+    expect(skill).toContain("`theme-no-reset.css`");
+    expect(skill).not.toContain("Tailwind");
+    expect(skill).not.toContain("Preact");
+    expect(skill).not.toContain("@theme");
+  });
+
   it("shape (a) minimal + skill features only: every unconditional referenced path exists", async () => {
     const features = ["claudeSkills", "claudeSkillsWriting"];
     const dir = await scaffoldShape("shape-a-minimal-skills", features);

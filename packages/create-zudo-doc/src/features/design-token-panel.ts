@@ -20,11 +20,11 @@ import type { FeatureModule } from "../compose.js";
  * the single conditional line in `src/styles/global.css` (documented in
  * that file's header comment) — it can't ship unconditionally from
  * `@takazudo/zudo-doc/theme.css` because it pulls in zdtp's own bytes.
- * Inserted right after the `@layer zd-preflight, zd-flow;` line (the same
- * position the locked-manifest reference shape uses).
+ * Inserted immediately after the package theme CSS so zdtp can build on its
+ * design-token custom properties.
  */
 const ZDTP_IMPORT_LINE = `@import "@takazudo/zdtp/styles.css";`;
-const LAYER_LINE = `@layer zd-preflight, zd-flow;`;
+const THEME_IMPORT_LINE = `@import "@takazudo/zudo-doc/theme.css";`;
 
 export const designTokenPanelFeature: FeatureModule = () => ({
   name: "designTokenPanel",
@@ -34,7 +34,10 @@ export const designTokenPanelFeature: FeatureModule = () => ({
     if (!(await fs.pathExists(cssPath))) return;
     let content = await fs.readFile(cssPath, "utf-8");
     if (content.includes(ZDTP_IMPORT_LINE)) return; // already patched (idempotent)
-    content = content.replace(LAYER_LINE, `${LAYER_LINE}\n${ZDTP_IMPORT_LINE}`);
+    content = content.replace(
+      THEME_IMPORT_LINE,
+      `${THEME_IMPORT_LINE}\n${ZDTP_IMPORT_LINE}`,
+    );
     await fs.writeFile(cssPath, content);
   },
 });
