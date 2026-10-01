@@ -5,7 +5,7 @@
 // as part of the package-first migration (epic #2321, S4 #2327).
 //
 // Markup contract — KEEP STABLE. The structure:
-//   <div data-admonition="<variant>" class="admonition admonition-<variant>">
+//   <div data-admonition="<variant>" class="admonition-<variant>">
 //     <p class="admonition-title">…</p>
 //     <div class="admonition-body">…</div>
 //   </div>
@@ -13,7 +13,7 @@
 // the consumer's global.css) and e2e smoke specs target. Per-variant
 // color + icon live in CSS keyed off `data-admonition`, so this component
 // stays presentation-agnostic.
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export type AdmonitionVariant =
   | "note"
@@ -37,10 +37,10 @@ export interface AdmonitionProps {
  */
 export function makeAdmonition(variant: AdmonitionVariant) {
   const defaultTitle = variant.charAt(0).toUpperCase() + variant.slice(1);
-  return function Admonition({ title, children }: AdmonitionProps): Description {
+  return function Admonition({ title, children }: AdmonitionProps): Child {
     const heading = title && title.length > 0 ? title : defaultTitle;
     return (
-      <div data-admonition={variant} class={`admonition admonition-${variant}`}>
+      <div data-admonition={variant} class={`admonition-${variant}`}>
         <p class="admonition-title">{heading}</p>
         <div class="admonition-body">{children}</div>
       </div>

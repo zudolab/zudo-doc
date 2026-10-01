@@ -74,5 +74,9 @@ export function MermaidInit(props: MermaidInitProps = {}): JSX.Element {
   const script =
     props.script ??
     (props.cdnUrl ? buildMermaidInitScript(props.cdnUrl) : MERMAID_INIT_SCRIPT);
+  // A custom body is trusted code, but it must remain inside this script tag.
+  if (/<\/script\b/i.test(script)) {
+    throw new Error("MermaidInit script must not contain a closing script tag");
+  }
   return <script rawHtml={script} />;
 }

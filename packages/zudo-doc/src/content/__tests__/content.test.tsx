@@ -1,6 +1,5 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { HeadingH2 } from "../heading-h2.js";
 import { HeadingH3 } from "../heading-h3.js";
 import { HeadingH4 } from "../heading-h4.js";
@@ -15,68 +14,7 @@ import { ContentTable } from "../content-table.js";
 import { ContentCode } from "../content-code.js";
 import { defaultComponents } from "../component-map.js";
 
-// ---------------------------------------------------------------------------
-// Minimal VNode serializer (copied from breadcrumb tests to avoid pulling in
-// preact-render-to-string at test time).
-// ---------------------------------------------------------------------------
-type AnyVNode = Description;
-
-function isVNode(v: unknown): v is AnyVNode {
-  return (
-    typeof v === "object" &&
-    v !== null &&
-    Object.prototype.hasOwnProperty.call(v, "type") &&
-    Object.prototype.hasOwnProperty.call(v, "props")
-  );
-}
-
-function escapeAttr(s: string): string {
-  return s.replace(/"/g, "&quot;");
-}
-
-function serialize(node: Child): string {
-  if (node == null || typeof node === "boolean") return "";
-  if (typeof node === "string") return node;
-  if (typeof node === "number" || typeof node === "bigint") return String(node);
-  if (Array.isArray(node)) return node.map(serialize).join("");
-  if (!isVNode(node)) return "";
-  const { type, props } = node;
-  const { children, ...rest } = (props ?? {}) as {
-    children?: Child;
-    [key: string]: unknown;
-  };
-
-  if (typeof type === "function") {
-    const fn = type as (p: typeof props) => Child;
-    return serialize(fn(props));
-  }
-  if (type == null || (typeof type === "string" && type === "")) {
-    // Fragment
-    return serialize(children);
-  }
-  if (typeof type !== "string") return serialize(children);
-
-  const voidEls = new Set(["br", "hr", "img", "input", "wbr", "meta", "link"]);
-
-  const attrs = Object.entries(rest)
-    .filter(([, v]) => v !== undefined && v !== null && v !== false)
-    .map(([k, v]) => {
-      if (k === "key") return "";
-      if (v === true) return ` ${k}`;
-      if (k === "style" && typeof v === "object") {
-        // Serialize style object to inline string for attr comparison
-        const styleStr = Object.entries(v as Record<string, string>)
-          .map(([p, val]) => `${p.replace(/([A-Z])/g, "-$1").toLowerCase()}:${val}`)
-          .join(";");
-        return ` ${k}="${escapeAttr(styleStr)}"`;
-      }
-      return ` ${k}="${escapeAttr(String(v))}"`;
-    })
-    .join("");
-
-  if (voidEls.has(type)) return `<${type}${attrs}/>`;
-  return `<${type}${attrs}>${serialize(children)}</${type}>`;
-}
+import { renderSsr as serialize } from "../../__tests__/helpers/zudo-react.js";
 
 // ---------------------------------------------------------------------------
 // Heading components
@@ -93,10 +31,34 @@ describe("HeadingH2", () => {
 
   it("appends extra className to the default classes", () => {
     const html = serialize(
-      <HeadingH2 className="extra-class">Text</HeadingH2>,
+      <HeadingH2 class="extra-class">Text</HeadingH2>,
     );
     expect(html).toContain("extra-class");
     expect(html).toContain("text-title");
+  });
+});
+
+describe("native MDX list and pre contracts", () => {
+  it("forwards a nondefault start and attributes to the ol itself without a wrapper", () => {
+    const html = serialize(<ContentOl start={3} class="resumed" data-list="chapter"><li>Three</li><li><strong>Four</strong></li></ContentOl>);
+    expect(html).toMatch(/^<ol\b/);
+    expect(html).toContain('start="3"');
+    expect(html).toContain('class="resumed"');
+    expect(html).toContain('data-list="chapter"');
+    expect(html).toContain('<li>Three</li><li><strong>Four</strong></li>');
+    expect(html).toMatch(/<\/ol>$/);
+  });
+
+  it("keeps default and task list children in ordinary JSX", () => {
+    expect(serialize(<ContentOl><li>One</li></ContentOl>)).not.toContain('start=');
+    const task = serialize(<ContentUl><li><input type="checkbox" checked disabled /> Done</li></ContentUl>);
+    expect(task).toContain('<input type="checkbox" checked disabled>');
+    expect(task).toContain('Done');
+  });
+
+  it("uses the renderer's native pre leading-LF protection", () => {
+    const html = serialize(<pre>{"\nfirst\nsecond"}</pre>);
+    expect(html).toBe("<pre>\n\nfirst\nsecond</pre>");
   });
 });
 
@@ -215,7 +177,7 @@ describe("ContentLink", () => {
 
   it("bypasses styling for block-class links", () => {
     const html = serialize(
-      <ContentLink href="/docs" className="block">
+      <ContentLink href="/docs" class="block">
         Block link
       </ContentLink>,
     );
@@ -224,7 +186,7 @@ describe("ContentLink", () => {
 
   it("bypasses styling for hash-link anchors", () => {
     const html = serialize(
-      <ContentLink href="#section" className="hash-link">
+      <ContentLink href="#section" class="hash-link">
         #section
       </ContentLink>,
     );
@@ -314,7 +276,7 @@ describe("ContentLink", () => {
       dir: "media",
     });
     const html = serialize(
-      <AssetLink href="/media/demo/file.js" className="block">
+      <AssetLink href="/media/demo/file.js" class="block">
         file.js
       </AssetLink>,
     );
@@ -349,7 +311,7 @@ describe("ContentCode", () => {
 
   it("passes through Shiki block code (language-* class) untouched", () => {
     const html = serialize(
-      <ContentCode className="language-ts">const x = 1</ContentCode>,
+      <ContentCode class="language-ts">const x = 1</ContentCode>,
     );
     expect(html).toContain("language-ts");
     // should not inject wbr into highlighted blocks

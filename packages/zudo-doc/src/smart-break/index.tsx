@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 /**
  * Heuristic: does `text` look like a URL, filesystem path, or similar
@@ -55,10 +55,10 @@ function htmlEscape(s: string): string {
  * the input string unchanged so callers can trust non-path prose passes
  * through untouched.
  */
-export function smartBreak(text: string): Description | string {
+export function smartBreak(text: string): Child {
   if (!isPathLike(text)) return text;
   const parts = text.split(DELIM_SPLIT);
-  const nodes: (string | Description)[] = [];
+  const nodes: Child[] = [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i] ?? "";
     if (part === "") continue;
@@ -73,7 +73,7 @@ export function smartBreak(text: string): Description | string {
  * Preact function component wrapper — pure, server-renderable.
  * Stringifies children and defers to smartBreak.
  */
-export function SmartBreak({ children }: { children?: unknown }): Description {
+export function SmartBreak({ children }: { children?: unknown }): Child {
   return <>{smartBreak(String(children ?? ""))}</>;
 }
 
