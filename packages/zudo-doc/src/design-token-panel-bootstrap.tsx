@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 /**
  * Design-token panel (zdtp) WIRING MECHANISM + PACKAGE-DEFAULT ISLAND (#2658,
  * epic Minimal Scaffold #2651). zdtp itself is LAZY-LOADED (#3282, epic
@@ -97,7 +95,7 @@
  * required pull point. See @takazudo/zdtp PORTABLE-CONTRACT.md §7.
  */
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type {
   LifecycleAdapter,
   PanelConfig,

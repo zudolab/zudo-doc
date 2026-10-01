@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-pager — factory for the shared prev/next pager <nav> (epic #2344, S7).
 //
 // The host's `pages/lib/_doc-pager.tsx` previously read the `t` function
@@ -7,7 +6,7 @@
 // injected dependency so the logic lives in the package while the host stub
 // keeps the singleton imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { ChevronLeft, ChevronRight } from "../icons/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";

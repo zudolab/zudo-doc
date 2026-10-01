@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createInlineVersionSwitcher (epic #2344, S8).
  *

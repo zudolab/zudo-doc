@@ -64,3 +64,10 @@ Run the exact source-resolution and port-check commands from the conventions wit
 | Upstream issue/shim and removal version | pending (or verified none) |
 | Browser/visual cases handed to #4468/#4475 | pending |
 | Final commit / reviewer / date | pending |
+
+## Remaining Preact runtime imports after #4437
+
+The following files still import Preact runtime APIs for their assigned semantic port. The mechanical codemod removed Preact type imports and JSX pragmas.
+
+- `e2e/fixtures/hostpanel/src/host-panel/bootstrap-island.tsx`
+- `e2e/fixtures/hostpanel/src/host-panel/media-probe-island.tsx`

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createCategoryNavWrapper — version threading (#3218).
  *

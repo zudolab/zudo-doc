@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence test for `<DocLayoutWithDefaults>` TOC gating.
  *

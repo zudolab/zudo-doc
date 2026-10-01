@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // routes/_design-token-panel-bootstrap — the ROUTES-ONLY configured
 // design-token-panel island (#3396, epic #3394).
 //
@@ -34,7 +32,7 @@
 // callers), so both components are in the scanned graph and a shared name
 // would trip zfb's "island marker name collision" warning and drop one of them.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { runDesignTokenPanelBootstrapOnce } from "../design-token-panel-bootstrap.js";
 // Host-callables channel, third virtual module (#2658, mirrors #2501's
 // chromeBindingsModule): absent `settings.designTokenPanelConfigModule` →

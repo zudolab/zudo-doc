@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Footer presentational shell for the documentation layout.
 //
 // The original template mixed data-prep (settings + getDocsCollection
@@ -33,7 +31,7 @@
 //    `mt-vsp-lg border-t border-muted pt-vsp-md` that the Astro template
 //    applied via `class:list` conditional.
 
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 
 import type { FooterLinkColumn, FooterTagColumn } from "./types.js";
 
@@ -71,7 +69,7 @@ export interface FooterProps {
  * configured. The inner content (link grid, copyright) is only emitted
  * when the respective slots carry data.
  */
-export function Footer(props: FooterProps): VNode {
+export function Footer(props: FooterProps): Description {
   const linkColumns = props.linkColumns ?? [];
   const tagColumns = props.tagColumns ?? [];
   const copyright = props.copyright ?? "";
@@ -159,7 +157,7 @@ export function Footer(props: FooterProps): VNode {
         {hasCopyright && (
           <div
             class={copyrightClass}
-            dangerouslySetInnerHTML={{ __html: copyright }}
+            rawHtml={copyright}
           />
         )}
       </div>

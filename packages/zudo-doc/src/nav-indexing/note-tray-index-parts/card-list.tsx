@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { formatMonthDayLabel, formatYear } from "../../format-date/index.js";
 import type { ResolvedDateFormats } from "../../settings.js";
 import { CategoryLinkIcon } from "../../tree-nav-shared/index.js";

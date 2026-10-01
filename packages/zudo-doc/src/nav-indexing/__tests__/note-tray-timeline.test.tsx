@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
 import { NoteTrayIndex } from "../note-tray-index.js";
 import { serialize } from "./helpers.js";

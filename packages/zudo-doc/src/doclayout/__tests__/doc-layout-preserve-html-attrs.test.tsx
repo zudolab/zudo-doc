@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Pins the full `<ClientRouter preserveHtmlAttrs>` array emitted by
  * `<DocLayout>` (previously unguarded — closes the gap called out by #3254).

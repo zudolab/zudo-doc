@@ -11,7 +11,7 @@
 // downstream consumers may continue to use the v2 types until the v2
 // package itself widens them. Changes here are v2 breaking changes.
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 /**
  * Locale code as seen by the header. Widened from the host's literal
@@ -75,10 +75,10 @@ export interface HeaderRightComponentProps {
   lang: Locale | undefined;
   githubRepoUrl: string | null;
   githubLabel: string;
-  themeToggle: ComponentChildren;
-  languageSwitcher: ComponentChildren;
-  versionSwitcher: ComponentChildren;
-  search: ComponentChildren;
+  themeToggle: Child;
+  languageSwitcher: Child;
+  versionSwitcher: Child;
+  search: Child;
   colorModeEnabled: boolean;
   hasLocales: boolean;
 }
@@ -86,7 +86,7 @@ export interface HeaderRightComponentProps {
 /** A callable-only host registry keyed by serialized component name. */
 export type HeaderRightComponentRegistry = Record<
   string,
-  (props: HeaderRightComponentProps) => ComponentChildren
+  (props: HeaderRightComponentProps) => Child
 >;
 
 export interface HeaderRightTriggerItem {

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Primary chrome replacement seam (#2775).
 //
 // Package-owned routes, self-contained scaffold routes, and the shared page
@@ -9,7 +8,7 @@
 // imported package implementation, preserving both default output and island
 // scanner reachability.
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { ChromeContext, FactoryComponent } from "../factory-context/index.js";
 import type {
   BreadcrumbSlotProps,
@@ -28,7 +27,7 @@ import { Toc } from "../toc/index.js";
 import { Breadcrumb } from "../breadcrumb/index.js";
 import { createDocPager } from "../doc-pager/index.js";
 
-type PrimarySlot<P> = (props: P) => ComponentChildren;
+type PrimarySlot<P> = (props: P) => Child;
 
 /**
  * Recover one exact call-site component type from the deliberately wide

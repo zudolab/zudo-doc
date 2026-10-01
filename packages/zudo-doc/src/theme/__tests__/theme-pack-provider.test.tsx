@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Unit tests for the theme-pack FOUC-safe bootstrap (ADR
 // `docs/adr/theme-packs.md` Decision 3 "Hard-load bootstrap"; #2822;
 // document.write → head appendChild + explicit latch, #3399).

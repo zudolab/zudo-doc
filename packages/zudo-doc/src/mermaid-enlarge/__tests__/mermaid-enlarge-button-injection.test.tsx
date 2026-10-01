@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Real-DOM regression tests for the enlarge-button injection loop
  * (zudolab/zudo-doc#3132 — "mermaid enlarge broken").

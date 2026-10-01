@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Mermaid-enlarge island — relocated from src/components/mermaid-enlarge.tsx
 // (host showcase) into the package as part of Package-First Wave 3 (S3,
 // epic #2344). Uses shared hook + constants from S1a foundation:
@@ -281,59 +279,59 @@ export function MermaidEnlarge() {
   return (
     <dialog
       ref={dialogRef}
-      onClick={handleBackdropClick}
+      on:click={handleBackdropClick}
       aria-label="Enlarged diagram"
-      className={MERMAID_ENLARGE_DIALOG_CLASS}
+      class={MERMAID_ENLARGE_DIALOG_CLASS}
       style={ENLARGE_DIALOG_STYLE}
     >
       {open && (
         <>
           <div
-            className="zd-mermaid-viewport"
+            class="zd-mermaid-viewport"
             tabindex={0}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onKeyDown={onViewportKeyDown}
+            on:pointerdown={onPointerDown}
+            on:pointermove={onPointerMove}
+            on:pointerup={onPointerUp}
+            on:pointercancel={onPointerUp}
+            on:keydown={onViewportKeyDown}
             data-pan-active={panActive && zoomed ? "" : undefined}
           >
             <div
               ref={innerRef}
-              className="zd-mermaid-transform"
+              class="zd-mermaid-transform"
               style={{
                 transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
                 "transform-origin": "center",
               }}
-              dangerouslySetInnerHTML={{ __html: open.svgHtml }}
+              rawHtml={open.svgHtml}
             />
           </div>
 
-          <div className="zd-mermaid-toolbar" role="toolbar" aria-label="Diagram zoom controls">
+          <div class="zd-mermaid-toolbar" role="toolbar" aria-label="Diagram zoom controls">
             <button
               type="button"
-              className="zd-mermaid-tool-btn"
+              class="zd-mermaid-tool-btn"
               aria-label="Zoom in"
-              onClick={zoomIn}
+              on:click={zoomIn}
               disabled={atMax}
             >
               <PlusIcon />
             </button>
             <button
               type="button"
-              className="zd-mermaid-tool-btn"
+              class="zd-mermaid-tool-btn"
               aria-label="Zoom out"
-              onClick={zoomOut}
+              on:click={zoomOut}
               disabled={!zoomed}
             >
               <MinusIcon />
             </button>
             <button
               type="button"
-              className="zd-mermaid-tool-btn"
+              class="zd-mermaid-tool-btn"
               aria-label="Toggle pan mode"
               aria-pressed={panActive}
-              onClick={togglePan}
+              on:click={togglePan}
               disabled={!zoomed}
             >
               <PanIcon />
@@ -342,8 +340,8 @@ export function MermaidEnlarge() {
 
           <button
             type="button"
-            onClick={() => dialogRef.current?.close()}
-            className="zd-enlarge-dialog-close"
+            on:click={() => dialogRef.current?.close()}
+            class="zd-enlarge-dialog-close"
             aria-label="Close enlarged diagram"
           >
             <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true">
@@ -364,5 +362,5 @@ MermaidEnlarge.displayName = "MermaidEnlarge";
  * dist HTML carries the dialog shell even before hydration.
  */
 export function MermaidEnlargeSsrFallback() {
-  return <dialog aria-label="Enlarged diagram" className={MERMAID_ENLARGE_DIALOG_CLASS} style={ENLARGE_DIALOG_STYLE} />;
+  return <dialog aria-label="Enlarged diagram" class={MERMAID_ENLARGE_DIALOG_CLASS} style={ENLARGE_DIALOG_STYLE} />;
 }

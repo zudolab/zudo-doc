@@ -1,4 +1,3 @@
-/** @jsxImportSource preact */
 // "Defaults" wrapper around the composable `<DocLayout>` shell.
 //
 // This file is the single point that:
@@ -56,7 +55,8 @@
 // // @slot:doc-layout:imports
 // // @slot:doc-layout:frontmatter
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 // `@takazudo/zfb` provides the `<Island>` JSX wrapper. We wrap the
 // default Toc / MobileToc here (rather than inside the Toc / MobileToc
 // modules themselves) so the zfb island bundle hydrates the bare inner
@@ -137,21 +137,21 @@ export interface DocLayoutWithDefaultsProps
     | "main"
   > {
   /** The page's article body. Required. */
-  children: ComponentChildren;
+  children: Child;
 
   // ---- override slots -----------------------------------------------
   /** Replace the default site header. */
-  headerOverride?: ComponentChildren;
+  headerOverride?: Child;
   /** Replace the default sidebar contents; pass `false` to omit its landmark entirely. */
-  sidebarOverride?: ComponentChildren;
+  sidebarOverride?: Child;
   /** Replace the default desktop TOC. */
-  tocOverride?: ComponentChildren;
+  tocOverride?: Child;
   /** Replace the default mobile TOC. */
-  mobileTocOverride?: ComponentChildren;
+  mobileTocOverride?: Child;
   /** Replace the default breadcrumb. */
-  breadcrumbOverride?: ComponentChildren;
+  breadcrumbOverride?: Child;
   /** Replace the default footer. */
-  footerOverride?: ComponentChildren;
+  footerOverride?: Child;
   /**
    * Heading items extracted from the page's MDX body. When provided, the
    * default Toc and MobileToc instances render the full item list in SSG
@@ -434,7 +434,7 @@ export function DocLayoutWithDefaults(
               <CodeBlockEnhancer />
               <TabsInit />
               <MermaidInit />
-              <script dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_INIT_SCRIPT }} />
+              <script rawHtml={VERSION_SWITCHER_INIT_SCRIPT} />
             </>
           )
         }

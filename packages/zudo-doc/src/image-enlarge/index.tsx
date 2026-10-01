@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Image-enlarge island — relocated from src/components/image-enlarge.tsx
 // (host showcase) into the package as part of Package-First Wave 3 (S3,
 // epic #2344). Uses shared hook + constants from S1a foundation:
@@ -169,25 +167,25 @@ export function ImageEnlarge() {
   return (
     <dialog
       ref={dialogRef}
-      onClick={handleBackdropClick}
-      className={IMAGE_ENLARGE_DIALOG_CLASS}
+      on:click={handleBackdropClick}
+      class={IMAGE_ENLARGE_DIALOG_CLASS}
       style={ENLARGE_DIALOG_STYLE}
     >
       {imgData && (
         <>
-          <div className="relative">
+          <div class="relative">
             <img
               src={imgData.currentSrc || imgData.src}
               srcSet={imgData.srcset}
               sizes={imgData.srcset ? "85vw" : undefined}
               alt={imgData.alt}
-              className="block max-h-[85vh] max-w-[85vw] object-contain"
+              class="block max-h-[85vh] max-w-[85vw] object-contain"
             />
           </div>
           <button
             type="button"
-            onClick={() => dialogRef.current?.close()}
-            className="zd-enlarge-dialog-close"
+            on:click={() => dialogRef.current?.close()}
+            class="zd-enlarge-dialog-close"
             aria-label="Close enlarged image"
           >
             <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true">
@@ -212,7 +210,7 @@ ImageEnlarge.displayName = "ImageEnlarge";
 export function ImageEnlargeSsrFallback() {
   return (
     <dialog
-      className={IMAGE_ENLARGE_DIALOG_CLASS}
+      class={IMAGE_ENLARGE_DIALOG_CLASS}
       style={ENLARGE_DIALOG_STYLE}
     />
   );

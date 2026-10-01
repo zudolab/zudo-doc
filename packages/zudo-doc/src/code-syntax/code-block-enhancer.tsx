@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of the legacy `code-block-enhancer` component.
 //
 // The original component rendered:
@@ -12,7 +10,7 @@
 // the host can drop it into any SSR layout without Astro. The init function
 // is also exported separately for callers that manage their own script injection.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
 
 /**
@@ -36,7 +34,7 @@ export function CodeBlockEnhancer(): JSX.Element {
   return (
     <>
       <div class="code-block-sr-announce" aria-live="polite" />
-      <script dangerouslySetInnerHTML={{ __html: CODE_BLOCK_ENHANCER_SCRIPT }} />
+      <script rawHtml={CODE_BLOCK_ENHANCER_SCRIPT} />
     </>
   );
 }

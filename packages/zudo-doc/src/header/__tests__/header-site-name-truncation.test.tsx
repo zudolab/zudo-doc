@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Regression cover for zudolab/zudo-doc#4288.
  *

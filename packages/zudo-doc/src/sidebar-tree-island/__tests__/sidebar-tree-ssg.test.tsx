@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence test for the SidebarTree island component.
  *
@@ -13,7 +12,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { render } from "preact-render-to-string";
 import { Island } from "@takazudo/zfb";
 import { SidebarTree } from "../index.js";
@@ -87,7 +86,7 @@ describe("SidebarTree — call-site Island marker", () => {
       Island({
         when: "load",
         children: <SidebarTree nodes={SAMPLE_NODES} />,
-      }) as unknown as VNode,
+      }) as unknown as Description,
     );
     expect(html).toContain('data-zfb-island="SidebarTree"');
   });

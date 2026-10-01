@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { Tabs } from "../tabs.js";

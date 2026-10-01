@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const hookHarness = vi.hoisted(() => {

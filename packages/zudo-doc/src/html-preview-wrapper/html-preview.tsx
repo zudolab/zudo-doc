@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { useMemo } from "preact/hooks";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import {
   PreviewBase,
   type HtmlPreviewLabels,
@@ -304,7 +302,7 @@ export function HtmlPreview({
   externalScripts,
   preflight,
   showResources,
-}: HtmlPreviewProps): VNode {
+}: HtmlPreviewProps): Description {
   const srcdoc = useMemo(
     () =>
       buildSrcdoc(

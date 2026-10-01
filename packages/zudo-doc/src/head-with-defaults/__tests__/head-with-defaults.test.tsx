@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // head-with-defaults unit tests — SiteHeadConfig extras emission.
 //
 // Mirrors the exact-string assertion style of src/head/__tests__/doc-head.test.tsx.

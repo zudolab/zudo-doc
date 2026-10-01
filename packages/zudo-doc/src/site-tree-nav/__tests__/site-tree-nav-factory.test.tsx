@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory + island-marker tests for the SiteTreeNavWrapper factory (epic #2344, S8).
  *

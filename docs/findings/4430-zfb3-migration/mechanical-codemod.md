@@ -11,6 +11,12 @@ Codemod: `node scripts/zfb3-codemods/jsx-v2-safe.mjs [--dry-run] [paths...]`. It
 
 The #4431 comparator's narrow SVG attribute exception in `scripts/zfb3-parity/normalize.mjs` and `compare.mjs` is an explicit #4433 ownership extension. It changes only expected baseline SVG nodes when the current node omits the exact inert attribute; class, CSS, island and unrelated DOM comparisons remain strict.
 
+## v3 mechanical pass (#4437)
+
+`node scripts/zfb3-codemods/jsx-v3-mechanical.mjs` changed 283 tracked TSX/TS files on the first pass; `--dry-run` reported zero files on the second pass. It removed all Preact JSX source pragmas, rewrote Preact type imports to zudo-react core / JSX runtime types, renamed intrinsic `className` and native handlers, converted simple `dangerouslySetInnerHTML` to `rawHtml`, and shortened the two rounded utility names. The AST census found zero remaining intrinsic `className`, camel-cased native handlers and `dangerouslySetInnerHTML` attributes. No script/style text-child sites required conversion. The 47 remaining files with Preact runtime imports are listed in their assigned port matrices; semantic hooks, renderers and tests remain for those owners.
+
+This pass does not certify each rawHtml payload's trust, parser context, hydration behavior or dynamic script/style payload. Each port's raw HTML row must still complete the locked per-site review. It also leaves component callback prop names and hooks intact. TypeScript's intentional-red baseline is in [README.md](README.md).
+
 ## Verified v2 parity contract
 
 The manager built both pre-codemod base `cef8782c2920d067ba710d3219ea7e8779937267` and topic `28422f629f1c66a56a370bfbe10c7c1ce205152d` with CI-faithful `scripts/parity-build.sh` under the heavy guard: both passed with 789 pages. The comparator reports **0 hard and 0 advisory differences** from base to topic across routes, islands, DOM, classes, and CSS inventory. The original frozen reference `337b9f110793dccb4759bddd5273eab38cd9d2f0` has three CSS inventory differences versus both trees, with exact identical difference objects. These additions predate #4433; no CSS exception was added. Evidence: `$HOME/.cache/zudo-doc-zfb3-parity/4433-v2-codemod/{original-to-parent,parent-to-codemod,static-revised}.{json,md}`.

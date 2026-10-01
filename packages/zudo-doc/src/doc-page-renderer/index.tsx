@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-page-renderer — factory for the shared page renderer for all 4 doc routes
 // (epic #2344, S7).
 //
@@ -18,7 +17,8 @@
 //     back to the nav node's own docsUrl, doc history rendered for listed
 //     entries via `docHistoryContentDir`.
 
-import type { JSX, VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { DocPageBaseProps, DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -135,10 +135,10 @@ export interface DocPageRendererDeps {
     versionBannerLabels?: VersionBannerLabels;
     autoIndexLabel?: string;
     autoIndexChildren?: DocNavNode[];
-    metainfoSlot?: VNode | null;
-    contentHeaderSlot?: VNode;
-    contentSlot?: VNode;
-    docHistorySlot?: VNode | null;
+    metainfoSlot?: Description | null;
+    contentHeaderSlot?: Description;
+    contentSlot?: Description;
+    docHistorySlot?: Description | null;
   }) => JSX.Element;
   /**
    * The `DocContentHeader` component (host-side factory result).
@@ -168,7 +168,7 @@ export interface DocPageRendererDeps {
     sourceFileExt?: ".mdx" | ".md";
     contentDir?: string;
     isFallback?: boolean;
-  }) => VNode | null;
+  }) => Description | null;
 }
 
 /**

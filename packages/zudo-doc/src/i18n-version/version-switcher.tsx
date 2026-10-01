@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/version-switcher.
 //
 // Like the language-switcher, this is a pure presentational component:
@@ -63,7 +61,7 @@
 //   - `create-zudo-doc` scaffolds it into the generated `src/styles/global.css`
 //     template so freshly-scaffolded projects get it without action.
 
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import type { VersionEntry, VersionSwitcherLabels } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
@@ -299,7 +297,7 @@ function cls(...parts: (string | false | null | undefined)[]): string {
 export const VERSION_SWITCHER_VISIBILITY_STYLE =
   "@media (min-width:64rem){.hidden:has(> [data-version-switcher]){display:block}}";
 
-function ChevronDownIcon(): VNode {
+function ChevronDownIcon(): Description {
   return (
     <svg
       class="h-[0.875rem] w-[0.875rem]"
@@ -324,7 +322,7 @@ function ChevronDownIcon(): VNode {
  * `VERSION_SWITCHER_INIT_SCRIPT` — mount it once at body-end on any
  * page that includes a `<VersionSwitcher>`.
  */
-export function VersionSwitcher(props: VersionSwitcherProps): VNode {
+export function VersionSwitcher(props: VersionSwitcherProps): Description {
   const {
     versions,
     currentVersion,

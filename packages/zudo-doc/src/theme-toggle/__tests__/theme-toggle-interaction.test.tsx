@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { render as renderToString } from "preact-render-to-string";

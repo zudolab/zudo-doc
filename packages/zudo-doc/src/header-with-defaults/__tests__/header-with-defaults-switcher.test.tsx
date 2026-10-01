@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createHeaderWithDefaults — #3215 unavailableVersions
  * wiring on the header dropdown version switcher.
@@ -21,12 +20,12 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { createHeaderWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 
-type AnyVNode = VNode<Record<string, unknown>>;
+type AnyVNode = Description;
 
 /** A ChromeContext with two configured versions: "getting-started" exists
  *  only in v1's docs; v2's docs contain a different page entirely. */

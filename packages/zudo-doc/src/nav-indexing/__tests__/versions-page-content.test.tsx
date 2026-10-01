@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, it, expect } from "vitest";
 import { VersionsPageContent } from "../versions-page-content.js";
 import { serialize } from "./helpers.js";

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Host-side body-end islands helper.
 //
 // Wave 8 (Path A — super-epic #1333 / child epic #1355) drops the local
@@ -28,7 +27,8 @@
 // `Island`'s return type to `unknown`, so call-sites cast through
 // `as unknown as VNode` at the boundary.
 
-import type { VNode, JSX } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 
@@ -108,7 +108,7 @@ export function BodyEndIslands({
     ? (Island({
         when: "load",
         children: <ClientRouterBootstrap />,
-      }) as unknown as VNode)
+      }) as unknown as Description)
     : null;
 
   // Gated on `settings.aiAssistant` (zudolab/zudo-doc#2058): when the AI
@@ -135,7 +135,7 @@ export function BodyEndIslands({
         Island({
           ssrFallback: <p class="sr-only">{aiChatBodyLabel}</p>,
           children: <AiChatModal basePath={basePath} />,
-        }) as unknown as VNode
+        }) as unknown as Description
       }
     </>
   ) : null;
@@ -155,7 +155,7 @@ export function BodyEndIslands({
         when: "idle",
         ssrFallback: <ImageEnlargeSsrFallback />,
         children: <ImageEnlarge />,
-      }) as unknown as VNode)
+      }) as unknown as Description)
     : null;
 
   // Gated on `settings.mermaid` (issue #2176 / #2178). Mirrors the imageEnlarge
@@ -169,7 +169,7 @@ export function BodyEndIslands({
         when: "idle",
         ssrFallback: <MermaidEnlargeSsrFallback />,
         children: <MermaidEnlarge />,
-      }) as unknown as VNode)
+      }) as unknown as Description)
     : null;
 
   return (

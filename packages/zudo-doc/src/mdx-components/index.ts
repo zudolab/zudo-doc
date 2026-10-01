@@ -34,9 +34,8 @@
 //     like Avatar/Button/Card). Spread LAST so the host always wins.
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 import { toChildArray } from "preact";
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import type { Settings } from "../settings.js";
 import type { AssetManifest } from "../route-context-payload/types.js";
 import { defaultComponents } from "../content/index.js";
@@ -248,7 +247,7 @@ function makeEnlargeableParagraph(
   },
 ) {
   return function EnlargeableParagraph(props: {
-    children?: ComponentChildren;
+    children?: Child;
     [key: string]: unknown;
   }): unknown {
     const { children } = props;
@@ -268,7 +267,7 @@ function makeEnlargeableParagraph(
         "type" in kid &&
         "props" in kid
       ) {
-        const vnode = kid as VNode<Record<string, unknown>>;
+        const vnode = kid as Description;
         if (vnode.type === ContentImg || vnode.type === "img") {
           const imgProps = (vnode.props ?? {}) as Record<string, unknown>;
           const decoded =

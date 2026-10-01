@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it, vi } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import {
   createNoteTrayIndexWrapper,
   type NoteTrayIndexDeps,
@@ -58,7 +56,7 @@ function deps(overrides: Partial<NoteTrayIndexDeps> = {}): NoteTrayIndexDeps {
   };
 }
 
-const propsOf = (value: unknown) => (value as VNode<NoteTrayIndexProps>).props;
+const propsOf = (value: unknown) => (value as Description).props;
 
 describe("createNoteTrayIndexWrapper", () => {
   it("defaults category to the tray containing currentSlug and resolves canonical tags", () => {

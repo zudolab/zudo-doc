@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Real-DOM regression tests for the explicit current-route override threaded
 // through SidebarTree's active-slug derivation (zudolab/zudo-doc#3398).
 //

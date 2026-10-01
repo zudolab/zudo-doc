@@ -1,7 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Regression guard for the first-paint clobber bug found while arming the
 // #3245 e2e guard: `VERSION_SWITCHER_REWIRE_SCRIPT` is inline in <header>,
 // which parses before <article> in document order. Its unconditional

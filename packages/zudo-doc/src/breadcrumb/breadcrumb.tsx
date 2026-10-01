@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { findPath } from "./find-path.js";
 import type { BreadcrumbItem, BreadcrumbNode } from "./types.js";
 import { ChevronRight } from "../icons/index.js";
@@ -50,10 +48,10 @@ interface SmartLabelProps {
  * looks "path-like" (URLs, slash-separated paths, etc.). Prose labels
  * pass through unchanged.
  */
-function SmartLabel({ label }: SmartLabelProps): VNode | string {
+function SmartLabel({ label }: SmartLabelProps): Description | string {
   if (!isPathLike(label)) return label;
   const parts = label.split(DELIM_SPLIT);
-  const nodes: (string | VNode)[] = [];
+  const nodes: (string | Description)[] = [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (!part) continue;
@@ -83,11 +81,11 @@ function isPathLike(text: string): boolean {
   return false;
 }
 
-function ChevronIcon(): VNode {
+function ChevronIcon(): Description {
   return <ChevronRight className="h-icon-xs w-icon-xs text-muted shrink-0" />;
 }
 
-function HomeIcon(): VNode {
+function HomeIcon(): Description {
   return (
     <svg
       class="h-[1.575rem] w-[1.575rem] shrink-0"
@@ -130,7 +128,7 @@ export interface BreadcrumbProps {
    * VersionSwitcher pill inline at the right of the breadcrumb row,
    * matching the reference site's layout on category index pages.
    */
-  rightSlot?: ComponentChildren;
+  rightSlot?: Child;
 }
 
 /**
@@ -144,7 +142,7 @@ export interface BreadcrumbProps {
  * Returns null when no items resolve, matching the documented
  * `items.length > 0 &&` guard.
  */
-export function Breadcrumb(props: BreadcrumbProps): VNode | null {
+export function Breadcrumb(props: BreadcrumbProps): Description | null {
   const items =
     props.items ??
     (props.tree && props.currentId !== undefined

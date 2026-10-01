@@ -1,7 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";

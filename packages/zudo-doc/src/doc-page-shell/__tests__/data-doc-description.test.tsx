@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Stable DOM hook regression test (zudolab/zudo-doc#2873).
  *

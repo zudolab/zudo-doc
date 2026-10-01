@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Stable DOM hook + gating regression test for the desktop TOC-toggle
  * feature (epic #3252, #3254).

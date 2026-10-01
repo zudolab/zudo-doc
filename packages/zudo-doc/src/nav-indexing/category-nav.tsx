@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/category-nav.
 //
 // The original Astro template built the nav tree, found a category node by
@@ -15,7 +13,7 @@
 //     filter, but the component also guards locally for safety).
 //   - The arrow SVG is identical to the one in the original template.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 

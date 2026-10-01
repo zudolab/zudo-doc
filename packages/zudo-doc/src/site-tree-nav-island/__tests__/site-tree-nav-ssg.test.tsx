@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence test for the SiteTreeNav island component.
  *
@@ -9,7 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { render } from "preact-render-to-string";
 import { Island } from "@takazudo/zfb";
 import { SiteTreeNav } from "../index.js";
@@ -336,7 +335,7 @@ describe("SiteTreeNav — call-site Island marker", () => {
       Island({
         when: "idle",
         children: <SiteTreeNav tree={SAMPLE_TREE} />,
-      }) as unknown as VNode,
+      }) as unknown as Description,
     );
     expect(html).toContain('data-zfb-island="SiteTreeNav"');
   });

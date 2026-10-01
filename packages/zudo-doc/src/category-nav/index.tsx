@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // category-nav — factory for the MDX <CategoryNav> wrapper component
 // (epic #2344, S8).
 //
@@ -19,7 +18,7 @@
 // The `lang` prop is injected by createMdxComponents() in
 // pages/_mdx-components.ts so locale routes get locale-aware nav data.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { CategoryNav as CategoryNavV2 } from "../nav-indexing/index.js";
 import type { NavNode as V2NavNode } from "../nav-indexing/types.js";
 import { remapVersionedHrefs } from "../nav-data-prep/index.js";

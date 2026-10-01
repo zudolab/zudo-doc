@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 type Props = JSX.IntrinsicElements["ol"];
 
@@ -11,7 +9,7 @@ export function ContentOl({ children, className, ...rest }: Props) {
   return (
     <ol
       {...rest}
-      className={className || undefined}
+      class={className || undefined}
       style={{ "padding-left": "2em", "list-style-type": "decimal" }}
     >
       {children}

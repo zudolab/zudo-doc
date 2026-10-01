@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Page module for the site index route.
 //
 // Default-locale (EN) site index. Static route — no paths() export needed.
@@ -21,7 +20,7 @@
 
 import { routeContext } from "./lib/_route-context";
 import { prepareHomeData } from "@takazudo/zudo-doc/home-page";
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { HomePageView } from "./lib/_chrome";
 
 export const frontmatter = { title: "Home" };

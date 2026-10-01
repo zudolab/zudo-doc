@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Locked manifest (#2653 Decision 4, i18n addendum): the locale-prefixed
 // counterpart of pages/docs/[[...slug]].tsx, retained for explicit host route
 // ownership; zfb 2.13.1 also serves injected dynamic routes in dev. Self-contained: only the
@@ -24,7 +23,7 @@
 // docHistory note: same as the default-locale stub — when docHistory is
 // selected, the generator patches this file too.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { routeContext } from "virtual:zudo-doc-route-context";
 import {
   createRouteContext,

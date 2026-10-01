@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 import { describe, it, expect } from "vitest";
 import { render } from "preact-render-to-string";
 import { AutoLogo, pickGlyphName } from "../index.js";

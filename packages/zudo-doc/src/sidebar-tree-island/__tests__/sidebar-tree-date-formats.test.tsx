@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SidebarTree — per-role date patterns from the `dateFormats` prop (#4078).
  *

@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/site-tree-nav-demo.
 //
 // The original Astro template loaded the full doc collection, built the nav
@@ -17,7 +15,7 @@
 // and passes it in. The categoryOrder / categoryIgnore props mirror the
 // filtering that site-tree-nav.tsx applies at runtime.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 

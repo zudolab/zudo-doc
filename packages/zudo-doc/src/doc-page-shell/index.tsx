@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-page-shell — factory for the shared render shell used by all 4
 // doc-route page components (epic #2344, S5).
 //
@@ -14,7 +13,8 @@
 // slots. The base EN route (shipped in every scaffold) can depend on it
 // without dragging in the versioning/i18n feature surface.
 
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { MobileToc, getTocTitle } from "../toc/index.js";
@@ -104,7 +104,7 @@ export interface DocPageShellProps {
   /** Version slug for Header/Sidebar active-state, or undefined on latest routes. */
   currentVersion?: string;
   /** Inline version switcher VNode for the breadcrumb right-slot. */
-  versionSwitcher: ComponentChildren;
+  versionSwitcher: Child;
 
   /**
    * This page's unavailable-version slugs, straight from
@@ -136,20 +136,20 @@ export interface DocPageShellProps {
    * Auto-index branch slot: the build-time date block (DocMetainfoArea), or
    * null to omit it.
    */
-  metainfoSlot?: VNode | null;
+  metainfoSlot?: Description | null;
 
   /**
    * Entry branch slot: the content header (h1 + meta + tags + description +
    * frontmatter preview), built per route (carries isFallback).
    */
-  contentHeaderSlot?: VNode;
+  contentHeaderSlot?: Description;
   /** Entry branch slot: the rendered MDX `<Content />`. */
-  contentSlot?: VNode;
+  contentSlot?: Description;
   /**
    * Entry branch slot: the document-utilities area (DocHistoryArea), or null
    * to omit it.
    */
-  docHistorySlot?: VNode | null;
+  docHistorySlot?: Description | null;
 }
 
 /** Settings subset read by {@link createDocPageShell}. */
@@ -323,7 +323,7 @@ export function createDocPageShell<S extends Settings = Settings>(
               {Island({
                 when: "load",
                 children: <Toc headings={headings} title={tocTitle} />,
-              }) as unknown as VNode}
+              }) as unknown as Description}
             </div>
           )
       : undefined;
@@ -331,7 +331,7 @@ export function createDocPageShell<S extends Settings = Settings>(
       ? (Island({
           when: "load",
           children: <MobileToc headings={headings} title={tocTitle} />,
-        }) as unknown as VNode)
+        }) as unknown as Description)
       : undefined;
 
     return (

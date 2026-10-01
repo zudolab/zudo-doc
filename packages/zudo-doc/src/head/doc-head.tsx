@@ -1,4 +1,4 @@
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { HeadProps } from "./types.js";
 import { OgTags } from "./og-tags.js";
 import { TwitterCard } from "./twitter-card.js";

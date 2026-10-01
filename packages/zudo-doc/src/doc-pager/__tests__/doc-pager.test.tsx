@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR-shape test for the DocPager's `data-doc-pager` stable DOM hook
 // (zudolab/zudo-doc#2873 — theme packs select `[data-doc-pager]` instead of
 // relying on the bare `<nav>` structure).

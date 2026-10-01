@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Shared icon module — thin server-rendered Preact components.
 //
 // All icons accept an optional `className` prop for sizing and colour
@@ -14,7 +12,7 @@
 // so screen-readers skip them; callers should pair them with visible or
 // sr-only text labels.
 
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 
 export interface IconProps {
   /** CSS class string forwarded to the root `<svg>` element. */
@@ -25,7 +23,7 @@ export interface IconProps {
 // Chevron — right-pointing (d="M9 5l7 7-7 7")
 // ---------------------------------------------------------------------------
 
-export function ChevronRight({ className }: IconProps): VNode {
+export function ChevronRight({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -44,7 +42,7 @@ export function ChevronRight({ className }: IconProps): VNode {
 // Chevron — left-pointing (d="M15 19l-7-7 7-7")
 // ---------------------------------------------------------------------------
 
-export function ChevronLeft({ className }: IconProps): VNode {
+export function ChevronLeft({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -63,7 +61,7 @@ export function ChevronLeft({ className }: IconProps): VNode {
 // Search (magnifying glass)
 // ---------------------------------------------------------------------------
 
-export function Search({ className }: IconProps): VNode {
+export function Search({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -82,7 +80,7 @@ export function Search({ className }: IconProps): VNode {
 // History (clock with a circular arrow)
 // ---------------------------------------------------------------------------
 
-export function History({ className }: IconProps): VNode {
+export function History({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -104,7 +102,7 @@ export function History({ className }: IconProps): VNode {
 // Close (×)
 // ---------------------------------------------------------------------------
 
-export function Close({ className }: IconProps): VNode {
+export function Close({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -125,7 +123,7 @@ export function Close({ className }: IconProps): VNode {
 // ArrowLeft (← with horizontal bar)
 // ---------------------------------------------------------------------------
 
-export function ArrowLeft({ className }: IconProps): VNode {
+export function ArrowLeft({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -148,7 +146,7 @@ export function ArrowLeft({ className }: IconProps): VNode {
 // The path is the canonical mark used throughout this project.
 // ---------------------------------------------------------------------------
 
-export function GitHub({ className }: IconProps): VNode {
+export function GitHub({ className }: IconProps): Description {
   return (
     <svg
       width="20"
@@ -167,7 +165,7 @@ export function GitHub({ className }: IconProps): VNode {
 // Folder (closed)
 // ---------------------------------------------------------------------------
 
-export function Folder({ className }: IconProps): VNode {
+export function Folder({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -190,7 +188,7 @@ export function Folder({ className }: IconProps): VNode {
 // Folder — open
 // ---------------------------------------------------------------------------
 
-export function FolderOpen({ className }: IconProps): VNode {
+export function FolderOpen({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -218,7 +216,7 @@ export function FolderOpen({ className }: IconProps): VNode {
 // File — generic
 // ---------------------------------------------------------------------------
 
-export function FileGeneric({ className }: IconProps): VNode {
+export function FileGeneric({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -242,7 +240,7 @@ export function FileGeneric({ className }: IconProps): VNode {
 // File — code
 // ---------------------------------------------------------------------------
 
-export function FileCode({ className }: IconProps): VNode {
+export function FileCode({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -268,7 +266,7 @@ export function FileCode({ className }: IconProps): VNode {
 // File — text
 // ---------------------------------------------------------------------------
 
-export function FileText({ className }: IconProps): VNode {
+export function FileText({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -294,7 +292,7 @@ export function FileText({ className }: IconProps): VNode {
 // File — image
 // ---------------------------------------------------------------------------
 
-export function FileImage({ className }: IconProps): VNode {
+export function FileImage({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -315,7 +313,7 @@ export function FileImage({ className }: IconProps): VNode {
 // File — video
 // ---------------------------------------------------------------------------
 
-export function FileVideo({ className }: IconProps): VNode {
+export function FileVideo({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -335,7 +333,7 @@ export function FileVideo({ className }: IconProps): VNode {
 // File — PDF
 // ---------------------------------------------------------------------------
 
-export function FilePdf({ className }: IconProps): VNode {
+export function FilePdf({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}
@@ -369,7 +367,7 @@ export function FilePdf({ className }: IconProps): VNode {
 // File — archive
 // ---------------------------------------------------------------------------
 
-export function FileArchive({ className }: IconProps): VNode {
+export function FileArchive({ className }: IconProps): Description {
   return (
     <svg
       class={className || undefined}

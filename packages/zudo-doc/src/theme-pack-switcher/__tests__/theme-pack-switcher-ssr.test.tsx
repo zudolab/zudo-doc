@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR-shape tests for the ThemePackSwitcher flyout island (#2821).
 //
 // The island hydrates `when: "load"` WITHOUT an `ssrFallback`, so zfb SSRs

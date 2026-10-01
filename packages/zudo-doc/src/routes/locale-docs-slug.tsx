@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /[locale]/docs/[[...slug]] — package-owned
 // equivalent of pages/[locale]/docs/[[...slug]].tsx (A1 #2361).
 //
@@ -7,7 +6,7 @@
 // injected ONCE; `paths()` enumerates one route per (non-default locale, slug)
 // with the locale-first + base-EN-fallback merge — reconstructed via `_context`.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { DocPageEntryProps, DocPageAutoIndexProps } from "../doc-page-props/index.js";
 import { settings, getLocaleConfig, resolveNavSource, buildDocRouteEntries } from "./_context.js";
 import { renderDocPage } from "./_chrome.js";

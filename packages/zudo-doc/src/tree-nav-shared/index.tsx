@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Shared constants and primitives for sidebar-tree-island and site-tree-nav-island.
 // Relocated from src/components/tree-nav-shared.tsx (host-side) into the package
 // so the islands can be self-contained.
@@ -23,7 +22,7 @@ export function CategoryLinkIcon({ className }: { className?: string }) {
       fill="currentColor"
       viewBox="0 0 103.395 107.049"
       aria-hidden="true"
-      className={`shrink-0 ${className ?? ""}`}
+      class={`shrink-0 ${className ?? ""}`}
     >
       <path d={CATEGORY_LINK_PATH} />
     </svg>
@@ -54,7 +53,7 @@ export function ConnectorLines({
   return (
     <>
       <div
-        className="absolute border-l border-dashed border-muted"
+        class="absolute border-l border-dashed border-muted"
         style={{
           left,
           top: "0px",
@@ -62,7 +61,7 @@ export function ConnectorLines({
         }}
       />
       <div
-        className="absolute border-t border-dashed border-muted"
+        class="absolute border-t border-dashed border-muted"
         style={{
           left,
           width,

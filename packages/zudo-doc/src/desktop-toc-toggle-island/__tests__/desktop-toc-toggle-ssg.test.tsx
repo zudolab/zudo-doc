@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence test for the DesktopTocToggle island component. Mirrors
  * desktop-sidebar-toggle-island/__tests__/desktop-sidebar-toggle-ssg.test.tsx
@@ -11,7 +10,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { render } from "preact-render-to-string";
 import { Island } from "@takazudo/zfb";
 import {
@@ -158,7 +157,7 @@ describe("DesktopTocToggle — call-site Island marker", () => {
       Island({
         when: "load",
         children: <DesktopTocToggle />,
-      }) as unknown as VNode,
+      }) as unknown as Description,
     );
     expect(html).toContain('data-zfb-island="DesktopTocToggle"');
   });

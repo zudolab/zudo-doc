@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // search-widget — SSR-friendly search trigger + dialog widget (epic #2344, S5).
 //
 // The host's `pages/lib/_search-widget.tsx` previously imported `withBase`
@@ -9,7 +8,7 @@
 //
 // Pure SSR — no islands, no client-only imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { SEARCH_WIDGET_SCRIPT } from "../search-widget-script/index.js";
 
 export interface SearchWidgetProps {
@@ -134,7 +133,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
                 placeholder={placeholderText}
                 class="w-full bg-transparent text-body text-fg outline-none placeholder:text-muted"
                 autocomplete="off"
-                spellcheck={"false" as unknown as boolean}
+                spellcheck="false"
               />
               {/* Wide-viewport hit count (hidden until results arrive) */}
               <span
@@ -205,7 +204,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
           per page — the browser deduplicates same-id custom elements
           automatically; the `customElements.define` call below guards against
           double-registration with the `!customElements.get(...)` check. */}
-      <script dangerouslySetInnerHTML={{ __html: SEARCH_WIDGET_SCRIPT }} />
+      <script rawHtml={SEARCH_WIDGET_SCRIPT} />
     </>
   );
 }

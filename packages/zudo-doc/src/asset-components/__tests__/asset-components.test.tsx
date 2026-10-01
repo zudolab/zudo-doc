@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
 import render from "preact-render-to-string";
 import type { AssetManifest } from "../../route-context-payload/types.js";

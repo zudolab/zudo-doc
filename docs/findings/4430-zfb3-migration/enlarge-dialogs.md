@@ -46,3 +46,11 @@ Run the exact source-resolution and port-check commands from the conventions wit
 | Upstream issue/shim and removal version | pending (or verified none) |
 | Browser/visual cases handed to #4468/#4475 | pending |
 | Final commit / reviewer / date | pending |
+
+## Remaining Preact runtime imports after #4437
+
+The following files still import Preact runtime APIs for their assigned semantic port. The mechanical codemod removed Preact type imports and JSX pragmas.
+
+- `packages/zudo-doc/src/image-enlarge/index.tsx`
+- `packages/zudo-doc/src/mermaid-enlarge/__tests__/mermaid-enlarge-button-injection.test.tsx`
+- `packages/zudo-doc/src/mermaid-enlarge/index.tsx`

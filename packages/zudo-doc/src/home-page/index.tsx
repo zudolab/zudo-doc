@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // home-page — factory for the shared home-page body (epic #2499, S3 #2502).
 //
 // `/` is never injected by the routes plugin (zfb rejects `/`; upstream
@@ -32,7 +31,8 @@
 // NOT an eject target — no `ejectable-snapshot` registration.
 
 import { Fragment } from "preact";
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { AutoLogo } from "../auto-logo/index.js";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
@@ -55,13 +55,13 @@ export { prepareHomeData } from "./prepare-home-data.js";
 export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
 
 /** Sitemap / Tags heading — same look as the compact intro h2 (#4194). */
-function HomeSectionHeading({ children }: { children: ComponentChildren }) {
+function HomeSectionHeading({ children }: { children: Child }) {
   return <h2 class={`${HOME_SECTION_HEADING_CLASS} mb-vsp-md`}>{children}</h2>;
 }
 
 /** Small "double-chevron + label" link shared by the secondary category row
  *  and the "See all tags" / legacy "All Tags" links (epic #4235). */
-function HomeMetaLink({ href, children }: { href: string; children: ComponentChildren }) {
+function HomeMetaLink({ href, children }: { href: string; children: Child }) {
   return (
     <a
       href={href}
@@ -132,7 +132,7 @@ export interface HomePageViewProps {
    * from it (a renderer). Resolved as `extras ?? hostBindings.homeExtras?.({
    * locale })`.
    */
-  extras?: ComponentChildren;
+  extras?: Child;
   /**
    * Overrides the default first hero link, which is otherwise
    * `settings.headerNav[0]` + `t("nav.overview", locale)`. `path` is
@@ -265,7 +265,7 @@ export function createHomePageView<S extends Settings = Settings>(
     // of each item hard-coding its own trailing/leading separator) is what
     // keeps the separator count correct regardless of which combination of
     // primary/GitHub/extras is present.
-    const rowItems: ComponentChildren[] = [];
+    const rowItems: Child[] = [];
     if (primary) {
       rowItems.push(
         <a href={primary.href} class="text-fg underline hover:text-accent">
@@ -292,7 +292,7 @@ export function createHomePageView<S extends Settings = Settings>(
       );
     }
     if (hasExtras) {
-      rowItems.push(resolvedExtras as ComponentChildren);
+      rowItems.push(resolvedExtras as Child);
     }
 
     return (
@@ -373,7 +373,7 @@ export function createHomePageView<S extends Settings = Settings>(
                 dateFormats={dateFormatsFor(locale)}
               />
             ),
-          }) as unknown as VNode}
+          }) as unknown as Description}
 
           {movedNodes.length > 0 && (
             <nav

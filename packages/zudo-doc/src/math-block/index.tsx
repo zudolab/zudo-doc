@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // MathBlock — server-rendered KaTeX component for MDX math expressions.
 // Moved from the showcase's `pages/lib/_math-block.tsx` into the shared
 // package as part of the package-first migration (epic #2321, S4 #2327).
@@ -25,7 +24,7 @@
 // `import("katex").then(onFulfilled, onRejected)` as a bare specifier instead
 // of failing the build (#4015 / #4209), and evaluating this module never throws.
 
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 
 type KatexLike = typeof import("katex").default;
 
@@ -60,7 +59,7 @@ export interface MathBlockProps {
  * match the standard rehype-katex output so existing CSS (e.g. the
  * KaTeX stylesheet) still applies.
  */
-export function MathBlock({ latex, block = false }: MathBlockProps): VNode {
+export function MathBlock({ latex, block = false }: MathBlockProps): Description {
   if (!katex) throw new Error(MISSING_KATEX_MESSAGE);
   const html = katex.renderToString(latex, {
     displayMode: block,
@@ -74,7 +73,7 @@ export function MathBlock({ latex, block = false }: MathBlockProps): VNode {
       <div
         class="math math-display"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: html }}
+        rawHtml={html}
       />
     );
   }
@@ -83,7 +82,7 @@ export function MathBlock({ latex, block = false }: MathBlockProps): VNode {
     <span
       class="math math-inline"
       // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: html }}
+      rawHtml={html}
     />
   );
 }

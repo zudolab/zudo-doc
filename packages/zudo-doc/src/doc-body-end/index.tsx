@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-body-end — factory for the shared bodyEndComponents block (epic #2344, S7).
 //
 // The host's `pages/lib/_doc-body-end.tsx` previously read
@@ -12,7 +11,7 @@
 // `settings.imageEnlarge` etc. — it is itself a host-side component that
 // the doc-page-shell factory already accepts as a slot).
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { SidebarResizerInit } from "../sidebar-resizer/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";

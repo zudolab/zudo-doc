@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG marker test for the package-default body-end islands (#2406 / #2401(c)).
  *

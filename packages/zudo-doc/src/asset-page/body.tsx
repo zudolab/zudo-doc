@@ -1,13 +1,11 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // The asset viewer page body, extracted from `createAssetPageView` (index.tsx)
 // so it's renderable from plain props without a `ChromeContext` or
 // `@takazudo/zfb*` (zudolab/zudo-doc#4221). `createAssetPageView` still owns
 // resolving these props (settings, i18n, URLs) and wraps `<AssetPageBody>`
 // inside `DocLayoutWithDefaults`.
 
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
 import type { DateFormatPattern } from "../format-date/index.js";
 import type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
@@ -121,8 +119,8 @@ export function resolveAssetPageLabels(
  * `zfb build` run, all sharing this module) is a latent hazard. Each call
  * returns a fresh vnode.
  */
-export function renderAssetDetailsPrepaintScript(): VNode {
-  return <script dangerouslySetInnerHTML={{ __html: ASSET_DETAILS_PREPAINT_SCRIPT }} />;
+export function renderAssetDetailsPrepaintScript(): Description {
+  return <script rawHtml={ASSET_DETAILS_PREPAINT_SCRIPT} />;
 }
 
 export interface AssetPageBodyProps {
@@ -165,7 +163,7 @@ export function AssetPageBody({
   backLink,
   viewSourceUrl,
   showViewSource,
-}: AssetPageBodyProps): VNode {
+}: AssetPageBodyProps): Description {
   const linesLabel = labels.linesTemplate.replace("{count}", String(asset.lines ?? 0));
   const linked = <AssetLinkedFrom asset={asset} label={labels.linkedFrom} />;
   const detailsLabels: AssetDetailsLabels = {
@@ -187,7 +185,7 @@ export function AssetPageBody({
   const downloadPanel = (
     <AssetDownloadPanel asset={asset} rawUrl={rawUrl} noPreview={labels.noPreview} downloadLabel={labels.download} copyLabel={labels.copy} />
   );
-  let stage: ComponentChildren;
+  let stage: Child;
   const isMedia = asset.previewable && asset.sniffOk && ["image", "video", "pdf"].includes(asset.kind);
   if (!asset.previewable || !asset.sniffOk) stage = downloadPanel;
   else if (asset.kind === "image") stage = <AssetImageStage asset={asset} rawUrl={rawUrl} labels={imageStageLabels} />;
@@ -208,7 +206,7 @@ export function AssetPageBody({
       {body}
       <AssetActions rawUrl={rawUrl} downloadLabel={labels.download} openRawLabel={labels.openRaw} copyLabel={labels.copy} wrapLabel={labels.wrap} bottom />
       {showViewSource && <BodyFootUtilArea sourceUrl={viewSourceUrl} viewSourceLabel={labels.viewSource} docHistoryIsland={null} />}
-      <script dangerouslySetInnerHTML={{ __html: ASSET_PAGE_SCRIPT }} />
+      <script rawHtml={ASSET_PAGE_SCRIPT} />
     </div>
   );
 }

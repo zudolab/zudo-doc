@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-content-header — factory for the shared content header block
 // (epic #2344, S7).
 //
@@ -9,7 +8,8 @@
 // factory receives those as injected dependencies so the logic lives in the
 // package while the host stub keeps the singleton imports.
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { FrontmatterPreview, type FrontmatterCellRenderer } from "../metainfo/index.js";
 import type { DocPageEntry } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -148,7 +148,7 @@ export function createDocContentHeader<S extends Settings = Settings>(
           locale,
           isFallback,
           version,
-        }) as ComponentChildren}
+        }) as Child}
 
         {/* Authored date line — independent of the git-derived metainfo block.
             Unlike that block, these values come directly from frontmatter and

@@ -1,7 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // The hostpanel fixture's OWN design-token-panel island (#4310, epic #4309) —
 // the live-browser counterpart of
 // `packages/zudo-doc/src/__tests__/fixtures/route-injection/src/host-panel-bootstrap-island.tsx`.
@@ -24,7 +23,7 @@
 // node: zfb's SPA transition swaps the body, so a node-bound listener would be
 // lost on the first soft navigation while this island's effect does not re-run.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { useEffect } from "preact/hooks";
 import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
 import { buildDesignTokenPanelConfig } from "./design-token-panel-config.js";

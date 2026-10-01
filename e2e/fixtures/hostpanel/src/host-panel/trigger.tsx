@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // The host's OWN design-token-panel trigger (#4310, epic #4309).
 //
 // `designTokenPanel: false` drops the package's built-in `#design-token-trigger`
@@ -13,7 +12,7 @@
 // (Label in Name) — a voice-control user saying "Tokens" could not activate it.
 // The longer description lives in `title` instead.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 /** DOM id the bootstrap island binds its click handler to, and the spec clicks. */
 export const HOST_TOKEN_TRIGGER_ID = "host-token-trigger";

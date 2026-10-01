@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Layout-level JSX port of `src/components/header` for the
 // zudo-doc framework primitives layer (super-epic #473, sub-issue
 // #476). The component is intentionally server-render-friendly: it
@@ -37,7 +35,8 @@
 //     the TypeScript syntax was stripped because a raw `<script>` tag
 //     ships its body to the browser as-is.
 
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   computeActiveNavPath,
   isNavItemActive,
@@ -120,7 +119,7 @@ export interface HeaderProps {
    * replaces the legacy `<slot name="sidebar" />`. Consumers pass the
    * sidebar tree they want to surface in the mobile sheet.
    */
-  sidebarSlot?: ComponentChildren;
+  sidebarSlot?: Child;
 
   /**
    * Replacement for the `<SidebarToggle client:media="...">` element in
@@ -130,23 +129,23 @@ export interface HeaderProps {
    * that slot — the layout is still valid (e.g. doc pages with
    * `hide_sidebar`).
    */
-  sidebarToggle?: ComponentChildren;
+  sidebarToggle?: Child;
 
   /**
    * Replacement for `<ThemeToggle client:load />`. Rendered only when
    * `colorModeEnabled` is `true` AND a `theme-toggle` entry survives
    * `filterHeaderRightItems` — matching the original template.
    */
-  themeToggle?: ComponentChildren;
+  themeToggle?: Child;
 
   /** Replacement for the `<LanguageSwitcher />` Astro child. */
-  languageSwitcher?: ComponentChildren;
+  languageSwitcher?: Child;
 
   /** Replacement for the `<VersionSwitcher />` Astro child. */
-  versionSwitcher?: ComponentChildren;
+  versionSwitcher?: Child;
 
   /** Replacement for the `<Search />` Astro child. */
-  search?: ComponentChildren;
+  search?: Child;
 
   /**
    * Emits `data-zfb-transition-persist={persistKey}` on the
@@ -314,9 +313,9 @@ export function Header(props: HeaderProps): JSX.Element {
         rightItemDispatch,
       ),
     }))
-    .filter((entry): entry is typeof entry & { node: VNode } => entry.node !== null);
-  const rightGroups: VNode[] = [];
-  let iconGroup: VNode[] = [];
+    .filter((entry): entry is typeof entry & { node: Description } => entry.node !== null);
+  const rightGroups: Description[] = [];
+  let iconGroup: Description[] = [];
 
   const flushIconGroup = () => {
     if (iconGroup.length === 0) return;
@@ -458,14 +457,14 @@ export function Header(props: HeaderProps): JSX.Element {
         {rightGroups}
       </div>
 
-      <script dangerouslySetInnerHTML={{ __html: NAV_OVERFLOW_SCRIPT }} />
+      <script rawHtml={NAV_OVERFLOW_SCRIPT} />
       {hasLocales ? (
         // Keeps the persisted header's language-switcher hrefs pointing at the
         // current page's equivalent in each other locale across same-locale SPA
         // navigation (#2551). Registers a document-level AFTER_NAVIGATE_EVENT
         // listener once; idempotent across re-execution.
         <script
-          dangerouslySetInnerHTML={{ __html: LANGUAGE_SWITCHER_INIT_SCRIPT }}
+          rawHtml={LANGUAGE_SWITCHER_INIT_SCRIPT}
         />
       ) : null}
       {hasVersions ? (
@@ -474,7 +473,7 @@ export function Header(props: HeaderProps): JSX.Element {
         // navigation (#2553). Registers a document-level AFTER_NAVIGATE_EVENT
         // listener once; idempotent across re-execution.
         <script
-          dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_REWIRE_SCRIPT }}
+          rawHtml={VERSION_SWITCHER_REWIRE_SCRIPT}
         />
       ) : null}
     </header>
@@ -488,8 +487,8 @@ export function Header(props: HeaderProps): JSX.Element {
 function SidebarSlotFallback({
   children,
 }: {
-  children?: ComponentChildren;
-}): VNode | null {
+  children?: Child;
+}): Description | null {
   if (children === undefined || children === null) return null;
   return <span hidden>{children}</span>;
 }
@@ -502,7 +501,7 @@ function renderNavItem(
   currentVersion: string | undefined,
   urlHelpers: HeaderUrlHelpers,
   i18n: HeaderI18n,
-): VNode {
+): Description {
   // Category matching (the page's resolved big category) is the primary
   // signal; URL-path matching stays as a secondary fallback so items that
   // declare no `categoryMatch`, and pages with no resolved section (home,
@@ -645,8 +644,8 @@ function TriggerButton({
   id: string;
   ariaLabel: string;
   event: string;
-  children: ComponentChildren;
-}): VNode {
+  children: Child;
+}): Description {
   const inlineOnclick: Record<string, string> = {
     onclick: `window.dispatchEvent(new CustomEvent('${event}'))`,
   };
@@ -676,8 +675,8 @@ function SlotWrapper({
 }: {
   index: number;
   className?: string;
-  children: ComponentChildren;
-}): VNode {
+  children: Child;
+}): Description {
   return (
     <div key={`right-${index}`} class={className}>
       {children}
@@ -689,7 +688,7 @@ type RightItemHandler = (
   item: HeaderRightItem,
   index: number,
   ctx: RightItemContext,
-) => VNode | null;
+) => Description | null;
 
 // Dispatch table keyed by `${type}:${trigger|component}`, or just `type`
 // for link/html items that carry no sub-type discriminant.
@@ -841,7 +840,7 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         // Mirrors `<Fragment set:html={item.html} />` from the Astro
         // template — the legacy code already trusts this string, and
         // this port preserves that contract.
-        dangerouslySetInnerHTML={{ __html: item.html }}
+        rawHtml={item.html}
       />
     );
   },
@@ -896,7 +895,7 @@ function renderRightItem(
   index: number,
   ctx: RightItemContext,
   dispatch: ReadonlyMap<string, RightItemHandler>,
-): VNode | null {
+): Description | null {
   const key =
     item.type === "trigger"
       ? `trigger:${item.trigger}`

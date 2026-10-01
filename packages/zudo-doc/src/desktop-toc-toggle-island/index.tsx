@@ -1,7 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 import { useState, useEffect, useRef } from "preact/hooks";
 import { ChevronRight, ChevronLeft } from "../icons/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
@@ -99,8 +98,8 @@ export function DesktopTocToggle() {
   return (
     <button
       type="button"
-      onClick={() => setVisible((v) => !v)}
-      className="zd-desktop-toc-toggle hidden xl:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 rounded-l-DEFAULT text-muted cursor-pointer transition-[right,color] duration-200 ease-in-out hover:text-fg"
+      on:click={() => setVisible((v) => !v)}
+      class="zd-desktop-toc-toggle hidden xl:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 rounded-l text-muted cursor-pointer transition-[right,color] duration-200 ease-in-out hover:text-fg"
       aria-label={visible ? "Hide table of contents" : "Show table of contents"}
       aria-pressed={visible}
       data-zfb-transition-persist="desktop-toc-toggle"

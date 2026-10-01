@@ -1,7 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX, VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import type { FactoryComponent } from "../factory-context/index.js";
 
@@ -47,12 +46,12 @@ export function createDesignTokenPanelIsland(
 
     return (
       <>
-        <script dangerouslySetInnerHTML={{ __html: ZDTP_TOGGLE_SHIM_SRC }} />
+        <script rawHtml={ZDTP_TOGGLE_SHIM_SRC} />
         {
           Island({
             when: "load",
             children: <DesignTokenPanelBootstrap />,
-          }) as unknown as VNode
+          }) as unknown as Description
         }
       </>
     );
