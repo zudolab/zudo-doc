@@ -9,7 +9,7 @@
 // banner contents. The role also doubles as the e2e selector
 // (`[role='note']`) used by versioning specs.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export interface VersionBannerLabels {
   /** Banner body text (e.g. "You are viewing documentation for an older version."). */
@@ -35,7 +35,7 @@ export interface VersionBannerProps {
  * The host typically resolves `labels` via `t("version.banner.*", lang)`
  * and `latestUrl` via the project's URL helpers.
  */
-export function VersionBanner(props: VersionBannerProps): Description {
+export function VersionBanner(props: VersionBannerProps): Child {
   const { type, latestUrl, labels } = props;
   return (
     <div

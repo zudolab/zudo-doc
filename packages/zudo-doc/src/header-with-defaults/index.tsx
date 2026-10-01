@@ -7,7 +7,7 @@
 // `@/utils/github`). This factory receives those as arguments so the logic
 // lives in the package while the host stub keeps the singleton imports.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { Header, filterHeaderRightItems } from "../header/index.js";
@@ -190,12 +190,19 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             dateFormats={dateFormatsFor(lang)}
           />
         ),
-      }) as unknown as Description;
+      });
 
     const themeToggle = Island({
       when: "load",
-      children: <ThemeToggle defaultMode={themeDefaultMode} labels={themeToggleLabels(t, lang)} respectPrefersColorScheme={themeRespectSystem} pendingUntilHydrated={true} />,
-    }) as unknown as Description;
+      children: (
+        <ThemeToggle
+          {...(themeDefaultMode !== undefined ? { defaultMode: themeDefaultMode } : {})}
+          labels={themeToggleLabels(t, lang)}
+          respectPrefersColorScheme={themeRespectSystem}
+          pendingUntilHydrated={true}
+        />
+      ),
+    });
 
     const searchWidget = (
       <SearchWidget
@@ -210,7 +217,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     );
 
     // Build the version-switcher component when versioning is configured.
-    let versionSwitcher: Description | undefined;
+    let versionSwitcher: Child | undefined;
 
     if (settings.versions && settings.versions.length > 0) {
       const isNonDefaultLocale = lang !== defaultLocale;
@@ -263,7 +270,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             currentLocale: lang,
           }}
         />
-      ) as unknown as Description;
+      );
     }
 
     const languageSwitcher =
@@ -279,7 +286,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
           }}
           currentLocale={lang}
         />
-      ) as unknown as Description : undefined;
+      ) : undefined;
 
     const persistKey = `header-${lang}`;
 

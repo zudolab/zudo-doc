@@ -101,6 +101,21 @@ describe("VersionSwitcher", () => {
     expect(html).toContain('id="version-menu"');
   });
 
+  it("uses data-version-switcher as the marker and emits only the required relative utility", () => {
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+      />,
+    );
+
+    expect(html).toContain('<div class="relative" data-version-switcher>');
+    expect(html).not.toContain('class="version-switcher relative"');
+  });
+
   it("appends idSuffix to the menu id and aria-controls", () => {
     const html = serialize(
       <VersionSwitcher

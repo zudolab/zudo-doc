@@ -5,17 +5,14 @@
 // emits the same markup the legacy Astro template did, leaving the two
 // interactive child islands (the mobile sidebar toggle and the dropdown
 // "..." overflow controller) as either consumer-supplied slots or an
-// inline-script `<script dangerouslySetInnerHTML>`.
+// inline-script `<script rawHtml>`.
 //
 // Why this shape:
-//   * The Astro template embeds three Astro-only sub-components
-//     (`<LanguageSwitcher />`, `<VersionSwitcher />`, `<Search />`).
-//     None of those have a JSX equivalent yet (Task #3 ports them), so
-//     they are exposed as `languageSwitcher` / `versionSwitcher` /
-//     `search` slot props. The host project keeps using
-//     `header` until the sibling ports land — this file exists
-//     so consumers of the v2 package can opt into the JSX path early.
-//   * The two Preact islands (`SidebarToggle`, `ThemeToggle`) are also
+//   * The Astro template embeds locale/version switchers and a search
+//     widget. Their ports remain injectable through `languageSwitcher` /
+//     `versionSwitcher` / `search` slot props so this host-agnostic header
+//     does not depend on the concrete widget configuration.
+//   * The two interactive islands (`SidebarToggle`, `ThemeToggle`) are also
 //     accepted as slots so consumers control hydration boundaries
 //     (e.g. wrap them in zfb's `<Island when="media">` / `<Island
 //     when="load">`). The matching `<slot name="sidebar" />` in the
@@ -30,12 +27,12 @@
 //     `./nav-active.ts` so they stay unit-testable without booting the
 //     host config.
 //   * The inline overflow script is a pure-JS string emitted via
-//     `dangerouslySetInnerHTML` (see `./nav-overflow-script.ts`). The
+//     `rawHtml` (see `./nav-overflow-script.ts`). The
 //     behaviour is identical to the original `<script>` block — only
 //     the TypeScript syntax was stripped because a raw `<script>` tag
 //     ships its body to the browser as-is.
 
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   computeActiveNavPath,
@@ -313,9 +310,9 @@ export function Header(props: HeaderProps): JSX.Element {
         rightItemDispatch,
       ),
     }))
-    .filter((entry): entry is typeof entry & { node: Description } => entry.node !== null);
-  const rightGroups: Description[] = [];
-  let iconGroup: Description[] = [];
+    .filter((entry): entry is typeof entry & { node: Child } => entry.node !== null);
+  const rightGroups: Child[] = [];
+  let iconGroup: Child[] = [];
 
   const flushIconGroup = () => {
     if (iconGroup.length === 0) return;
@@ -357,20 +354,14 @@ export function Header(props: HeaderProps): JSX.Element {
       //     re-binds the dropdown toggle on AFTER_NAVIGATE_EVENT, and
       //     VERSION_SWITCHER_REWIRE_SCRIPT recomputes the menu from
       //     window.location on the same event (zudolab/zudo-doc#2553).
-      //   - Search: <site-search> custom element re-registers on
-      //     AFTER_NAVIGATE_EVENT (_search-widget-script.ts:184, verified (a))
+      //   - Search: the persisted <site-search> instance refreshes its
+      //     page-level state on AFTER_NAVIGATE_EVENT.
       //   - SidebarToggle (mobile): closes on AFTER_NAVIGATE_EVENT
-      //     (sidebar-toggle-island/index.tsx, verified (a)). Its section tree
-      //     rides the Island's serialised data-props, and re-hydration alone
-      //     does NOT correct it — the header is lifted verbatim, so the Island
-      //     re-mounts from the OLD props (zudolab/zudo-doc#3525). What corrects
-      //     it is `ensureNestedIslandPropsRefresh`
-      //     (transitions/nested-island-props-refresh.ts, registered from the
-      //     island module): on BEFORE_SWAP_EVENT it copies the incoming
-      //     document's data-props onto the live nested islands, and
-      //     mountNewIslands re-reads the attribute at mount time (#3530)
-      //     Host islands can opt out with data-zd-props-preserve on the live
-      //     island or an ancestor inside this persisted root (#3555).
+      //     (sidebar-toggle-island/index.tsx). zfb 3.1 keeps unchanged island
+      //     roots live and applies changed incoming props natively. The
+      //     transition adapter copies old props only for islands opted into
+      //     host preservation with data-zd-props-preserve; unsafe incoming
+      //     structure drops persistence before native reconciliation.
       //   - Header nav + aria-current: NAV_OVERFLOW_SCRIPT re-runs on
       //     AFTER_NAVIGATE_EVENT (frozen by zudolab/zudo-doc#3534 — the
       //     `addEventListener(${afterNavigateEventLiteral}, initNavOverflow)`
@@ -488,7 +479,7 @@ function SidebarSlotFallback({
   children,
 }: {
   children?: Child;
-}): Description | null {
+}): Child {
   if (children === undefined || children === null) return null;
   return <span hidden>{children}</span>;
 }
@@ -501,7 +492,7 @@ function renderNavItem(
   currentVersion: string | undefined,
   urlHelpers: HeaderUrlHelpers,
   i18n: HeaderI18n,
-): Description {
+): Child {
   // Category matching (the page's resolved big category) is the primary
   // signal; URL-path matching stays as a secondary fallback so items that
   // declare no `categoryMatch`, and pages with no resolved section (home,
@@ -645,7 +636,7 @@ function TriggerButton({
   ariaLabel: string;
   event: string;
   children: Child;
-}): Description {
+}): Child {
   const inlineOnclick: Record<string, string> = {
     onclick: `window.dispatchEvent(new CustomEvent('${event}'))`,
   };
@@ -676,7 +667,7 @@ function SlotWrapper({
   index: number;
   className?: string;
   children: Child;
-}): Description {
+}): Child {
   return (
     <div key={`right-${index}`} class={className}>
       {children}
@@ -688,7 +679,7 @@ type RightItemHandler = (
   item: HeaderRightItem,
   index: number,
   ctx: RightItemContext,
-) => Description | null;
+) => Child;
 
 // Dispatch table keyed by `${type}:${trigger|component}`, or just `type`
 // for link/html items that carry no sub-type discriminant.
@@ -895,7 +886,7 @@ function renderRightItem(
   index: number,
   ctx: RightItemContext,
   dispatch: ReadonlyMap<string, RightItemHandler>,
-): Description | null {
+): Child {
   const key =
     item.type === "trigger"
       ? `trigger:${item.trigger}`

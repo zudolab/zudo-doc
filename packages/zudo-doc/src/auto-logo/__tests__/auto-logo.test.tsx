@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 import { describe, it, expect } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { AutoLogo, pickGlyphName } from "../index.js";
 import {
   GLYPH_NAMES,

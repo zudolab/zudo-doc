@@ -1,6 +1,8 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import { isDescription } from "@takazudo/zfb/zudo-react";
+import "./island-metadata.js";
 import { createHeaderWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { ChromeContext } from "../../factory-context/index.js";
@@ -46,7 +48,7 @@ describe("HeaderWithDefaults — versioned headerNav items (#3216/#3190)", () =>
     });
     const HeaderWithDefaults = createHeaderWithDefaults(ctx);
     return render(
-      <HeaderWithDefaults lang="en" currentPath="/docs/guides" currentVersion={currentVersion} />,
+      <HeaderWithDefaults lang="en" currentPath="/docs/guides" currentVersion={currentVersion} hideSidebarToggle />,
     );
   }
 
@@ -76,13 +78,18 @@ describe("HeaderWithDefaults — versioned headerNav items (#3216/#3190)", () =>
       },
     });
     const HeaderWithDefaults = createHeaderWithDefaults(ctx);
-    const html = render(<HeaderWithDefaults lang="en" />);
-    const markerIndex = html.indexOf('data-zfb-island="ThemeToggle"');
-    expect(markerIndex).toBeGreaterThanOrEqual(0);
-    const button = html.slice(markerIndex).match(/<button\b[^>]*>/)?.[0];
-
-    expect(button).toBeDefined();
-    expect(button).toMatch(/\sdata-zd-pending(?:=""|\s|>)/);
-    expect(button).toContain('aria-disabled="true"');
+    const header = HeaderWithDefaults({ lang: "en", hideSidebarToggle: true });
+    expect(isDescription(header)).toBe(true);
+    if (!isDescription(header)) throw new Error("Expected a Header description");
+    const themeToggleIsland = header.props["themeToggle"];
+    expect(isDescription(themeToggleIsland)).toBe(true);
+    if (!isDescription(themeToggleIsland)) throw new Error("Expected a ThemeToggle island");
+    expect(themeToggleIsland.props["options"]).toMatchObject({
+      identity: { component: "ThemeToggle" },
+    });
+    const themeToggle = themeToggleIsland.props["child"];
+    expect(isDescription(themeToggle)).toBe(true);
+    if (!isDescription(themeToggle)) throw new Error("Expected a ThemeToggle description");
+    expect(themeToggle.props["pendingUntilHydrated"]).toBe(true);
   });
 });
