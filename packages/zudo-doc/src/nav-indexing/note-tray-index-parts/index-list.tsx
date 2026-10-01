@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { rankWidth } from "../../note-tray-model/index.js";
 import type { NoteTrayIndexProps } from "../note-tray-index.js";
 import { DateLine } from "./date-line.js";

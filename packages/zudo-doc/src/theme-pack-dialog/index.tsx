@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // ThemePackDialog — the browse-all theme-pack grid modal (epic Theme Core
 // #2812, sub-issue #2825; ADR `docs/adr/theme-packs.md` Decision 7). Rendered
 // INSIDE the #2821 ThemePackSwitcher flyout island's own tree via the
@@ -166,28 +164,28 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
   return (
     <dialog
       ref={dialogRef}
-      onClick={handleBackdropClick}
+      on:click={handleBackdropClick}
       aria-labelledby="zd-theme-pack-dialog-title"
-      className="z-modal m-auto max-h-[85vh] w-[calc(100vw_-_2rem)] max-w-[64rem] rounded-lg border border-muted bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80"
+      class="z-modal m-auto max-h-[85vh] w-[calc(100vw_-_2rem)] max-w-[64rem] rounded-lg border border-muted bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80"
     >
-      <div className="flex max-h-[85vh] flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm">
-          <h2 id="zd-theme-pack-dialog-title" className="text-title font-bold text-fg">
+      <div class="flex max-h-[85vh] flex-col">
+        <div class="flex shrink-0 items-center justify-between gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm">
+          <h2 id="zd-theme-pack-dialog-title" class="text-title font-bold text-fg">
             Preview theme
           </h2>
           <button
             type="button"
-            onClick={() => dialogRef.current?.close()}
+            on:click={() => dialogRef.current?.close()}
             aria-label="Close"
-            className="flex items-center justify-center text-muted transition-colors hover:text-fg"
+            class="flex items-center justify-center text-muted transition-colors hover:text-fg"
           >
             <Close className="h-icon-sm w-icon-sm" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-hsp-lg py-vsp-lg">
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-hsp-lg py-vsp-lg">
           {!hasBrowsablePacks ? (
-            <p className="py-vsp-xl text-center text-small text-muted">
+            <p class="py-vsp-xl text-center text-small text-muted">
               No other theme packs are configured — only the default look is available.
             </p>
           ) : (
@@ -195,13 +193,13 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
               {registryState === "error" && (
                 <div
                   role="alert"
-                  className="mx-auto flex flex-col items-center gap-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-lg py-vsp-lg text-center text-small text-danger"
+                  class="mx-auto flex flex-col items-center gap-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-lg py-vsp-lg text-center text-small text-danger"
                 >
                   <p>Could not load theme previews.</p>
                   <button
                     type="button"
-                    onClick={retry}
-                    className="rounded border border-danger px-hsp-md py-hsp-2xs text-caption text-danger transition-colors hover:bg-danger/10"
+                    on:click={retry}
+                    class="rounded border border-danger px-hsp-md py-hsp-2xs text-caption text-danger transition-colors hover:bg-danger/10"
                   >
                     Retry
                   </button>
@@ -209,24 +207,24 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
               )}
               {(registryState === "idle" || registryState === "loading") && (
                 <>
-                  <p role="status" className="sr-only">
+                  <p role="status" class="sr-only">
                     Loading theme previews…
                   </p>
                   <div
                     aria-hidden="true"
-                    className="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3"
+                    class="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3"
                   >
                     {order.map((entry) => (
                       <div
                         key={entry.slug}
-                        className="h-[10rem] rounded-lg border border-muted bg-surface/50"
+                        class="h-[10rem] rounded-lg border border-muted bg-surface/50"
                       />
                     ))}
                   </div>
                 </>
               )}
               {packs !== null && (
-                <div className="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3">
+                <div class="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3">
                   {packs.map((meta) => (
                     <ThemePackCard
                       key={meta.slug}

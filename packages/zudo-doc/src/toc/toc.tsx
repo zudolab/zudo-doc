@@ -1,9 +1,7 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { useMemo } from "preact/hooks";
 
 import { useActiveHeading } from "./use-active-heading.js";
@@ -60,7 +58,7 @@ export interface TocProps {
  * `<nav aria-label="Table of contents">` landmark provides the section
  * semantics for screen readers. Issue #1655 / T1.
  */
-export function Toc({ headings, title = "On this page" }: TocProps): VNode {
+export function Toc({ headings, title = "On this page" }: TocProps): Description {
   const filtered = useMemo(
     () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
     [headings],
@@ -71,7 +69,7 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
     <nav
       aria-label="Table of contents"
       data-zd-toc
-      className={cx(
+      class={cx(
         "hidden xl:flex flex-col",
         "w-[280px] shrink-0",
         "sticky top-[3.5rem] self-start z-sidebar",
@@ -80,22 +78,22 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
       )}
     >
       {filtered.length > 0 && (
-        <ul className="border-l border-muted pl-hsp-lg overflow-y-auto">
+        <ul class="border-l border-muted pl-hsp-lg overflow-y-auto">
           {filtered.map((heading, index) => {
             const isActive = heading.slug === activeId;
             return (
               <li
                 key={`${heading.slug}-${index}`}
-                className={cx(
+                class={cx(
                   heading.depth === 3 && "ml-hsp-lg",
                   heading.depth === 4 && "ml-hsp-2xl",
                 )}
               >
                 <a
                   href={`#${heading.slug}`}
-                  onClick={() => activate(heading.slug)}
+                  on:click={() => activate(heading.slug)}
                   aria-current={isActive ? "true" : undefined}
-                  className={cx(
+                  class={cx(
                     "block py-vsp-2xs text-small leading-snug transition-colors",
                     isActive
                       ? "bg-fg text-bg font-medium"

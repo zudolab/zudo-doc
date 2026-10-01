@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Real-DOM interaction tests for the ThemePackSwitcher stable DOM hooks
 // (zudolab/zudo-doc#2873 acceptance criteria):
 //

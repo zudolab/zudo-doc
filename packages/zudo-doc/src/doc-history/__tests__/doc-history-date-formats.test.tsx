@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * DocHistory — the `full` date-format role on revision dates (#4078).
  *

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Header trigger gate companion to the #3414 derive-level skip.
  *
@@ -19,11 +18,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { createHeaderWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 
-type AnyVNode = VNode<Record<string, unknown>>;
+type AnyVNode = Description;
 
 const DTP_TRIGGER = { type: "trigger", trigger: "design-token-panel" };
 

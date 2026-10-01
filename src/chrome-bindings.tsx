@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // The showcase's real host-bound chrome slots — the sanctioned
 // `chromeBindingsModule` seam (ADR "Host-callables channel — chromeBindingsModule",
 // packages/zudo-doc/docs/adr/route-injection-seam.md; #2501). Wired via
@@ -19,7 +18,7 @@
 // route context / `createChrome` call itself now lives at each consumer, per
 // the locked self-contained-stub shape — #2653 decision wave).
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
 import { settings } from "@/config/settings";
@@ -108,8 +107,8 @@ const MdxStub = (_props: unknown) => null;
 /** SSR pass-through for `<Island when=…>` — renders children, ignores `when`. */
 function IslandWrapper(props: {
   when?: "load" | "idle" | "visible" | "media";
-  children?: ComponentChildren;
-}): ComponentChildren {
+  children?: Child;
+}): Child {
   return props.children ?? null;
 }
 

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // katex is an optional peer (#4209): math-block must evaluate without it and
 // only fail — clearly — when a <MathBlock> is actually rendered.
 import { afterEach, describe, expect, it, vi } from "vitest";

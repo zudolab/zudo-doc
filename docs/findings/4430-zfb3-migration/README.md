@@ -10,7 +10,7 @@ Each topic contains file/symbol rows, per-site rawHtml review, utility dispositi
 
 A row closes only with: final v3 form, pinned spec section, code/test reference, command and result, rawHtml trust/parser/cleanup review if applicable, and any deliberate DOM/class/behavior difference. “None” must be verified, not assumed. Keep temporary shim rows blocked for release even if unit tests pass. #4475 cannot report release PASS while any zfb shim remains.
 
-The mechanical codemod owner #4437 records its starting owned/full TypeScript diagnostic counts here: **pending**. Full integration counts: **pending #4467**. Final package versions and actual `zfb --version` binary output: **pending #4476**. Browser hydration/navigation and client-bundle size delta: **pending #4468/#4475**.
+The #4437 mechanical codemod leaves **662 TypeScript diagnostics** as the ports' starting line: 642 from `pnpm exec tsc --noEmit -p packages/zudo-doc/tsconfig.json --pretty false` plus 20 from `pnpm exec tsc --noEmit -p tsconfig.json --pretty false` (2026-10-02, zfb 3.1.0). The commands are separate package and host programs; `packages/zudo-doc/virtual-modules.d.ts` was first generated with its package script. The host program may resolve stale v2 package `dist/`, so its 20 diagnostics are a provisional host count, not a source-resolution port verdict. Complete integration counts: **pending #4467**. Final package versions and actual `zfb --version` binary output: **pending #4476**. Browser hydration/navigation and client-bundle size delta: **pending #4468/#4475**.
 
 ## Normative references
 

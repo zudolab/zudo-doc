@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 
 /**
  * Props passed to a per-key custom renderer component.
@@ -29,7 +27,7 @@ export interface FrontmatterCellRendererProps {
  */
 export type FrontmatterCellRenderer = (
   props: FrontmatterCellRendererProps,
-) => ComponentChildren;
+) => Child;
 
 export interface FrontmatterPreviewProps {
   /**
@@ -120,7 +118,7 @@ function renderValue(v: unknown): { text?: string; code?: string } {
  */
 export function FrontmatterPreview(
   props: FrontmatterPreviewProps,
-): VNode | null {
+): Description | null {
   const {
     entries = [],
     title = DEFAULT_FRONTMATTER_PREVIEW_TITLE,

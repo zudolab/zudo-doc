@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Server-rendered, zero-hydration full-page loading overlay.
 //
 // Renders three things into the document:
@@ -94,9 +92,7 @@ export default function PageLoadingOverlay({
         <span class="page-loading-spinner" />
       </div>
       <script
-        dangerouslySetInnerHTML={{
-          __html: buildPageLoadingOverlayBootstrap(id),
-        }}
+        rawHtml={buildPageLoadingOverlayBootstrap(id)}
       />
     </>
   );

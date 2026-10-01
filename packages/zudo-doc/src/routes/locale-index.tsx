@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /[locale] — package-owned equivalent of
 // pages/[locale]/index.tsx (A1 #2361). One route per non-default locale; the
 // locale-prefixed site index (site-map grid + optional tag count).
@@ -12,7 +11,7 @@
 // guard. The prepared tree / tag count are handed to the shared home body
 // factory, same as the default-locale route.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { settings, routeCtx } from "./_context.js";
 import { prepareHomeData } from "../home-page/prepare-home-data.js";
 import { HomePageView } from "./_chrome.js";

@@ -1,7 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX, VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { SmartBreak as SmartBreakBase } from "../smart-break/index.js";
 import { decodeAuthoredHref, assetViewerHref } from "../asset-path/index.js";
 import type { AssetManifest } from "../route-context-payload/types.js";
@@ -11,7 +10,7 @@ import { AssetFileIcon, formatAssetBytes } from "../asset-components/index.js";
 // under compat mode. Runtime is fine since the preact/compat alias is in effect.
 const SmartBreak = SmartBreakBase as unknown as (props: {
   children?: JSX.IntrinsicElements["a"]["children"];
-}) => VNode;
+}) => Description;
 
 type Props = JSX.IntrinsicElements["a"];
 
@@ -21,7 +20,7 @@ export function ContentLink({ href, className, children, ...rest }: Props) {
   const classes = typeof className === "string" ? className.split(" ") : [];
   if (classes.includes("block") || classes.includes("hash-link")) {
     return (
-      <a href={href} className={className} {...rest}>
+      <a href={href} class={className} {...rest}>
         {children}
       </a>
     );
@@ -41,7 +40,7 @@ export function ContentLink({ href, className, children, ...rest }: Props) {
   return (
     <a
       href={href}
-      className={`text-accent underline hover:text-accent-hover${className ? ` ${className}` : ""}`}
+      class={`text-accent underline hover:text-accent-hover${className ? ` ${className}` : ""}`}
       {...rest}
     >
       {content}
@@ -107,10 +106,10 @@ export function createContentLink({
           fragment: decoded.fragment,
         })}
       >
-        <span className="inline-flex items-baseline gap-x-hsp-xs font-mono">
+        <span class="inline-flex items-baseline gap-x-hsp-xs font-mono">
           <AssetFileIcon className="h-icon-sm w-icon-sm shrink-0" />
           <span>{children}</span>
-          <span className="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
+          <span class="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
         </span>
       </ContentLink>
     );

@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 
 /**
  * Heuristic: does `text` look like a URL, filesystem path, or similar
@@ -57,10 +55,10 @@ function htmlEscape(s: string): string {
  * the input string unchanged so callers can trust non-path prose passes
  * through untouched.
  */
-export function smartBreak(text: string): VNode | string {
+export function smartBreak(text: string): Description | string {
   if (!isPathLike(text)) return text;
   const parts = text.split(DELIM_SPLIT);
-  const nodes: (string | VNode)[] = [];
+  const nodes: (string | Description)[] = [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i] ?? "";
     if (part === "") continue;
@@ -75,7 +73,7 @@ export function smartBreak(text: string): VNode | string {
  * Preact function component wrapper — pure, server-renderable.
  * Stringifies children and defers to smartBreak.
  */
-export function SmartBreak({ children }: { children?: unknown }): VNode {
+export function SmartBreak({ children }: { children?: unknown }): Description {
   return <>{smartBreak(String(children ?? ""))}</>;
 }
 

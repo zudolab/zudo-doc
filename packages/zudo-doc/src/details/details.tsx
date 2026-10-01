@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 
 export interface DetailsProps {
   /**
@@ -11,7 +9,7 @@ export interface DetailsProps {
    */
   title?: string;
   /** Slot content rendered inside the collapsed body. */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**
@@ -22,7 +20,7 @@ export interface DetailsProps {
  * The legacy component used Astro's `<slot />`; v2 accepts standard
  * Preact `children`.
  */
-export function Details({ title = "Details", children }: DetailsProps): VNode {
+export function Details({ title = "Details", children }: DetailsProps): Description {
   return (
     <details class="my-vsp-md border border-muted rounded-lg overflow-hidden">
       <summary class="cursor-pointer px-hsp-lg py-vsp-sm bg-surface font-medium text-fg select-none hover:text-accent">

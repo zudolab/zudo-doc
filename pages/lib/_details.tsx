@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Host-side MDX wrapper for <Details> — trivial passthrough to the v2
 // Details component.
 //
@@ -7,14 +6,14 @@
 // content as `children`, so the mapping is direct. The title prop (default
 // "Details") is forwarded unchanged.
 
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { Details as DetailsV2 } from "@takazudo/zudo-doc/details";
 
 export interface DetailsWrapperProps {
   /** Summary label shown in the <summary> element. Defaults to "Details". */
   title?: string;
   /** MDX slot content rendered inside the collapsed body. */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**
@@ -24,6 +23,6 @@ export interface DetailsWrapperProps {
  * content using `<Details title="...">...</Details>` renders correctly
  * on zfb routes.
  */
-export function DetailsWrapper({ title, children }: DetailsWrapperProps): VNode {
+export function DetailsWrapper({ title, children }: DetailsWrapperProps): Description {
   return <DetailsV2 title={title}>{children}</DetailsV2>;
 }

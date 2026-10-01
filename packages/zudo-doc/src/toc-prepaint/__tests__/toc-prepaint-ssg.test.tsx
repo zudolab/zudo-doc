@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG tests for the toc-prepaint factories (epic #3252, #3254). Mirrors
  * sidebar-prepaint/__tests__/sidebar-prepaint-ssg.test.tsx 1:1 for the desktop

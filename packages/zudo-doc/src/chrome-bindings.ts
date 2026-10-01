@@ -33,7 +33,7 @@
 // `@takazudo/zudo-doc/chrome-bindings` (NOT folded into `./chrome`, which would
 // drag the whole `createChrome` tree into hosts that only want the helper).
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { BreadcrumbItem } from "./breadcrumb/index.js";
 import type { DocPageNavNode } from "./doc-page-shell/index.js";
 import type { HeadingItem } from "./toc/index.js";
@@ -175,7 +175,7 @@ export interface TocSlotProps {
  */
 export interface BreadcrumbSlotProps {
   items: BreadcrumbItem[];
-  rightSlot?: ComponentChildren;
+  rightSlot?: Child;
 }
 
 /** Props supplied to the doc-route `DocPager` replacement. */

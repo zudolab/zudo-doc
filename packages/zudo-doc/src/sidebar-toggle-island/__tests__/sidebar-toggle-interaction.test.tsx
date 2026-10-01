@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Real-DOM behavioral tests for the mobile drawer's Escape-to-close handling
 // (zudolab/zudo-doc#4366).
 //

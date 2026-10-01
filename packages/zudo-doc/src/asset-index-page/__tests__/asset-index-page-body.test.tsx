@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { render } from "preact-render-to-string";
 import { describe, expect, it } from "vitest";
 import type { AssetIndexEntry } from "../../route-context-payload/types.js";

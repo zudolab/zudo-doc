@@ -138,7 +138,7 @@ function bindingsSource(testCase: MatrixCase): string {
     .join(",\n  ");
 
   return `/** @jsxRuntime automatic */
-/** @jsxImportSource preact */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
 import {
   defineChromeBindings,
   ${typeImports},

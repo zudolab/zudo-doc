@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of the legacy `mermaid-init` component.
 //
 // The original component rendered a single <script> tag that:
@@ -23,7 +21,7 @@
 // full rationale and the override knobs (`cdnUrl` prop or
 // `buildMermaidInitScript()` for hand-rolled callers).
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   MERMAID_CDN_MODULE_URL,
   buildMermaidInitScript,
@@ -76,5 +74,5 @@ export function MermaidInit(props: MermaidInitProps = {}): JSX.Element {
   const script =
     props.script ??
     (props.cdnUrl ? buildMermaidInitScript(props.cdnUrl) : MERMAID_INIT_SCRIPT);
-  return <script dangerouslySetInnerHTML={{ __html: script }} />;
+  return <script rawHtml={script} />;
 }

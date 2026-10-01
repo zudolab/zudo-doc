@@ -1,9 +1,7 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { useEffect, useRef, useState } from "preact/hooks";
 // `@takazudo/zfb` is provided by the consumer at integration time;
 // types come from the package-level shim at `../_zfb-shim.d.ts`.
@@ -165,7 +163,7 @@ function HtmlPreviewReservation({
 }: {
   height: number | undefined;
   reservationRef?: { current: HTMLDivElement | null };
-}): VNode {
+}): Description {
   return (
     <div
       ref={reservationRef}
@@ -205,7 +203,7 @@ function HtmlPreviewReservation({
  */
 export function HtmlPreviewWrapperInner(
   props: HtmlPreviewWrapperInnerProps,
-): VNode {
+): Description {
   const runtimeProps = props as HtmlPreviewWrapperInnerRuntimeProps;
   const deferUntilVisible = runtimeProps[VISIBLE_MOUNT_PROP] === true;
   const reservationRef = useRef<HTMLDivElement>(null);
@@ -338,7 +336,7 @@ HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapperInner";
  */
 export function HtmlPreviewWrapper(
   props: HtmlPreviewWrapperProps,
-): VNode {
+): Description {
   const { loading = "eager", ...innerProps } = props;
 
   if (loading === "visible") {
@@ -352,12 +350,12 @@ export function HtmlPreviewWrapper(
       ssrFallback: <HtmlPreviewReservation height={innerProps.height} />,
       children: <HtmlPreviewWrapperInner {...visibleInnerProps} />,
     });
-    return rendered as unknown as VNode;
+    return rendered as unknown as Description;
   }
 
   const rendered = Island({
     when: "visible",
     children: <HtmlPreviewWrapperInner {...innerProps} />,
   });
-  return rendered as unknown as VNode;
+  return rendered as unknown as Description;
 }

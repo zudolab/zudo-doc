@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // header-with-defaults — factory for the locale-/version-aware Header
 // wrapper (epic #2344, S5).
 //
@@ -8,7 +7,8 @@
 // `@/utils/github`). This factory receives those as arguments so the logic
 // lives in the package while the host stub keeps the singleton imports.
 
-import type { VNode, JSX } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { Header, filterHeaderRightItems } from "../header/index.js";
 import {
@@ -190,12 +190,12 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             dateFormats={dateFormatsFor(lang)}
           />
         ),
-      }) as unknown as VNode;
+      }) as unknown as Description;
 
     const themeToggle = Island({
       when: "load",
       children: <ThemeToggle defaultMode={themeDefaultMode} labels={themeToggleLabels(t, lang)} respectPrefersColorScheme={themeRespectSystem} pendingUntilHydrated={true} />,
-    }) as unknown as VNode;
+    }) as unknown as Description;
 
     const searchWidget = (
       <SearchWidget
@@ -210,7 +210,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     );
 
     // Build the version-switcher component when versioning is configured.
-    let versionSwitcher: VNode | undefined;
+    let versionSwitcher: Description | undefined;
 
     if (settings.versions && settings.versions.length > 0) {
       const isNonDefaultLocale = lang !== defaultLocale;
@@ -263,7 +263,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             currentLocale: lang,
           }}
         />
-      ) as unknown as VNode;
+      ) as unknown as Description;
     }
 
     const languageSwitcher =
@@ -279,7 +279,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
           }}
           currentLocale={lang}
         />
-      ) as unknown as VNode : undefined;
+      ) as unknown as Description : undefined;
 
     const persistKey = `header-${lang}`;
 

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // chrome/derive — internal shared derivations from the unified ChromeContext
 // (epic Collapse Wiring Shells #2420, FACTORIES #2424).
 //
@@ -20,7 +19,8 @@
 // This module is NOT in the preset eval graph (preset.ts never imports it), so
 // its host/runtime dependency graph never touches the node-free config surface.
 
-import type { JSX, VNode, ComponentChildren } from "preact";
+import type { Description, Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { ChromeContext, FactoryComponent } from "../factory-context/index.js";
 import type { ResolvedDateFormats, Settings } from "../settings.js";
 import type { CategoryMeta } from "../sidebar-tree/types.js";
@@ -170,8 +170,8 @@ function DocHistoryStub(
     displayLocale?: string;
     dateFormats?: ResolvedDateFormats;
   },
-): VNode {
-  return (<></>) as VNode;
+): Description {
+  return (<></>) as Description;
 }
 
 /** Island MDX binding (package default) — an SSR pass-through that renders its
@@ -179,8 +179,8 @@ function DocHistoryStub(
  *  note in the original `routes/_chrome.tsx`). `when` is ignored at SSR time. */
 function IslandPassthrough(props: {
   when?: "load" | "idle" | "visible" | "media";
-  children?: ComponentChildren;
-}): ComponentChildren {
+  children?: Child;
+}): Child {
   return props.children ?? null;
 }
 

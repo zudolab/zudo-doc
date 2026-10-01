@@ -1,7 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Drift-guard extension for epic #3242 / #3244: simulates a real
 // `zfb:after-swap` cycle in happy-dom and asserts the persisted header's
 // version-switcher anchors end up matching a fresh SSR render of the

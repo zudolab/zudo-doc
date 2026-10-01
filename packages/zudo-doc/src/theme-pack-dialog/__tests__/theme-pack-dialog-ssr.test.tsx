@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR-shape tests for ThemePackDialog (#2825).
 //
 // This dialog never unmounts (it lives inside the persistent ThemePackSwitcher

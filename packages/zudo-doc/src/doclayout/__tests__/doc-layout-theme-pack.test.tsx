@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSG HTML-presence tests for the theme-pack DOM contract on <DocLayout> /
 // <DocLayoutWithDefaults> (ADR `docs/adr/theme-packs.md` Decision 3; #2822):
 //

@@ -1,7 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import { Fragment, h, type ComponentType, type VNode } from "preact";
+import { Fragment, h } from "preact";
+import type { Component, Description } from "@takazudo/zfb/zudo-react";
 import { render as renderToString } from "preact-render-to-string";
 import { renderHtml } from "@takazudo/zfb-md-wasm/render";
 import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
@@ -29,13 +28,13 @@ const DIRECTIVES = {
   caution: "Caution",
 };
 
-function htmlToPreact(html: string, components: Record<string, unknown>): VNode {
+function htmlToPreact(html: string, components: Record<string, unknown>): Description {
   const document = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
   const componentByTag = new Map(
     Object.entries(components).map(([name, component]) => [name.toLowerCase(), component]),
   );
 
-  function convert(node: Node): VNode | string | null {
+  function convert(node: Node): Description | string | null {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
     if (!(node instanceof Element)) return null;
 
@@ -45,7 +44,7 @@ function htmlToPreact(html: string, components: Record<string, unknown>): VNode 
         value,
       ]),
     );
-    const component = componentByTag.get(node.localName) as ComponentType | undefined;
+    const component = componentByTag.get(node.localName) as Component | undefined;
     const children = Array.from(node.childNodes).map(convert);
     return h(component ?? node.localName, props, children);
   }

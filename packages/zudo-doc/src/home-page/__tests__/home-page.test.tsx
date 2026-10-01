@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Unit tests for `createHomePageView` (epic #2499, S3 #2502).
  *

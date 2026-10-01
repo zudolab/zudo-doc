@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import {
   isPathLike,
   smartBreak,
@@ -42,7 +42,7 @@ function vnodeToHtml(node: unknown): string {
   if (typeof node === "number") return htmlEscape(String(node));
   if (Array.isArray(node)) return node.map(vnodeToHtml).join("");
 
-  const vnode = node as VNode<{ children?: unknown }>;
+  const vnode = node as Description;
   if (typeof vnode.type === "string") {
     const tag = vnode.type;
     if (VOID_TAGS.has(tag)) return `<${tag}>`;
@@ -52,7 +52,7 @@ function vnodeToHtml(node: unknown): string {
   return vnodeToHtml(vnode.props?.children);
 }
 
-function renderToHtml(result: VNode | string): string {
+function renderToHtml(result: Description | string): string {
   if (typeof result === "string") return htmlEscape(result);
   return vnodeToHtml(result);
 }

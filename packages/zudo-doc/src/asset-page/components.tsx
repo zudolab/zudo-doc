@@ -1,11 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Leaf presentational components for the asset viewer page, moved verbatim
 // out of `index.tsx` (zudolab/zudo-doc#4221) so they — and the labels types
 // beside them — are importable without pulling in `@takazudo/zfb*`.
 
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import type { DateFormatPattern } from "../format-date/index.js";
 import { formatDate } from "../format-date/index.js";
 import { formatAssetBytes } from "../asset-components/index.js";
@@ -13,7 +11,7 @@ import { ChevronLeft, ChevronRight } from "../icons/index.js";
 import type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 import { actionClass, facetLabel, kindLabel } from "./shared.js";
 
-export function AssetEyebrow({ asset, badge }: { asset: AssetRecord; badge: string }): VNode {
+export function AssetEyebrow({ asset, badge }: { asset: AssetRecord; badge: string }): Description {
   return (
     <div class="mb-vsp-xs flex flex-wrap items-center gap-hsp-xs text-micro tracking-wide uppercase">
       <span class="rounded-full border border-muted px-hsp-sm py-vsp-3xs text-fg">{badge}</span>
@@ -22,7 +20,7 @@ export function AssetEyebrow({ asset, badge }: { asset: AssetRecord; badge: stri
   );
 }
 
-export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel, fullPattern }: { asset: AssetRecord; locale: string; badge: string; updatedLabel: string; linesLabel?: string; fullPattern?: DateFormatPattern }): VNode {
+export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel, fullPattern }: { asset: AssetRecord; locale: string; badge: string; updatedLabel: string; linesLabel?: string; fullPattern?: DateFormatPattern }): Description {
   const facet = facetLabel(asset, linesLabel);
   return (
     <header>
@@ -40,7 +38,7 @@ export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel, fu
   );
 }
 
-export function AssetActions({ rawUrl, downloadLabel, openRawLabel, copyLabel, wrapLabel, code = false, bottom = false }: { rawUrl: string; downloadLabel: string; openRawLabel: string; copyLabel: string; wrapLabel: string; code?: boolean; bottom?: boolean }): VNode {
+export function AssetActions({ rawUrl, downloadLabel, openRawLabel, copyLabel, wrapLabel, code = false, bottom = false }: { rawUrl: string; downloadLabel: string; openRawLabel: string; copyLabel: string; wrapLabel: string; code?: boolean; bottom?: boolean }): Description {
   return (
     <div class={`${bottom ? "mt-vsp-lg border-t border-muted pt-vsp-md" : "mb-vsp-md"} flex flex-wrap gap-hsp-sm`} data-zd-asset-actions>
       <a download="" href={rawUrl} class={`${actionClass(true)} hover:underline focus-visible:underline`}>{downloadLabel}</a>
@@ -51,7 +49,7 @@ export function AssetActions({ rawUrl, downloadLabel, openRawLabel, copyLabel, w
   );
 }
 
-export function AssetCodeBody({ asset, copyLabel, wrapLabel, truncatedLabel, linesLabel }: { asset: AssetRecord; copyLabel: string; wrapLabel: string; truncatedLabel: string; linesLabel?: string }): VNode {
+export function AssetCodeBody({ asset, copyLabel, wrapLabel, truncatedLabel, linesLabel }: { asset: AssetRecord; copyLabel: string; wrapLabel: string; truncatedLabel: string; linesLabel?: string }): Description {
   const highlightedCode = asset.html?.match(/^<pre\b[^>]*>\s*(<code\b[\s\S]*<\/code>)\s*<\/pre>$/)?.[1] ?? "";
   return (
     <section>
@@ -62,13 +60,13 @@ export function AssetCodeBody({ asset, copyLabel, wrapLabel, truncatedLabel, lin
           <button type="button" disabled data-zd-asset-action="wrap" class="text-fg hover:text-accent focus-visible:text-accent">{wrapLabel}</button>
         </span>
       </div>
-      <pre class="hi-root zd-asset-code" data-lang={asset.language ?? "text"} dangerouslySetInnerHTML={{ __html: highlightedCode }} />
+      <pre class="hi-root zd-asset-code" data-lang={asset.language ?? "text"} rawHtml={highlightedCode} />
       {asset.truncated && <p class="mt-vsp-xs text-caption text-muted">{truncatedLabel}</p>}
     </section>
   );
 }
 
-function EnlargeIcon(): VNode {
+function EnlargeIcon(): Description {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5M3 8l6-6m12 6-6-6M3 16l6 6m12-6-6 6" /></svg>;
 }
 
@@ -80,7 +78,7 @@ export interface AssetImageStageLabels {
   enlarge: string;
 }
 
-export function AssetImageStage({ asset, rawUrl, labels }: { asset: AssetRecord; rawUrl: string; labels: AssetImageStageLabels }): VNode {
+export function AssetImageStage({ asset, rawUrl, labels }: { asset: AssetRecord; rawUrl: string; labels: AssetImageStageLabels }): Description {
   return (
     <section>
       <div class="mb-vsp-xs flex flex-wrap gap-hsp-sm text-caption">
@@ -95,11 +93,11 @@ export function AssetImageStage({ asset, rawUrl, labels }: { asset: AssetRecord;
   );
 }
 
-export function AssetVideoStage({ asset, rawUrl }: { asset: AssetRecord; rawUrl: string }): VNode {
+export function AssetVideoStage({ asset, rawUrl }: { asset: AssetRecord; rawUrl: string }): Description {
   return <div class="zd-asset-stage flex items-center justify-center rounded border border-muted bg-surface p-hsp-lg"><video controls preload="metadata" src={rawUrl} width={asset.width} height={asset.height} class="max-w-full" /></div>;
 }
 
-export function AssetPdfStage({ asset, rawUrl, children }: { asset: AssetRecord; rawUrl: string; children: ComponentChildren }): VNode {
+export function AssetPdfStage({ asset, rawUrl, children }: { asset: AssetRecord; rawUrl: string; children: Child }): Description {
   return (
     <section>
       {/* Chrome's built-in PDF viewer does not render in a sandboxed frame. The URL is same-origin build output. */}
@@ -109,7 +107,7 @@ export function AssetPdfStage({ asset, rawUrl, children }: { asset: AssetRecord;
   );
 }
 
-export function AssetDownloadPanel({ asset, rawUrl, noPreview, downloadLabel, copyLabel }: { asset: AssetRecord; rawUrl: string; noPreview: string; downloadLabel: string; copyLabel: string }): VNode {
+export function AssetDownloadPanel({ asset, rawUrl, noPreview, downloadLabel, copyLabel }: { asset: AssetRecord; rawUrl: string; noPreview: string; downloadLabel: string; copyLabel: string }): Description {
   return (
     <section class="rounded border border-dashed border-muted p-hsp-xl text-center">
       <div aria-hidden="true" class="mb-vsp-xs text-heading">↓</div>
@@ -124,7 +122,7 @@ export function AssetDownloadPanel({ asset, rawUrl, noPreview, downloadLabel, co
   );
 }
 
-export function AssetLinkedFrom({ asset, label }: { asset: AssetRecord; label: string }): VNode | null {
+export function AssetLinkedFrom({ asset, label }: { asset: AssetRecord; label: string }): Description | null {
   if (asset.linkedFrom.length === 0) return null;
   return (
     <section class="mt-vsp-lg">
@@ -145,7 +143,7 @@ export interface AssetDetailsLabels {
   updated: string;
 }
 
-export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: AssetDetailsLabels }): VNode {
+export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: AssetDetailsLabels }): Description {
   const rows: Array<[string, string]> = [[labels.type, asset.mime], [labels.size, formatAssetBytes(asset.bytes)], [labels.path, asset.path]];
   if (asset.width !== undefined && asset.height !== undefined) rows.splice(1, 0, [labels.dimensions, `${asset.width} × ${asset.height}`]);
   if (asset.updatedDate) rows.push([labels.updated, asset.updatedDate]);
@@ -183,7 +181,7 @@ export interface AssetDetailsToggleLabels {
  * points the way the rail will move — right to collapse it away, left to bring
  * it back — matching the TOC toggle's direction semantics.
  */
-function AssetDetailsToggle({ labels }: { labels: AssetDetailsToggleLabels }): VNode {
+function AssetDetailsToggle({ labels }: { labels: AssetDetailsToggleLabels }): Description {
   return (
     <button
       type="button"
@@ -194,7 +192,7 @@ function AssetDetailsToggle({ labels }: { labels: AssetDetailsToggleLabels }): V
       aria-controls={ASSET_DETAILS_RAIL_ID}
       aria-expanded="true"
       aria-label={labels.collapse}
-      class="zd-asset-details-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 rounded-l-DEFAULT text-muted cursor-pointer transition-colors duration-200 ease-in-out hover:text-fg disabled:cursor-default disabled:opacity-50"
+      class="zd-asset-details-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 rounded-l text-muted cursor-pointer transition-colors duration-200 ease-in-out hover:text-fg disabled:cursor-default disabled:opacity-50"
     >
       <span data-zd-asset-details-chevron="collapse"><ChevronRight className="h-icon-sm w-icon-sm" /></span>
       <span data-zd-asset-details-chevron="expand"><ChevronLeft className="h-icon-sm w-icon-sm" /></span>
@@ -209,7 +207,7 @@ function AssetDetailsToggle({ labels }: { labels: AssetDetailsToggleLabels }): V
  * Exported (unlike its pre-#4221 module-private form in `index.tsx`) so
  * `body.tsx#AssetPageBody` can compose it from a different module.
  */
-export function AssetBodyLayout({ stage, details, linked, toggleLabels }: { stage: ComponentChildren; details: ComponentChildren; linked: ComponentChildren; toggleLabels: AssetDetailsToggleLabels }): VNode {
+export function AssetBodyLayout({ stage, details, linked, toggleLabels }: { stage: Child; details: Child; linked: Child; toggleLabels: AssetDetailsToggleLabels }): Description {
   return (
     <>
       <AssetDetailsToggle labels={toggleLabels} />

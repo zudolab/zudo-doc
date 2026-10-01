@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // FindInPageInit — the package-owned find-in-page island (zudolab/zudo-doc#2689).
 //
 // Relocated from
@@ -20,7 +18,7 @@
 // shortcut. A non-Tauri host that sets `findInPage: true` ships the island's
 // (tiny) code with no visible effect.
 import { useState, useEffect, useRef } from "preact/compat";
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { FindBar } from "./find-bar.js";
 import { createFindInPage } from "./find-in-page.js";
 

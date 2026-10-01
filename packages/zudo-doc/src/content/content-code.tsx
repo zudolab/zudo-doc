@@ -1,14 +1,13 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX, VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { SmartBreak as SmartBreakImpl } from "../smart-break/index.js";
 
 // Preact VNode vs JSX.IntrinsicElements["code"].children type mismatch under compat mode;
 // cast so the content override type-checks. Runtime is fine since the preact/compat alias is in effect.
 const SmartBreak = SmartBreakImpl as unknown as (props: {
   children?: unknown;
-}) => VNode;
+}) => Description;
 
 type Props = JSX.IntrinsicElements["code"];
 
@@ -35,14 +34,14 @@ export function ContentCode({ children, className, ...rest }: Props) {
 
   if (textFromChildren === null) {
     return (
-      <code className={className} {...rest}>
+      <code class={className} {...rest}>
         {children}
       </code>
     );
   }
 
   return (
-    <code className={className} {...rest}>
+    <code class={className} {...rest}>
       <SmartBreak>{textFromChildren}</SmartBreak>
     </code>
   );

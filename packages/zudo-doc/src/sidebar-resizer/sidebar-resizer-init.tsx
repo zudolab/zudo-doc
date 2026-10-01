@@ -1,4 +1,3 @@
-/** @jsxImportSource preact */
 // Inline script component for sidebar resizer initialization.
 //
 // Mirrors the pattern used by CodeBlockEnhancer / TabsInit / MermaidInit:
@@ -41,7 +40,7 @@
 // require a build step. Keep these in sync with MIN_W / MAX_W / LS_KEY /
 // CSS_PROP in sidebar-resizer/index.ts.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 // The full initSidebarResizer implementation embedded as a browser script
@@ -203,7 +202,7 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
  */
 export function SidebarResizerInit(): JSX.Element {
   return (
-    <script dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_INIT_SCRIPT }} />
+    <script rawHtml={SIDEBAR_RESIZER_INIT_SCRIPT} />
   );
 }
 
@@ -241,7 +240,7 @@ export const SIDEBAR_RESIZER_RESTORE_SCRIPT = `(function(){try{var w=localStorag
 export function SidebarResizerRestore(): JSX.Element {
   return (
     <script
-      dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }}
+      rawHtml={SIDEBAR_RESIZER_RESTORE_SCRIPT}
     />
   );
 }

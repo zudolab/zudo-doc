@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // head-with-defaults — factory for the og:title / og:description / color-scheme
 // head injection (epic #2344, S5).
 //
@@ -11,7 +10,7 @@
 //
 // Pure SSR — no client-only imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { OgTags, TwitterCard } from "../head/index.js";
 import type { HeadProps } from "../head/types.js";
 import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "../sidebar-resizer/index.js";
@@ -315,7 +314,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
             restore script, which is likewise hoisted into <head> (emitted
             from doc-page-shell's head slot via createSidebarVisibilityPrepaint,
             zudolab/zudo-doc#2571). */}
-        {settings.sidebarResizer && <script dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }} />}
+        {settings.sidebarResizer && <script rawHtml={SIDEBAR_RESIZER_RESTORE_SCRIPT} />}
         {/* favicon set — see resolveFaviconLinks() for the settings.favicon
             emission table. Omitting the setting keeps the historical four
             links, byte-identical, withBase()-prefixed. */}
@@ -372,9 +371,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                   />
                   <noscript
                     key={`${i}-noscript`}
-                    dangerouslySetInnerHTML={{
-                      __html: `<link rel="stylesheet" href="${s.href.replace(/"/g, "&quot;")}"${s.media ? ` media="${s.media}"` : ""}${s.crossorigin ? ` crossorigin="${s.crossorigin}"` : ""}>`,
-                    }}
+                    rawHtml={`<link rel="stylesheet" href="${s.href.replace(/"/g, "&quot;")}"${s.media ? ` media="${s.media}"` : ""}${s.crossorigin ? ` crossorigin="${s.crossorigin}"` : ""}>`}
                   />
                 </>
               ) : (

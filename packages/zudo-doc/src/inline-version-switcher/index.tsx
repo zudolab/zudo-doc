@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // inline-version-switcher — factory for the breadcrumb inline version-switcher
 // pill (epic #2344, S8).
 //
@@ -8,7 +7,7 @@
 // This factory receives those as injected dependencies so the logic lives in
 // the package while the host stub keeps the singleton imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   VersionSwitcher,
   type VersionSwitcherLabels,

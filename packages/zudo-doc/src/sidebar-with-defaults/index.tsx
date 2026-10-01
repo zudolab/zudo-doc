@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // sidebar-with-defaults — factory for the locale-/version-aware Sidebar
 // wrapper (epic #2344, S5).
 //
@@ -8,7 +7,7 @@
 // the nav data builders as injected functions so the logic lives in the
 // package while the host stub keeps the singleton imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";

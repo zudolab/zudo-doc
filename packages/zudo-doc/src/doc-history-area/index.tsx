@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-history-area — factory for the locale-aware DocHistory area wrapper
 // (epic #2344, S7).
 //
@@ -18,7 +17,7 @@
 // resolves only in the host project's tsconfig. The factory receives the parsed
 // manifest as a plain object.
 
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { Island } from "@takazudo/zfb";
 // Relative, NOT `@takazudo/zudo-doc-history-server/exclude` — that package is an
 // OPTIONAL peer and this module is in the always-bundled chrome graph, so the
@@ -61,7 +60,7 @@ export type DocHistoryComponent = (props: {
   basePath?: string;
   displayLocale?: string;
   dateFormats?: ResolvedDateFormats;
-}) => VNode;
+}) => Description;
 
 export interface DocHistoryAreaProps {
   /** Page slug, e.g. "getting-started/intro". */
@@ -110,7 +109,7 @@ export interface DocHistoryAreaProps {
  */
 export function createDocHistoryArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
-): (props: DocHistoryAreaProps) => VNode | null {
+): (props: DocHistoryAreaProps) => Description | null {
   assertChromeContext(ctx, "createDocHistoryArea");
   const settings = ctx.settings as unknown as DocHistoryAreaSettings;
   const isHistoryExcluded = compileExclude(settings.docHistoryExclude ?? []);
@@ -141,7 +140,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     sourceFileExt,
     contentDir,
     isFallback,
-  }: DocHistoryAreaProps): VNode | null {
+  }: DocHistoryAreaProps): Description | null {
     if (!settings.docHistory) return null;
 
     // Doc-history storage sentinel ("" -> "index"): a root index page has the
@@ -236,7 +235,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
               dateFormats={docHistoryDateFormats}
             />
           ),
-        }) as unknown as VNode)
+        }) as unknown as Description)
       : null;
 
     // Suppress TS warning about historyLabel being unused — it is retained

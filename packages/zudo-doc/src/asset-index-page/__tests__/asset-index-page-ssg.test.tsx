@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { render } from "preact-render-to-string";
 import { describe, expect, it } from "vitest";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";

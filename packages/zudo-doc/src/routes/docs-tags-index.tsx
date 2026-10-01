@@ -1,9 +1,8 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /docs/tags — package-owned equivalent of
 // pages/docs/tags/index.tsx (A1 #2361). Default-locale "All Tags" index.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { defaultLocale } from "./_context.js";
 import { TagsIndexPageView } from "./_chrome.js";
 

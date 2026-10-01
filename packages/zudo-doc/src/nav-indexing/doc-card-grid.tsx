@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/doc-card-grid.
 //
 // The original Astro template accepted a flat list of pre-built items
@@ -15,7 +13,7 @@
 //   - The arrow SVG uses `text-muted` colouring, turning accent on hover/focus
 //     of the card link — identical to nav-card-grid.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 /** A single resolved doc card item. */
 export interface DocCardItem {

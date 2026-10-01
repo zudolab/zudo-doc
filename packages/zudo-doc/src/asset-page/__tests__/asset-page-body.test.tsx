@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import type { AssetRecord } from "../../plugins/internal/asset-viewer/types.js";

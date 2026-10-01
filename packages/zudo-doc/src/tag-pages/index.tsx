@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // tag-pages — factory for the doc-tags page renderers (epic #2344, S8).
 //
 // The host's `pages/lib/_tag-pages.tsx` previously imported host singletons
@@ -26,7 +25,8 @@
 //     unflagged base doc would resurface as a card linking to a locale route
 //     the docs route never builds.
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import type { BreadcrumbItem } from "../breadcrumb/index.js";
 import { DocCardGrid, TagNav } from "../nav-indexing/index.js";
@@ -127,7 +127,7 @@ export interface TagPagesAPI {
     tagInfo: TagInfo;
   }) => JSX.Element;
   /** "All Tags" index page — computes the tag map at render time. */
-  TagsIndexPageView: (props: { locale: string; children?: ComponentChildren }) => JSX.Element;
+  TagsIndexPageView: (props: { locale: string; children?: Child }) => JSX.Element;
 }
 
 /**
@@ -275,7 +275,7 @@ export function createTagPages<S extends Settings = Settings>(
 
   /** "All Tags" index page — computes the tag map at render time (matching the
    *  original pages, which had no props from paths()). */
-  function TagsIndexPageView({ locale }: { locale: string; children?: ComponentChildren }): JSX.Element {
+  function TagsIndexPageView({ locale }: { locale: string; children?: Child }): JSX.Element {
     const isDefault = locale === defaultLocale;
     const prefix = localePrefix(locale);
     const pageTitle = t("doc.allTags", locale);

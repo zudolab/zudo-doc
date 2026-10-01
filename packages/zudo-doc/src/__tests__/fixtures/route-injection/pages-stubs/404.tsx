@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Precedence stub for A2 route-injection build proof (A2 #2363).
 // This pages/404.tsx stub INTENTIONALLY collides with the package's injected
 // /404 route. Per Decision 6 (ADR route-injection-seam.md), the user's

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Page module for the locale-prefixed site index route.
 //
 // Non-default-locale site index. paths() emits one route per locale defined
@@ -28,7 +27,7 @@
 import { settings } from "@/config/settings";
 import { routeContext } from "../lib/_route-context";
 import { prepareHomeData } from "@takazudo/zudo-doc/home-page";
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { HomePageView } from "../lib/_chrome";
 
 export const frontmatter = { title: "Home" };

@@ -45,7 +45,7 @@
 // at the top of `@takazudo/zfb-runtime/src/client-router.ts`.
 import "@takazudo/zfb-runtime/client-router";
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 /**
  * Renders nothing. The island marker exists only so zfb's island scanner

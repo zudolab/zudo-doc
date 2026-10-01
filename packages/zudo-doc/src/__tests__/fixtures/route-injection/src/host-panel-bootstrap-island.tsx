@@ -1,7 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Host-mounted design-token-panel island fixture (#4286, epic #4283).
 //
 // The actual CLIENT island `./chrome-bindings-host-panel.tsx` mounts, kept in
@@ -31,7 +30,7 @@
 // `ConfiguredDesignTokenPanelBootstrap`) so the marker/registry match in the
 // build test is unambiguous.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
 import { buildDesignTokenPanelConfig } from "./design-token-panel-config.js";
 

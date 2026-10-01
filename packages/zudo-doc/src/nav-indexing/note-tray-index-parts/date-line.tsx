@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { formatDate } from "../../note-tray-model/index.js";
 import type { ResolvedDateFormats } from "../../settings.js";
 import type { NoteTrayIndexItem } from "../note-tray-index.js";

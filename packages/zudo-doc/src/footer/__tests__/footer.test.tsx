@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR-shape test for the Footer shell's `data-footer` stable DOM hook
 // (zudolab/zudo-doc#2873 — theme packs select `[data-footer]` instead of
 // relying on the `<footer>` tag/structure alone).

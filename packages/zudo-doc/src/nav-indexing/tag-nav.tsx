@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/tag-nav.
 //
 // The original Astro template had two rendering branches controlled by the
@@ -20,7 +18,7 @@
 //   - Both use the same two-layer border-faking technique from the original.
 //   - Returns null when the relevant data is empty.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { TagItem, TagLink, TagNavLabels } from "./types.js";
 

@@ -1,13 +1,11 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // The asset index page body, extracted from `createAssetIndexPageView`
 // (index.tsx) so it's renderable from plain props without a `ChromeContext`
 // or `@takazudo/zfb*` (zudolab/zudo-doc#4223). `createAssetIndexPageView`
 // still owns resolving these props (settings, i18n, URLs) and wraps
 // `<AssetIndexPageBody>` inside `DocLayoutWithDefaults`.
 
-import type { ComponentType, VNode } from "preact";
+import type { Component, Description } from "@takazudo/zfb/zudo-react";
 import { formatAssetBytes } from "../asset-components/index.js";
 import { assetViewerHref } from "../asset-path/index.js";
 import { facetLabel, kindLabel } from "../asset-page/shared.js";
@@ -88,10 +86,10 @@ export function resolveAssetIndexPageLabels(
   };
 }
 
-export function iconFor(asset: AssetIndexEntry): ComponentType<{ className?: string }> {
+export function iconFor(asset: AssetIndexEntry): Component<{ className?: string }> {
   const extension = basename(asset.path).split(".").at(-1)?.toLowerCase();
   if (asset.kind === "other" && extension && ARCHIVE_EXTENSIONS.has(extension)) return FileArchive;
-  const icons: Record<AssetKind, ComponentType<{ className?: string }>> = {
+  const icons: Record<AssetKind, Component<{ className?: string }>> = {
     code: FileCode,
     text: FileText,
     image: FileImage,
@@ -102,7 +100,7 @@ export function iconFor(asset: AssetIndexEntry): ComponentType<{ className?: str
   return icons[asset.kind];
 }
 
-export function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fileCountSingleLabel, linesLabel, root = false }: { node: AssetTreeNode; base: string; routePrefix: string; locale?: string; fileCountLabel: string; fileCountSingleLabel: string; linesLabel: string; root?: boolean }): VNode {
+export function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fileCountSingleLabel, linesLabel, root = false }: { node: AssetTreeNode; base: string; routePrefix: string; locale?: string; fileCountLabel: string; fileCountSingleLabel: string; linesLabel: string; root?: boolean }): Description {
   return (
     <ul data-zd-asset-tree={root ? true : undefined}>
       {node.dirs.map((dir) => (
@@ -161,7 +159,7 @@ export interface AssetIndexPageBodyProps {
  * `DocLayoutWithDefaults`'s children before the #4223 split. Plain props
  * only, no `ChromeContext`.
  */
-export function AssetIndexPageBody({ entries, labels, base, routePrefix, dir, locale }: AssetIndexPageBodyProps): VNode {
+export function AssetIndexPageBody({ entries, labels, base, routePrefix, dir, locale }: AssetIndexPageBodyProps): Description {
   const tree = buildAssetTree(entries);
   const folders = folderCount(tree);
   return (
@@ -187,7 +185,7 @@ export function AssetIndexPageBody({ entries, labels, base, routePrefix, dir, lo
         </span>
       </div>
       {entries.length > 0 ? <AssetTree root node={tree} base={base} routePrefix={routePrefix} locale={locale} fileCountLabel={labels.fileCount} fileCountSingleLabel={labels.fileCountSingle} linesLabel={labels.lines} /> : <p class="text-small text-muted" data-zd-asset-index-empty>{labels.indexEmpty}</p>}
-      <script dangerouslySetInnerHTML={{ __html: ASSET_INDEX_PAGE_SCRIPT }} />
+      <script rawHtml={ASSET_INDEX_PAGE_SCRIPT} />
     </div>
   );
 }

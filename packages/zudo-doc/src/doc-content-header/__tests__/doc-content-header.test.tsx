@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Unit tests for the `docContentHeaderExtras` host-binding seam
  * (zudolab/zudo-doc#2500, epic #2499).

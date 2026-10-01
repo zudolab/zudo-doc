@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // site-tree-nav — factory for the MDX <SiteTreeNav> wrapper component
 // (epic #2344, S8).
 //
@@ -24,7 +23,7 @@
 // IMPORTANT: Island({when:"idle"}) is PRESERVED — not "load". The island
 // must mount after the page is idle for performance (refs #1453).
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
 import type { SidebarNavNode } from "../sidebar/types.js";

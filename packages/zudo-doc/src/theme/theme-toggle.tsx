@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Island-wrapped variant of the theme toggle for the `./theme` barrel.
 //
 // The actual component lives in `../theme-toggle/index.tsx` (the BARE
@@ -8,7 +7,7 @@
 // carries the directive, so zfb's island scanner registers exactly one
 // "ThemeToggle" island — adding the directive here would register a
 // second, colliding entry for the same marker name.
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 // `@takazudo/zfb` is provided by the consumer at integration time.
 import { Island } from "@takazudo/zfb";
 import {
@@ -24,10 +23,10 @@ import {
  * want to control hydration timing themselves) should import the bare
  * component from `@takazudo/zudo-doc/theme-toggle` instead.
  */
-export default function ThemeToggle(props: ThemeToggleProps = {}): VNode {
+export default function ThemeToggle(props: ThemeToggleProps = {}): Description {
   const rendered = Island({
     when: "load",
     children: <ThemeToggleBare {...props} />,
   });
-  return rendered as unknown as VNode;
+  return rendered as unknown as Description;
 }

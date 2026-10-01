@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR fallback shell for the <PresetGenerator> interactive form.
 //
 // The real component (src/components/preset-generator.tsx) is a large
@@ -20,7 +19,7 @@
 // connect the import to the manifest entry and the hydration runtime can
 // mount the real form into the skip-ssr placeholder on the client.
 
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { HeadingH3 } from "@takazudo/zudo-doc/content";
 import { Island } from "@takazudo/zfb";
 import PresetGenerator from "@/components/preset-generator";
@@ -57,7 +56,7 @@ const SECTION_HEADINGS = [
  * this file → preset-generator.tsx and registers the real component in the
  * island manifest for client-side mounting.
  */
-export function PresetGeneratorFallback(): VNode {
+export function PresetGeneratorFallback(): Description {
   const fallback = (
     <div class="zd-preset-gen-fallback">
       {SECTION_HEADINGS.map((heading) => (
@@ -78,5 +77,5 @@ export function PresetGeneratorFallback(): VNode {
     when: "load",
     ssrFallback: fallback,
     children: <PresetGenerator />,
-  }) as unknown as VNode;
+  }) as unknown as Description;
 }

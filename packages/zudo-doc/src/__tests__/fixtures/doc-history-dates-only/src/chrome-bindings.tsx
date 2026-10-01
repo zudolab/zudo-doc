@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // The generated manifest is the only host data supplied to the package chrome.
 // The build test deliberately creates it through the doc-history preBuild hook.
 

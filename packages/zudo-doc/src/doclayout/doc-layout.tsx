@@ -1,4 +1,3 @@
-/** @jsxImportSource preact */
 // Composable JSX shell for the documentation layout.
 //
 // This is intentionally a thin, slot-driven shell. It does not know
@@ -54,7 +53,8 @@
 // preservation, etc.) belong in `<DocLayoutWithDefaults>` or in
 // downstream Island components — not here.
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 // <ClientRouter /> from @takazudo/zfb-runtime: Strategy B SPA soft-swap
 // router. Intercepts same-origin link clicks, fetches the new page, and
@@ -117,17 +117,17 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * links, the `<ClientRouter />` (Astro) or its zfb-equivalent — the
    * shell stays out of the way.
    */
-  head?: ComponentChildren;
+  head?: Child;
 
   /** Required. The site header. Consumer ships its own `<header>`. */
-  header: ComponentChildren;
+  header: Child;
 
   /**
    * Optional sidebar content. When omitted (or when `hideSidebar` is
    * true) the desktop-sidebar `<aside>` is not rendered and the
    * content-margin wrapper collapses to full width.
    */
-  sidebar?: ComponentChildren;
+  sidebar?: Child;
 
   /**
    * Hide the sidebar even if the slot is provided. Mirrors the
@@ -150,26 +150,26 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * Slot rendered between the desktop sidebar and the content-margin
    * wrapper. Used by the sidebar-toggle feature in `create-zudo-doc`.
    */
-  afterSidebar?: ComponentChildren;
+  afterSidebar?: Child;
 
   /** Optional breadcrumb shown above the article. */
-  breadcrumb?: ComponentChildren;
+  breadcrumb?: Child;
 
   /** Optional content slot rendered between breadcrumb and article. */
-  afterBreadcrumb?: ComponentChildren;
+  afterBreadcrumb?: Child;
 
   /** Optional mobile-only TOC, rendered above the article. */
-  mobileToc?: ComponentChildren;
+  mobileToc?: Child;
 
   /** Required. The page's article body. */
-  main: ComponentChildren;
+  main: Child;
 
   /**
    * Optional content slot rendered immediately after `<article>` but
    * still inside `<main>`. Used by the body-foot util area and the
    * doc-history feature.
    */
-  afterContent?: ComponentChildren;
+  afterContent?: Child;
 
   /**
    * Raw `data-*` attributes spread onto the `<article>` element. This shell
@@ -187,7 +187,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   articleAttrs?: Record<string, string>;
 
   /** Optional desktop TOC rendered alongside `<main>` on wide screens. */
-  toc?: ComponentChildren;
+  toc?: Child;
 
   /** Hide the TOC (both desktop and mobile) regardless of slot value. */
   hideToc?: boolean;
@@ -219,7 +219,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   navSection?: string;
 
   /** Optional footer rendered below the content. */
-  footer?: ComponentChildren;
+  footer?: Child;
 
   // ---- body-end extension points -------------------------------------
   /**
@@ -227,7 +227,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * design-token panels, code-block enhancers, mock initializers, and
    * other globally-mounted islands.
    */
-  bodyEndComponents?: ComponentChildren;
+  bodyEndComponents?: Child;
 
   /**
    * Scripts / inline `<script>` islands rendered last in `</body>`.
@@ -235,7 +235,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * layout had two separate anchors here, and downstream features (e.g.
    * the sidebar resizer) inject into the scripts slot specifically.
    */
-  bodyEndScripts?: ComponentChildren;
+  bodyEndScripts?: Child;
 
   /**
    * When `false`, the zfb SPA soft-swap router (`ClientRouter`) is not

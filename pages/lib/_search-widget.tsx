@@ -1,8 +1,7 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Host thin-stub — see @takazudo/zudo-doc/search-widget (epic #2344, S5).
 // Injects the host's base path and re-exports the package SearchWidget.
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   SearchWidget as PackageSearchWidget,
   type SearchWidgetProps as PackageSearchWidgetProps,

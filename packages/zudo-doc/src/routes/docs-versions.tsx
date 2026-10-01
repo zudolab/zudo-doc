@@ -1,10 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /docs/versions — package-owned equivalent of
 // pages/docs/versions.tsx (A1 #2361). Default-locale versions index; rendered
 // by the package `VersionsPageView` (`_chrome`).
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { defaultLocale } from "./_context.js";
 import { VersionsPageView } from "./_chrome.js";
 

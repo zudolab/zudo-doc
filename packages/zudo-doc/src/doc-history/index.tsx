@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // DocHistory island — relocated from src/components/doc-history.tsx (epic #2344, S4).
 // Uses the shared hook and types shipped by S1a instead of re-inlining them:
 //   - useModalDialog from @takazudo/zudo-doc/use-modal-dialog (open/close sync, focus management)
@@ -55,9 +53,9 @@ interface DiffSelection {
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center py-vsp-xl">
+    <div class="flex items-center justify-center py-vsp-xl">
       <span
-        className="inline-block box-border rounded-full"
+        class="inline-block box-border rounded-full"
         style={{
           width: "48px",
           height: "48px",
@@ -235,24 +233,24 @@ function DiffViewer({
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <div class="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-hsp-sm px-hsp-lg py-vsp-xs border-b border-muted">
+      <div class="flex items-center gap-hsp-sm px-hsp-lg py-vsp-xs border-b border-muted">
         {showBackButton && (
           <button
             type="button"
-            onClick={onBack}
-            className="text-muted hover:text-fg lg:hidden"
+            on:click={onBack}
+            class="text-muted hover:text-fg lg:hidden"
             aria-label="Back to revisions"
           >
             <ArrowLeft className="h-icon-sm w-icon-sm" />
           </button>
         )}
-        <div className="flex-1 min-w-0 flex">
-          <div className="w-1/2 text-small text-muted font-mono truncate pr-hsp-sm">
+        <div class="flex-1 min-w-0 flex">
+          <div class="w-1/2 text-small text-muted font-mono truncate pr-hsp-sm">
             {selection.older.hash.slice(0, 7)}
           </div>
-          <div className="w-1/2 text-small text-muted font-mono truncate pl-hsp-sm">
+          <div class="w-1/2 text-small text-muted font-mono truncate pl-hsp-sm">
             {selection.newer.hash.slice(0, 7)}
           </div>
         </div>
@@ -260,11 +258,11 @@ function DiffViewer({
 
       {/* Side-by-side diff — shows a spinner while the diff module lazy-loads */}
       {diffError && (
-        <div className="px-hsp-lg py-vsp-lg text-danger text-small">{diffError}</div>
+        <div class="px-hsp-lg py-vsp-lg text-danger text-small">{diffError}</div>
       )}
       {!changes && !diffError && <Spinner />}
-      <div className={`flex-1 overflow-auto${!changes ? " hidden" : ""}`}>
-        <table className="w-full border-collapse" style={{ "table-layout": "fixed" }}>
+      <div class={`flex-1 overflow-auto${!changes ? " hidden" : ""}`}>
+        <table class="w-full border-collapse" style={{ "table-layout": "fixed" }}>
           <colgroup>
             <col style={{ width: "2.5rem" }} />
             <col />
@@ -285,21 +283,21 @@ function DiffViewer({
               const rightEmpty = row.rightLine === null;
 
               return (
-                <tr key={idx} className="diff-row">
+                <tr key={idx} class="diff-row">
                   {/* Left line number */}
-                  <td className={`diff-line-num ${leftBg}`}>
+                  <td class={`diff-line-num ${leftBg}`}>
                     {row.leftNum ?? ""}
                   </td>
                   {/* Left content */}
-                  <td className={`diff-line-content ${leftBg}${leftEmpty ? " diff-line-empty" : ""}`}>
+                  <td class={`diff-line-content ${leftBg}${leftEmpty ? " diff-line-empty" : ""}`}>
                     {row.leftLine ?? ""}
                   </td>
                   {/* Right line number */}
-                  <td className={`diff-line-num ${rightBg}`}>
+                  <td class={`diff-line-num ${rightBg}`}>
                     {row.rightNum ?? ""}
                   </td>
                   {/* Right content */}
-                  <td className={`diff-line-content ${rightBg}${rightEmpty ? " diff-line-empty" : ""}`}>
+                  <td class={`diff-line-content ${rightBg}${rightEmpty ? " diff-line-empty" : ""}`}>
                     {row.rightLine ?? ""}
                   </td>
                 </tr>
@@ -332,7 +330,7 @@ function RevisionList({
 
   if (entries.length === 0) {
     return (
-      <div className="px-hsp-lg py-vsp-lg text-muted text-small">
+      <div class="px-hsp-lg py-vsp-lg text-muted text-small">
         No revision history available.
       </div>
     );
@@ -359,15 +357,15 @@ function RevisionList({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div class="flex flex-col h-full">
       {/* Compare bar */}
       {entries.length >= 2 && (
-        <div className="px-hsp-lg py-vsp-xs border-b border-muted flex items-center gap-hsp-sm">
+        <div class="px-hsp-lg py-vsp-xs border-b border-muted flex items-center gap-hsp-sm">
           <button
             type="button"
             disabled={!canCompare}
-            onClick={handleCompare}
-            className={
+            on:click={handleCompare}
+            class={
               canCompare
                 ? "px-hsp-md py-vsp-2xs text-small rounded bg-accent text-bg hover:bg-accent-hover"
                 : "px-hsp-md py-vsp-2xs text-small rounded bg-surface text-muted cursor-not-allowed"
@@ -375,14 +373,14 @@ function RevisionList({
           >
             Compare
           </button>
-          <span className="text-caption text-muted">
+          <span class="text-caption text-muted">
             Select two revisions (A / B)
           </span>
         </div>
       )}
 
       {/* Revision entries */}
-      <div className="flex-1 overflow-auto">
+      <div class="flex-1 overflow-auto">
         {entries.map((entry, idx) => {
           const isA = selectedA === idx;
           const isB = selectedB === idx;
@@ -401,20 +399,20 @@ function RevisionList({
           return (
             <div
               key={entry.hash}
-              className={
+              class={
                 isA || isB
                   ? "px-hsp-lg py-vsp-xs border-b border-muted bg-surface"
                   : "px-hsp-lg py-vsp-xs border-b border-muted hover:bg-surface"
               }
             >
-              <div className="flex items-start gap-hsp-sm">
+              <div class="flex items-start gap-hsp-sm">
                 {/* Selection badges */}
                 {entries.length >= 2 && (
-                  <div className="flex flex-col gap-vsp-2xs pt-[2px] shrink-0">
+                  <div class="flex flex-col gap-vsp-2xs pt-[2px] shrink-0">
                     <button
                       type="button"
-                      onClick={() => setSelectedA(idx)}
-                      className={
+                      on:click={() => setSelectedA(idx)}
+                      class={
                         isA
                           ? "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center bg-accent text-bg"
                           : "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center border border-muted text-muted hover:border-fg hover:text-fg"
@@ -425,8 +423,8 @@ function RevisionList({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSelectedB(idx)}
-                      className={
+                      on:click={() => setSelectedB(idx)}
+                      class={
                         isB
                           ? "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center bg-accent text-bg"
                           : "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center border border-muted text-muted hover:border-fg hover:text-fg"
@@ -439,17 +437,17 @@ function RevisionList({
                 )}
 
                 {/* Revision info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-hsp-sm">
-                    <code className="text-caption text-accent font-mono">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-baseline gap-hsp-sm">
+                    <code class="text-caption text-accent font-mono">
                       {entry.hash.slice(0, 7)}
                     </code>
-                    <span className="text-caption text-muted">{dateStr}</span>
+                    <span class="text-caption text-muted">{dateStr}</span>
                   </div>
-                  <div className="text-small text-fg mt-vsp-2xs truncate">
+                  <div class="text-small text-fg mt-vsp-2xs truncate">
                     <SmartBreak>{entry.message}</SmartBreak>
                   </div>
-                  <div className="text-caption text-muted">{entry.author}</div>
+                  <div class="text-caption text-muted">{entry.author}</div>
                 </div>
               </div>
             </div>
@@ -585,15 +583,15 @@ export function DocHistory({
           (the old `{!isOpen && …}`) left the ref pointing at a detached node,
           so `.focus()` no-op'd and focus fell to <body> on close
           (zudolab/zudo-doc#2303). */}
-      <div className="flex justify-end mt-vsp-xl">
+      <div class="flex justify-end mt-vsp-xl">
         <button
           type="button"
-          onClick={handleOpen}
-          className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors"
+          on:click={handleOpen}
+          class="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors"
           aria-label="View document history"
         >
           <History className="h-icon-md w-icon-md" />
-          <span className="text-small">History</span>
+          <span class="text-small">History</span>
         </button>
       </div>
 
@@ -609,18 +607,18 @@ export function DocHistory({
       <dialog
         ref={dialogRef}
         aria-label="Document revision history"
-        className="doc-history-panel z-modal fixed inset-0 m-0 h-full w-full max-h-full max-w-full bg-bg border-none p-0 backdrop:z-modal-backdrop backdrop:bg-bg/30"
+        class="doc-history-panel z-modal fixed inset-0 m-0 h-full w-full max-h-full max-w-full bg-bg border-none p-0 backdrop:z-modal-backdrop backdrop:bg-bg/30"
         style={{ color: "var(--color-fg)" }}
       >
         {/* Panel header */}
-        <div className="flex items-center justify-between px-hsp-lg py-vsp-xs border-b border-muted">
-          <h2 className="text-body font-semibold text-fg">
+        <div class="flex items-center justify-between px-hsp-lg py-vsp-xs border-b border-muted">
+          <h2 class="text-body font-semibold text-fg">
             {view === "diff" ? "Diff" : "Revision History"}
           </h2>
           <button
             type="button"
-            onClick={handleClose}
-            className="text-muted hover:text-fg"
+            on:click={handleClose}
+            class="text-muted hover:text-fg"
             aria-label="Close history panel"
           >
             <Close className="h-icon-md w-icon-md" />
@@ -628,21 +626,21 @@ export function DocHistory({
         </div>
 
         {/* Panel body */}
-        <div className="h-[calc(100%_-_3rem)] overflow-hidden">
+        <div class="h-[calc(100%_-_3rem)] overflow-hidden">
           {loading && <Spinner />}
 
           {error && (
-            <div className="px-hsp-lg py-vsp-lg text-danger text-small">
+            <div class="px-hsp-lg py-vsp-lg text-danger text-small">
               {error}
             </div>
           )}
 
           {/* Difit-style LR split: revision sidebar | diff area */}
           {!loading && !error && data && (
-            <div className="flex h-full">
+            <div class="flex h-full">
               {/* Left sidebar: revision list — always visible on lg */}
               <div
-                className={
+                class={
                   hasDiff
                     ? "hidden lg:flex lg:flex-col lg:w-[clamp(16rem,25%,22rem)] shrink-0 border-r border-muted h-full"
                     : "flex flex-col w-full h-full"
@@ -658,7 +656,7 @@ export function DocHistory({
 
               {/* Right: diff viewer (on mobile, replaces the sidebar) */}
               {hasDiff && (
-                <div className="flex-1 min-w-0 h-full">
+                <div class="flex-1 min-w-0 h-full">
                   {/* Key on the compared pair forces a fresh mount whenever the
                       selection changes, so the previous pair's diff rows can
                       never render under the new header hashes while the lazy

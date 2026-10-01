@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG hydration smoke test for ImageEnlarge + ImageEnlargeSsrFallback.
  *

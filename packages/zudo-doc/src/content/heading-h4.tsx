@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 type Props = JSX.IntrinsicElements["h4"];
 
@@ -9,7 +7,7 @@ export function HeadingH4({ id, children, className, ...rest }: Props) {
   return (
     <h4
       id={id}
-      className={`text-body font-semibold leading-snug pt-vsp-xs border-t border-transparent${className ? ` ${className}` : ""}`}
+      class={`text-body font-semibold leading-snug pt-vsp-xs border-t border-transparent${className ? ` ${className}` : ""}`}
       style={
         {
           borderImage:

@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import recordsValue from "virtual:zudo-doc-asset-bodies";
 import type { AssetRecords } from "../plugins/internal/asset-viewer/types.js";
 import type { AssetIndexEntry } from "../route-context-payload/types.js";

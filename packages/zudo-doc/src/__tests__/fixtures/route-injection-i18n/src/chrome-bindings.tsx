@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Host-callables channel fixture (CB #2501) — i18n variant, extended for the
 // home-page extraction proof (S3 #2502).
 //

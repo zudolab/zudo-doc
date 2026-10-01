@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createHeaderWithDefaults — #4219 optional `sidebarNodes`
  * override on `HeaderWithDefaultsProps`.
@@ -17,14 +16,14 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { createHeaderWithDefaults } from "../index.js";
 import { createChrome } from "../../chrome/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { ChromeContext, RouteContext } from "../../factory-context/index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 
-type AnyVNode = VNode<Record<string, unknown>>;
+type AnyVNode = Description;
 
 function fixedNode(slug: string): SidebarNavNode {
   return {

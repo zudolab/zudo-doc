@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/versions-page-content.
 //
 // The original Astro template read settings.versions, resolved href helpers
@@ -20,7 +18,7 @@
 //   - Returns the page content (not null) regardless of whether past
 //     versions exist (matching the Astro template's unconditional h1).
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { VersionPageEntry, VersionsPageLabels } from "./types.js";
 import { ChevronRight } from "../icons/index.js";

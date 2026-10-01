@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG tests for the sidebar-prepaint factories (bug zudolab/zudo-doc#2571).
  *
@@ -19,7 +18,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { render } from "preact-render-to-string";
 import {
   createSidebarPrepaint,
@@ -124,7 +123,7 @@ describe("doc-page-shell wiring — visibility script actually reaches <head>", 
         headings: [],
       } as unknown as Parameters<typeof renderDocPage>[0],
       { locale: "en" },
-    ) as VNode;
+    ) as Description;
 
     const html = render(vnode);
     const scriptIdx = html.indexOf(SCRIPT_SET_ATTR);

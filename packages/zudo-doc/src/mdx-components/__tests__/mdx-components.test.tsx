@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { h } from "preact";
-import type { ComponentType } from "preact";
+import type { Component } from "@takazudo/zfb/zudo-react";
 import render from "preact-render-to-string";
 import { describe, expect, it } from "vitest";
 import type { AssetManifest } from "../../route-context-payload/types.js";
@@ -55,7 +53,7 @@ function renderImageParagraph(
   imageEnlarge = true,
 ) {
   const components = makeComponents(assetManifest, imageEnlarge);
-  const Img = components.img as ComponentType<Record<string, unknown>>;
+  const Img = components.img as Component<Record<string, unknown>>;
   const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
   return render(Paragraph({ children: h(Img, props) }) as never);
 }
@@ -87,7 +85,7 @@ describe("manifest image captions", () => {
 
   it("preserves the active locale in the image-caption viewer link", () => {
     const components = makeComponents(manifest, true, "ja");
-    const Img = components.img as ComponentType<Record<string, unknown>>;
+    const Img = components.img as Component<Record<string, unknown>>;
     const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
     const html = render(Paragraph({
       children: h(Img, { src: "/media/images/diagram.png", alt: "Diagram" }),
@@ -115,7 +113,7 @@ describe("manifest image captions", () => {
         NoteTrayIndex: nav,
       },
     });
-    const Img = components.img as ComponentType<Record<string, unknown>>;
+    const Img = components.img as Component<Record<string, unknown>>;
     const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
     const html = render(Paragraph({
       children: h(Img, { src: "/media/images/diagram.png", alt: "Diagram" }),

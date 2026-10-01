@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // FindBar UI — relocated from
 // `create-zudo-doc/templates/features/tauri/files/src/components/find-bar.tsx`
 // into the package as part of the `findInPage` package-owned island
@@ -81,27 +79,27 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
   if (!visible) return null;
 
   return (
-    <div className="fixed top-[3.5rem] right-0 z-dropdown flex items-center gap-hsp-sm py-hsp-xs px-hsp-md bg-surface border-b border-l border-muted rounded-bl-lg">
+    <div class="fixed top-[3.5rem] right-0 z-dropdown flex items-center gap-hsp-sm py-hsp-xs px-hsp-md bg-surface border-b border-l border-muted rounded-bl-lg">
       <input
         ref={inputRef}
-        className="w-[12rem] py-[4px] px-hsp-sm rounded text-small bg-bg border border-muted text-fg outline-none focus:border-accent"
+        class="w-[12rem] py-[4px] px-hsp-sm rounded text-small bg-bg border border-muted text-fg outline-none focus:border-accent"
         type="text"
         value={query}
         placeholder="Find in page..."
         aria-label="Find in page"
-        onChange={(e) => {
+        on:change={(e) => {
           setQuery(e.currentTarget.value);
           handleFind(e.currentTarget.value);
         }}
-        onKeyDown={handleKeyDown}
+        on:keydown={handleKeyDown}
       />
-      <span className="text-caption whitespace-nowrap min-w-[3rem] text-center text-fg/60">
+      <span class="text-caption whitespace-nowrap min-w-[3rem] text-center text-fg/60">
         {matchInfo ? `${matchInfo.activeMatchOrdinal}/${matchInfo.matches}` : ""}
       </span>
       <button
         type="button"
-        className="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
-        onClick={() => {
+        class="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
+        on:click={() => {
           const result = findInPage.prev();
           setMatchInfo(toMatchInfo(result));
         }}
@@ -111,8 +109,8 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
       </button>
       <button
         type="button"
-        className="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
-        onClick={() => {
+        class="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
+        on:click={() => {
           const result = findInPage.next();
           setMatchInfo(toMatchInfo(result));
         }}
@@ -122,8 +120,8 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
       </button>
       <button
         type="button"
-        className="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
-        onClick={onClose}
+        class="py-hsp-2xs px-hsp-sm rounded text-caption bg-bg border border-muted text-fg hover:bg-surface"
+        on:click={onClose}
         title="Close (Esc)"
       >
         Close

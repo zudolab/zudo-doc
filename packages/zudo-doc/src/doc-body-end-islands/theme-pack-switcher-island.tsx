@@ -1,7 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX, VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import type { FactoryComponent } from "../factory-context/index.js";
 // Type-only — erased at build; the REAL component arrives through
@@ -73,7 +72,7 @@ export function createThemePackSwitcherIsland(
                 pendingUntilHydrated={pendingUntilHydrated}
               />
             ),
-          }) as unknown as VNode
+          }) as unknown as Description
         }
       </>
     );

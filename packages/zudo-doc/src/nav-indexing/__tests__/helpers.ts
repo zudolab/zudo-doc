@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 /**
  * Shared VNode serializer for nav-indexing tests.
  *
@@ -10,9 +8,9 @@
  * pattern to avoid pulling in preact-render-to-string.
  */
 
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 
-type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
+type AnyVNode = Description;
 
 function isVNode(v: unknown): v is AnyVNode {
   return (
@@ -27,7 +25,7 @@ function escapeAttr(s: string): string {
   return s.replace(/"/g, "&quot;");
 }
 
-export function serialize(node: ComponentChildren): string {
+export function serialize(node: Child): string {
   if (node == null || typeof node === "boolean") return "";
   if (typeof node === "string") return node;
   if (typeof node === "number" || typeof node === "bigint") return String(node);
@@ -35,12 +33,12 @@ export function serialize(node: ComponentChildren): string {
   if (!isVNode(node)) return "";
   const { type, props } = node;
   const { children, ...rest } = (props ?? {}) as {
-    children?: ComponentChildren;
+    children?: Child;
     [key: string]: unknown;
   };
 
   if (typeof type === "function") {
-    const fn = type as (p: typeof props) => ComponentChildren;
+    const fn = type as (p: typeof props) => Child;
     return serialize(fn(props));
   }
   if (type == null || (typeof type === "string" && type === "")) {

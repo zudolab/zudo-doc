@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, it, expect } from "vitest";
 import { DocsSitemap } from "../docs-sitemap.js";
 import { serialize } from "./helpers.js";

@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/docs-sitemap.
 //
 // The original Astro template loaded the docs collection, built the nav tree,
@@ -20,7 +18,7 @@
 //     wrapper regardless.
 //   - Returns null when the tree is empty.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 

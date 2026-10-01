@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Card-rendering-from-meta-fixtures tests (#2825 acceptance criterion): the
 // mini preview must paint entirely from `meta.preview[<mode>]` resolved plain
 // colors — never by loading a pack stylesheet or webfont — plus the name,

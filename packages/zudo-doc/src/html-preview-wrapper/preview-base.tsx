@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { HighlightedCode } from "./highlighted-code.js";
 import {
   createPreviewAutoHeightController,
@@ -101,7 +99,7 @@ export function PreviewBase({
   showSource,
   showViewportControls,
   autoHeight,
-}: PreviewBaseProps): VNode {
+}: PreviewBaseProps): Description {
   const resolvedLabels = resolveLabels(labels);
   const sourceVisible = showSource ?? true;
   const viewportControlsVisible = showViewportControls ?? true;
@@ -188,7 +186,7 @@ export function PreviewBase({
                       : "bg-transparent text-muted border-muted hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
                   }`}
                   aria-pressed={i === activeViewport}
-                  onClick={() => setActiveViewport(i)}
+                  on:click={() => setActiveViewport(i)}
                 >
                   {vp.label}
                 </button>
@@ -222,7 +220,7 @@ export function PreviewBase({
           <button
             type="button"
             class="flex min-h-[44px] min-w-[44px] items-center w-full px-hsp-md py-hsp-sm text-caption font-medium text-muted bg-surface border-none cursor-pointer gap-hsp-xs hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
-            onClick={() => setCodeOpen((v) => !v)}
+            on:click={() => setCodeOpen((v) => !v)}
             aria-expanded={codeOpen}
           >
             <span

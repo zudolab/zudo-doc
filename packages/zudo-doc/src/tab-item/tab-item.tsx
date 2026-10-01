@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of the legacy `tab-item` component.
 //
 // Visual wrapper for one tab panel inside a Tabs group. Server-rendered,
@@ -8,7 +6,7 @@
 // `data-tab-label` / `data-tab-default` to wire interactivity, so the
 // attribute shape here must mirror the Astro original byte-for-byte.
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export interface TabItemProps {
   /** Human-readable label rendered by the parent Tabs trigger row. */
@@ -25,7 +23,7 @@ export interface TabItemProps {
    */
   default?: boolean;
   /** Panel body. */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**

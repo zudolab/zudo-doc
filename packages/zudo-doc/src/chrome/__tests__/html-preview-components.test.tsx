@@ -1,8 +1,7 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
-import { h, type ComponentType } from "preact";
+import { h } from "preact";
+import type { Component } from "@takazudo/zfb/zudo-react";
 import render from "preact-render-to-string";
 
 import { defaultTranslations } from "../../i18n-defaults/index.js";
@@ -25,7 +24,7 @@ function renderBoundPreview(
 ): string {
   const { createMdxComponentsBound } = deriveMdxComponents(ctx);
   const components = createMdxComponentsBound(lang);
-  const HtmlPreview = components.HtmlPreview as ComponentType<HtmlPreviewProps>;
+  const HtmlPreview = components.HtmlPreview as Component<HtmlPreviewProps>;
   return render(h(HtmlPreview, props));
 }
 

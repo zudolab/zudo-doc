@@ -1,7 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 import { useState, useEffect, useRef } from "preact/hooks";
 import { ChevronRight, ChevronLeft } from "../icons/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
@@ -94,8 +93,8 @@ export function DesktopSidebarToggle() {
   return (
     <button
       type="button"
-      onClick={() => setVisible((v) => !v)}
-      className="zd-desktop-sidebar-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-l-0 rounded-r-DEFAULT text-muted cursor-pointer transition-[left,color] duration-200 ease-in-out hover:text-fg"
+      on:click={() => setVisible((v) => !v)}
+      class="zd-desktop-sidebar-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-l-0 rounded-r text-muted cursor-pointer transition-[left,color] duration-200 ease-in-out hover:text-fg"
       aria-label={visible ? "Hide sidebar" : "Show sidebar"}
       aria-pressed={visible}
       data-zfb-transition-persist="desktop-sidebar-toggle"

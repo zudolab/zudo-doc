@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Cross-surface proof that ONE dataset key drives every current-route reader
 // (zudolab/zudo-doc#3408). Each of the four surfaces is exercised through
 // `document.documentElement.dataset[CURRENT_PATH_DATASET_KEY]` — never a

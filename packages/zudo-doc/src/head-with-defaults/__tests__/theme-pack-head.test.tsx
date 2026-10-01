@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // head-with-defaults theme-pack emission tests (ADR
 // `docs/adr/theme-packs.md` Decision 3; #2822).
 //

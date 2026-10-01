@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /docs/[[...slug]] — package-owned equivalent of
 // pages/docs/[[...slug]].tsx (epic Package-First Finale #2356, A1 #2361).
 //
@@ -11,7 +10,7 @@
 // is on; even then dropped if the user keeps a `pages/docs/[[...slug]].tsx`
 // stub (Decision 6).
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { DocPageEntryProps, DocPageAutoIndexProps } from "../doc-page-props/index.js";
 import { settings, defaultLocale, resolveNavSource, buildDocRouteEntries } from "./_context.js";
 import { renderDocPage } from "./_chrome.js";

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Self-contained doc-route stub (#2653 Decision 4 correction; locked form
 // #2660) — retained as the showcase's explicit host-owned route; zfb 2.13.1
 // also serves the injected dynamic route in dev. Versioned non-default-locale docs route:
@@ -10,7 +9,7 @@
 // the `virtual:zudo-doc-chrome-bindings` host-callables channel for the
 // showcase's real chrome slots — no `pages/lib`, no `@/config`.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { routeContext } from "virtual:zudo-doc-route-context";
 import {
   createRouteContext,

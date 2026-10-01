@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // katex present: rendering is unchanged by the optional-peer loading (#4209).
 // Kept apart from the katex-unavailable file so no module mock is in play.
 import { describe, expect, it } from "vitest";

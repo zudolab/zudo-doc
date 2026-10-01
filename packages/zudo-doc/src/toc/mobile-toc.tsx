@@ -1,9 +1,7 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { useMemo, useState } from "preact/hooks";
 
 import type { HeadingItem } from "./types.js";
@@ -48,7 +46,7 @@ export interface MobileTocProps {
 export function MobileToc({
   headings,
   title = "On this page",
-}: MobileTocProps): VNode {
+}: MobileTocProps): Description {
   const filtered = useMemo(
     () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
     [headings],
@@ -62,7 +60,7 @@ export function MobileToc({
   // aria-hidden prevents screen readers from announcing the invisible label.
   if (filtered.length === 0) {
     return (
-      <div className="hidden" aria-hidden="true">
+      <div class="hidden" aria-hidden="true">
         {title}
       </div>
     );
@@ -77,17 +75,17 @@ export function MobileToc({
   // branch is a `display:none` placeholder carrying only the locale label, so
   // there is nothing for a pack to style.
   return (
-    <div data-zd-mobile-toc className="xl:hidden border border-muted mb-vsp-lg">
+    <div data-zd-mobile-toc class="xl:hidden border border-muted mb-vsp-lg">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        on:click={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
+        class="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
       >
         <span>{title}</span>
         <svg
           aria-hidden="true"
-          className={cx(
+          class={cx(
             "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
             open && "rotate-180",
           )}
@@ -109,7 +107,7 @@ export function MobileToc({
           elements remain in the static markup, satisfying the a11y requirement
           for keyboard accessibility after hydration. */}
       <ul
-        className={cx(
+        class={cx(
           "border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs",
           !open && "hidden",
         )}
@@ -118,15 +116,15 @@ export function MobileToc({
         {filtered.map((heading, index) => (
           <li
             key={`${heading.slug}-${index}`}
-            className={cx(
+            class={cx(
               heading.depth === 3 && "ml-hsp-lg",
               heading.depth === 4 && "ml-hsp-2xl",
             )}
           >
             <a
               href={`#${heading.slug}`}
-              onClick={() => setOpen(false)}
-              className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
+              on:click={() => setOpen(false)}
+              class="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
             >
               <SmartBreak>{heading.text}</SmartBreak>
             </a>

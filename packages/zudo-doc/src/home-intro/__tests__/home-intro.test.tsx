@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 import { describe, expect, it } from "vitest";
 import { renderToString } from "preact-render-to-string";
 import { CompactProse, resolveHomeIntro } from "../index.js";

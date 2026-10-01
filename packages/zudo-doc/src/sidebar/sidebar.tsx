@@ -1,8 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/sidebar.
 //
 // The original Astro template was almost entirely data assembly —
@@ -51,7 +49,7 @@
 // pin `displayName` explicitly. The `<Island when="load">` wrapper is
 // applied at the call site (`<DocLayoutWithDefaults>`).
 
-import type { ComponentChildren, FunctionComponent, VNode } from "preact";
+import type { Child, Component, Description } from "@takazudo/zfb/zudo-react";
 
 import type { SidebarTreeIslandProps } from "./types.js";
 
@@ -62,14 +60,14 @@ export interface SidebarProps extends SidebarTreeIslandProps {
    * Mutually exclusive with `children`: prefer this form so v2 owns the
    * prop forwarding contract.
    */
-  treeComponent?: FunctionComponent<SidebarTreeIslandProps>;
+  treeComponent?: Component<SidebarTreeIslandProps>;
   /**
    * Pre-rendered tree content — falls back to this when
    * `treeComponent` is omitted. Useful for tests and for layouts that
    * compose the tree separately (e.g. inside a host wrapper
    * that needs `client:load` on the actual island element).
    */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**
@@ -98,7 +96,7 @@ export interface SidebarProps extends SidebarTreeIslandProps {
  * `<Island>` wrapper here exists so the shell can host data-only
  * variants in the future without losing the marker contract.
  */
-export function Sidebar(props: SidebarProps): VNode | null {
+export function Sidebar(props: SidebarProps): Description | null {
   const {
     treeComponent: TreeComponent,
     children,

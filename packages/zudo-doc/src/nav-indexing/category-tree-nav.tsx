@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/category-tree-nav.
 //
 // The original Astro template built the full nav tree with groupSatelliteNodes,
@@ -18,7 +16,7 @@
 //   - Description is rendered after the label when present.
 //   - Returns null when no renderable children exist.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 

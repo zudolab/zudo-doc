@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { HeadingH2 } from "../heading-h2.js";
 import { HeadingH3 } from "../heading-h3.js";
 import { HeadingH4 } from "../heading-h4.js";
@@ -21,7 +19,7 @@ import { defaultComponents } from "../component-map.js";
 // Minimal VNode serializer (copied from breadcrumb tests to avoid pulling in
 // preact-render-to-string at test time).
 // ---------------------------------------------------------------------------
-type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
+type AnyVNode = Description;
 
 function isVNode(v: unknown): v is AnyVNode {
   return (
@@ -36,7 +34,7 @@ function escapeAttr(s: string): string {
   return s.replace(/"/g, "&quot;");
 }
 
-function serialize(node: ComponentChildren): string {
+function serialize(node: Child): string {
   if (node == null || typeof node === "boolean") return "";
   if (typeof node === "string") return node;
   if (typeof node === "number" || typeof node === "bigint") return String(node);
@@ -44,12 +42,12 @@ function serialize(node: ComponentChildren): string {
   if (!isVNode(node)) return "";
   const { type, props } = node;
   const { children, ...rest } = (props ?? {}) as {
-    children?: ComponentChildren;
+    children?: Child;
     [key: string]: unknown;
   };
 
   if (typeof type === "function") {
-    const fn = type as (p: typeof props) => ComponentChildren;
+    const fn = type as (p: typeof props) => Child;
     return serialize(fn(props));
   }
   if (type == null || (typeof type === "string" && type === "")) {

@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of the legacy `tabs` component.
 //
 // The original component rendered:
@@ -21,7 +19,8 @@
 // area unchanged, so mixed content (e.g. a heading above a tab set) works.
 
 import { cloneElement, toChildArray } from "preact";
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { TabItem } from "../tab-item/tab-item.js";
 import type { TabItemProps } from "../tab-item/tab-item.js";
 
@@ -47,7 +46,7 @@ export interface TabsProps {
    */
   groupId?: string;
   /** `<TabItem>` children (and any other content). */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**
@@ -80,10 +79,10 @@ export function Tabs({ groupId, children }: TabsProps): JSX.Element {
 
   // Step 1 — keep only VNodes whose `type` is the TabItem function.
   const tabItemNodes = childArray.filter(
-    (child): child is VNode =>
+    (child): child is Description =>
       typeof child === "object" &&
       child !== null &&
-      (child as VNode).type === TabItem,
+      (child as Description).type === TabItem,
   );
 
   // Step 2 — cast props to the known shape so the JSX below is type-safe.
@@ -114,9 +113,9 @@ export function Tabs({ groupId, children }: TabsProps): JSX.Element {
     if (
       typeof child === "object" &&
       child !== null &&
-      (child as VNode).type === TabItem
+      (child as Description).type === TabItem
     ) {
-      const node = child as VNode;
+      const node = child as Description;
       const props = node.props as TabItemProps;
       const value = props.value ?? props.label;
       const isDefault = value === defaultValue;

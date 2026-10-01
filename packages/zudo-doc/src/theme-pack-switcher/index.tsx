@@ -1,7 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // ThemePackSwitcher — the bottom-right theme-pack switcher flyout island
 // (ADR `docs/adr/theme-packs.md` Decision 7; epic Theme Core #2812,
 // sub-issue #2821).
@@ -33,7 +32,8 @@
 // Use the preact hook entrypoints directly — zfb's esbuild step does not
 // alias "react" to "preact/compat" (the theme-toggle precedent).
 
-import type { JSX, VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ChevronLeft, ChevronRight, Close } from "../icons/index.js";
 import { useHydrationPending } from "../hydration-pending.js";
@@ -107,7 +107,7 @@ const ThemePackDialogSlot: ThemePackDialogComponent | null = ThemePackDialog;
 
 /** Browse-all grid icon (2×2 rounded squares) — local like the theme-toggle
  *  sun/moon icons; `../icons` has no grid glyph and this stays private. */
-function GridIcon({ className }: { className?: string }): VNode {
+function GridIcon({ className }: { className?: string }): Description {
   return (
     <svg
       class={className || undefined}
@@ -126,7 +126,7 @@ function GridIcon({ className }: { className?: string }): VNode {
 }
 
 /** Launcher glyph — a paint-swatch/palette circle. */
-function PaletteIcon({ className }: { className?: string }): VNode {
+function PaletteIcon({ className }: { className?: string }): Description {
   return (
     <svg
       class={className || undefined}
@@ -243,7 +243,7 @@ export function ThemePackSwitcher({
                 aria-label="Browse all theme packs"
                 title="Browse all theme packs"
                 disabled={ThemePackDialogSlot === null}
-                onClick={openDialog}
+                on:click={openDialog}
                 class={ICON_BUTTON_CLASS}
               >
                 <GridIcon className="h-icon-sm w-icon-sm" />
@@ -252,7 +252,7 @@ export function ThemePackSwitcher({
                 type="button"
                 aria-label="Close theme pack switcher"
                 title="Close"
-                onClick={closeCard}
+                on:click={closeCard}
                 class={ICON_BUTTON_CLASS}
               >
                 <Close className="h-icon-sm w-icon-sm" />
@@ -272,7 +272,7 @@ export function ThemePackSwitcher({
               type="button"
               aria-label="Previous theme pack"
               disabled={order.length < 2}
-              onClick={() => cycle(-1)}
+              on:click={() => cycle(-1)}
               class={CONTROL_BUTTON_CLASS}
             >
               <ChevronLeft className="h-icon-xs w-icon-xs" />
@@ -282,7 +282,7 @@ export function ThemePackSwitcher({
               type="button"
               aria-label="Next theme pack"
               disabled={order.length < 2}
-              onClick={() => cycle(1)}
+              on:click={() => cycle(1)}
               class={CONTROL_BUTTON_CLASS}
             >
               Next
@@ -301,7 +301,7 @@ export function ThemePackSwitcher({
         title="Theme packs"
         data-switcher-launcher
         data-zd-pending={pending ? "" : undefined}
-        onClick={() => {
+        on:click={() => {
           if (pending) return;
           setOpen(!open);
         }}

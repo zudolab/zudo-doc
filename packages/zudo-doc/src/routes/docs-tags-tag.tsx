@@ -1,10 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /docs/tags/[tag] — package-owned equivalent of
 // pages/docs/tags/[tag].tsx (A1 #2361). One route per unique tag in the
 // default-locale collection.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { TagInfo } from "../tag-pages/index.js";
 import { defaultLocale } from "./_context.js";
 import { collectTagMapForLocale, TagDetailPageView } from "./_chrome.js";

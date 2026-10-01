@@ -1,6 +1,5 @@
 "use client";
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 import { useEffect, useState } from "preact/hooks";
 
 /** Fixture-owned observable media-scheduled island for the hydration-health gate. */

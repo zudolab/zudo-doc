@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // versions-page — factory for the documentation-versions page renderer
 // (epic #2344, S8).
 //
@@ -8,7 +7,8 @@
 // receives those as injected dependencies so the logic lives in the package
 // while the host stub keeps the singleton imports.
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { VersionsPageContent } from "../nav-indexing/index.js";
 import type { VersionPageEntry, VersionsPageLabels } from "../nav-indexing/index.js";
@@ -72,7 +72,7 @@ export interface VersionsPageDeps {
 /** Props for the VersionsPageView component. */
 export interface VersionsPageViewProps {
   locale: string;
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**

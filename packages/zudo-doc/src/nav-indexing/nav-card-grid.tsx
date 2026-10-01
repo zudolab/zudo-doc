@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/nav-card-grid.
 //
 // The original Astro template received a NavNode[] (direct children) plus a
@@ -22,7 +20,7 @@
 //   - Nodes without `hasPage` and without children are filtered out.
 //   - Returns null when no renderable items remain.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 

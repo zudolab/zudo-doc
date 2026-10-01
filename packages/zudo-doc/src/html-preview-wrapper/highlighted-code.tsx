@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { useEffect, useState } from "preact/hooks";
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { startHighlightRequest } from "./highlight-runtime.js";
 
 export interface HighlightedCodeProps {
@@ -20,7 +18,7 @@ export interface HighlightedCodeProps {
 export function HighlightedCode({
   code,
   language,
-}: HighlightedCodeProps): VNode {
+}: HighlightedCodeProps): Description {
   const [highlighted, setHighlighted] = useState<{
     code: string;
     language: string;
@@ -59,7 +57,7 @@ export function HighlightedCode({
     <div
       class="zd-html-preview-code"
       // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: html }}
+      rawHtml={html}
     />
   );
 }

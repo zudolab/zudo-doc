@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Self-contained doc-route stub (#2653/#2660), retained as the showcase's
 // explicit host-owned route. zfb 2.13.1 now serves injected dynamic routes in
 // dev as well as build; downstream projects do not need a stub for that reason.
@@ -25,7 +24,7 @@
 // `DesignTokenPanelBootstrap` bootstrap island — see
 // packages/zudo-doc/CLAUDE.md.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { routeContext } from "virtual:zudo-doc-route-context";
 import {
   createRouteContext,

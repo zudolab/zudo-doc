@@ -17,7 +17,7 @@
 // and `colorMode` as required props, so this file no longer reaches into
 // host `@/config/*` modules.
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 import {
   COLOR_SCHEME_CHANGED_EVENT,
@@ -52,7 +52,7 @@ export interface ColorSchemeProviderProps {
    */
   colorMode: ColorSchemeProviderColorMode | null;
   /** Optional children; preserved for forward compatibility. */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /** Bootstrap script for the light/dark/system preference (settings.colorMode set). */
@@ -117,8 +117,8 @@ export default function ColorSchemeProvider({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: cssText }} />
-      {bootstrap !== null && <script dangerouslySetInnerHTML={{ __html: bootstrap }} />}
+      <style rawHtml={cssText} />
+      {bootstrap !== null && <script rawHtml={bootstrap} />}
     </>
   );
 }
