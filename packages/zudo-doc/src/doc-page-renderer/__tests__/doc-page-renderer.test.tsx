@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { Description } from "@takazudo/zfb/zudo-react";
+import { h, type Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { createRenderDocPage } from "../index.js";
 import type { RenderDocPageOptions } from "../index.js";
@@ -16,7 +16,7 @@ import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveGetUnavailableVersions } from "../../chrome/derive.js";
 import type { NoteTrayIndexProps } from "../../nav-indexing/note-tray-index.js";
-import { serialize } from "../../nav-indexing/__tests__/helpers.js";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fakes factory
@@ -44,7 +44,7 @@ function makeEntryProps(
       },
       body: "",
       module_specifier: "test-page.mdx",
-      Content: () => ({ type: "div", props: {}, key: null }),
+      Content: () => h("div", {}),
     },
     breadcrumbs: [],
     prev: null,
@@ -166,7 +166,7 @@ describe("createRenderDocPage — NoteTrayIndex MDX registration", () => {
     const bound = (content.type as (props: Record<string, unknown>) => Description)(content.props);
     const rendered = (bound.type as (props: Record<string, unknown>) => Description)(bound.props);
     const noteTrayProps = rendered.props as unknown as NoteTrayIndexProps;
-    const html = serialize(
+    const html = renderSsr(
       (rendered.type as (props: NoteTrayIndexProps) => JSX.Element)(noteTrayProps),
     );
 

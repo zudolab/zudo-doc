@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { Child, Component } from "@takazudo/zfb/zudo-react";
 
 /**
  * Props passed to a per-key custom renderer component.
@@ -25,9 +25,7 @@ export interface FrontmatterCellRendererProps {
  * Return `null` or `undefined` to fall through to the built-in
  * `renderValue()` plain-text path.
  */
-export type FrontmatterCellRenderer = (
-  props: FrontmatterCellRendererProps,
-) => Child;
+export type FrontmatterCellRenderer = Component<FrontmatterCellRendererProps>;
 
 export interface FrontmatterPreviewProps {
   /**
@@ -118,7 +116,7 @@ function renderValue(v: unknown): { text?: string; code?: string } {
  */
 export function FrontmatterPreview(
   props: FrontmatterPreviewProps,
-): Description | null {
+): Child {
   const {
     entries = [],
     title = DEFAULT_FRONTMATTER_PREVIEW_TITLE,

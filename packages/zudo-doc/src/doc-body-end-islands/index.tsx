@@ -78,7 +78,6 @@
 // pin — NOT the deps-injection dance, since it has no virtual-module
 // coupling to keep out of this factory's reachability graph.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { AiChatModal } from "../ai-chat-modal/index.js";
@@ -223,7 +222,7 @@ export function createBodyEndIslands(
           Island({
             ssrFallback: <p class="sr-only">{aiChatBodyLabel}</p>,
             children: <AiChatModal basePath={basePath} />,
-          }) as unknown as Description
+          })
         }
       </>
     ) : null;
@@ -237,7 +236,7 @@ export function createBodyEndIslands(
           when: "idle",
           ssrFallback: <ImageEnlargeSsrFallback />,
           children: <ImageEnlarge />,
-        }) as unknown as Description)
+        }))
       : null;
 
     // Gated on `settings.mermaid`. Mirrors imageEnlarge: empty closed
@@ -248,7 +247,7 @@ export function createBodyEndIslands(
           when: "idle",
           ssrFallback: <MermaidEnlargeSsrFallback />,
           children: <MermaidEnlarge />,
-        }) as unknown as Description)
+        }))
       : null;
 
     // Gated on `settings.findInPage` (zudolab/zudo-doc#2689). This gate
@@ -263,7 +262,7 @@ export function createBodyEndIslands(
       ? (Island({
           when: "load",
           children: <FindInPageInit />,
-        }) as unknown as Description)
+        }))
       : null;
 
     return (

@@ -1,4 +1,5 @@
 /** @jsxRuntime automatic */
+import "../../__tests__/fixtures/install-island-metadata.js";
 /**
  * SSG marker test for the package-default body-end islands (#2406 / #2401(c)).
  *
@@ -24,7 +25,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   createBodyEndIslands,
   type BodyEndIslandsSettings,
@@ -33,7 +34,7 @@ import { deriveBodyEndIslands } from "../../chrome/derive.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import type { ThemePackRegistry } from "../../theme-packs-registry/index.js";
 import {
-  ThemePackSwitcher,
+  ThemePackSwitcher as RealThemePackSwitcher,
   type ThemePackSwitcherProps,
 } from "../../theme-pack-switcher/index.js";
 
@@ -72,18 +73,18 @@ function renderIslands(
 /** A fake `DesignTokenPanelBootstrap` — structurally what `_chrome.tsx` injects
  *  in production (the real package component), swapped for a marker function
  *  here so this stays a fast, build-free unit test. */
-function FakeDesignTokenPanelBootstrap() {
+const FakeDesignTokenPanelBootstrap = function DesignTokenPanelBootstrap() {
   return null;
-}
+};
 FakeDesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";
 
 /** A fake `ThemePackSwitcher` (#2821) — the marker-only stand-in for the real
  *  flyout component `chrome/derive.tsx` injects in production; the real
  *  component's SSR shape is covered end-to-end by the deriveBodyEndIslands
  *  suite below and by theme-pack-switcher-ssr.test.tsx. */
-function FakeThemePackSwitcher() {
+const FakeThemePackSwitcher = function ThemePackSwitcher() {
   return null;
-}
+};
 FakeThemePackSwitcher.displayName = "ThemePackSwitcher";
 
 /** Serializable flyout props (ADR theme-packs.md Decision 7 shape). */
@@ -488,7 +489,7 @@ describe("BodyEndIslands — ThemePackSwitcher island gate (#2821)", () => {
         themePackSwitcherProps: THEME_PACK_SWITCHER_PROPS,
         // Use the real component here so this assertion covers the launcher
         // DOM contract rather than only the factory's marker wiring.
-        ThemePackSwitcher: ThemePackSwitcher as unknown as typeof FakeThemePackSwitcher,
+        ThemePackSwitcher: RealThemePackSwitcher as unknown as typeof FakeThemePackSwitcher,
       },
     );
     const launcher = html.match(/<button\b[^>]*data-switcher-launcher[^>]*>/)?.[0];

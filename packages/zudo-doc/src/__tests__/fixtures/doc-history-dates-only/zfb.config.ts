@@ -25,9 +25,7 @@ const directiveVocabulary: DirectiveVocabulary = {
 const preset = zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary });
 
 export default defineConfig({
-  framework: "preact",
   port: 4351,
-  tailwind: { enabled: true },
   base: settings.base,
   ...preset,
 });

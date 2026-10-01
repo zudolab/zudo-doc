@@ -1,7 +1,8 @@
 /** @jsxRuntime automatic */
+import "../../__tests__/fixtures/install-island-metadata.js";
 import { describe, expect, it } from "vitest";
 import type { Description } from "@takazudo/zfb/zudo-react";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { createSidebarWithDefaults } from "../../sidebar-with-defaults/index.js";
 import { createHeaderWithDefaults } from "../../header-with-defaults/index.js";

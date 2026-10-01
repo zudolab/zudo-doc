@@ -1,8 +1,8 @@
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import type { FactoryComponent } from "../factory-context/index.js";
+import { normalizeIslandData } from "../chrome/island-data.js";
 // Type-only — erased at build; the REAL component arrives through
 // `deps.ThemePackSwitcher` (statically imported by `chrome/derive.tsx`, the
 // scanner-reachability chain — see the note below).
@@ -52,12 +52,15 @@ export function createThemePackSwitcherIsland(
   deps: ThemePackSwitcherIslandDeps,
 ): () => JSX.Element | null {
   const pendingUntilHydrated = deps.pendingUntilHydrated ?? true;
+  const transportProps = deps.themePackSwitcherProps === null
+    ? null
+    : normalizeIslandData(deps.themePackSwitcherProps);
   const ThemePackSwitcher = deps.ThemePackSwitcher as unknown as
     | ThemePackSwitcherComponent
     | undefined;
 
   function ThemePackSwitcherIsland(): JSX.Element | null {
-    if (!deps.themePackSwitcher || deps.themePackSwitcherProps === null || !ThemePackSwitcher) {
+    if (!deps.themePackSwitcher || transportProps === null || !ThemePackSwitcher) {
       return null;
     }
 
@@ -68,11 +71,11 @@ export function createThemePackSwitcherIsland(
             when: "load",
             children: (
               <ThemePackSwitcher
-                {...deps.themePackSwitcherProps}
+                {...transportProps}
                 pendingUntilHydrated={pendingUntilHydrated}
               />
             ),
-          }) as unknown as Description
+          })
         }
       </>
     );

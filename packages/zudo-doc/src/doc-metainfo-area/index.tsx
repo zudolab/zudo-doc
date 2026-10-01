@@ -12,7 +12,7 @@
 // project only (it's a shadow-tree tsconfig alias — not portable to the package).
 // The factory receives the parsed manifest as a plain JS object.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { DocMetainfo } from "../metainfo/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
@@ -63,7 +63,7 @@ export interface DocMetainfoAreaProps {
  */
 export function createDocMetainfoArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
-): (props: DocMetainfoAreaProps) => Description | null {
+): (props: DocMetainfoAreaProps) => Child {
   assertChromeContext(ctx, "createDocMetainfoArea");
   const settings = ctx.settings as unknown as DocMetainfoAreaSettings;
   const defaultLocale = ctx.defaultLocale;
@@ -74,7 +74,7 @@ export function createDocMetainfoArea<S extends Settings = Settings>(
   const t = ctx.t;
   const dateFormatsFor = deriveDateFormats(ctx);
 
-  function DocMetainfoArea({ slug, locale, isFallback }: DocMetainfoAreaProps): Description | null {
+  function DocMetainfoArea({ slug, locale, isFallback }: DocMetainfoAreaProps): Child {
     if (!settings.docMetainfo) return null;
 
     // Keep the pre-setting behavior for contexts that omit the optional field;
