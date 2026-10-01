@@ -3,19 +3,19 @@
  * SSG HTML-presence test for the SidebarTree island component.
  *
  * Verifies that navigation links appear in the serialized HTML produced by
- * `preact-render-to-string` (which mirrors what the zfb SSG renderer emits
+ * `renderSsr` from the zudo-react harness (which mirrors what zfb emits
  * into `dist/**\/index.html`). Static markup must contain nav structure so
  * crawlers and JS-off users can discover doc links.
  *
  * Also tests the `data-zfb-island` call-site marker via Island wrapper, and
- * checks the `displayName` pin so zfb's island scanner resolves a stable name.
+ * checks the `displayName` pin and the public island boundary marker.
  */
 
 import { describe, expect, it } from "vitest";
-import type { Description } from "@takazudo/zfb/zudo-react";
-import { render } from "preact-render-to-string";
-import { Island } from "@takazudo/zfb";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { SidebarTree } from "../index.js";
+import { h } from "@takazudo/zfb/zudo-react";
+import { islandRoot } from "@takazudo/zfb/zudo-react/server";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 
 const SAMPLE_NODES: SidebarNavNode[] = [
@@ -81,12 +81,9 @@ describe("SidebarTree — displayName pin", () => {
 describe("SidebarTree — call-site Island marker", () => {
   it("emits data-zfb-island=SidebarTree in SSG output", () => {
     const html = render(
-      // Island() returns the public IslandElement shape ({ type, props, key });
-      // it is a real Preact VNode at runtime, so re-view it as VNode for render().
-      Island({
-        when: "load",
-        children: <SidebarTree nodes={SAMPLE_NODES} />,
-      }) as unknown as Description,
+      islandRoot(h(SidebarTree, { nodes: SAMPLE_NODES }), {
+        identity: { component: "SidebarTree", build: "test" },
+      }),
     );
     expect(html).toContain('data-zfb-island="SidebarTree"');
   });
