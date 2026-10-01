@@ -12,6 +12,7 @@ import fs from "fs-extra";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+import { execFileSync } from "node:child_process";
 import type { UserChoices } from "../prompts.js";
 import { deriveDocSkillName, scaffold } from "../scaffold.js";
 import { validateProjectName } from "../utils.js";
@@ -1255,6 +1256,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "public/favicon-32x32.png",
       "public/favicon.ico",
       "public/favicon.svg",
+      "scripts/stage-cloudflare-base.mjs",
       "scripts/check-links.js",
       "scripts/setup-doc-skill.sh",
       "src-tauri-dev/.gitignore",
@@ -1943,6 +1945,10 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBeUndefined();
     expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBeUndefined();
     expect(pkg.devDependencies.wrangler).toBeUndefined();
+    const workspace = await fs.readFile(projectPath("test-doc", "pnpm-workspace.yaml"), "utf8");
+    expect(workspace).toContain("onlyBuiltDependencies:\n  - esbuild\n");
+    expect(workspace).toContain("allowBuilds:\n  esbuild: true\n");
+    expect(workspace).not.toContain("workerd");
     expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe(
       ROOT_ZFB_PINS["@takazudo/zfb-md-wasm"],
     );
@@ -2025,7 +2031,11 @@ describe("scaffold — generated package.json", () => {
     );
     expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBe("1.31.0");
     expect(pkg.devDependencies.wrangler).toBe("4.111.0");
+    const workspace = await fs.readFile(path.join(project, "pnpm-workspace.yaml"), "utf8");
+    expect(workspace).toContain("onlyBuiltDependencies:\n  - esbuild\n  - workerd\n  - sharp\n");
+    expect(workspace).toContain("allowBuilds:\n  esbuild: true\n  workerd: true\n  sharp: true\n");
     expect(pkg.scripts["preview:worker"]).toBe("wrangler dev");
+    expect(pkg.scripts.build).toBe("zfb build && node scripts/stage-cloudflare-base.mjs");
     expect(pkg.scripts.deploy).toBe("pnpm build && wrangler deploy");
     expect(
       Object.keys(pkg.dependencies)
@@ -2047,6 +2057,7 @@ describe("scaffold — generated package.json", () => {
     ).toEqual(["deploy", "preview:worker"]);
     expect(files.filter((file) => !baseFiles.includes(file))).toEqual([
       "README.md",
+      "scripts/stage-cloudflare-base.mjs",
       "wrangler.jsonc",
     ]);
     expect(wrangler).toEqual({
@@ -2091,6 +2102,24 @@ describe("scaffold — generated package.json", () => {
     expect(generatedText.join("\n")).not.toMatch(
       /takazudomodular|account_id|kv_namespaces|durable_objects/i,
     );
+  });
+
+  it("stages non-root Cloudflare static assets without nesting the agent feed or moving the Worker", async () => {
+    await scaffold({ ...baseChoices, projectName: "stage-base", features: ["mcp"], mcpDeploy: "cloudflare" });
+    const project = projectPath("stage-base");
+    await fs.outputJson(path.join(project, "dist/manual/agent/v1/manifest.json"), { site: { base: "/manual" } });
+    await fs.outputFile(path.join(project, "dist/docs/guide/index.html"), "<h1>Guide</h1>");
+    await fs.outputFile(path.join(project, "dist/assets/site.css"), "body{}\n");
+    await fs.outputFile(path.join(project, "dist/llms.txt"), "# Docs\n");
+    await fs.outputFile(path.join(project, "dist/_worker.js"), "export default {};\n");
+    const script = path.join(project, "scripts/stage-cloudflare-base.mjs");
+    execFileSync("node", [script], { cwd: project });
+    execFileSync("node", [script], { cwd: project });
+    expect(await fs.readFile(path.join(project, "dist/manual/docs/guide/index.html"), "utf8")).toBe("<h1>Guide</h1>");
+    expect(await fs.readFile(path.join(project, "dist/manual/assets/site.css"), "utf8")).toBe("body{}\n");
+    expect(await fs.readFile(path.join(project, "dist/manual/llms.txt"), "utf8")).toBe("# Docs\n");
+    expect(await fs.pathExists(path.join(project, "dist/manual/_worker.js"))).toBe(false);
+    expect(await fs.pathExists(path.join(project, "dist/manual/manual/agent/v1/manifest.json"))).toBe(false);
   });
 
   it("derives Wrangler names that satisfy Cloudflare Worker name limits", async () => {

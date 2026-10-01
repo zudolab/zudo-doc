@@ -5,6 +5,54 @@ import type { FeatureModule } from "../compose.js";
 import type { UserChoices } from "../prompts.js";
 import { capitalize, pmRunCommand } from "../utils.js";
 
+// zfb writes prerendered routes and bundle assets flat under dist even when
+// `base` prefixes their URLs. Wrangler serves dist literally, so a site and
+// MCP endpoint mounted below the origin need these files at dist/<base>/.
+// The agent exporter and public copier already write there; snapshot only the
+// remaining flat files before copying so the step is safe to repeat.
+const stageCloudflareBaseScript = `import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import path from "node:path";
+
+const dist = path.resolve("dist");
+function findManifests(dir, found = []) {
+  const candidate = path.join(dir, "agent", "v1", "manifest.json");
+  if (existsSync(candidate)) found.push(candidate);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory() && entry.name !== "agent") findManifests(path.join(dir, entry.name), found);
+  }
+  return found;
+}
+const manifests = findManifests(dist);
+if (manifests.length !== 1) throw new Error("Expected one agent/v1/manifest.json in dist");
+const base = JSON.parse(readFileSync(manifests[0], "utf8")).site?.base;
+if (typeof base !== "string" || !base.startsWith("/") || base.includes("\\\\")) {
+  throw new Error("Invalid agent manifest site.base");
+}
+const segments = base.split("/").filter(Boolean);
+if (segments.some((segment) => segment === "." || segment === "..")) {
+  throw new Error("Invalid agent manifest site.base");
+}
+if (segments.length) {
+  const target = path.join(dist, ...segments);
+  const files = [];
+  function collect(dir) {
+    if (dir === target) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (dir === dist && ["_worker.js", "_zfb_inner.mjs", "__zfb", ".assetsignore"].includes(entry.name)) continue;
+      const source = path.join(dir, entry.name);
+      if (entry.isDirectory()) collect(source);
+      else files.push(path.relative(dist, source));
+    }
+  }
+  collect(dist);
+  for (const rel of files) {
+    const destination = path.join(target, rel);
+    mkdirSync(path.dirname(destination), { recursive: true });
+    cpSync(path.join(dist, rel), destination, { force: true });
+  }
+}
+`;
+
 const wranglerConfig = (choices: UserChoices): string =>
   JSON.stringify(
     {
@@ -63,6 +111,8 @@ function generateMcpReadme(choices: UserChoices): string {
     "    " + choices.packageManager + " install",
     "    " + build,
     "",
+    "When <code>base</code> is a non-root path, the build stages the prerendered pages, llms files, and browser assets under that path for Wrangler. The Worker entry remains at <code>dist/_worker.js</code>.",
+    "",
     "Run the built Worker locally with Wrangler:",
     "",
     "    " + verify,
@@ -111,6 +161,10 @@ export const mcpFeature: FeatureModule = (choices) => ({
     await fs.outputFile(
       path.join(targetDir, "README.md"),
       generateMcpReadme(choices),
+    );
+    await fs.outputFile(
+      path.join(targetDir, "scripts/stage-cloudflare-base.mjs"),
+      stageCloudflareBaseScript,
     );
   },
 });
