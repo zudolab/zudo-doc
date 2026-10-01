@@ -496,6 +496,9 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       siteDescription: "Documentation base framework.",
       base: "/",
       siteUrl: "https://zudo-doc.takazudomodular.com",
+      defaultLocale: "en",
+      agentExport: false,
+      mcp: false,
       defaultLocaleDir: "src/content/docs",
       locales: [{ code: "ja", dir: "src/content/docs-ja" }],
       assetScan: {
@@ -533,6 +536,31 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       onBroken: "warn",
     });
     // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
+  });
+
+  it("threads agent-export and MCP settings only through the llms descriptor", () => {
+    const result = zudoDocPreset({
+      settings: {
+        ...fixtureSettings,
+        defaultLocale: "ja",
+        llmsTxt: true,
+        agentExport: true,
+        mcp: true,
+      },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const llms = result.plugins.find((plugin) => plugin.name === "@takazudo/zudo-doc/plugins/llms-txt");
+    const agentExport = result.plugins.find((plugin) => plugin.name === "@takazudo/zudo-doc/plugins/agent-export");
+
+    expect(llms?.options).toMatchObject({
+      defaultLocale: "ja",
+      agentExport: true,
+      mcp: true,
+    });
+    expect(agentExport?.options).toMatchObject({
+      defaultLocale: "ja",
+    });
   });
 
   it("shares the serialized asset-scan projection with search and llms", () => {

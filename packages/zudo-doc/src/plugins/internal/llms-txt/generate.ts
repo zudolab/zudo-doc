@@ -20,6 +20,13 @@ import {
 const BINARY_ASSET_STUB = "(binary asset, not inlined)";
 const TRUNCATED_ASSET_MARKER = "… (truncated)";
 
+export interface LlmsTxtGenerationOptions {
+  /** Replace eligible document links with their per-page Markdown artifacts. */
+  agentExport?: boolean;
+  /** Add an MCP discovery section with this base-aware endpoint URL. */
+  mcpEndpointUrl?: string;
+}
+
 function utf8Width(codePoint: number): number {
   if (codePoint <= 0x7f) return 1;
   if (codePoint <= 0x7ff) return 2;
@@ -65,6 +72,7 @@ export function generateLlmsTxt(
   entries: readonly LlmsDocEntry[],
   meta: LlmsTxtSiteMeta,
   assets: readonly LlmsAssetEntry[] = [],
+  options: LlmsTxtGenerationOptions = {},
 ): string {
   const lines: string[] = [];
   lines.push(`# ${meta.siteName}`);
@@ -75,7 +83,10 @@ export function generateLlmsTxt(
   lines.push("");
 
   for (const entry of entries) {
-    lines.push(`- [${entry.title}](${entry.url}): ${entry.description}`);
+    const url = options.agentExport && entry.agentMarkdownUrl
+      ? entry.agentMarkdownUrl
+      : entry.url;
+    lines.push(`- [${entry.title}](${url}): ${entry.description}`);
   }
 
   lines.push("");
@@ -85,6 +96,12 @@ export function generateLlmsTxt(
     for (const asset of assets) {
       lines.push(`- [${asset.path}](${asset.url})`);
     }
+    lines.push("");
+  }
+  if (options.mcpEndpointUrl !== undefined) {
+    lines.push("## MCP");
+    lines.push("");
+    lines.push(`- [Read-only MCP endpoint](${options.mcpEndpointUrl})`);
     lines.push("");
   }
   return lines.join("\n");
