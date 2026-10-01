@@ -41,11 +41,14 @@ export function run(paths, { command = process.execPath } = {}) {
       const config = join(dir, `${project === resolve(pkg, "tsconfig.json") ? "package" : "host"}.json`);
       writeFileSync(config, JSON.stringify({
         extends: project,
-        // Keep the host's virtual-module declarations when a local package
-        // artifact build has generated them. Earlier leaf worktrees may not
-        // have that artifact yet, so the port check must still run without it.
-        files: project === resolve(repo, "tsconfig.json") && existsSync(resolve(pkg, "virtual-modules.d.ts"))
-          ? [resolve(pkg, "virtual-modules.d.ts")]
+        // Keep the host's hand-authored config shim and its generated virtual
+        // module declarations. Earlier leaf worktrees may not have a package
+        // artifact build yet, so the generated file remains optional.
+        files: project === resolve(repo, "tsconfig.json")
+          ? [
+              resolve(pkg, "zfb-config-shim.d.ts"),
+              ...(existsSync(resolve(pkg, "virtual-modules.d.ts")) ? [resolve(pkg, "virtual-modules.d.ts")] : []),
+            ]
           : [],
         compilerOptions: {
           baseUrl: repo,
