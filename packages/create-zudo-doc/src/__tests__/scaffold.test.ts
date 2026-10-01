@@ -2104,22 +2104,27 @@ describe("scaffold — generated package.json", () => {
     );
   });
 
-  it("stages non-root Cloudflare static assets without nesting the agent feed or moving the Worker", async () => {
-    await scaffold({ ...baseChoices, projectName: "stage-base", features: ["mcp"], mcpDeploy: "cloudflare" });
-    const project = projectPath("stage-base");
-    await fs.outputJson(path.join(project, "dist/manual/agent/v1/manifest.json"), { site: { base: "/manual" } });
-    await fs.outputFile(path.join(project, "dist/docs/guide/index.html"), "<h1>Guide</h1>");
-    await fs.outputFile(path.join(project, "dist/assets/site.css"), "body{}\n");
-    await fs.outputFile(path.join(project, "dist/llms.txt"), "# Docs\n");
-    await fs.outputFile(path.join(project, "dist/_worker.js"), "export default {};\n");
-    const script = path.join(project, "scripts/stage-cloudflare-base.mjs");
-    execFileSync("node", [script], { cwd: project });
-    execFileSync("node", [script], { cwd: project });
-    expect(await fs.readFile(path.join(project, "dist/manual/docs/guide/index.html"), "utf8")).toBe("<h1>Guide</h1>");
-    expect(await fs.readFile(path.join(project, "dist/manual/assets/site.css"), "utf8")).toBe("body{}\n");
-    expect(await fs.readFile(path.join(project, "dist/manual/llms.txt"), "utf8")).toBe("# Docs\n");
-    expect(await fs.pathExists(path.join(project, "dist/manual/_worker.js"))).toBe(false);
-    expect(await fs.pathExists(path.join(project, "dist/manual/manual/agent/v1/manifest.json"))).toBe(false);
+  it("stages non-root Cloudflare assets for nested bases without nesting the feed or moving the Worker", async () => {
+    for (const [index, base] of ["/manual", "/manual/v1", "/docs/agent/manual"].entries()) {
+      const projectName = `stage-base-${index}`;
+      const segments = base.split("/").filter(Boolean);
+      await scaffold({ ...baseChoices, projectName, features: ["mcp"], mcpDeploy: "cloudflare" });
+      const project = projectPath(projectName);
+      const target = path.join(project, "dist", ...segments);
+      await fs.outputJson(path.join(target, "agent/v1/manifest.json"), { site: { base } });
+      await fs.outputFile(path.join(project, "dist/docs/guide/index.html"), "<h1>Guide</h1>");
+      await fs.outputFile(path.join(project, "dist/assets/site.css"), "body{}\n");
+      await fs.outputFile(path.join(project, "dist/llms.txt"), "# Docs\n");
+      await fs.outputFile(path.join(project, "dist/_worker.js"), "export default {};\n");
+      const script = path.join(project, "scripts/stage-cloudflare-base.mjs");
+      execFileSync("node", [script], { cwd: project });
+      execFileSync("node", [script], { cwd: project });
+      expect(await fs.readFile(path.join(target, "docs/guide/index.html"), "utf8")).toBe("<h1>Guide</h1>");
+      expect(await fs.readFile(path.join(target, "assets/site.css"), "utf8")).toBe("body{}\n");
+      expect(await fs.readFile(path.join(target, "llms.txt"), "utf8")).toBe("# Docs\n");
+      expect(await fs.pathExists(path.join(target, "_worker.js"))).toBe(false);
+      expect(await fs.pathExists(path.join(target, ...segments, "agent/v1/manifest.json"))).toBe(false);
+    }
   });
 
   it("derives Wrangler names that satisfy Cloudflare Worker name limits", async () => {
