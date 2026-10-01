@@ -17,38 +17,38 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import { DocHistory } from "../index.js";
 
 describe("DocHistory — SSG HTML presence", () => {
   it("renders the history trigger button in static HTML", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     // The trigger button must appear in SSG output so users without JS can
     // still see the button (it degrades gracefully without the dialog API).
     expect(html).toContain('aria-label="View document history"');
-    expect(html).toContain("doc-history-trigger");
+    expect(html).toContain("data-doc-history-trigger");
     expect(html).toContain("History");
   });
 
   it("renders the dialog landmark in static HTML", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     expect(html).toContain('aria-label="Document revision history"');
-    expect(html).toContain("doc-history-panel");
+    expect(html).toContain("data-doc-history-panel");
   });
 
   it("renders close button inside the dialog", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     expect(html).toContain('aria-label="Close history panel"');
   });
 
   it("renders the panel header with Revision History title", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     // The default view is 'closed' (dialog not yet opened); header still renders

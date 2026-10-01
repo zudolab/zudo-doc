@@ -1,11 +1,17 @@
 /** @jsxRuntime automatic */
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { beforeEach, describe, expect, it } from "vitest";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { createDocHistoryArea } from "../index.js";
+import { DocHistory } from "../../doc-history/index.js";
 
 const GITHUB_URL = "https://github.com/example/docs";
+beforeEach(() => {
+  (globalThis as typeof globalThis & { __zfb?: unknown }).__zfb = {
+    zudoReactBuild: "test", zudoReactIslands: ["DocHistory"],
+  };
+});
 
 function renderArea(
   docHistoryMeta: Record<string, unknown>,
@@ -20,11 +26,11 @@ function renderArea(
       docHistoryExclude,
       docHistoryUi,
     },
-    overrides: { hostBindings: { docHistoryMeta } } as Partial<ChromeContext>,
+    overrides: { hostBindings: { docHistoryMeta, DocHistory } } as unknown as Partial<ChromeContext>,
   });
   const DocHistoryArea = createDocHistoryArea(ctx);
 
-  return render(
+  return renderSsr(
     <DocHistoryArea
       slug="guide"
       locale="en"
@@ -128,7 +134,7 @@ describe("createDocHistoryArea UI gate", () => {
     const DocHistoryArea = createDocHistoryArea(ctx);
 
     expect(
-      render(
+      renderSsr(
         <DocHistoryArea
           slug="guide"
           locale="en"
@@ -152,10 +158,11 @@ describe("createDocHistoryArea UI gate", () => {
 function renderAreaForLocale(locale: string, isFallback?: boolean): string {
   const ctx = makeFakeChromeContext({
     settings: { bodyFootUtilArea: false },
+    overrides: { hostBindings: { DocHistory } } as unknown as Partial<ChromeContext>,
   });
   const DocHistoryArea = createDocHistoryArea(ctx);
 
-  return render(
+  return renderSsr(
     <DocHistoryArea slug="guide" locale={locale} isFallback={isFallback} />,
   );
 }

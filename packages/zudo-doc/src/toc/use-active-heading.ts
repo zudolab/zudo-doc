@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { signal } from "@takazudo/zfb/zudo-react";
+import type { Scope, Signal } from "@takazudo/zfb/zudo-react";
 import type { HeadingItem } from "./types.js";
 
 /**
@@ -12,7 +13,7 @@ const DEBOUNCE_MS = 200;
 
 /**
  * Pure helper that picks the active heading id given the heading slug
- * order and a slug→element map. Extracted from the hook so it is unit-
+ * order and a slug→element map. Extracted from the setup helper so it is unit-
  * testable without DOM event plumbing.
  *
  * Algorithm: find the first heading whose top is at or below the
@@ -67,12 +68,12 @@ export function getActiveHeadingId(
 }
 
 export interface UseActiveHeadingResult {
-  activeId: string | null;
+  activeId: Signal<string | null>;
   activate: (id: string) => void;
 }
 
 /**
- * Scroll-spy hook. Tracks which heading slug should be highlighted
+ * Scroll-spy setup helper. Tracks which heading slug should be highlighted
  * based on the current scroll position. Provides an `activate(id)`
  * imperatively-callable helper used by click handlers — sets the
  * active id immediately and suppresses the scroll-driven update until
@@ -80,50 +81,44 @@ export interface UseActiveHeadingResult {
  * for older Safari).
  */
 export function useActiveHeading(
+  scope: Scope,
   headings: readonly HeadingItem[],
 ): UseActiveHeadingResult {
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const headingIdsRef = useRef<readonly string[]>([]);
-  const elementMapRef = useRef<Map<string, HTMLElement>>(new Map());
-  const suppressedRef = useRef(false);
+  const activeId = signal<string | null>(null);
+  const headingIds = headings.map((heading) => heading.slug);
+  let activateInScope: (id: string) => void = () => {};
+  const activate = (id: string) => activateInScope(id);
 
-  const activate = useCallback((id: string) => {
-    setActiveId(id);
-    suppressedRef.current = true;
-    // Safety timeout: unsuppress if no scroll event fires (target already in view)
-    setTimeout(() => {
-      suppressedRef.current = false;
-    }, 2000);
-  }, []);
+  scope.onActivate(() => {
+    let suppressed = false;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    let fallbackTimerId: ReturnType<typeof setTimeout> | null = null;
+    let suppressionTimerId: ReturnType<typeof setTimeout> | null = null;
 
-  useEffect(() => {
-    const ids = headings.map((h) => h.slug);
-    headingIdsRef.current = ids;
+    activateInScope = (id: string) => {
+      activeId.value = id;
+      suppressed = true;
+      if (suppressionTimerId !== null) clearTimeout(suppressionTimerId);
+      // Safety timeout: unsuppress if no scroll event fires (target already in view).
+      suppressionTimerId = setTimeout(() => {
+        suppressionTimerId = null;
+        suppressed = false;
+      }, 2000);
+    };
 
     const map = new Map<string, HTMLElement>();
-    for (const id of ids) {
+    for (const id of headingIds) {
       const el = document.getElementById(id);
       if (el) map.set(id, el);
     }
-    elementMapRef.current = map;
-
-    let timerId: ReturnType<typeof setTimeout> | null = null;
 
     function update() {
       timerId = null;
-      setActiveId(
-        getActiveHeadingId(
-          headingIdsRef.current,
-          elementMapRef.current,
-          window.innerHeight,
-        ),
-      );
+      activeId.value = getActiveHeadingId(headingIds, map, window.innerHeight);
     }
 
-    let fallbackTimerId: ReturnType<typeof setTimeout> | null = null;
-
     function onScroll() {
-      if (suppressedRef.current) {
+      if (suppressed) {
         // Fallback for browsers without scrollend (Safari < 18)
         if (fallbackTimerId !== null) clearTimeout(fallbackTimerId);
         fallbackTimerId = setTimeout(onScrollEnd, 1500);
@@ -134,7 +129,11 @@ export function useActiveHeading(
     }
 
     function onScrollEnd() {
-      suppressedRef.current = false;
+      suppressed = false;
+      if (suppressionTimerId !== null) {
+        clearTimeout(suppressionTimerId);
+        suppressionTimerId = null;
+      }
       if (fallbackTimerId !== null) {
         clearTimeout(fallbackTimerId);
         fallbackTimerId = null;
@@ -143,20 +142,26 @@ export function useActiveHeading(
       update();
     }
 
+    // Browser position may reflect a restored scroll position or current hash.
+    // Read it only after hydration so the initial server/client tree agrees.
     update();
-
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     window.addEventListener("scrollend", onScrollEnd, { passive: true });
 
     return () => {
+      activateInScope = () => {};
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("scrollend", onScrollEnd);
       if (timerId !== null) clearTimeout(timerId);
+      timerId = null;
       if (fallbackTimerId !== null) clearTimeout(fallbackTimerId);
+      fallbackTimerId = null;
+      if (suppressionTimerId !== null) clearTimeout(suppressionTimerId);
+      suppressionTimerId = null;
     };
-  }, [headings]);
+  });
 
   return { activeId, activate };
 }

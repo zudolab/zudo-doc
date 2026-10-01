@@ -21,6 +21,7 @@
 // TabsInit (the companion init script) is expected to be present in the
 // consumer's layout — we do not duplicate it here.
 
+import { flattenChildren } from "@takazudo/zfb/zudo-react";
 import type { Child } from "@takazudo/zfb/zudo-react";
 import { Tabs } from "../code-syntax/index.js";
 import { TabItem } from "../tab-item/index.js";
@@ -31,14 +32,8 @@ type Props = {
   [key: string]: unknown;
 };
 
-function toArray(children: Child): Child[] {
-  if (!children) return [];
-  if (Array.isArray(children)) return children;
-  return [children];
-}
-
 export function CodeGroup({ tabs = [], children, name }: Props) {
-  const childArray = toArray(children);
+  const childArray = flattenChildren(children);
 
   // Zip tabs labels with pre children by index. Extra children beyond the
   // tabs array (shouldn't happen in normal zfb output) are ignored.

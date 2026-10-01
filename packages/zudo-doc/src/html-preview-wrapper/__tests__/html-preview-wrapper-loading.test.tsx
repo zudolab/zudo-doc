@@ -1,28 +1,52 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import {
   HtmlPreviewWrapper,
   HtmlPreviewWrapperInner,
   type HtmlPreviewWrapperProps,
 } from "../index.js";
 
-function decodeAttributeJson(value: string): Record<string, unknown> {
-  return JSON.parse(
-    value
-      .replaceAll("&quot;", '"')
-      .replaceAll("&#x27;", "'")
-      .replaceAll("&lt;", "<")
-      .replaceAll("&gt;", ">")
-      .replaceAll("&amp;", "&"),
-  ) as Record<string, unknown>;
+function renderWrapperSsr(node: Child): string {
+  type ZfbTestMetadata = {
+    zudoReactBuild?: string;
+    zudoReactIslands?: readonly string[];
+  };
+  const runtime = globalThis as typeof globalThis & {
+    __zfb?: ZfbTestMetadata;
+  };
+  const previous = runtime.__zfb;
+  runtime.__zfb = {
+    ...previous,
+    zudoReactBuild: "html-preview-loading-tests",
+    zudoReactIslands: [
+      ...new Set([...(previous?.zudoReactIslands ?? []), "HtmlPreviewWrapperInner"]),
+    ],
+  };
+  try {
+    return renderSsr(node);
+  } finally {
+    if (previous === undefined) delete runtime.__zfb;
+    else runtime.__zfb = previous;
+  }
+}
+
+function parseHtml(html: string): HTMLElement {
+  const host = document.createElement("div");
+  host.innerHTML = html;
+  return host;
 }
 
 function readSerializedProps(html: string): Record<string, unknown> {
-  const encoded = html.match(/data-props="([^"]+)"/)?.[1];
+  const marker = parseHtml(html).querySelector<HTMLElement>(
+    "[data-zfb-island], [data-zfb-island-skip-ssr]",
+  );
+  const encoded = marker?.getAttribute("data-props");
   expect(encoded).toBeDefined();
-  return decodeAttributeJson(encoded ?? "{}");
+  return JSON.parse(encoded ?? "{}") as Record<string, unknown>;
 }
 
 const COMPLETE_PROPS: HtmlPreviewWrapperProps = {
@@ -55,86 +79,88 @@ const COMPLETE_PROPS: HtmlPreviewWrapperProps = {
 
 describe("HtmlPreviewWrapper loading contract", () => {
   it("keeps omitted and explicit eager output identical", () => {
-    const omitted = render(<HtmlPreviewWrapper {...COMPLETE_PROPS} />);
-    const eager = render(
+    const omitted = renderWrapperSsr(<HtmlPreviewWrapper {...COMPLETE_PROPS} />);
+    const eager = renderWrapperSsr(
       <HtmlPreviewWrapper {...COMPLETE_PROPS} loading="eager" />,
     );
+    const host = parseHtml(eager);
 
     expect(eager).toBe(omitted);
-    expect(eager).toContain(
-      'data-zfb-island="HtmlPreviewWrapperInner"',
-    );
+    expect(eager).toContain('data-zfb-island="HtmlPreviewWrapperInner"');
     expect(eager).not.toContain("data-zfb-island-skip-ssr");
-    expect(eager).toContain("<iframe");
-    expect(eager).toContain("srcdoc=");
-    expect(eager).not.toMatch(/<iframe[^>]*\sloading=/);
-    expect(eager).toContain('title="Lifecycle preview"');
+    expect(eager).toContain("data-zd-html-preview-frame-host");
+    // zfb 3.1.0 rejects iframe children in islands (#3361); activation creates it.
+    expect(eager).not.toContain("<iframe");
+    expect(eager).not.toMatch(/\sloading=/);
+    expect(host.textContent).toContain("Lifecycle preview");
     expect(readSerializedProps(eager)).toEqual(COMPLETE_PROPS);
   });
 
-  it("emits serialized props and no rendered preview subtree in visible mode", () => {
-    const html = render(
+  it("uses native visible skip-SSR scheduling with the full public props", () => {
+    const html = renderWrapperSsr(
       <HtmlPreviewWrapper {...COMPLETE_PROPS} loading="visible" />,
     );
-
-    expect(html).toContain(
-      'data-zfb-island-skip-ssr="HtmlPreviewWrapperInner"',
+    const host = parseHtml(html);
+    const marker = host.querySelector<HTMLElement>(
+      '[data-zfb-island-skip-ssr="HtmlPreviewWrapperInner"]',
     );
-    expect(html).toContain('data-when="visible"');
+
+    expect(marker).not.toBeNull();
+    expect(marker?.getAttribute("data-when")).toBe("visible");
     expect(html).not.toContain('data-zfb-island="');
+    expect(html).not.toContain("data-zd-html-preview-frame-host");
     expect(html).not.toContain("<iframe");
-    expect(html).not.toContain("srcdoc=");
     expect(html).not.toContain("<script");
     expect(html).not.toContain("<link");
     expect(html).not.toContain("<button");
-    expect(html).not.toContain("role=\"group\"");
+    expect(html).not.toContain('role="group"');
     expect(html).not.toContain("aria-expanded");
 
     const serialized = readSerializedProps(html);
-    expect(serialized).toMatchObject(COMPLETE_PROPS);
-    expect(serialized).toHaveProperty("__zudoDocVisibleMount", true);
+    expect(serialized).toEqual(COMPLETE_PROPS);
     expect(serialized).not.toHaveProperty("loading");
-
-    const eager = readSerializedProps(
-      render(<HtmlPreviewWrapper {...COMPLETE_PROPS} />),
-    );
-    const {
-      __zudoDocVisibleMount: _visibleMount,
-      ...visibleSerializable
-    } = serialized;
-    expect(visibleSerializable).toEqual(eager);
+    expect(serialized).not.toHaveProperty("__zudoDocVisibleMount");
   });
 
   it("uses the explicit height for an inert, non-interactive reservation", () => {
-    const html = render(
+    const html = renderWrapperSsr(
       <HtmlPreviewWrapper
         html="<p>hello</p>"
         height={480}
         loading="visible"
       />,
     );
-    const reservation = html.match(
-      /<div aria-hidden="true" data-zd-html-preview-reservation[^>]*>/,
-    )?.[0];
+    const reservation = parseHtml(html).querySelector<HTMLElement>(
+      "[data-zd-html-preview-reservation]",
+    );
 
-    expect(reservation).toBeDefined();
-    expect(reservation).toContain('style="height:480px;"');
-    expect(reservation).not.toMatch(/tabindex|role=|href=|<button/i);
+    expect(reservation).not.toBeNull();
+    expect(html).toContain('style="height:480px;"');
+    expect(reservation?.getAttribute("aria-hidden")).toBe("true");
+    expect(reservation?.style.height).toBe("480px");
+    expect(reservation?.hasAttribute("tabindex")).toBe(false);
+    expect(reservation?.hasAttribute("role")).toBe(false);
+    expect(reservation?.hasAttribute("href")).toBe(false);
+    expect(reservation?.querySelector("button")).toBeNull();
   });
 
   it.each([undefined, 0, -20])(
     "uses the 200px floor when height is %s",
     (height) => {
-      const html = render(
-        <HtmlPreviewWrapper
-          html="<p>hello</p>"
-          height={height}
-          loading="visible"
-        />,
+      const props: HtmlPreviewWrapperProps = {
+        html: "<p>hello</p>",
+        loading: "visible",
+        ...(height === undefined ? {} : { height }),
+      };
+      const html = renderWrapperSsr(
+        <HtmlPreviewWrapper {...props} />,
+      );
+      const reservation = parseHtml(html).querySelector<HTMLElement>(
+        "[data-zd-html-preview-reservation]",
       );
 
-      expect(html).toContain('style="height:200px;"');
-      expect(html).toContain('aria-hidden="true"');
+      expect(reservation?.style.height).toBe("200px");
+      expect(reservation?.getAttribute("aria-hidden")).toBe("true");
     },
   );
 
@@ -144,15 +170,20 @@ describe("HtmlPreviewWrapper loading contract", () => {
       "HtmlPreviewWrapperInner",
     );
 
-    const inner = render(<HtmlPreviewWrapperInner {...COMPLETE_PROPS} />);
-    expect(inner).toContain("<iframe");
+    const inner = renderSsr(
+      <HtmlPreviewWrapperInner {...COMPLETE_PROPS} />,
+    );
+    expect(inner).toContain("data-zd-html-preview-frame-host");
+    expect(inner).not.toContain("<iframe");
     expect(inner).not.toContain("data-zfb-island");
 
-    const visible = render(
+    const visible = renderWrapperSsr(
       <HtmlPreviewWrapper {...COMPLETE_PROPS} loading="visible" />,
     );
     expect(
-      visible.match(/data-zfb-island(?:-skip-ssr)?=/g),
+      parseHtml(visible).querySelectorAll(
+        "[data-zfb-island], [data-zfb-island-skip-ssr]",
+      ),
     ).toHaveLength(1);
   });
 });

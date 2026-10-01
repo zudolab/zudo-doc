@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 
 /**
  * Default label used when the consumer doesn't pass one. The legacy
@@ -50,7 +50,7 @@ export interface BodyFootUtilAreaProps {
  * surrounding `<section>` (with its top border + spacing) doesn't
  * appear as an empty band.
  */
-export function BodyFootUtilArea(props: BodyFootUtilAreaProps): Description | null {
+export function BodyFootUtilArea(props: BodyFootUtilAreaProps): Child {
   const {
     sourceUrl,
     viewSourceLabel = DEFAULT_VIEW_SOURCE_LABEL,

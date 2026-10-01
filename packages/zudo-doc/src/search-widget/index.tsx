@@ -60,7 +60,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
 
   return (
     <>
-      {/* @ts-expect-error site-search is a custom element not in JSX intrinsics */}
       <site-search
         data-base={base}
         data-result-count-template={resultCountTemplate}
@@ -197,7 +196,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
             </div>
           </div>
         </dialog>
-      {/* @ts-expect-error closing custom element tag */}
       </site-search>
 
       {/* Inline script registers the SiteSearch custom element. Emitted once

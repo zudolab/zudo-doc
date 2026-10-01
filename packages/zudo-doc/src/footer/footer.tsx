@@ -20,7 +20,7 @@
 //  - The link/tag column grid is only emitted when at least one column is
 //    present (mirrors the Astro `hasColumns &&` guard).
 //
-//  - The copyright block is rendered as-is via `dangerouslySetInnerHTML`
+//  - The copyright block is rendered as-is via `rawHtml`
 //    because the original template used `<Fragment set:html={copyright} />`
 //    to allow inline anchors. Callers are responsible for sanitising
 //    the string (the Astro version did the same — it trusted
@@ -31,7 +31,7 @@
 //    `mt-vsp-lg border-t border-muted pt-vsp-md` that the Astro template
 //    applied via `class:list` conditional.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 import type { FooterLinkColumn, FooterTagColumn } from "./types.js";
 
@@ -48,7 +48,7 @@ export interface FooterProps {
    */
   tagColumns?: FooterTagColumn[];
   /**
-   * Copyright HTML. Rendered via `dangerouslySetInnerHTML` so embedded
+   * Copyright HTML. Rendered via `rawHtml` so embedded
    * anchors work. The caller is responsible for the contents.
    */
   copyright?: string;
@@ -69,7 +69,7 @@ export interface FooterProps {
  * configured. The inner content (link grid, copyright) is only emitted
  * when the respective slots carry data.
  */
-export function Footer(props: FooterProps): Description {
+export function Footer(props: FooterProps): Child {
   const linkColumns = props.linkColumns ?? [];
   const tagColumns = props.tagColumns ?? [];
   const copyright = props.copyright ?? "";

@@ -1,12 +1,12 @@
 /** @jsxRuntime automatic */
-import { render } from "preact-render-to-string";
 import { describe, expect, it } from "vitest";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 
 import { HighlightedCode } from "../highlighted-code.js";
 
 describe("HighlightedCode", () => {
   it("server-renders the plain fallback with JSX-escaped source", () => {
-    const html = render(
+    const html = renderSsr(
       <HighlightedCode
         code={'<script data-value="a & b">alert(1)</script>'}
         language="html"
@@ -16,7 +16,7 @@ describe("HighlightedCode", () => {
     expect(html).toContain("<pre");
     expect(html).toContain("<code");
     expect(html).toContain(
-      "&lt;script data-value=&quot;a &amp; b&quot;>alert(1)&lt;/script>",
+      '&lt;script data-value="a &amp; b"&gt;alert(1)&lt;/script&gt;',
     );
     expect(html).not.toContain("<script");
     expect(html).not.toContain("dangerouslySetInnerHTML");

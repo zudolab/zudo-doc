@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { TabItem } from "../tab-item.js";
 
 describe("<TabItem />", () => {

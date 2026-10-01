@@ -5,7 +5,7 @@
 // Light/Dark badge, and description from the rest of `ThemePackMeta`.
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { ThemePackCard } from "../theme-pack-card.js";
 import type { ThemePackMeta } from "../../theme-packs-registry/index.js";
 
@@ -91,7 +91,7 @@ describe("ThemePackCard — rendering from meta fixtures", () => {
     expect(html).toContain("the lazy dog");
     expect(html).toContain("const");
     expect(html).toContain("theme");
-    expect(html).toContain("&quot;foundry&quot;"); // preact-render-to-string HTML-escapes quotes in text nodes
+    expect(html).toContain('"foundry"'); // zudo-react SSR preserves quotes in text nodes
   });
 
   it("renders name, description, and the Light badge from meta.mode", () => {

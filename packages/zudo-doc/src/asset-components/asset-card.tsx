@@ -60,7 +60,7 @@ export function createAssetCard(context: AssetComponentContext) {
       <article class="rounded-lg border border-muted bg-surface px-hsp-lg py-vsp-sm">
         <div class="flex items-start gap-x-hsp-md">
           <span class="flex h-icon-lg w-icon-lg shrink-0 items-center justify-center text-muted">
-            <AssetFileIcon className="h-icon-lg w-icon-lg" />
+            <AssetFileIcon class="h-icon-lg w-icon-lg" />
           </span>
           <div class="min-w-0 flex-1">
             <div class="font-mono text-small text-fg">

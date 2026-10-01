@@ -11,7 +11,7 @@
 //     helpers. With the SPA router, AFTER_NAVIGATE_EVENT fires after
 //     each same-document swap; BEFORE_NAVIGATE_EVENT fires before.
 //   - `nested-island-props-refresh.ts` — the document-lifetime helper that
-//     refreshes nested-island `data-props` at the `zfb:before-swap` seam
+//     prepares detached incoming chrome for zfb 3.1 native island reconciliation
 //     (zudolab/zudo-doc#3530).
 
 export {

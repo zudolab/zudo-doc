@@ -23,7 +23,7 @@
 // (`LANGUAGE_SWITCHER_INIT_SCRIPT`) that recomputes each anchor's href from
 // `window.location.pathname` on load and on `zfb:after-swap`.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { LocaleLink } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
@@ -229,7 +229,7 @@ export function LanguageSwitcher({
   currentLocale,
   accessibleLabel,
   idSuffix = "",
-}: LanguageSwitcherProps): Description | null {
+}: LanguageSwitcherProps): Child {
   if (links.length <= 1) return null;
 
   const menuId = `language-menu${idSuffix ? `-${idSuffix}` : ""}`;
@@ -306,7 +306,7 @@ export function LanguageSwitcher({
   );
 }
 
-function ChevronDownIcon(): Description {
+function ChevronDownIcon(): Child {
   return (
     <svg
       class="h-icon-xs w-icon-xs shrink-0"

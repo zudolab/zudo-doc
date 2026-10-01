@@ -1,6 +1,7 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import "../../header-with-defaults/__tests__/island-metadata.js";
 import { defineChromeBindings } from "../../chrome-bindings.js";
 import { createChrome } from "../../chrome/index.js";
 import type {
@@ -62,6 +63,7 @@ describe("named header-right component registry", () => {
       />,
     );
 
+    expect(html).toContain('data-zfb-transition-persist="header-en"');
     const group = html.slice(
       html.indexOf("data-header-icon-group"),
       html.indexOf("data-language"),
@@ -227,6 +229,7 @@ describe("named header-right component registry", () => {
         lang="en"
         currentPath="/docs/registry"
         currentSlug="registry"
+        hideSidebarToggle
       />,
     );
     expect(html).toContain('data-route-registry="en:0"');

@@ -1,8 +1,7 @@
 "use client";
 
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
-import { useMemo } from "preact/hooks";
+import { computed, getScope, type Child } from "@takazudo/zfb/zudo-react";
 
 import { useActiveHeading } from "./use-active-heading.js";
 import type { HeadingItem } from "./types.js";
@@ -21,7 +20,7 @@ export interface TocProps {
 }
 
 /**
- * Desktop right-rail Table of Contents — a Preact island component.
+ * Desktop right-rail Table of Contents — a zudo-react island component.
  *
  * Renders the `<nav aria-label="Table of contents">` directly. **The
  * caller is responsible for wrapping this in `<Island when="load">`**
@@ -58,12 +57,9 @@ export interface TocProps {
  * `<nav aria-label="Table of contents">` landmark provides the section
  * semantics for screen readers. Issue #1655 / T1.
  */
-export function Toc({ headings, title = "On this page" }: TocProps): Description {
-  const filtered = useMemo(
-    () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
-    [headings],
-  );
-  const { activeId, activate } = useActiveHeading(filtered);
+export function Toc({ headings, title = "On this page" }: TocProps): Child {
+  const filtered = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+  const { activeId, activate } = useActiveHeading(getScope(), filtered);
 
   return (
     <nav
@@ -80,7 +76,15 @@ export function Toc({ headings, title = "On this page" }: TocProps): Description
       {filtered.length > 0 && (
         <ul class="border-l border-muted pl-hsp-lg overflow-y-auto">
           {filtered.map((heading, index) => {
-            const isActive = heading.slug === activeId;
+            const isActive = computed(() => heading.slug === activeId.value);
+            const linkClass = computed(() =>
+              cx(
+                "block py-vsp-2xs text-small leading-snug transition-colors",
+                isActive.value
+                  ? "bg-fg text-bg font-medium"
+                  : "text-muted hover:underline focus:underline",
+              ),
+            );
             return (
               <li
                 key={`${heading.slug}-${index}`}
@@ -92,13 +96,8 @@ export function Toc({ headings, title = "On this page" }: TocProps): Description
                 <a
                   href={`#${heading.slug}`}
                   on:click={() => activate(heading.slug)}
-                  aria-current={isActive ? "true" : undefined}
-                  class={cx(
-                    "block py-vsp-2xs text-small leading-snug transition-colors",
-                    isActive
-                      ? "bg-fg text-bg font-medium"
-                      : "text-muted hover:underline focus:underline",
-                  )}
+                  aria-current={computed(() => isActive.value ? "true" : undefined)}
+                  class={linkClass}
                 >
                   <SmartBreak>{heading.text}</SmartBreak>
                 </a>

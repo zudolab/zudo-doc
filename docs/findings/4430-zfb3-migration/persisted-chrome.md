@@ -1,74 +1,24 @@
-# Port the persisted-chrome transition helpers (nested-island refresh with v3 wrapper metadata, remount handling)
+# Persisted chrome transition helpers
 
-Owner: [#4442](https://github.com/zudolab/zudo-doc/issues/4442). Status: **pending port**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4442](https://github.com/zudolab/zudo-doc/issues/4442). Status: **source port complete; browser verification pending**. Binding spec: [round-2 persisted chrome convention](../../../_temp-resource/4430-zfb3-migration/conventions.md#persisted-chrome-and-router-events), [#4480](https://github.com/zudolab/zudo-doc/issues/4480), and [#4479 packed probe](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md) Z04.
 
-Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
+## Migration matrix
 
-## Round-2 locked spec (3.1.0)
-
-Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
-
-Void the round-1 unconditional `data-zfb-island-remount`, post-teardown metadata copier and accepted loss of unchanged local state. #4479 Z04 proves unchanged nested roots keep a live handle and signal through packed swap. Use native 3.1.0 reconciliation; unchanged effective identity/exact props keep DOM/handle/state, changed props or identity recreate with render. Keep the existing install/ensure/dispose helper signatures and eager document singleton, now limited to the existing zudo-doc host preserve-props policy and safe incoming-structure preparation. This topic remains necessary.
-
-Packed router teardown calls `unmountIslands(oldBody, incomingBody)` before `event.swap`; a post-teardown mutation cannot decide native retention. BEFORE_SWAP may read live state and prepare only the detached incoming document. For live `data-zd-props-preserve` on a root/ancestor, retain old props only when component/root kind/transport/protocol/build agrees. Do not mask changed identity. Pair only unique ancestor keys/names; ambiguous matches, added/removed roots, changed chrome structure or unsupported scheduling-metadata refresh must opt that incoming ancestor out of persistence so the native lifecycle replaces it safely. Never replace a structurally unchanged subtree to evade the same-handle test. Cancelled navigation must leave live DOM/handles untouched; any composed swap delegates exactly once and preserves receiver/args/result/errors.
-
-Test actual packed native lifecycle via the harness: mutated unchanged state (one activation, zero cleanup), changed identity/props, preserve policy, normal/skip-SSR roots, metadata removal, delayed imports, cancellation, duplicate names/keys and incoming structure. No fabricated root-persist API (#3363), hand-authored wrappers or patch. If native required behavior fails, file it and re-block release instead of silently restoring a remount shim. #4468/#4475 still own real-browser navigation, focus and nonzero-scroll proof.
-
-## Files and symbols
-
-| File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
-| --- | --- | --- | --- |
-| `packages/zudo-doc/src/transitions/index.ts` | `module / template` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `installNestedIslandPropsRefresh` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `ensureNestedIslandPropsRefresh` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `disposeNestedIslandPropsRefresh` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `buildNestedIslandPropsMutationPlan` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `commitMutationPlanAndDelegate` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `collectRefreshableRoots` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `collectUniqueOwnedIslands` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `indexUniquely` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `applyPropsMutation` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `reportRefreshErrors` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `surfaceAsynchronously` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `isDocument` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/nested-island-props-refresh.ts` | `resolveBrowserOptions` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/page-events.ts` | `BEFORE_NAVIGATE_EVENT` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/page-events.ts` | `AFTER_NAVIGATE_EVENT` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/page-events.ts` | `BEFORE_SWAP_EVENT` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/page-events.ts` | `onBeforeNavigate` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/transitions/page-events.ts` | `onAfterNavigate` | event/callback → native listener or stable component prop | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-
-## Raw HTML sites to review
-
-| File and baseline line | Payload/context review | Trust, parser context, cleanup and test |
+| v2 construct touched | v3 form and behavior | Status and evidence |
 | --- | --- | --- |
-| No direct site in initial source scan | Check imported helpers and newly introduced rawHtml | pending confirmation; add each new site explicitly |
+| `zfb:before-swap` live-root `data-props` copier and unconditional `data-zfb-island-remount` | Prepare only detached `newDocument` before native 3.1 `unmountIslands(oldBody, incomingBody)`; no live metadata write or blanket remount | Done; packed unchanged-handle and changed-props lifecycle tests |
+| `data-zd-props-preserve` on island/root/ancestor | Copy old exact `data-props` to incoming only with matching marker kind, component, transport, protocol and build; remove an absent attribute | Done; header, aside, identity and attribute-removal tests |
+| Persisted ancestor pairing by key and nested island name | Require unique keys/names and matching authored element topology; unsafe structure or scheduling changes opt incoming ancestor out of persistence | Done; duplicate, addition/removal, structure and scheduling tests |
+| `install`/`ensure`/`dispose` document listener API | Same API, SSR-safe singleton; composed swap delegates once with receiver/args/result/error | Done; cancellation, delegation, singleton tests |
+| `page-events.ts` v2-era lifecycle comments | zfb 3.1 event vocabulary and pre-teardown timing | Done; source port check |
+| `transitions/index.ts` ejectable barrel | Keeps `ensureNestedIslandPropsRefresh` export; describes native preparation | Done; source port check |
 
-## Utility/token and authored rewrite rows
+## Raw HTML and visual review
 
-| File | Original utility or CSS construct | Required disposition / review | Status and test |
-| --- | --- | --- | --- |
-| Owned source set | No mapped gap in planning TSV | Confirm generated candidate or matching shipped authored selector; unknown ordinary class is not proof | pending scan confirmation |
+There are no `rawHtml` sites or class/CSS changes in the owned transitions source. The helper writes only detached DOM attributes. Deliberate behavior difference: unchanged nested roots retain their live handle and scope state; changed exact props/identity recreate via native render; unsafe incoming ancestor structure is replaced. These are the 3.1.0 native lifecycle and round-2 policy, not a visual redesign. Real-browser repeated navigation, mutated local state, nonzero scroll, focus and header/aside/footer parity are assigned to #4468/#4475.
 
-## Tests and completion evidence
+## Verification
 
-Existing candidate test files (ownership exceptions in the issue still apply):
-
-- `packages/zudo-doc/src/transitions/__tests__/nested-island-props-refresh.test.ts` — pending port/run result.
-
-Run the exact source-resolution and port-check commands from the conventions with this topic’s paths. Record command, result, version and remaining diagnostics. Required behavioral coverage: initial SSR, active updates, cleanup/disposal, relevant navigation and parser/prop failures. CSS changes require computed-style evidence from the verification owner; a green build is insufficient.
-
-| Completion field | Owner must fill |
-| --- | --- |
-| Port-check / unit evidence | pending |
-| RawHtml review verdict per site | pending (or verified none) |
-| Deliberate DOM/class/behavior differences and cause | pending (or verified none) |
-| Upstream issue/shim and removal version | pending (or verified none) |
-| Browser/visual cases handed to #4468/#4475 | pending |
-| Final commit / reviewer / date | pending |
-
-## Remaining Preact runtime imports after #4437
-
-The following files still import Preact runtime APIs for their assigned semantic port. The mechanical codemod removed Preact type imports and JSX pragmas.
-
-- `packages/zudo-doc/src/current-path/__tests__/current-path-surfaces.test.tsx`
+- `ZFB3_SOURCE_RESOLVE=1 pnpm exec vitest run --config packages/zudo-doc/vitest.config.ts packages/zudo-doc/src/transitions/__tests__/nested-island-props-refresh.test.ts`: 10 tests passed, including packed unchanged-state, changed-props, marker-kind, and deferred-mount lifecycle.
+- `node scripts/zfb3-port-check.mjs` over every owned source/test file: zero owned diagnostics. Unrelated migration-window diagnostics remain for #4467.
+- Upstream [#3362](https://github.com/Takazudo/zudo-front-builder/issues/3362) is fixed for unchanged roots by packed 3.1.0 Z04; [#3363](https://github.com/Takazudo/zudo-front-builder/issues/3363) remains a separate public persist-option gap. No zudo-doc shim or removal version applies.
