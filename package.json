@@ -79,7 +79,7 @@
     "check:bash32-compat": "node scripts/check-bash32-compat.mjs",
     "check:flaky-tracking-issue": "node scripts/check-flaky-tracking-issue.mjs",
     "check:wait-debt": "node scripts/check-wait-debt.mjs",
-    "check:package-safelist": "node scripts/check-package-safelist.mjs",
+    "check:package-wind-manifest": "node scripts/check-package-wind-manifest.mjs",
     "check:no-host-alias-in-package": "node scripts/check-no-host-alias-in-package.mjs",
     "check:canonical-tags": "node scripts/check-canonical-tags.mjs",
     "check:compatibility-contract": "tsx scripts/check-compatibility-contract.ts",

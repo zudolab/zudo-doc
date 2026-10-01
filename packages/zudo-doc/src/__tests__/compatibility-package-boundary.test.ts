@@ -79,17 +79,10 @@ describe("collapsed compatibility package boundary", () => {
     expect(tabsInitModule).not.toHaveProperty("default");
   });
 
-  it("exports only the explicit safelist.css subpath", () => {
-    const packageJson = JSON.parse(
-      readFileSync(resolve(__dirname, "../../package.json"), "utf8"),
-    ) as { exports: Record<string, unknown> };
-
-    expect(packageJson.exports).toHaveProperty("./safelist.css");
-    expect(packageJson.exports).not.toHaveProperty("./safelist");
-
-    const require = createRequire(import.meta.url);
-    expect(() => require.resolve("@takazudo/zudo-doc/safelist")).toThrow(
-      /Package subpath '.\/safelist' is not defined|ERR_PACKAGE_PATH_NOT_EXPORTED/,
-    );
+  it("exports wind.json and removes the Tailwind CSS subpaths", () => {
+    const packageJson = JSON.parse(readFileSync(resolve(__dirname, "../../package.json"), "utf8")) as { exports: Record<string, unknown> };
+    expect(packageJson.exports).toHaveProperty("./wind.json", "./dist/wind.json");
+    expect(packageJson.exports).not.toHaveProperty("./safelist.css");
+    expect(packageJson.exports).not.toHaveProperty("./theme-no-reset.css");
   });
 });
