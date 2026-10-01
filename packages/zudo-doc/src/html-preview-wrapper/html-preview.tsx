@@ -1,6 +1,5 @@
 /** @jsxRuntime automatic */
-import { useMemo } from "preact/hooks";
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import {
   PreviewBase,
   type HtmlPreviewLabels,
@@ -273,13 +272,7 @@ ${js ? `<script>${js}</script>` : ""}
  * HTML preview widget — renders an isolated iframe with viewport
  * controls and a collapsible code section.
  *
- * JSX port of src/components/html-preview/html-preview.tsx with
- * React → Preact hook imports.
- *
- * Requires client-side JS (iframe load events, height sync, code
- * toggle). Mount as an island via `<HtmlPreview client:visible />` in
- * Astro, or wire up the SSR-skip placeholder pattern for non-Astro
- * consumers.
+ * Pure setup for the preview island; iframe lifecycle belongs to PreviewBase.
  */
 export function HtmlPreview({
   html,
@@ -302,33 +295,17 @@ export function HtmlPreview({
   externalScripts,
   preflight,
   showResources,
-}: HtmlPreviewProps): Description {
-  const srcdoc = useMemo(
-    () =>
-      buildSrcdoc(
-        html,
-        css,
-        head,
-        js,
-        fullHeight,
-        externalStyles,
-        externalScripts,
-        preflight,
-        { lang, title, previewLabel: labels?.preview },
-      ),
-    [
-      html,
-      css,
-      head,
-      js,
-      fullHeight,
-      externalStyles,
-      externalScripts,
-      preflight,
-      lang,
-      title,
-      labels?.preview,
-    ],
+}: HtmlPreviewProps): Child {
+  const srcdoc = buildSrcdoc(
+    html,
+    css,
+    head,
+    js,
+    fullHeight,
+    externalStyles,
+    externalScripts,
+    preflight,
+    { lang, title, previewLabel: labels?.preview },
   );
   const hasScripts = containsScript(head, js, externalScripts);
   const syncDelay = hasScripts ? 300 : 0;
@@ -339,7 +316,7 @@ export function HtmlPreview({
   // into an unsandboxed iframe in the generated site.
   const sandboxAttributeValue = sandboxValue === "" ? " " : sandboxValue;
 
-  const codeBlocks = useMemo(() => {
+  const codeBlocks = (() => {
     const resourceLines = showResources
       ? [
           ...(externalStyles ?? []).map(
@@ -371,15 +348,7 @@ export function HtmlPreview({
           ]
         : []),
     ];
-  }, [
-    html,
-    componentCss,
-    componentHead,
-    componentJs,
-    showResources,
-    externalStyles,
-    externalScripts,
-  ]);
+  })();
 
   return (
     <PreviewBase
