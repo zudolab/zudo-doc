@@ -14,8 +14,10 @@
 //               stays in lockstep with the production `emitLlmsTxt`
 //               byte-for-byte.
 //
-// `options` carries `{ siteName, siteDescription, base, siteUrl,
-// defaultLocaleDir, locales }` from the matching entry in `zfb.config.ts`.
+// `options` carries `{ siteName, siteDescription, base, siteUrl, defaultLocale,
+// agentExport, mcp, defaultLocaleDir, locales }` from the matching entry in
+// `zfb.config.ts`; the final three feature fields are used only for opt-in
+// discovery links and never change the disabled output.
 //
 // Inline functions are not supported by zfb's plugin runtime; see the
 // sibling `doc-history.ts` for the rationale.

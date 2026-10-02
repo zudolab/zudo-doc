@@ -46,6 +46,7 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
+  assertAgentDocsConsistent,
   resolvesBundleZdtp,
   warnAmbiguousDropdownCategoryMatch,
 } from "./config-assertions/index.js";
@@ -145,6 +146,10 @@ export interface PresetSettings {
   transclude?: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
   llmsTxt?: boolean;
+  /** Generate the package-owned static agent documentation feed. */
+  agentExport?: boolean;
+  /** Enable the stateless read-only MCP endpoint; requires `agentExport: true`. */
+  mcp?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
   /** Metadata fields shown in the doc metadata area. */
   docMetainfoFields?: Array<"created" | "updated" | "author">;
@@ -342,6 +347,11 @@ export interface PresetMarkdown {
   gfm: { taskListItem: boolean; footnoteDefinition: boolean };
 }
 
+/** MCP-only bundler options required for SDK CommonJS dependency resolution. */
+export interface PresetBundle {
+  mainFields: string[];
+}
+
 export interface PresetCodeHighlight {
   mode: "class";
   defaultStylesheet: true;
@@ -351,6 +361,8 @@ export interface PresetCodeHighlight {
 export interface ZudoDocPresetResult {
   collections: PresetCollection[];
   plugins: PresetPlugin[];
+  /** Present only when MCP is enabled. */
+  bundle?: PresetBundle;
   markdown: PresetMarkdown;
   codeHighlight: PresetCodeHighlight;
   resolveMarkdownLinks: PresetResolveMarkdownLinks;
@@ -414,6 +426,10 @@ export function zudoDocPreset({
   // built below.
   assertValidSearchMaxBodyLength(settings.searchMaxBodyLength);
 
+  // The directly-callable preset must enforce the MCP/export combination and
+  // runtime value guards too; callers can bypass `zudoDoc()` entirely.
+  assertAgentDocsConsistent(settings);
+
   // This diagnostic belongs only to the directly-callable preset. `zudoDoc()`
   // delegates here, so a second call site would emit duplicate warnings.
   warnAmbiguousDropdownCategoryMatch(settings.headerNav);
@@ -426,6 +442,9 @@ export function zudoDocPreset({
   return {
     collections: buildCollections(settings, docsSchemaJson),
     plugins: buildPlugins(settings, { translations, tagVocabulary, colorSchemes }),
+    ...(settings.mcp === true
+      ? { bundle: { mainFields: ["module", "main"] } }
+      : {}),
     markdown: {
       features: buildMarkdownFeatures(settings, directiveVocabulary),
       ...(settings.cjkFriendly !== undefined ? { cjkFriendly: settings.cjkFriendly } : {}),
@@ -672,7 +691,7 @@ function buildPlugins(
     // the route catalog from `settings.locales` / `settings.versions`. Listed
     // FIRST so an injected route is registered before the other plugins'
     // preBuild work runs (ordering is cosmetic — injection happens in `setup`).
-    ...(effectivePackageOwnedRoutes || assetViewer || homeIntro
+    ...(effectivePackageOwnedRoutes || assetViewer || homeIntro || settings.mcp === true
       ? [
           {
             name: "@takazudo/zudo-doc/plugins/routes",
@@ -783,12 +802,28 @@ function buildPlugins(
               siteDescription: settings.siteDescription,
               base: settings.base,
               siteUrl: settings.siteUrl,
+              defaultLocale: settings.defaultLocale ?? "en",
+              agentExport: settings.agentExport === true,
+              mcp: settings.mcp === true,
               defaultLocaleDir: settings.docsDir,
               locales: localeArray,
               assetScan,
             },
           },
         ]
+      : []),
+    ...(settings.agentExport
+      ? [{
+          name: "@takazudo/zudo-doc/plugins/agent-export",
+          options: {
+            siteName: settings.siteName,
+            siteUrl: settings.siteUrl,
+            base: settings.base,
+            defaultLocale: settings.defaultLocale ?? "en",
+            defaultLocaleDir: settings.docsDir,
+            locales: localeArray,
+          },
+        }]
       : []),
     ...(Array.isArray(settings.changelogs) && settings.changelogs.length > 0
       ? [

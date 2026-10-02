@@ -23,6 +23,7 @@ import type { DocPageBaseProps, DocNavNode, DocPageEntry } from "../doc-page-pro
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import { agentPageKey } from "../agent-docs/identity.js";
 import { createDocPageShell } from "../doc-page-shell/index.js";
 import { createDocContentHeader } from "../doc-content-header/index.js";
 import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
@@ -110,6 +111,12 @@ export interface DocPageRendererDeps {
     title: string;
     description?: string;
     canonical?: string;
+    alternateLinks?: ReadonlyArray<{
+      rel: string;
+      href: string;
+      type?: string;
+      title?: string;
+    }>;
     breadcrumbs: Array<{ label: string; href?: string }>;
     prev: DocNavNode | null;
     next: DocNavNode | null;
@@ -297,6 +304,24 @@ export function createRenderDocPage<S extends Settings = Settings>(
       ? undefined
       : `sidebar-${locale}-${navSection ?? "default"}`;
 
+    const agentMarkdownAlternates =
+      ctx.settings.agentExport === true &&
+      !version &&
+      !isFallback &&
+      props.kind === "entry" &&
+      !Boolean(
+        entryData?.draft ||
+          entryData?.unlisted ||
+          entryData?.search_exclude ||
+          entryData?.category_no_page,
+      )
+        ? [{
+            rel: "alternate",
+            type: "text/markdown",
+            href: ctx.withBase(`/agent/v1/pages/${agentPageKey(locale, slug)}.md`),
+          }]
+        : undefined;
+
     // Build the Content node for entry pages — uses the locale-aware components bag.
     const ContentComponent = props.kind === "entry"
       ? (props.entry.Content as (props: { components: Record<string, unknown> }) => JSX.Element)
@@ -310,6 +335,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
         title={title}
         description={description}
         canonical={canonical}
+        alternateLinks={agentMarkdownAlternates}
         breadcrumbs={breadcrumbs}
         prev={prev}
         next={next}

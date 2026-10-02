@@ -1,8 +1,11 @@
 import { env, exports } from "cloudflare:workers";
 import { runInDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
 import generatedWorker from "../dist/_worker.js";
+import previewWorker from "../worker-preview-entry";
 import worker, {
   AiChatDailySpendCap,
   aiChatDailySpendCapObjectName,
@@ -10,6 +13,22 @@ import worker, {
 
 function cap(name: string) {
   return env.AI_CHAT_DAILY_SPEND_CAP.getByName(name);
+}
+
+const mcpUrl = "https://example.com/mcp";
+const previewExecutionContext = {
+  waitUntil: (_promise: Promise<unknown>) => undefined,
+  passThroughOnException: () => undefined,
+  props: {},
+} as ExecutionContext;
+
+async function fetchPreview(request: Request): Promise<Response> {
+  if (!previewWorker.fetch) throw new TypeError("Preview Worker does not export a fetch handler");
+  return previewWorker.fetch(
+    request as Parameters<typeof previewWorker.fetch>[0],
+    env,
+    previewExecutionContext,
+  );
 }
 
 describe("custom Worker entry", () => {
@@ -25,6 +44,21 @@ describe("custom Worker entry", () => {
     expect(staticResponse.status).toBe(200);
     expect(await staticResponse.text()).toContain("User-agent:");
 
+    const manifestResponse = await exports.default.fetch(
+      new Request("https://example.com/agent/v1/manifest.json"),
+    );
+    expect(manifestResponse.status).toBe(200);
+    const manifest = (await manifestResponse.json()) as {
+      schemaVersion: number;
+      site: { base: string };
+      items: unknown[];
+    };
+    expect(manifest).toMatchObject({
+      schemaVersion: 1,
+      site: { base: "/" },
+    });
+    expect(manifest.items.length).toBeGreaterThan(0);
+
     const dynamicResponse = await exports.default.fetch(
       new Request("https://example.com/api/ai-chat", {
         method: "POST",
@@ -37,6 +71,90 @@ describe("custom Worker entry", () => {
     await expect(dynamicResponse.json()).resolves.toEqual({
       response:
         "This feature is disabled on this demo. Need per project setup to enable this.",
+    });
+  });
+
+  it("serves the stateless MCP protocol through the generated Worker", async () => {
+    const client = new Client({ name: "worker-contract", version: "1.0.0" });
+    const transport = new StreamableHTTPClientTransport(new URL(mcpUrl), {
+      fetch: (input, init) =>
+        exports.default.fetch(
+          new Request(input, init) as Parameters<typeof exports.default.fetch>[0],
+        ),
+    });
+
+    try {
+      await client.connect(transport);
+      const listed = await client.listTools();
+      expect(listed.tools.map(({ name }) => name)).toEqual(["search", "fetch"]);
+
+      const search = await client.callTool({
+        name: "search",
+        arguments: { query: "configuration" },
+      });
+      expect(search.isError).not.toBe(true);
+      const found = (search.structuredContent as {
+        results: Array<{ id: string; title: string; url: string }>;
+      }).results;
+      expect(found.length).toBeGreaterThan(0);
+
+      const fetched = await client.callTool({
+        name: "fetch",
+        arguments: { id: found[0]!.id },
+      });
+      expect(fetched.isError).not.toBe(true);
+      expect(fetched.structuredContent).toMatchObject({
+        id: found[0]!.id,
+        url: expect.stringMatching(/^https:\/\/zudo-doc\.takazudomodular\.com\//),
+      });
+      expect((fetched.structuredContent as { text: string }).text.length).toBeGreaterThan(0);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("uses the locked MCP method contract", async () => {
+    for (const method of ["GET", "HEAD", "DELETE"]) {
+      const response = await exports.default.fetch(
+        new Request(mcpUrl, { method }),
+      );
+      expect(response.status).toBe(405);
+    }
+
+    const options = await exports.default.fetch(
+      new Request(mcpUrl, { method: "OPTIONS" }),
+    );
+    expect(options.status).toBe(204);
+  });
+
+  it("sends preview GET and HEAD to assets and preview POST to the MCP handler", async () => {
+    for (const method of ["GET", "HEAD"]) {
+      const assetResponse = await fetchPreview(new Request(mcpUrl, { method }));
+      expect(assetResponse.status).toBe(404);
+    }
+
+    const post = await fetchPreview(
+      new Request(mcpUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "initialize",
+          params: {
+            protocolVersion: "2025-03-26",
+            capabilities: {},
+            clientInfo: { name: "preview-contract", version: "1.0.0" },
+          },
+        }),
+      }),
+    );
+    expect(post.status).toBe(200);
+    await expect(post.json()).resolves.toMatchObject({
+      result: { serverInfo: { name: "zudo-doc" } },
     });
   });
 

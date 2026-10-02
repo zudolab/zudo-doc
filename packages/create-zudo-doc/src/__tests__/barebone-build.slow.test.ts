@@ -126,4 +126,10 @@ describe("barebone (all features off) generated project", () => {
     );
     expect(await fs.pathExists(docHtml)).toBe(true);
   });
+
+  it("keeps all optional export and runtime output absent", async () => {
+    expect(await fs.pathExists(path.join(projectDir, "dist", "llms.txt"))).toBe(false);
+    expect(await fs.pathExists(path.join(projectDir, "dist", "agent"))).toBe(false);
+    expect(await fs.pathExists(path.join(projectDir, "dist", "_worker.js"))).toBe(false);
+  });
 });

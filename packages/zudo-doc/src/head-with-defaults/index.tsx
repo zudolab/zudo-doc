@@ -37,6 +37,8 @@ export interface HeadWithDefaultsProps {
    * `<link rel="canonical" href="...">`.
    */
   canonical?: string;
+  /** Page-specific alternate links, such as an exported Markdown version. */
+  alternateLinks?: HeadProps["alternateLinks"];
 }
 
 /** Settings subset read by {@link createHeadWithDefaults}. Retained for the
@@ -52,6 +54,10 @@ export interface HeadWithDefaultsSettings {
     twitterCreator?: string;
   };
   siteName: string;
+  /** Emit agent-discovery links only when the opt-in static export is enabled. */
+  agentExport?: boolean;
+  /** Existing llms.txt output setting; retained independently from agent export. */
+  llmsTxt?: boolean;
   colorMode?: ColorSchemeProviderColorMode | null | false;
   sidebarResizer?: boolean;
   /** Configured theme-pack slug (ADR `docs/adr/theme-packs.md`, #2822). */
@@ -238,6 +244,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
     title,
     description,
     canonical,
+    alternateLinks,
   }: HeadWithDefaultsProps): JSX.Element {
     const { metaTags } = settings;
 
@@ -323,6 +330,18 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
           <link key={i} {...attrs} />
         ))}
         {canonical !== undefined && <link rel="canonical" href={canonical} />}
+        {alternateLinks?.map((alternate, i) => (
+          <link
+            key={`page-alternate:${i}`}
+            rel={alternate.rel}
+            href={alternate.href}
+            {...(alternate.type ? { type: alternate.type } : {})}
+            {...(alternate.title ? { title: alternate.title } : {})}
+          />
+        ))}
+        {settings.agentExport && settings.llmsTxt && (
+          <link rel="alternate" href={withBase("/llms.txt")} type="text/plain" />
+        )}
         {/* Site-wide <head> extras from settings.head (SiteHeadConfig).
             The entire block is gated on ctx.settings.head being present so that
             the DEFAULT path (no settings.head) emits NOTHING — keeping the

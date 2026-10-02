@@ -112,6 +112,12 @@ When `llmsTxt` is enabled, zudo-doc adds `<link>` tags to the `<head>` of every 
 
 This supplements the standard path-based discovery (`/llms.txt` at the domain root) which may not work when your site uses a `base` path like `/my-docs/`.
 
+## Agent export and MCP links
+
+When `agentExport: true` is enabled, the slim `llms.txt` index links each documentation page to its clean, complete `/agent/v1/pages/<page-key>.md` alternative. With export disabled, its existing page links stay unchanged. The full-content file keeps canonical human-page source URLs. When `mcp: true` is also enabled, the index advertises the separate `<base>/mcp` endpoint. The generated Markdown and MCP endpoint are described in [Agent-readable export](./agent-export.mdx) and [MCP server](./mcp-server.mdx).
+
+Agents do not necessarily read `llms.txt` just because you supply a homepage URL. For browser-only use, explicitly give the client the `llms.txt` URL or a generated Markdown page URL. `llmsTxt` is on by default in the initializer; the package-level setting defaults to `false` when you configure `zudoDoc` yourself.
+
 ## Dev Mode
 
 The generated files are available during development via zfb's devMiddleware. When running `pnpm dev`, requests to `/llms.txt` and `/llms-full.txt` are handled dynamically — no build step needed.

@@ -73,6 +73,8 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
+  agentExport: true,
+  mcp: true,
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   designTokenPanel: true as boolean,

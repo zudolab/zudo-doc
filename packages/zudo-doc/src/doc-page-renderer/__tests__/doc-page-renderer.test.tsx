@@ -17,6 +17,7 @@ import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-cont
 import { deriveGetUnavailableVersions } from "../../chrome/derive.js";
 import type { NoteTrayIndexProps } from "../../nav-indexing/note-tray-index.js";
 import { serialize } from "../../nav-indexing/__tests__/helpers.js";
+import { agentPageKey } from "../../agent-docs/identity.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fakes factory
@@ -111,6 +112,59 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
       expect(historySlot.props["sourceFileExt"]).toBe(ext);
     },
   );
+});
+
+describe("createRenderDocPage — agent Markdown alternate eligibility", () => {
+  it("uses the actual locale and frontmatter route override under a non-root base", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { agentExport: true, base: "/manual/", defaultLocale: "ja" },
+      overrides: {
+        withBase: (path: string) =>
+          path === "/" ? "/manual/" : `/manual${path}`,
+      },
+    });
+    const vnode = createRenderDocPage(ctx)(
+      makeEntryProps({ slug: "frontmatter-route" }),
+      { locale: "ja" },
+    ) as VNode<Record<string, unknown>>;
+    const pageKey = agentPageKey("ja", "frontmatter-route");
+
+    expect(vnode.props["alternateLinks"]).toEqual([
+      {
+        rel: "alternate",
+        type: "text/markdown",
+        href: `/manual/agent/v1/pages/${pageKey}.md`,
+      },
+    ]);
+  });
+
+  it.each([
+    ["draft", { draft: true }],
+    ["unlisted", { unlisted: true }],
+    ["search excluded", { search_exclude: true }],
+    ["metadata-only category", { category_no_page: true }],
+  ])("omits the alternate for %s entries", (_label, excluded) => {
+    const ctx = makeFakeChromeContext({ settings: { agentExport: true } });
+    const vnode = createRenderDocPage(ctx)(
+      makeEntryProps(excluded as Record<string, unknown>),
+      opts,
+    ) as VNode<Record<string, unknown>>;
+
+    expect(vnode.props["alternateLinks"]).toBeUndefined();
+  });
+
+  it.each([
+    ["fallback content", { isFallback: true }],
+    ["versioned content", { version: { slug: "1.0" } }],
+  ])("omits the alternate for %s", (_label, options) => {
+    const ctx = makeFakeChromeContext({ settings: { agentExport: true } });
+    const vnode = createRenderDocPage(ctx)(
+      makeEntryProps(),
+      { locale: "en", ...options },
+    ) as VNode<Record<string, unknown>>;
+
+    expect(vnode.props["alternateLinks"]).toBeUndefined();
+  });
 });
 
 describe("createRenderDocPage — NoteTrayIndex MDX registration", () => {

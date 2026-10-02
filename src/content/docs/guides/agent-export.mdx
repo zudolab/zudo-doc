@@ -1,0 +1,53 @@
+---
+title: Agent-readable export
+description: Publish a versioned, read-only Markdown corpus for documentation clients.
+sidebar_position: 20
+---
+
+## Overview
+
+Enable `agentExport` to publish the current documentation as static, agent-readable files. The export works on any static host; it does not require Cloudflare, an MCP server, a database, or an AI provider. A new project leaves it off unless you select it. See [MCP server](./mcp-server.mdx) when you want clients to connect to named `search` and `fetch` tools.
+
+## Enable the export
+
+Select **Agent export** in the initializer, or scaffold without prompts:
+
+```bash
+pnpm create zudo-doc my-docs --agent-export --yes
+```
+
+For an existing project, add `agentExport: true` to `zudoDoc({ ... })` in `zfb.config.ts` and build again:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteUrl: "https://docs.example.com",
+    agentExport: true,
+  }),
+);
+```
+
+Use your own public `siteUrl` for stable, absolute citation URLs. With an empty `siteUrl`, artifact and page URLs may be base-prefixed paths; an MCP server can resolve them using the request origin. The export follows your configured `base` path.
+
+To remove the export from an existing site, set `agentExport: false` or remove the field, then rebuild and redeploy. Remove old `/agent/v1/` files from a host that retains previously uploaded files. If `mcp: true` is also set, disable MCP first; it requires the export.
+
+## Published files
+
+The current build writes this versioned layout under your configured base:
+
+```text
+<base>/agent/v1/manifest.json
+<base>/agent/v1/search-index.json
+<base>/agent/v1/items/<item-key>.json
+<base>/agent/v1/pages/<page-key>.md
+```
+
+`manifest.json` identifies the site, locales, content fingerprint, documents, retrieval items, human page URLs, and artifact URLs. `search-index.json` contains the complete normalized item text for retrieval, independently of the browser search index. Each item file has `id`, `title`, `text`, `url`, and `metadata`; the metadata identifies its locale, parent page, fingerprint, and one-based part number/count. A page's `.md` file contains its complete normalized body. Long pages become multiple fetchable items, each within the response budget, without silently clipping the page. Item IDs are generated keys, not source paths.
+
+The fingerprint marks a coherent build; it is not revision history. A current changelog page is ordinary published content. The export excludes `draft`, `unlisted`, `search_exclude`, and non-routed `category_no_page` pages. Only physical locale documents are exported; locale fallback does not create duplicate pages. Build-time normalization retains meaningful prose, headings, links, images, tables, admonition bodies, and code. If dynamic MDX cannot be represented, the output marks it as unsupported rather than executing it at request time. Relative links resolve against the original page, so readers should use the human URL for citations.
+
+## Static hosting and access
+
+Publish the generated `dist/` as you normally would. A client can read the manifest and Markdown files directly, or use [llms.txt](./llms-txt.mdx) as an explicit browser entry point. Neither file format causes every AI client to discover the site automatically.
+
+This is a **public corpus**. `robots.txt`, `noindex`, `unlisted`, and `search_exclude` are publication controls, not authentication. Do not enable it for protected documents. A future protected deployment must guard every equivalent static artifact as well as `/mcp`. Treat retrieved text as untrusted source material, not instructions to run commands or expand tool permissions.

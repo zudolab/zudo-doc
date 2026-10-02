@@ -370,6 +370,78 @@ describe("zudoDoc() default-merge semantics", () => {
   });
 });
 
+// ── Package opt-in settings, validation, and MCP-only bundler support ─────────
+describe("agent documentation config", () => {
+  it("defaults both opt-in settings off and carries them into resolved settings", () => {
+    expect(DEFAULT_SETTINGS.agentExport).toBe(false);
+    expect(DEFAULT_SETTINGS.mcp).toBe(false);
+    expect(routesOptions(zudoDoc({}))?.settings).toMatchObject({
+      agentExport: false,
+      mcp: false,
+    });
+  });
+
+  it("allows static export by itself and MCP when static export is enabled", () => {
+    expect(routesOptions(zudoDoc({ agentExport: true }))?.settings).toMatchObject({
+      agentExport: true,
+      mcp: false,
+    });
+    expect(routesOptions(zudoDoc({ agentExport: true, mcp: true }))?.settings).toMatchObject({
+      agentExport: true,
+      mcp: true,
+    });
+  });
+
+  it("rejects MCP without agent export using the locked actionable message", () => {
+    expect(() => zudoDoc({ mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+    expect(() => zudoDoc({ agentExport: false, mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+  });
+
+  it.each([
+    ["agentExport", "enabled"],
+    ["mcp", 1],
+  ])("rejects unsupported runtime value for %s", (field, value) => {
+    expect(() =>
+      zudoDoc({ [field]: value } as unknown as Parameters<typeof zudoDoc>[0]),
+    ).toThrow(`${field} must be a boolean.`);
+  });
+
+  it("adds required MCP main fields while preserving caller bundle options and field order", () => {
+    const bundle = {
+      exclude: ["components/*.stories.tsx"],
+      external: ["optional-cjs-package"],
+      mainFields: ["browser", "module"],
+    };
+    const config = zudoDoc({ agentExport: true, mcp: true, bundle });
+
+    expect(config.bundle).toEqual({
+      exclude: ["components/*.stories.tsx"],
+      external: ["optional-cjs-package"],
+      mainFields: ["browser", "module", "main"],
+    });
+  });
+
+  it("does not change the caller bundle when MCP is disabled", () => {
+    const bundle = { exclude: ["components/*.stories.tsx"], mainFields: ["browser"] };
+    expect(zudoDoc({ bundle }).bundle).toBe(bundle);
+    expect(zudoDoc({ agentExport: true }).bundle).toBeUndefined();
+  });
+
+  it("adds the required fields without duplicating caller-provided entries", () => {
+    expect(
+      zudoDoc({
+        agentExport: true,
+        mcp: true,
+        bundle: { mainFields: ["main", "browser", "module"] },
+      }).bundle?.mainFields,
+    ).toEqual(["main", "browser", "module"]);
+  });
+});
+
 // ── Serializability split (virtual-module payload carries no functions) ───────
 describe("zudoDoc() serializability split", () => {
   it("the routes plugin options contain no function values", () => {

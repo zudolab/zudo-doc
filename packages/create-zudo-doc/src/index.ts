@@ -7,7 +7,7 @@ import {
   validateArgs,
 } from "./cli.js";
 import { FEATURES } from "./constants.js";
-import { loadPreset } from "./preset.js";
+import { loadPreset, normalizeAgentMcpChoices } from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
 import { scaffold } from "./scaffold.js";
 import {
@@ -89,6 +89,9 @@ async function main() {
   if (args.changelogPackages !== undefined) {
     prefilled.changelogPackages = args.changelogPackages;
   }
+  if (args.mcpDeploy !== undefined) {
+    prefilled.mcpDeploy = args.mcpDeploy as "cloudflare";
+  }
 
   // Build feature overrides from explicit flags — driven by FEATURES constant
   const featureFlags: Partial<Record<string, boolean>> = {};
@@ -135,7 +138,53 @@ async function main() {
     prefilled.features = { ...featureDefaults, ...prefilled.features };
   }
 
-  const choices = await runPrompts(prefilled);
+  // Presets and --yes run without further input, so resolve MCP's sole
+  // deployment target before runPrompts() sees the prefilled choices. Keep an
+  // interactive --mcp invocation's target unset so it receives the visible
+  // Cloudflare follow-up prompt.
+  const prefilledAgentMcp = normalizeAgentMcpChoices({
+    agentExport: prefilled.explicitlyDisabledFeatures?.includes("agentExport")
+      ? false
+      : prefilled.features?.agentExport === true
+        ? true
+        : undefined,
+    mcp: prefilled.features?.mcp,
+    mcpDeploy: prefilled.mcpDeploy,
+  });
+  if (prefilledAgentMcp.error) {
+    p.log.error(prefilledAgentMcp.error);
+    process.exit(1);
+  }
+  if (args.yes || args.preset) {
+    if (prefilled.features && prefilledAgentMcp.agentExport === true) {
+      prefilled.features.agentExport = true;
+    }
+    prefilled.mcpDeploy = prefilledAgentMcp.mcpDeploy;
+  }
+
+  let choices: Awaited<ReturnType<typeof runPrompts>>;
+  try {
+    choices = await runPrompts(prefilled);
+  } catch (err) {
+    p.log.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+
+  // Keep the CLI orchestration boundary guarded as well as the prompt/API
+  // entry points: all validation completes before scaffold() can write files.
+  const agentMcp = normalizeAgentMcpChoices({
+    agentExport: choices.features.includes("agentExport") ? true : undefined,
+    mcp: choices.features.includes("mcp"),
+    mcpDeploy: choices.mcpDeploy,
+  });
+  if (agentMcp.error) {
+    p.log.error(agentMcp.error);
+    process.exit(1);
+  }
+  if (agentMcp.agentExport === true && !choices.features.includes("agentExport")) {
+    choices.features = [...choices.features, "agentExport"];
+  }
+  choices.mcpDeploy = agentMcp.mcpDeploy;
   const targetDir = resolveTargetDir(choices);
   const destination = destinationLabel(choices);
   // A destination may now contain spaces (only its LAST segment goes through
@@ -220,7 +269,21 @@ async function main() {
   console.log();
   console.log(`  ${pc.bold("Next steps:")}`);
   console.log(`  cd ${cdTarget}`);
-  console.log(`  ${pmRunCommand(choices.packageManager, "dev")}`);
+  if (choices.features.includes("mcp")) {
+    const pm = choices.packageManager;
+    console.log(`  ${pm} install`);
+    console.log(`  ${pmRunCommand(pm, "build")}`);
+    console.log(`  ${pmRunCommand(pm, "preview:worker")}  # verify locally`);
+    console.log(
+      `  Set siteUrl in zfb.config.ts, then run "wrangler login" and "${pmRunCommand(pm, "deploy")}" to deploy to your Cloudflare account.`,
+    );
+    console.log(
+      `  Connect your MCP client to <siteUrl><base>/mcp (for example, https://docs.example.com/mcp).`,
+    );
+    console.log(`  See README.md for setup details and the public-docs-only warning.`);
+  } else {
+    console.log(`  ${pmRunCommand(choices.packageManager, "dev")}`);
+  }
   console.log();
 }
 

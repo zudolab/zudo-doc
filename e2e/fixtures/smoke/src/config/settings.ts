@@ -62,6 +62,8 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   llmsTxt: true,
+  agentExport: true,
+  mcp: true,
   changelogs: false as ChangelogConfig[] | false,
   math: true,
   aiAssistant: true as boolean,

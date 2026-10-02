@@ -9,6 +9,35 @@
 
 import type { FaviconConfig } from "../settings.js";
 
+/** Structural subset of Settings used by the agent-export/MCP config guard. */
+export interface AgentDocsConsistentSubject {
+  agentExport?: unknown;
+  mcp?: unknown;
+}
+
+/**
+ * Validate the package-owned static agent export and MCP settings.
+ *
+ * These fields are booleans in the public config type, but JavaScript callers
+ * and casted TypeScript values can still pass unsupported values at runtime.
+ * MCP also requires the independently opt-in static feed.
+ */
+export function assertAgentDocsConsistent(settings: AgentDocsConsistentSubject): void {
+  if (settings.agentExport !== undefined && typeof settings.agentExport !== "boolean") {
+    throw new TypeError("agentExport must be a boolean.");
+  }
+
+  if (settings.mcp !== undefined && typeof settings.mcp !== "boolean") {
+    throw new TypeError("mcp must be a boolean.");
+  }
+
+  if (settings.mcp === true && settings.agentExport !== true) {
+    throw new TypeError(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+  }
+}
+
 /** Structural subset of a header dropdown read by the category-match guard. */
 export interface AmbiguousDropdownCategoryMatchItem {
   label?: string;

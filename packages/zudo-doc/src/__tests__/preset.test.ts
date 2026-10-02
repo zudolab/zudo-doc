@@ -382,6 +382,41 @@ describe("zudoDocPreset collections", () => {
   });
 });
 
+describe("zudoDocPreset agent documentation config", () => {
+  const callPreset = (settings: PresetSettings) =>
+    zudoDocPreset({
+      settings,
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+
+  it("does not add bundle settings when MCP is disabled", () => {
+    expect(callPreset(fixtureSettings)).not.toHaveProperty("bundle");
+    expect(callPreset({ ...fixtureSettings, agentExport: true })).not.toHaveProperty("bundle");
+  });
+
+  it("adds the required main fields when MCP is enabled", () => {
+    expect(callPreset({ ...fixtureSettings, agentExport: true, mcp: true }).bundle).toEqual({
+      mainFields: ["module", "main"],
+    });
+  });
+
+  it("rejects MCP without agent export using the locked message", () => {
+    expect(() => callPreset({ ...fixtureSettings, mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+  });
+
+  it("rejects unsupported runtime values through the direct preset API", () => {
+    expect(() =>
+      callPreset({ ...fixtureSettings, mcp: "yes" } as unknown as PresetSettings),
+    ).toThrow("mcp must be a boolean.");
+    expect(() =>
+      callPreset({ ...fixtureSettings, agentExport: "yes" } as unknown as PresetSettings),
+    ).toThrow("agentExport must be a boolean.");
+  });
+});
+
 describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
   it("emits the package plugin specifiers in order (no project-relative copy-public since #2358)", () => {
     const { plugins } = preset();
@@ -461,6 +496,9 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       siteDescription: "Documentation base framework.",
       base: "/",
       siteUrl: "https://zudo-doc.takazudomodular.com",
+      defaultLocale: "en",
+      agentExport: false,
+      mcp: false,
       defaultLocaleDir: "src/content/docs",
       locales: [{ code: "ja", dir: "src/content/docs-ja" }],
       assetScan: {
@@ -498,6 +536,31 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       onBroken: "warn",
     });
     // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
+  });
+
+  it("threads agent-export and MCP settings only through the llms descriptor", () => {
+    const result = zudoDocPreset({
+      settings: {
+        ...fixtureSettings,
+        defaultLocale: "ja",
+        llmsTxt: true,
+        agentExport: true,
+        mcp: true,
+      },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const llms = result.plugins.find((plugin) => plugin.name === "@takazudo/zudo-doc/plugins/llms-txt");
+    const agentExport = result.plugins.find((plugin) => plugin.name === "@takazudo/zudo-doc/plugins/agent-export");
+
+    expect(llms?.options).toMatchObject({
+      defaultLocale: "ja",
+      agentExport: true,
+      mcp: true,
+    });
+    expect(agentExport?.options).toMatchObject({
+      defaultLocale: "ja",
+    });
   });
 
   it("shares the serialized asset-scan projection with search and llms", () => {
@@ -662,6 +725,16 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       assetViewerRoutePrefix: "files",
       assetViewerExclude: ["drafts/**"],
     });
+  });
+
+  it("keeps the routes plugin for MCP when ordinary package routes are disabled", () => {
+    const result = zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: false, assetViewer: false, agentExport: true, mcp: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(result.plugins.find(plugin => plugin.name === "@takazudo/zudo-doc/plugins/routes")?.options)
+      .toMatchObject({ packageOwnedRoutes: false, settings: { mcp: true } });
   });
 
   it("omits the routes plugin when packageOwnedRoutes is false and assetViewer is omitted", () => {
