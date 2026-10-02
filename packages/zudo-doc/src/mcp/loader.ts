@@ -1,6 +1,38 @@
 import { AGENT_MAX_ITEMS, AGENT_MAX_MANIFEST_BYTES, AGENT_MAX_SEARCH_INDEX_BYTES } from "../agent-docs/limits.js";
 import { buildAgentSearchIndex, type BuiltAgentSearchIndex } from "../agent-docs/search.js";
 import type { AgentItem, AgentManifest, AgentSearchIndex } from "../agent-docs/types.js";
+import { z } from "zod";
+
+const digest = z.string().regex(/^[a-f0-9]{64}$/);
+const pageId = z.string().regex(/^p-[a-f0-9]{16}$/);
+const itemId = z.string().regex(/^p-[a-f0-9]{16}-[0-9]{6}$/);
+const part = z.number().int().positive();
+const itemSchema = z.object({
+  id: itemId, title: z.string(), text: z.string(), url: z.string(),
+  metadata: z.object({
+    locale: z.string(), pageId, fingerprint: digest, part, partCount: part,
+    description: z.string().optional(), section: z.string().optional(),
+    unsupportedDynamicContent: z.boolean().optional(),
+  }),
+});
+const manifestSchema = z.object({
+  schemaVersion: z.literal(1), fingerprint: digest,
+  site: z.object({ name: z.string(), url: z.string(), base: z.string() }),
+  defaultLocale: z.string(), locales: z.array(z.string()),
+  searchIndex: z.object({ url: z.string(), sha256: digest }),
+  documents: z.array(z.object({
+    id: pageId, key: pageId, locale: z.string(), title: z.string(), url: z.string(),
+    markdownUrl: z.string(), itemIds: z.array(itemId),
+  })),
+  items: z.array(z.object({
+    id: itemId, key: itemId, pageId, url: z.string(), artifactUrl: z.string(),
+    sha256: digest, part, partCount: part,
+  })).max(AGENT_MAX_ITEMS),
+});
+const indexSchema = z.object({
+  schemaVersion: z.literal(1), fingerprint: digest,
+  items: z.array(itemSchema).max(AGENT_MAX_ITEMS),
+});
 
 export type ReadAsset = (path: string) => Promise<Response>;
 
@@ -41,7 +73,10 @@ async function readText(read: ReadAsset, path: string, max: number): Promise<str
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > max) throw new CorpusUnavailable(`Agent corpus artifact exceeds ${max} bytes.`);
+      if (size > max) {
+        await reader.cancel();
+        throw new CorpusUnavailable(`Agent corpus artifact exceeds ${max} bytes.`);
+      }
       chunks.push(value);
     }
   } catch (error) {
@@ -54,14 +89,17 @@ async function readText(read: ReadAsset, path: string, max: number): Promise<str
   try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
   catch { throw new CorpusUnavailable(`Invalid UTF-8 in agent corpus artifact: ${path}`); }
 }
-function parse<T>(text: string, label: string): T {
-  try { return JSON.parse(text) as T; }
+function parse<T>(text: string, label: string, schema: z.ZodType<T>): T {
+  let value: unknown;
+  try { value = JSON.parse(text); }
   catch { throw new CorpusUnavailable(`Invalid agent ${label} JSON.`); }
+  const result = schema.safeParse(value);
+  if (!result.success) throw new CorpusUnavailable(`Incompatible agent ${label}.`);
+  return result.data;
 }
 export class AgentCorpusLoader {
   private current?: { fingerprint: string; manifest: AgentManifest; index: BuiltAgentSearchIndex };
   private loading?: Promise<{ fingerprint: string; manifest: AgentManifest; index: BuiltAgentSearchIndex }>;
-  private loadingFingerprint?: string;
   constructor(private readonly read: ReadAsset, private readonly base: string) {}
 
   private async load(manifest: AgentManifest) {
@@ -70,12 +108,12 @@ export class AgentCorpusLoader {
     if (indexPath !== `${root}search-index.json`) throw new CorpusUnavailable("Invalid agent search index path.");
     const raw = await readText(this.read, indexPath, AGENT_MAX_SEARCH_INDEX_BYTES);
     if (await sha256(raw) !== manifest.searchIndex.sha256) throw new CorpusUnavailable("Agent search index digest mismatch.");
-    const data = parse<AgentSearchIndex>(raw, "search index");
+    const data = parse<AgentSearchIndex>(raw, "search index", indexSchema);
     if (data.schemaVersion !== 1 || data.fingerprint !== manifest.fingerprint || !Array.isArray(data.items) || data.items.length > AGENT_MAX_ITEMS) {
       throw new CorpusUnavailable("Incompatible agent search index.");
     }
     const byId = new Map(manifest.items.map(item => [item.id, item]));
-    if (byId.size !== manifest.items.length || byId.size !== data.items.length || data.items.some(item => !byId.has(item.id) || item.metadata?.fingerprint !== manifest.fingerprint)) {
+    if (byId.size !== manifest.items.length || byId.size !== data.items.length || new Set(data.items.map(item => item.id)).size !== data.items.length || data.items.some(item => !byId.has(item.id) || item.metadata?.fingerprint !== manifest.fingerprint)) {
       throw new CorpusUnavailable("Agent search index does not match manifest.");
     }
     const loaded = { fingerprint: manifest.fingerprint, manifest, index: buildAgentSearchIndex(data) };
@@ -86,7 +124,7 @@ export class AgentCorpusLoader {
   async corpus() {
     const root = basePath(this.base);
     const raw = await readText(this.read, `${root}manifest.json`, AGENT_MAX_MANIFEST_BYTES);
-    const manifest = parse<AgentManifest>(raw, "manifest");
+    const manifest = parse<AgentManifest>(raw, "manifest", manifestSchema);
     if (manifest.schemaVersion !== 1 || !/^[a-f0-9]{64}$/.test(manifest.fingerprint) || !Array.isArray(manifest.items) || manifest.items.length > AGENT_MAX_ITEMS || !manifest.searchIndex?.sha256) {
       throw new CorpusUnavailable("Incompatible agent manifest.");
     }
@@ -99,10 +137,9 @@ export class AgentCorpusLoader {
     if (this.loading) {
       try {
         const loaded = await this.loading;
-        if (this.loadingFingerprint === manifest.fingerprint) return { ...loaded, manifest };
+        if (loaded.fingerprint === manifest.fingerprint && loaded.manifest.searchIndex.sha256 === manifest.searchIndex.sha256) return { ...loaded, manifest };
       } catch { /* retry the current manifest */ }
     }
-    this.loadingFingerprint = manifest.fingerprint;
     this.loading = this.load(manifest).finally(() => { this.loading = undefined; });
     return this.loading;
   }
@@ -116,7 +153,7 @@ export class AgentCorpusLoader {
     if (path !== `${root}items/${entry.key}.json` || !/^p-[a-f0-9]{16}-[0-9]{6}$/.test(entry.key)) throw new CorpusUnavailable("Invalid agent item path.");
     const raw = await readText(this.read, path, 256 * 1024);
     if (await sha256(raw) !== entry.sha256) throw new CorpusUnavailable("Agent item digest mismatch.");
-    const item = parse<AgentItem>(raw, "item");
+    const item = parse<AgentItem>(raw, "item", itemSchema);
     if (item.id !== id || item.metadata?.fingerprint !== manifest.fingerprint || item.metadata.pageId !== entry.pageId) throw new CorpusUnavailable("Agent item does not match manifest.");
     return item;
   }

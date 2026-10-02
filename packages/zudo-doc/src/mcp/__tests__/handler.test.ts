@@ -3,6 +3,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { createHash } from "node:crypto";
 import { createMcpHandler } from "../handler.js";
+import { AgentCorpusLoader } from "../loader.js";
 import type { AgentItem, AgentManifest, AgentSearchIndex } from "../../agent-docs/types.js";
 
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -25,6 +26,69 @@ const endpoint = "https://docs.example/manual/mcp";
 const post = (body: unknown, headers: Record<string, string> = {}) => new Request(endpoint, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...headers }, body: typeof body === "string" ? body : JSON.stringify(body) });
 
 describe("MCP handler", () => {
+  it("does not reuse an in-flight index with a different manifest digest", async () => {
+    const { files, manifest } = fixture();
+    let release!: () => void;
+    const blocked = new Promise<void>(resolve => { release = resolve; });
+    let indexStarted!: () => void;
+    const started = new Promise<void>(resolve => { indexStarted = resolve; });
+    let secondManifestRead!: () => void;
+    const secondRead = new Promise<void>(resolve => { secondManifestRead = resolve; });
+    let manifests = 0;
+    let indexes = 0;
+    const loader = new AgentCorpusLoader(async path => {
+      const raw = files.get(path)!;
+      if (path.endsWith("manifest.json") && ++manifests === 2) secondManifestRead();
+      if (path.endsWith("search-index.json") && ++indexes === 1) {
+        indexStarted();
+        await blocked;
+      }
+      return new Response(raw);
+    }, "/manual");
+    const first = loader.corpus();
+    await started;
+    const index = JSON.parse(files.get("/manual/agent/v1/search-index.json")!);
+    index.items[0].text = "Updated corpus";
+    const raw = JSON.stringify(index);
+    files.set("/manual/agent/v1/search-index.json", raw);
+    manifest.searchIndex.sha256 = hash(raw);
+    files.set("/manual/agent/v1/manifest.json", JSON.stringify(manifest));
+    const second = loader.corpus();
+    await secondRead;
+    release();
+    expect((await first).index.items[0]!.text).toContain("API_KEY");
+    expect((await second).index.items[0]!.text).toBe("Updated corpus");
+  });
+
+  it("fails closed with 503 for malformed corpus shapes rather than throwing", async () => {
+    for (const invalid of [null, [], { schemaVersion: 1 }, { ...fixture().manifest, site: null }, { ...fixture().manifest, items: [null] }]) {
+      const { files, handler } = fixture();
+      files.set("/manual/agent/v1/manifest.json", JSON.stringify(invalid));
+      const response = await handler(post({ jsonrpc: "2.0", id: 1, method: "tools/list" }));
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ error: "Incompatible agent manifest." });
+    }
+  });
+
+  it("rejects malformed index and item records even when their digests match", async () => {
+    for (const kind of ["index", "item"] as const) {
+      const { files, manifest, handler } = fixture();
+      const raw = kind === "index"
+        ? JSON.stringify({ schemaVersion: 1, fingerprint, items: [null] })
+        : JSON.stringify({ id, title: "Guide", text: null, metadata: { fingerprint, pageId: manifest.items[0]!.pageId } });
+      if (kind === "index") {
+        manifest.searchIndex.sha256 = hash(raw);
+        files.set("/manual/agent/v1/search-index.json", raw);
+      } else {
+        manifest.items[0]!.sha256 = hash(raw);
+        files.set(`/manual/agent/v1/items/${id}.json`, raw);
+      }
+      files.set("/manual/agent/v1/manifest.json", JSON.stringify(manifest));
+      const response = await handler(post({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "fetch", arguments: { id } } }));
+      expect(response.status).toBe(503);
+    }
+  });
+
   it("uses the real SDK client for discovery, search and fetch", async () => {
     const { handler } = fixture();
     const client = new Client({ name: "test", version: "1.0.0" });

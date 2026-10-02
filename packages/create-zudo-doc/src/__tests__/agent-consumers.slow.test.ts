@@ -35,7 +35,7 @@ async function build(name: string, features: string[], defaultLang = "en", addit
   }
   if (features.includes("agentExport")) {
     const docs = path.join(project, "src/content/docs");
-    await fs.outputFile(path.join(docs, "agent-proof.mdx"), `---\ntitle: Agent Proof\n---\n\nThe generated consumer contains the violet platypus marker.\n`);
+    await fs.outputFile(path.join(docs, "agent-proof.mdx"), `---\ntitle: Agent Proof\n---\n\nThe generated consumer contains the violet platypus marker.\n\n## Example\n\nUse \`<Widget />\` literally. [Source link](./agent-proof.mdx#example).\n`);
     for (const [flag, value] of [["draft", "true"], ["unlisted", "true"], ["search_exclude", "true"]]) {
       await fs.outputFile(path.join(docs, `excluded-${flag}.mdx`), `---\ntitle: Excluded ${flag}\n${flag}: ${value}\n---\n\nsecret-${flag}-marker\n`);
     }
@@ -131,6 +131,9 @@ describe("packed generated agent consumers", () => {
       expect(serialized).not.toContain(`secret-${flag}-marker`);
     }
     expect(await fs.readFile(path.join(output, "pages", `${manifest.documents.find((document: any) => document.title === "Agent Proof").key}.md`), "utf8")).toContain("violet platypus marker");
+    const proofText = index.items.find((item: any) => item.title === "Agent Proof").text;
+    expect(proofText).toContain("`<Widget />`");
+    expect(proofText).toContain("[Source link](/docs/agent-proof#example)");
     expect(await fs.readFile(path.join(project, "dist/llms.txt"), "utf8")).toContain("agent");
   });
 
@@ -171,6 +174,8 @@ describe("packed generated agent consumers", () => {
         expect(results.length).toBeGreaterThan(0);
         const fetched = await client.callTool({ name: "fetch", arguments: { id: results[0].id } });
         expect(JSON.stringify(fetched.structuredContent)).toContain("violet platypus marker");
+        expect((fetched.structuredContent as any).text).toContain("`<Widget />`");
+        expect((fetched.structuredContent as any).text).toContain("[Source link](/manual/docs/agent-proof#example)");
         expect((await client.callTool({ name: "fetch", arguments: { id: "unknown-id" } })).isError).toBe(true);
       } finally { await client.close(); }
       const headers = { "content-type": "application/json", accept: "application/json, text/event-stream" };

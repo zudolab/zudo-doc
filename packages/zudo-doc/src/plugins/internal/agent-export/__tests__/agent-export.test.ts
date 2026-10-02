@@ -8,6 +8,32 @@ import { normalizeAgentMarkdown } from "../normalize.js";
 import plugin from "../../../agent-export.js";
 
 describe("agent export", () => {
+  it("preserves inline code and removes multiline MDX comments from prose", () => {
+    const code = '`<Widget />` and ``<span>`value`</span>`` and `[link](relative)` and `$&`';
+    const result = normalizeAgentMarkdown(`${code}\n{/* private\ncomment text */}\nVisible`, "/docs/page");
+    expect(result.text).toBe(`${code}\n\nVisible`);
+    expect(result.unsupportedDynamicContent).toBe(false);
+  });
+
+  it("removes multiline named imports without removing import examples", () => {
+    const declaration = 'import {\n  InternalComponent,\n  helper\n} from "../../private/source";';
+    const result = normalizeAgentMarkdown(`${declaration}\n\nVisible\n\n\`\`\`tsx\n${declaration}\n\`\`\``, "/docs/page");
+    expect(result.text).toBe(`Visible\n\n\`\`\`tsx\n${declaration}\n\`\`\``);
+  });
+
+  it("resolves fragment, query and reference destinations against the source page", () => {
+    const source = '[section](#setup) [query](?view=all) [guide][ref]\n[ref]: ../guide "Guide"\n![image][img]\n[img]: <images/example.png>';
+    const result = normalizeAgentMarkdown(source, "https://example.test/manual/docs/page");
+    expect(result.text).toContain("[section](https://example.test/manual/docs/page#setup)");
+    expect(result.text).toContain("[query](https://example.test/manual/docs/page?view=all)");
+    expect(result.text).toContain('[ref]: https://example.test/manual/guide "Guide"');
+    expect(result.text).toContain("[img]: <https://example.test/manual/docs/images/example.png>");
+    expect(normalizeAgentMarkdown("[section](#setup)", "/manual/docs/page").text)
+      .toBe("[section](/manual/docs/page#setup)");
+    expect(normalizeAgentMarkdown("[guide](<other page>)", "/manual/docs/page").text)
+      .toBe("[guide](</manual/docs/other%20page>)");
+  });
+
   it("normalizes outside fences and preserves code, links and dynamic markers", () => {
     const result = normalizeAgentMarkdown('import Foo from "foo"\n```ts\nimport Foo from "foo"\n<Foo />\n```\n![alt](img.png)\n<Admonition>Keep this body</Admonition>\n<Foo />', "https://example.test/docs/page");
     expect(result.text).toContain('```ts\nimport Foo from "foo"\n<Foo />\n```');
@@ -74,6 +100,15 @@ describe("agent export", () => {
     const updated = JSON.parse(readFileSync(path, "utf8"));
     expect(updated.documents).toHaveLength(1);
     expect(existsSync(staleItem)).toBe(false);
+  });
+
+  it("resolves source-file links using locale and target slug overrides", () => {
+    const root = mkdtempSync(join(tmpdir(), "agent-links-"));
+    writeFileSync(join(root, "source.mdx"), '---\ntitle: Source\nslug: moved/source\n---\n[Target](./target.mdx#section)\n[Reference][target]\n[target]: ./target.mdx');
+    writeFileSync(join(root, "target.mdx"), '---\ntitle: Target\nslug: custom-target\n---\n# Section');
+    const corpus = projectAgentCorpus({ base: "/manual", siteUrl: "https://example.test", siteName: "Docs", defaultLocale: "ja", defaultLocaleDir: root });
+    const page = corpus.manifest.documents.find(doc => doc.title === "Source")!;
+    expect(corpus.pages.get(page.key)).toBe('[Target](https://example.test/manual/docs/custom-target#section)\n[Reference][target]\n[target]: https://example.test/manual/docs/custom-target');
   });
 
   it("serves live base-prefixed dev artifacts after edits", async () => {

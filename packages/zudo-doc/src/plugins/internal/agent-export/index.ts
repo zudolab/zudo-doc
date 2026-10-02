@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { agentItemKey, agentPageKey } from "../../../agent-docs/identity.js";
 import { AGENT_MAX_ITEMS, AGENT_MAX_MANIFEST_BYTES, AGENT_MAX_SEARCH_INDEX_BYTES } from "../../../agent-docs/limits.js";
 import type { AgentItem, AgentManifest, AgentSearchIndex } from "../../../agent-docs/types.js";
@@ -35,15 +36,29 @@ function artifactUrl(options: AgentExportOptions, path: string): string {
 export function projectAgentCorpus(options: AgentExportOptions): { manifest: AgentManifest; index: AgentSearchIndex; pages: Map<string, string>; items: Map<string, string> } {
   const roots = [{ code: options.defaultLocale, dir: options.defaultLocaleDir, default: true }, ...(options.locales ?? []).map(({ code, dir }) => ({ code, dir, default: false }))];
   const seen = new Set<string>();
-  const documents = roots.flatMap((root) => collectMdFiles(resolve(root.dir)).flatMap(({ filePath, slug: fileSlug }) => {
+  const sources = roots.flatMap((root) => collectMdFiles(resolve(root.dir)).flatMap(({ filePath, slug: fileSlug }) => {
     const parsed = parseMarkdownFile(filePath);
     if (!parsed || isExcluded(parsed.data)) return [];
     const slug = parsed.data.slug ?? fileSlug;
+    const url = slugToUrl(slug, root.default ? null : root.code, options.base, options.siteUrl);
+    return [{ root, filePath, parsed, slug, url }];
+  }));
+  const sourceUrls = new Map(sources.map(source => [source.filePath, source.url]));
+  const documents = sources.map(({ root, filePath, parsed, slug, url }) => {
     const id = agentPageKey(root.code, slug);
     if (seen.has(id)) throw new Error(`Duplicate agent page ID: ${id}`);
     seen.add(id);
-    const url = slugToUrl(slug, root.default ? null : root.code, options.base, options.siteUrl);
-    const normalized = normalizeAgentMarkdown(parsed.content, url);
+    const normalized = normalizeAgentMarkdown(parsed.content, url, target => {
+      // Source-relative MD/MDX links use the physical file, not its possibly
+      // overridden route slug. Resolve only known corpus files; never read a
+      // target supplied by the document or expose local paths in the feed.
+      try {
+        const source = new URL(target, pathToFileURL(filePath));
+        if (!/\.mdx?$/.test(source.pathname)) return undefined;
+        const page = sourceUrls.get(fileURLToPath(source));
+        return page === undefined ? undefined : page + source.search + source.hash;
+      } catch { return undefined; }
+    });
     const title = parsed.data.title ?? slug;
     const description = parsed.data.description ?? stripMarkdown(parsed.content).split("\n").find(Boolean) ?? "";
     const metadata = {
@@ -52,7 +67,7 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
       ...(description ? { description } : {}),
       ...(normalized.unsupportedDynamicContent ? { unsupportedDynamicContent: true } : {}),
     };
-    return [{
+    return {
       id,
       key: id,
       locale: root.code,
@@ -63,8 +78,8 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
       text: normalized.text,
       unsupportedDynamicContent: normalized.unsupportedDynamicContent,
       parts: chunkAgentText(normalized.text, title, url, metadata),
-    }];
-  })).sort((a, b) => order(a.locale, b.locale) || order(a.slug, b.slug));
+    };
+  }).sort((a, b) => order(a.locale, b.locale) || order(a.slug, b.slug));
   const site = { name: options.siteName, url: options.siteUrl ?? "", base: options.base };
   const locales = roots.map(({ code }) => code);
   const fingerprint = hash(json(canonical({ schemaVersion: 1, site, defaultLocale: options.defaultLocale, locales, documents })));
