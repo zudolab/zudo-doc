@@ -145,7 +145,7 @@ type _BreadcrumbSlotUsesChild = Assert<
   Equal<BreadcrumbSlotProps["rightSlot"], Child | undefined>
 >;
 type _EnlargeClassUsesClass = Assert<Equal<EnlargeDialogProps["class"], string>>;
-type _EnlargeStyleIsCssText = Assert<EnlargeDialogProps["style"] extends string ? true : false>;
+type _EnlargeStyleIsNativeObject = Assert<EnlargeDialogProps["style"] extends object ? true : false>;
 
 const intrinsicButtonProps: JSX.IntrinsicElements["button"] = {
   class: "rounded",

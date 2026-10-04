@@ -4,7 +4,7 @@
 // retains its zfb content bridge import; this leaf only assembles serializable
 // data and is safe to bundle in browsers and other non-zfb runtimes.
 
-import { DEFAULT_SETTINGS } from "../config.js";
+import { DEFAULT_SETTINGS } from "../settings-defaults.js";
 import { defaultTranslations } from "../i18n-defaults/index.js";
 import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
 import { buildThemePackRegistry } from "../theme-packs-registry/build-registry.js";

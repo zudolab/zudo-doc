@@ -10,7 +10,7 @@ Each topic contains file/symbol rows, per-site rawHtml review, utility dispositi
 
 A row closes only with: final v3 form, pinned spec section, code/test reference, command and result, rawHtml trust/parser/cleanup review if applicable, and any deliberate DOM/class/behavior difference. “None” must be verified, not assumed. Keep temporary shim rows blocked for release even if unit tests pass. #4475 cannot report release PASS while any zfb shim remains.
 
-The #4437 mechanical codemod leaves **662 TypeScript diagnostics** as the ports' starting line: 642 from `pnpm exec tsc --noEmit -p packages/zudo-doc/tsconfig.json --pretty false` plus 20 from `pnpm exec tsc --noEmit -p tsconfig.json --pretty false` (2026-10-02, zfb 3.1.0). The commands are separate package and host programs; `packages/zudo-doc/virtual-modules.d.ts` was first generated with its package script. The host program may resolve stale v2 package `dist/`, so its 20 diagnostics are a provisional host count, not a source-resolution port verdict. Complete integration counts: **pending #4467**. Final package versions and actual `zfb --version` binary output: **pending #4476**. Browser hydration/navigation and client-bundle size delta: **pending #4468/#4475**.
+The #4437 mechanical codemod leaves **662 TypeScript diagnostics** as the ports' starting line: 642 from `pnpm exec tsc --noEmit -p packages/zudo-doc/tsconfig.json --pretty false` plus 20 from `pnpm exec tsc --noEmit -p tsconfig.json --pretty false` (2026-10-02, zfb 3.1.0). The commands are separate package and host programs; `packages/zudo-doc/virtual-modules.d.ts` was first generated with its package script. The host program may resolve stale v2 package `dist/`, so its 20 diagnostics are a provisional host count, not a source-resolution port verdict. #4467 final-source package, host, pages, E2E and Worker typechecks report **zero diagnostics** after a fresh 3.2.0 workspace build. The four exact integration pins and actual `zfb --version` output are recorded below; final release versions remain #4476's responsibility. Browser hydration/navigation and client-bundle size delta: **pending #4468/#4475**.
 
 ## Normative references
 
@@ -118,3 +118,65 @@ The authoritative round-2 release list follows [#4479 packed evidence](../../../
 Actual temporary shim families are #3359, #3361 and #3375; #3376 is a separate unresolved contract gate. All four still need release evidence. Native #3360 lists, #3364 public CSS imports and #3362 unchanged-root preservation replace the obsolete round-1 list/physical-import/blanket-remount shims. Their integration regressions still gate release; if a shim reappears, it is a blocker even for a closed upstream issue. Native #3385 leading-LF behavior also needs real-browser parser confirmation. #3363's absent SDK persist prop is handled by the established ancestor persistence arrangement; no hand-authored root/persist shim is authorized. Other unresolved wind/tooling gaps retain their manifest, authored-CSS, naming and parity checks; they are not silently classified as fixed.
 
 #4467 rechecks newest published 3.x and actual binary, aligns exact pins and peer floors, and repeats changed native-path proofs before adopting a later version. #4475 records a no-shim source/packed-output survivor scan and all contract, browser, Worker and required-check verdicts. A green build with remaining shims or unresolved gates is not PASS. Under DD9, a BLOCKED #4475 prevents both the root merge and #4476 temporary-resource deletion. #4477 merges only after #4475 PASS, #4476 completion and green checks on the final commit; owner publication remains outside this chain.
+
+## #4467 integration update: published zfb 3.2.0
+
+The current integration pins `@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm`, and `@takazudo/zfb-adapter-cloudflare` to exact `3.2.0` where used; the package peer floor is `^3.2.0`. `pnpm exec zfb --version` reports `zfb 3.2.0` (embedded esbuild 0.25.12). The 3.1.0 decision and shim inventory above remain historical context. The results below supersede their current-state claims.
+
+| Prior gate | 3.2.0 integration result and proof |
+| --- | --- |
+| #3359 standard head and media attributes | Native head descriptions render directly in `DocLayout`; the static-head serializer was removed. Native `meta property`, `link as`, `popover`, and `video controls/preload` render in the package's focused SSR and interaction tests. The configured async stylesheet media swap retains its bounded handler validation independently of the removed serializer. |
+| #3361 island iframe | `PreviewBase` now SSRs and hydrates a native `<iframe srcdoc>`; the imperative host was removed. Focused preview tests cover eager and visible scheduling, srcdoc, viewport changes, height, and disposal. |
+| #3375 style keys | Issue-specific CSS text fallbacks for vendor mask, inset, placement, transform, and site-tree width use native CSS-spelled object styles. Explicit nonzero units remain. Package typecheck and focused style/interaction tests cover these changes. |
+| #3376 optional props | Strict own-key-sensitive optional prop construction remains the project contract; the package's existing SSR/hydration tests pass on 3.2.0. |
+| Remaining standard ruby gap | Native `<rb>` still throws `ZR_TAG` on 3.2.0. The bounded, escaped, non-executable ruby serializer remains in `home-intro/index.tsx`; [upstream #3642](https://github.com/Takazudo/zudo-front-builder/issues/3642) tracks the remaining release blocker. #4475 cannot claim a no-shim PASS until a published fix and native proof remove it. |
+
+There are no `preact` imports in owned `packages/zudo-doc/src`, root `src`, or `pages` TypeScript/TSX. Root `preact` remains installed for zdtp's opaque bundle and declarations. The package and root `preact-render-to-string` dependencies and the package's dev-only `preact` dependency were removed. Native `onload` serialization uses literal apostrophes in its double-quoted attribute; the browser receives the same handler. Native boolean `controls` renders as a bare attribute. Both intentional byte differences are covered by assertions.
+
+The 3.2.0 Wind CSS command now reports rejected manifest candidates by `manifest zudo-doc[index]` rather than the old parenthesized candidate text. The package manifest generator maps those source indexes back to exact candidates and its negative control still rejects unsupported utilities; it generated 483 accepted candidates. `zfb css --help` exposes no structured diagnostics option for this command. The flagged project Wind audit completed with zero error-severity diagnostics; its 1,513 `auditInfo` lines remain informational source-scan findings, not emitted-CSS proof.
+
+The browser-safe `route-context-payload` now reads `DEFAULT_SETTINGS` from `settings-defaults.ts`. `config.ts` retains the established export, while the source graph test requires zero forbidden runtime imports. This removes the prior `config -> wind -> @takazudo/zfb/config` edge from the browser entry. The package prepack graph check is rerun against fresh declarations and JS below.
+
+Documentation handoff for #4474: the feature field census still belongs in `packages/zudo-doc/src/config.ts`, but default values now live in `packages/zudo-doc/src/settings-defaults.ts` and are re-exported by `config.ts`. Update the root and package feature-change checklists before release so new settings cannot drift between their field JSDoc and the browser-safe defaults record.
+
+Upstream observability follow-up: [zudo-front-builder#3645](https://github.com/Takazudo/zudo-front-builder/issues/3645) tracks the uninstrumented build phase before published timing markers and timing that appears only after a phase completes. It does not claim the long-running local build is an upstream performance defect.
+
+A separate [upstream Wind source-scaling report #3647](https://github.com/Takazudo/zudo-front-builder/issues/3647) has a reduced published-3.2.0 `zfb css` repro: 5,000 class positions in one 428.9 KB source took 8.62 s, while the same source split across five files took 3.34 s. This supports a source-local extraction cost concern. It is not proof that the still-running full-site build is in Wind extraction; no production virtual module was split as a workaround.
+
+[Upstream build-stall report #3648](https://github.com/Takazudo/zudo-front-builder/issues/3648) reduces the integration build problem to one static page with an unused import of the valid `@takazudo/zudo-doc/chrome` entry, `wind: false`, and the released 3.2.0 binary. The CPU-active build reached plugin setup but no subsequent timing marker within a 60-second diagnostic cap. The same public entry imports in Node 24 in about 190 ms; a one-page `route-context` control reached the bundle markers in under a second. Additional static imports of the package's `home-page`, `doc-page-renderer`, and `head-with-defaults` entries behaved similarly to `chrome` under 15-second caps. The internal pre-bundle operation has not been attributed, and the diagnostic caps are not official build verdicts. The full-site parity build, root build, theme fixture, and package slow route builds remain **blocked without a passing verdict**; neither Wind nor dynamic route source text alone reproduced the stall. #4475 must remain BLOCKED both for this build gate and the native ruby gap.
+
+### #4467 command record (published 3.2.0; worktree `topic/zfb3-4467-zfb32`)
+
+| Command or gate | Current result | Provenance / limit |
+| --- | --- | --- |
+| `pnpm install --ignore-scripts`; normal guarded `pnpm install` | PASS; PASS | Initial dependency pin install; restored normal lifecycle after repairs. |
+| Guarded `pnpm build:workspace` | PASS | Final source build after initial Wind diagnostic-parser failure and then two type errors were fixed. Generated 483 accepted Wind candidates and fresh package JS/declarations. |
+| `pnpm check`, `pnpm check:pages`, `pnpm check:e2e`, `pnpm check:worker`, package `typecheck` | PASS | Repeated after the defaults leaf and final package rebuild. Zero TypeScript diagnostics. |
+| `pnpm test` | PASS | Initial six upgrade-sensitive expectations failed; fixed and reran after all final source edits in 62 seconds (exit 0). Root 1,320 passed / 4 skipped; scaffold 772 passed; package 3,421 passed / 2 skipped; remaining packages 74 and 44 passed. |
+| Guarded `pnpm test:unit:slow` | PASS | 76 tests. |
+| Package `check:prepack-contract`, `check:package-wind-manifest` | PASS; PASS | Initial prepack failure exposed `route-context-payload -> config -> wind`; final emitted browser graph has 83 runtime specifiers, seven declaration specifiers, zero forbidden. All 136 source utilities covered by Wind manifest. |
+| `pnpm exec zfb wind audit --project-root . --fail-on error` | PASS | 1,513 informational diagnostics, zero error severity. |
+| Guarded package `test:slow` | NO VERDICT | First run expired at the guard's 1,800-second cap after several CPU-active route builds, `ENV_SUSPECT exit=124`, without an assertion. A later queued diagnostic was intentionally canceled before completion. The route build blocker is tracked upstream as #3648; the three known A2 hash mismatches belong to #4470 only if reached. |
+| CI-faithful parity, root site build, six fixture builds | NO VERDICT | Full parity was intentionally canceled after about 23 minutes; timed repeat after about 31 minutes. A real one-file theme fixture was canceled after 139 seconds. The root build in guarded `b4push` step 23 was intentionally canceled after 2 minutes 6 seconds of CPU-active work with the same pre-bundle symptom; steps 1–22 passed and steps 24–34 were not reached, so the suite has no verdict. Five other fixtures were not run after the smallest theme fixture reproduced the blocker. No source exclusions, timeouts, or assertions were weakened. |
+
+The package's public `./image-enlarge` and `./mermaid-enlarge` subpaths still export their SSR fallback helpers through non-client `public.ts` barrels. Their client `index.tsx` entries each expose one callable island target under the 3.2 scanner. `HtmlPreviewWrapper` likewise remains exported from its subpath while its non-client implementation moved to `wrapper.tsx`. The package export map and built Node named-import proof preserve those public imports; #4473 must keep these in the API census.
+
+The command ledger below gives observed exit codes and elapsed wall time where captured. Intentional diagnostic cancellations (`143`) and guard caps (`124`) are **no verdict** for the underlying build, despite the shell's nonzero exit. An initial failure and its repaired rerun are both retained.
+
+| Invocation / stage | Exit | Elapsed | Interpretation |
+| --- | ---: | ---: | --- |
+| Initial guarded `pnpm build:workspace` | 1 | 9 s | Old Wind diagnostic parser failed under 3.2.0; repaired. |
+| Second guarded `pnpm build:workspace` | 2 | 12 s | Two 3.2 type errors surfaced; repaired. |
+| Third guarded `pnpm build:workspace` | 0 | 11 s | Passed after type repairs. |
+| Final guarded `pnpm build:workspace` | 0 | 32 s | Passed after browser-safe defaults split and package rebuild. |
+| Guarded normal `pnpm install` | 0 | 14 s | Lifecycle restored after initial `--ignore-scripts` install. |
+| Initial `pnpm test` | 1 | not recorded | Six upgrade-sensitive assertions failed; fixed before full rerun. |
+| Final-source `pnpm test` | 0 | 62 s | Root, package and scaffold default suites passed; counts above. |
+| Guarded `pnpm test:unit:slow` | 0 | 30 s | 76 root slow unit tests passed. |
+| Guarded package `test:slow`, first run | 124 | 1,800 s | Guard cap, `ENV_SUSPECT`; no test verdict. |
+| Guarded package `test:slow`, diagnostic retry | 143 | 35 s | Intentionally canceled to prioritize narrowed build repro; no test verdict. |
+| Guarded `bash scripts/parity-build.sh` | 143 | 1,380 s | Intentionally canceled CPU-active build; no parity verdict. |
+| Timed guarded parity retry | 143 | 1,885 s | Intentionally canceled after plugin setup and no next timing marker; no parity verdict. |
+| Timed guarded theme fixture | 143 | 139 s | Intentionally canceled CPU-active build; no fixture verdict. |
+| Guarded b4push | 143 | step 23 build: 126 s | Steps 1–22 passed; step 23 root build intentionally canceled on #3648, steps 24–34 not reached; no suite verdict. |
+| Published 3.2.0 one-page `chrome` import repro | 124 | 60 s | Diagnostic cap after plugin setup, CPU-active; upstream #3648. |

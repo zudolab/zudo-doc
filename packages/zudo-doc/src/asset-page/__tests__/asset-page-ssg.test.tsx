@@ -316,10 +316,10 @@ describe("asset page SSG", () => {
 
   it("renders video and sniff-approved PDF in the media grid", () => {
     const video = page(asset({ path: "movie.mp4", name: "movie.mp4", dir: "", kind: "video", mime: "video/mp4", durationSec: 2.5, width: 1280, height: 720 }));
-    expect(video).toContain('<video controls="" preload="metadata" src="/assets/movie.mp4" width="1280" height="720" class="max-w-full"></video>');
+    expect(video).toContain('<video controls preload="metadata" src="/assets/movie.mp4" width="1280" height="720" class="max-w-full"></video>');
     expect(video).toContain("zd-asset-media-grid");
     const videoWithoutDimensions = page(asset({ path: "movie.mp4", name: "movie.mp4", dir: "", kind: "video", mime: "video/mp4", width: undefined, height: undefined }));
-    expect(videoWithoutDimensions).toContain('<video controls="" preload="metadata" src="/assets/movie.mp4" class="max-w-full"></video>');
+    expect(videoWithoutDimensions).toContain('<video controls preload="metadata" src="/assets/movie.mp4" class="max-w-full"></video>');
     expect(videoWithoutDimensions).not.toContain('width="undefined"');
     const pdf = page(asset({ path: "guide.pdf", name: "guide.pdf", dir: "", kind: "pdf", mime: "application/pdf", width: undefined, height: undefined }));
     expect(pdf).toContain('<iframe title="guide.pdf" src="/assets/guide.pdf#view=FitH"');

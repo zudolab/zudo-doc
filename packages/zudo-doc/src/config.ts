@@ -157,102 +157,10 @@ type CodexResourcesConfig =
   | { codexDir: string; projectRoot?: string; scanRoot?: string }
   | false;
 
-// ---------------------------------------------------------------------------
-// DEFAULT_SETTINGS — the documented default for EVERY serializable settings
-// field. `zudoDoc()` merges user fields over these per-field (user wins). Every
-// value here is the same default that the matching `ZudoDocConfig` field's
-// `@default` JSDoc records. Kept as a complete `Settings` object so the routes
-// plugin's virtual-module payload is fully populated for zero-override users.
-// ---------------------------------------------------------------------------
-
-export const DEFAULT_SETTINGS: Settings = {
-  colorScheme: "Default Dark",
-  colorMode: {
-    defaultMode: "dark",
-    lightScheme: "Default Light",
-    darkScheme: "Default Dark",
-    respectPrefersColorScheme: true,
-  },
-  siteName: "Docs",
-  siteDescription: "",
-  logo: "auto",
-  favicon: undefined,
-  base: "/",
-  trailingSlash: false,
-  home: { wide: false, introMarkdown: "", sitemapHeading: "" },
-  siteTreeNavIgnore: [],
-  siteTreeNavSecondary: [],
-  minifyHtml: true,
-  docsDir: "src/content/docs",
-  entryDocSlug: "getting-started",
-  dateFormat: "locale",
-  defaultLocale: "en",
-  locales: {},
-  mermaid: true,
-  transclude: false,
-  noindex: false,
-  editUrl: false,
-  githubUrl: false,
-  siteUrl: "",
-  metaTags: {
-    description: true,
-    keywords: false,
-    ogImage: false,
-    ogSiteName: true,
-    twitterCard: false,
-  },
-  sitemap: false,
-  docMetainfo: false,
-  docMetainfoFields: ["created", "updated", "author"],
-  docTags: false,
-  tagPlacement: "after-title",
-  tagGovernance: "off",
-  tagVocabulary: false,
-  llmsTxt: false,
-  changelogs: false,
-  math: false,
-  cjkFriendly: false,
-  onBrokenMarkdownLinks: "warn",
-  aiAssistant: false,
-  aiChatDemoMode: false,
-  aiChatAllowedOrigins: [],
-  // Exact UTC-day paid-call admission cap; false disables it. An admission is
-  // consumed before provider fetch and is not provider-confirmed accounting.
-  aiChatGlobalDailyLimit: false,
-  designTokenPanel: false,
-  tocMinDepth: 2,
-  tocMaxDepth: 4,
-  searchMaxBodyLength: 3000,
-  sidebarResizer: false,
-  sidebarToggle: false,
-  tocToggle: false,
-  imageEnlarge: false,
-  findInPage: false,
-  dynamicPageTransition: false,
-  frontmatterPreview: false,
-  docHistory: false,
-  docHistoryUi: true,
-  docHistoryExclude: [],
-  assetViewer: false,
-  assetViewerDir: "assets",
-  assetViewerRoutePrefix: "files",
-  assetViewerExclude: [],
-  assetViewerIndex: false,
-  assetViewerIndexing: false,
-  bodyFootUtilArea: false,
-  htmlPreview: undefined,
-  versions: false,
-  claudeResources: false,
-  codexResources: false,
-  defaultLocaleOnlyPrefixes: [],
-  footer: false,
-  headerNav: [],
-  headerRightItems: [{ type: "component", component: "theme-toggle" }],
-  packageOwnedRoutes: true,
-  themePack: "default",
-  themePackSwitcher: false,
-  themePacks: undefined,
-};
+// Keep the established config export while the plain defaults live in a
+// browser-safe leaf consumed by route-context-payload.
+export { DEFAULT_SETTINGS } from "./settings-defaults.js";
+import { DEFAULT_SETTINGS } from "./settings-defaults.js";
 
 // ---------------------------------------------------------------------------
 // ZudoDocConfig — the single user-facing settings reference. Every field is

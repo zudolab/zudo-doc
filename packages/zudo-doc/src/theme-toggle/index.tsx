@@ -69,14 +69,11 @@ function AppearanceMenu({ id, labels, preference, resolved, activeIndex, trigger
   const scope = getScope();
   const menuRef: Ref<HTMLDivElement> = { current: null };
   const itemRefs: Ref<HTMLButtonElement>[] = preferences.map(() => ({ current: null }));
-  const placement = signal("visibility:hidden;left:0px;top:0px;right:auto;bottom:auto;margin:0;width:260px");
+  const placement = signal({ visibility: "hidden", left: "0px", top: "0px", right: "auto", bottom: "auto", margin: "0", width: "260px", "max-height": "none" });
 
   scope.onActivate(() => {
     const menu = menuRef.current;
     if (!menu) return;
-    // workaround for https://github.com/Takazudo/zudo-front-builder/issues/3359
-    // zudo-react 3.1.0 rejects the standard popover attribute during SSR.
-    menu.setAttribute("popover", "manual");
     menu.showPopover?.();
     const position = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
@@ -90,7 +87,7 @@ function AppearanceMenu({ id, labels, preference, resolved, activeIndex, trigger
       const maxHeight = Math.max(80, Math.min(desiredHeight, above ? roomAbove : roomBelow));
       const left = Math.max(gap, Math.min(rect.right - width, window.innerWidth - width - gap));
       const top = above ? Math.max(gap, rect.top - gap - maxHeight) : rect.bottom + gap;
-      placement.value = `left:${left}px;top:${top}px;right:auto;bottom:auto;margin:0;width:${width}px;max-height:${maxHeight}px`;
+      placement.value = { visibility: "visible", left: `${left}px`, top: `${top}px`, right: "auto", bottom: "auto", margin: "0", width: `${width}px`, "max-height": `${maxHeight}px` };
     };
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node) && !menu.contains(event.target as Node)) close();
@@ -131,7 +128,7 @@ function AppearanceMenu({ id, labels, preference, resolved, activeIndex, trigger
   return <div ref={menuRef} id={id} role="menu" aria-label={labels.appearance}
     on:keydown={onMenuKeyDown}
     class="fixed z-tooltip overflow-y-auto rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
-    style={placement}>
+    style={placement} popover="manual">
     <div class="px-hsp-sm py-vsp-xs text-small font-semibold" aria-hidden="true">{labels.appearance}</div>
     {preferences.map((option, index) => <button ref={itemRefs[index]} type="button"
       role="menuitemradio" aria-checked={computed(() => preference.value === option)}

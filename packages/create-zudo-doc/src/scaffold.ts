@@ -704,7 +704,7 @@ function generatePackageJson(
   const deps: Record<string, string> = {
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
-    // @takazudo/zfb-<platform>); pinned to the exact stable 3.1.0 package
+    // @takazudo/zfb-<platform>); pinned to the exact stable 3.2.0 package
     // family required by the zfb v3 migration lock.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
@@ -982,9 +982,9 @@ function generatePackageJson(
     // 2.22.1: zfb fixes dev live reload and lazy boot; md-wasm retains
     // workerd-specific parse/highlight exports while retaining browser paths.
     // No scaffold config migration is required.
-    "@takazudo/zfb": "3.1.0",
-    "@takazudo/zfb-runtime": "3.1.0",
-    "@takazudo/zfb-md-wasm": "3.1.0",
+    "@takazudo/zfb": "3.2.0",
+    "@takazudo/zfb-runtime": "3.2.0",
+    "@takazudo/zfb-md-wasm": "3.2.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

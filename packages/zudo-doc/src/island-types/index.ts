@@ -67,9 +67,7 @@ export interface DocHistoryData {
 // issue #2157).
 
 /** Shared inline style centering an enlarge `<dialog>` transform-free. */
-// workaround for https://github.com/Takazudo/zudo-front-builder/issues/3375
-// The v3 object style type rejects inset; the CSS string preserves the SSR style.
-export const ENLARGE_DIALOG_STYLE = "position:fixed;inset:0;margin:auto";
+export const ENLARGE_DIALOG_STYLE = { position: "fixed", inset: 0, margin: "auto" } as const;
 
 /** Class string for the image-enlarge `<dialog>` (hydrated + SSR fallback). */
 export const IMAGE_ENLARGE_DIALOG_CLASS =

@@ -441,7 +441,7 @@ function NoteTrayRow({
             fallback={() => (
               <span
                 class="shrink-0 font-mono tabular-nums text-caption text-muted"
-                style={computed(() => `width:${width.value}ch;`)}
+                style={computed(() => ({ width: `${width.value}ch` }))}
               >
                 {rankLabel}
               </span>

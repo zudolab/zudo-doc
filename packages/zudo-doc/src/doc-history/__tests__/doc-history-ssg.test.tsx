@@ -4,7 +4,7 @@
  *
  * Verifies:
  *  1. SSG markup — the trigger button and dialog landmark appear in static HTML
- *     produced by `preact-render-to-string` (mirroring zfb's SSG renderer).
+ *     produced by zudo-react's static renderer.
  *  2. displayName assertion — ensures the island marker name "DocHistory" is
  *     stable after minification/renaming.
  *  3. Call-site `data-zfb-island="DocHistory"` marker — emitted by the

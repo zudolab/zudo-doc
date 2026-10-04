@@ -3328,6 +3328,9 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
   white-space: nowrap;
   border-width: 0;
 }
+.visible {
+  visibility: visible;
+}
 .placeholder\:text-muted::placeholder {
   color: var(--zw-color-muted);
 }

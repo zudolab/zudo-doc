@@ -289,6 +289,6 @@ describe("emitManifest", () => {
 
 describe("strict zfb validation", () => {
   it("retains a resolved utility and rejects unsupported candidates", () => {
-    expect(validateCandidates(new Set(["flex", "invisible", "flow-root"]))).toEqual(["flex"]);
+    expect(validateCandidates(new Set(["flex", "invisible", "flow-root"]))).toEqual(["flex", "invisible"]);
   });
 });

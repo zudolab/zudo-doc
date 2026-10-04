@@ -60,6 +60,17 @@ export interface HeadWithDefaultsSettings {
   favicon?: string | FaviconConfig | false;
 }
 
+/** Keep the configured media inside the same bounded inline handler accepted
+ * by the former head serializer. Native head rendering escapes HTML attributes,
+ * but it does not validate JavaScript inserted into an event attribute. */
+function mediaSwapHandler(media: string | undefined): string {
+  const handler = `this.media='${media ?? "all"}'`;
+  if (!/^this\.media='[a-z\d\s(),:.%+\-/*<>=]*'$/i.test(handler)) {
+    throw new TypeError("Async stylesheet media cannot form a safe onload handler");
+  }
+  return handler;
+}
+
 // ── favicon emission (#3460) ────────────────────────────────────────────────
 
 /** `favicon: "auto"` — the documented sentinel value, mirroring `logo: "auto"`. */
@@ -354,8 +365,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                 //   <link rel="stylesheet" href media="print" onload="this.media='all'">
                 //   <noscript><link rel="stylesheet" href></noscript>
                 //
-                // The static-head serializer allows this bounded media swap
-                // handler and escapes it as an HTML attribute value.
+                // Preserve the bounded media swap before native JSX rendering.
                 <>
                   <link
                     key={`${i}-link`}
@@ -363,7 +373,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                     href={s.href}
                     {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
                     media="print"
-                    onload={`this.media='${s.media ?? "all"}'`}
+                    onload={mediaSwapHandler(s.media)}
                   />
                   <noscript key={`${i}-noscript`}>
                     <link

@@ -63,7 +63,16 @@ describe("zudoDoc() returns a complete ZfbConfig", () => {
 
     expect(config).not.toHaveProperty("wind");
     expect(config.presets).toEqual([zudoDocWindPreset]);
-    expect(config.presets?.[0]?.wind).toEqual(packageWindConfig);
+    // zfb 3.2.0 annotates package manifests with preset provenance.
+    expect(config.presets?.[0]?.wind).toEqual({
+      ...packageWindConfig,
+      manifests: {
+        "zudo-doc": {
+          path: "@takazudo/zudo-doc/wind.json",
+          __zfb_source_package: "@takazudo/zudo-doc",
+        },
+      },
+    });
   });
 
   it("keeps a partial user color override top-level beside package wind defaults", () => {
@@ -73,7 +82,16 @@ describe("zudoDoc() returns a complete ZfbConfig", () => {
     // zfb recursively merges this top-level override over the unchanged
     // package preset. The user object is not shallow-merged into Settings.
     expect(config.presets).toEqual([zudoDocWindPreset]);
-    expect(config.presets?.[0]?.wind).toEqual(packageWindConfig);
+    // zfb 3.2.0 annotates package manifests with preset provenance.
+    expect(config.presets?.[0]?.wind).toEqual({
+      ...packageWindConfig,
+      manifests: {
+        "zudo-doc": {
+          path: "@takazudo/zudo-doc/wind.json",
+          __zfb_source_package: "@takazudo/zudo-doc",
+        },
+      },
+    });
     expect(config.wind).toEqual(wind);
     expect(routesOptions(config)?.settings).not.toHaveProperty("wind");
   });

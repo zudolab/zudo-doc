@@ -4,7 +4,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 import { flushAll, renderIsland, renderSsr } from "../../__tests__/helpers/zudo-react.js";
-import { ImageEnlarge, ImageEnlargeSsrFallback } from "../index.js";
+import { ImageEnlarge } from "../index.js";
+import { ImageEnlargeSsrFallback } from "../ssr-fallback.js";
 import { IMAGE_ENLARGE_DIALOG_CLASS } from "../../island-types/index.js";
 
 class ResizeObserverStub {

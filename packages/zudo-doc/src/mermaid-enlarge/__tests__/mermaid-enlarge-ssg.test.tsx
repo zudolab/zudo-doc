@@ -3,7 +3,8 @@
 
 import { describe, expect, it } from "vitest";
 import { renderIsland, renderSsr } from "../../__tests__/helpers/zudo-react.js";
-import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "../index.js";
+import { MermaidEnlarge } from "../index.js";
+import { MermaidEnlargeSsrFallback } from "../ssr-fallback.js";
 import { MERMAID_ENLARGE_DIALOG_CLASS } from "../../island-types/index.js";
 
 describe("MermaidEnlarge — SSR shell", () => {

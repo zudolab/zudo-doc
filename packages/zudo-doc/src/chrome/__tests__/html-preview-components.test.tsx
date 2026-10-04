@@ -43,14 +43,13 @@ function expectSrcdocMetadata(
   expectedLang: string,
   expectedTitle: string,
 ): void {
-  // #3361: v3's iframe is created on activation. The SSR contract is the
-  // reserved frame host plus the exact language/title in transport props.
+  // Native iframe SSR and exact language/title transport props are required.
   const host = new Window().document.createElement("div");
   host.innerHTML = rendered;
   const wrapper = host.querySelector("[data-zfb-island]");
   expect(wrapper?.getAttribute("data-zfb-transport")).toBe("json/1");
   expect(wrapper?.getAttribute("data-zfb-build")).toBe("4464-doc-composition-test");
-  expect(host.querySelector("[data-zd-html-preview-frame-host]")).not.toBeNull();
+  expect(host.querySelector("iframe[srcdoc]")).not.toBeNull();
   const props = JSON.parse(wrapper?.getAttribute("data-props") ?? "{}") as {
     lang?: string;
     labels?: { preview?: string };

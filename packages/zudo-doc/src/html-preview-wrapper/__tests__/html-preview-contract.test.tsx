@@ -98,8 +98,7 @@ describe("HtmlPreview localized labels and control contract", () => {
     expect(html).toContain(">Full</button>");
     expect(html).toContain(">Hide code</button>");
     expect(html).toContain(">HTML</span>");
-    expect(html).toContain("data-zd-html-preview-frame-host");
-    expect(html).not.toContain("<iframe");
+    expect(html).toContain("<iframe");
   });
 
   it("overrides only supplied labels and treats undefined as omitted", () => {
@@ -191,7 +190,7 @@ describe("HtmlPreview localized labels and control contract", () => {
     expect(html).not.toContain(">Mobile</button>");
     expect(html).not.toContain(">Tablet</button>");
     expect(html).not.toContain(">Full</button>");
-    expect(html).toContain('style="width:100%"');
+    expect(html).toContain('style="width:100%;"');
     expect(host.querySelector<HTMLElement>(".resize-x")?.style.width).toBe(
       "100%",
     );
@@ -208,8 +207,7 @@ describe("HtmlPreview localized labels and control contract", () => {
     expect(html).not.toContain("border-t");
     expect(html).not.toContain("aria-expanded");
     expect(html).not.toContain('role="group"');
-    expect(html).toContain("data-zd-html-preview-frame-host");
-    expect(html).not.toContain("<iframe");
+    expect(html).toContain("<iframe");
   });
 
   it("keeps one visible island marker and forwards the public props through the wrapper", () => {

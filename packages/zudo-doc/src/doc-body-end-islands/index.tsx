@@ -81,8 +81,10 @@
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { AiChatModal } from "../ai-chat-modal/index.js";
-import { ImageEnlarge, ImageEnlargeSsrFallback } from "../image-enlarge/index.js";
-import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "../mermaid-enlarge/index.js";
+import { ImageEnlarge } from "../image-enlarge/index.js";
+import { ImageEnlargeSsrFallback } from "../image-enlarge/ssr-fallback.js";
+import { MermaidEnlarge } from "../mermaid-enlarge/index.js";
+import { MermaidEnlargeSsrFallback } from "../mermaid-enlarge/ssr-fallback.js";
 import { FindInPageInit } from "../find-in-page/index.js";
 // Named export (`page-loading/index.ts` re-exports `{ default as PageLoadingOverlay }`).
 import { PageLoadingOverlay } from "../page-loading/index.js";

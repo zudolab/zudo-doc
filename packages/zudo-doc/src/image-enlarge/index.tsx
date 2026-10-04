@@ -232,20 +232,3 @@ export function ImageEnlarge() {
   );
 }
 ImageEnlarge.displayName = "ImageEnlarge";
-
-/**
- * Static SSR fallback for the {@link ImageEnlarge} island.
- *
- * Renders an empty, closed `<dialog class="zd-enlarge-dialog ...">` so the
- * dist HTML carries the dialog shell even before hydration. Sources its
- * class and inline style from the shared constants in island-types so the
- * SSR fallback cannot drift from the hydrated dialog above.
- */
-export function ImageEnlargeSsrFallback() {
-  return (
-    <dialog
-      class={IMAGE_ENLARGE_DIALOG_CLASS}
-      style={ENLARGE_DIALOG_STYLE}
-    />
-  );
-}

@@ -34,7 +34,7 @@ const escapeHtml = (value: string) => value.replace(/[&<>"']/gu, ch => ({
 
 /** The Markdown parser and prepareNode whitelist both tags and attrs. Ruby's
  * rb/rp children are still missing from zudo-react's intrinsic vocabulary
- * (#3359), so only this bounded, non-executable subtree is opaque HTML. */
+ * (https://github.com/Takazudo/zudo-front-builder/issues/3642), so only this bounded, non-executable subtree is opaque HTML. */
 function serializeRubyChild(node: IntroNode): string {
   if (typeof node === "string") return escapeHtml(node);
   const attrs = Object.entries(node.attrs).map(([key, value]) =>
@@ -46,7 +46,7 @@ function serializeRubyChild(node: IntroNode): string {
 
 function renderNode(node: IntroNode): Child {
   if (typeof node === "string") return node;
-  // workaround for https://github.com/Takazudo/zudo-front-builder/issues/3359
+  // workaround for https://github.com/Takazudo/zudo-front-builder/issues/3642
   if (node.tag === "ruby") return h("ruby", { ...node.attrs, rawHtml: node.children.map(serializeRubyChild).join("") });
   const type = components[node.tag] ?? node.tag;
   return voidTags.has(node.tag)
