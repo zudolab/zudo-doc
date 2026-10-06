@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { serializeStaticHead as render } from "../serialize-static-head.js";
+import { renderToString as render } from "@takazudo/zfb/zudo-react/server";
 import { DocHead } from "../doc-head.js";
 import type { HeadProps } from "../types.js";
 
@@ -9,8 +9,7 @@ import type { HeadProps } from "../types.js";
  * These tests pin the exact output of DocHead for a range of fixtures so
  * any silent reordering or attribute-shape regression trips the suite.
  *
- * The bounded static-head serializer uses HTML5 void-tag syntax and preserves
- * configured field order while escaping all text and attribute values.
+ * The native zudo-react renderer preserves configured field order.
  */
 describe("DocHead — byte-parity fixtures", () => {
   it("emits the minimum required head when only title is supplied", () => {

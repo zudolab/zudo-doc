@@ -28,11 +28,10 @@ afterEach(() => {
 });
 
 describe("HtmlPreview v3 smoke", () => {
-  it("server renders the host, hydrates one iframe, switches viewport and toggles code", async () => {
+  it("server renders and hydrates one iframe, switches viewport and toggles code", async () => {
     const server = renderSsr(h(PreviewBase, props));
-    expect(server).toContain("data-zd-html-preview-frame-host");
-    expect(server).toContain("min-height:200px");
-    expect(server).not.toContain("<iframe");
+    expect(server).toContain("<iframe");
+    expect(server).toContain("height:200px");
 
     const body = document.createElement("body");
     Object.defineProperty(body, "scrollHeight", { value: 240 });
@@ -49,9 +48,8 @@ describe("HtmlPreview v3 smoke", () => {
     });
     try {
       expect(view.diagnostics).toEqual([]);
-      const host = view.root.querySelector("[data-zd-html-preview-frame-host]")!;
-      const iframe = host.querySelector("iframe")!;
-      expect(host.querySelectorAll("iframe")).toHaveLength(1);
+      const iframe = view.root.querySelector("iframe")!;
+      expect(view.root.querySelectorAll("iframe")).toHaveLength(1);
       expect(iframe.getAttribute("sandbox")).toBe("allow-same-origin");
       expect(iframe.srcdoc).toBe(props.srcdoc);
       expect(iframe.style.height).toBe("256px");
@@ -62,7 +60,7 @@ describe("HtmlPreview v3 smoke", () => {
       await flushAll();
       expect(buttons[0]!.getAttribute("aria-pressed")).toBe("true");
       expect(buttons[2]!.getAttribute("aria-pressed")).toBe("false");
-      expect((host.parentElement as HTMLElement).style.width).toBe("320px");
+      expect((iframe.parentElement as HTMLElement).style.width).toBe("320px");
 
       const toggle = view.root.querySelector<HTMLButtonElement>('[aria-expanded]')!;
       expect(toggle.getAttribute("aria-expanded")).toBe("false");

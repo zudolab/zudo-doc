@@ -661,7 +661,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   if (!hasAncestorPnpmWorkspace(targetDir)) {
     await fs.outputFile(
       path.join(targetDir, "pnpm-workspace.yaml"),
-      "# pnpm 11 defaults minimumReleaseAge to 1440min; its exclude matcher can't match this project's peer-nested lockfile keys (upstream pnpm bug), so disable the gate outright.\nminimumReleaseAge: 0\n",
+      "# pnpm 11 defaults minimumReleaseAge to 1440min; its exclude matcher can't match this project's peer-nested lockfile keys (upstream pnpm bug), so disable the gate outright.\n" +
+        "minimumReleaseAge: 0\n" +
+        "# pnpm 10 uses onlyBuiltDependencies; pnpm 11 uses allowBuilds.\n" +
+        "onlyBuiltDependencies:\n  - esbuild\n" +
+        (choices.features.includes("mcp") ? "  - workerd\n  - sharp\n" : "") +
+        "allowBuilds:\n  esbuild: true\n" +
+        (choices.features.includes("mcp") ? "  workerd: true\n  sharp: true\n" : ""),
     );
   } else {
     // Ancestor already has a pnpm-workspace.yaml: we deliberately do NOT write
@@ -704,8 +710,8 @@ function generatePackageJson(
   const deps: Record<string, string> = {
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
-    // @takazudo/zfb-<platform>); pinned to the exact stable 3.1.0 package
-    // family required by the zfb v3 migration lock.
+    // @takazudo/zfb-<platform>); pinned to the exact stable 4.0.0 package
+    // family required by the zfb v4 migration lock.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
@@ -982,9 +988,9 @@ function generatePackageJson(
     // 2.22.1: zfb fixes dev live reload and lazy boot; md-wasm retains
     // workerd-specific parse/highlight exports while retaining browser paths.
     // No scaffold config migration is required.
-    "@takazudo/zfb": "3.1.0",
-    "@takazudo/zfb-runtime": "3.1.0",
-    "@takazudo/zfb-md-wasm": "3.1.0",
+    "@takazudo/zfb": "4.0.0",
+    "@takazudo/zfb-runtime": "4.0.0",
+    "@takazudo/zfb-md-wasm": "4.0.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -1044,6 +1050,18 @@ function generatePackageJson(
     // packages/zudo-doc/src/__tests__/optional-peer-reachability.test.ts.)
   };
 
+  if (choices.features.includes("mcp")) {
+    // MCP is the only generated deployment preset in v1. These runtime
+    // packages are installed only for MCP consumers; agent-export-only and
+    // barebone sites remain provider-independent.
+    // Keep the adapter in lockstep with the zfb family (and root pin), checked
+    // by scripts/check-pin-parity.mjs.
+    deps["@takazudo/zfb-adapter-cloudflare"] = "4.0.0";
+    // Match @takazudo/zudo-doc's optional peer exactly. The package-owned MCP
+    // route imports the SDK only when this feature is enabled.
+    deps["@modelcontextprotocol/sdk"] = "1.31.0";
+  }
+
   const devDeps: Record<string, string> = {
     typescript: "^5.9.0",
     "@types/node": "^22.0.0",
@@ -1053,6 +1071,12 @@ function generatePackageJson(
     // html-validate dropped — check:html is no longer a default script
     // (see the scripts block below; `.htmlvalidate.json` no longer ships).
   };
+
+  if (choices.features.includes("mcp")) {
+    // Match the root Wrangler dev pin. Wrangler is never installed or invoked
+    // by scaffolding itself; preview and deployment remain owner-controlled.
+    devDeps["wrangler"] = "4.111.0";
+  }
 
   // search ships as @takazudo/zudo-doc's own self-contained generated
   // search-widget script (custom word-match scorer) — no third-party search
@@ -1199,6 +1223,12 @@ function generatePackageJson(
   }
 
   const pm = choices.packageManager;
+
+  if (choices.features.includes("mcp")) {
+    scripts["preview:worker"] = "wrangler dev";
+    scripts.build += " && node scripts/stage-cloudflare-base.mjs";
+    scripts.deploy = `${pmRunCommand(pm, "build")} && wrangler deploy`;
+  }
 
   // claudeSkills ships the zudo-doc-version-bump skill, whose release workflow
   // calls `<pm> b4push`. Emit a minimal stub so the skill does not hit a

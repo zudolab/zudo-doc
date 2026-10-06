@@ -90,7 +90,7 @@ describe("home introduction contract", () => {
     expect(output).not.toContain(' align=');
   });
 
-  it("escapes prepared ruby text inside its bounded raw HTML subtree", () => {
+  it("escapes prepared ruby text through native elements", () => {
     const output = renderToString(<CompactProse intro={{ nodes: [{
       tag: "ruby", attrs: {}, children: [
         { tag: "rb", attrs: {}, children: ["<script>bad</script>"] },

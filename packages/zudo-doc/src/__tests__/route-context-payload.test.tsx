@@ -287,13 +287,9 @@ describe("./route-context-payload browser safety", () => {
       resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
     });
 
-    // #4440's config preset now carries exactly this zfb-native Wind edge.
-    // Exact equality still rejects every other forbidden runtime dependency.
-    expect(violations).toEqual([{
-      specifier: "@takazudo/zfb/config",
-      label: "zfb engine package",
-      importer: resolve(PKG_ROOT, "src/wind/index.ts"),
-    }]);
+    // Plain defaults live outside the config/preset graph, so this browser
+    // entry reaches no zfb engine import or other forbidden dependency.
+    expect(violations).toEqual([]);
     expect(specifiers.length).toBeGreaterThan(0);
   });
 

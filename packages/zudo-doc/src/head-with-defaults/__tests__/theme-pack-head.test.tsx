@@ -8,7 +8,7 @@
 // inlined-map + noscript shapes.
 
 import { describe, expect, it } from "vitest";
-import { serializeStaticHead as render } from "../../head/serialize-static-head.js";
+import { renderToString as render } from "@takazudo/zfb/zudo-react/server";
 import { createHeadWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { THEME_PACK_LATCH_CSS } from "../../theme/theme-pack-provider.js";

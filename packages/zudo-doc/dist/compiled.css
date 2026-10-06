@@ -2046,6 +2046,9 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
 .block {
   display: block;
 }
+.contents {
+  display: contents;
+}
 .flex {
   display: flex;
 }
@@ -2063,6 +2066,9 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
 }
 .inline-flex {
   display: inline-flex;
+}
+.table {
+  display: table;
 }
 .absolute {
   position: absolute;
@@ -3327,6 +3333,9 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
   clip: rect(0,0,0,0);
   white-space: nowrap;
   border-width: 0;
+}
+.visible {
+  visibility: visible;
 }
 .placeholder\:text-muted::placeholder {
   color: var(--zw-color-muted);

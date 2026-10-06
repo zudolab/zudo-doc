@@ -4,15 +4,15 @@
 // Mirrors the exact-string assertion style of src/head/__tests__/doc-head.test.tsx.
 // Each test builds a ChromeContext via makeFakeChromeContext, constructs the
 // HeadWithDefaults component, serializes its pure head descriptions through
-// the bounded head serializer, and asserts the emitted HTML string.
+// the native zudo-react renderer, and asserts the emitted HTML string.
 //
 // Key coverage:
 //   - Each descriptor type (preconnect, preload, stylesheet, alternateLinks, meta)
-//   - async:true stylesheet → literal `onload="this.media=&#39;all&#39;"` + media="print" + <noscript>
+//   - async:true stylesheet → literal `onload="this.media='all'"` + media="print" + <noscript>
 //   - Absent settings.head → head-extras fragment not emitted (byte-parity baseline)
 
 import { describe, it, expect } from "vitest";
-import { serializeStaticHead as render } from "../../head/serialize-static-head.js";
+import { renderToString as render } from "@takazudo/zfb/zudo-react/server";
 import { createHeadWithDefaults } from "../index.js";
 import { renderAutoLogoIconSvg } from "../../auto-logo/icon.js";
 import { pickGlyphName } from "../../auto-logo/shapes.js";
@@ -120,9 +120,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
   });
 
   it("stylesheet (async:true): emits media='print' + literal onload + <noscript> fallback", () => {
-    // The static-head serializer keeps this bounded media swap handler and
-    // escapes apostrophes for the double-quoted HTML attribute. The browser
-    // decodes those entities before running the handler.
+    // Native head rendering keeps the bounded media swap handler.
     const ctx = makeFakeChromeContext({
       settings: {
         head: {
@@ -139,7 +137,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const out = render(<HeadWithDefaults title="Test" />);
     // The <link> must carry media="print" and the literal onload attribute.
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.example.com/style.css" media="print" onload="this.media=&#39;all&#39;">',
+      `<link rel="stylesheet" href="https://cdn.example.com/style.css" media="print" onload="this.media='all'">`,
     );
     // The <noscript> fallback must follow with a plain (non-self-closing) inner link.
     expect(out).toContain(
@@ -164,7 +162,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.example.com/style.css" crossorigin="anonymous" media="print" onload="this.media=&#39;all&#39;">',
+      `<link rel="stylesheet" href="https://cdn.example.com/style.css" crossorigin="anonymous" media="print" onload="this.media='all'">`,
     );
     expect(out).toContain(
       '<noscript><link rel="stylesheet" href="https://cdn.example.com/style.css" crossorigin="anonymous"></noscript>',
@@ -193,11 +191,21 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     // Initial media stays "print" (the non-render-blocking trick); onload swaps
     // to the configured media ("print"), NOT "all".
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.example.com/print.css" media="print" onload="this.media=&#39;print&#39;">',
+      `<link rel="stylesheet" href="https://cdn.example.com/print.css" media="print" onload="this.media='print'">`,
     );
     // The <noscript> fallback must include the configured media.
     expect(out).toContain(
       '<noscript><link rel="stylesheet" href="https://cdn.example.com/print.css" media="print"></noscript>',
+    );
+  });
+
+  it("rejects unsafe async stylesheet media before constructing an onload handler", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { head: { stylesheets: [{ href: "/style.css", media: "all';alert(1);//", async: true }] } },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    expect(() => render(<HeadWithDefaults title="Test" />)).toThrow(
+      "Async stylesheet media cannot form a safe onload handler",
     );
   });
 

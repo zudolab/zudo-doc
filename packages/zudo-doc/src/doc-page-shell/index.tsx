@@ -81,6 +81,13 @@ export interface DocPageShellProps {
   description?: string;
   /** Absolute canonical URL, or undefined when siteUrl is unset. */
   canonical?: string;
+  /** Additional per-page alternate links passed through to the head defaults. */
+  alternateLinks?: ReadonlyArray<{
+    rel: string;
+    href: string;
+    type?: string;
+    title?: string;
+  }>;
   /** Pre-resolved breadcrumb trail (hrefs already remapped per route). */
   breadcrumbs: DocPageBreadcrumbItem[];
   /** Pre-resolved prev/next nav nodes (hrefs already remapped per route). */
@@ -167,7 +174,12 @@ export interface DocPageShellDeps {
   settings: DocPageShellSettings;
   composeMetaTitle: (title: string) => string;
   getTocTitle: (locale: string) => string;
-  HeadWithDefaults: (props: { title: string; description?: string; canonical?: string }) => JSX.Element;
+  HeadWithDefaults: (props: {
+    title: string;
+    description?: string;
+    canonical?: string;
+    alternateLinks?: ReadonlyArray<{ rel: string; href: string; type?: string; title?: string }>;
+  }) => JSX.Element;
   SidebarWithDefaults: (props: {
     currentSlug?: string;
     lang?: string;
@@ -256,6 +268,7 @@ export function createDocPageShell<S extends Settings = Settings>(
       title,
       description,
       canonical,
+      alternateLinks,
       breadcrumbs,
       prev,
       next,
@@ -342,7 +355,12 @@ export function createDocPageShell<S extends Settings = Settings>(
         description={settings.metaTags.description ? description : undefined}
         head={
           <>
-            <HeadWithDefaults title={title} description={description} canonical={canonical} />
+            <HeadWithDefaults
+              title={title}
+              description={description}
+              canonical={canonical}
+              alternateLinks={alternateLinks}
+            />
             {/* Pre-paint sidebar-visibility restore — must sit in <head> so it
                 runs before the <aside> desktop sidebar is painted (#2571).
                 Gated identically to the afterSidebar toggle Island below. */}

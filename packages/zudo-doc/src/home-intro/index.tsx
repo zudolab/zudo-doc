@@ -28,33 +28,15 @@ components.h2 = ({ class: klass, children, ...rest }: { class?: string; children
 for (const variant of ["note", "tip", "info", "warning", "danger", "caution", "important"] as const) components[variant] = makeAdmonition(variant);
 
 const voidTags = new Set(["br", "hr", "img", "input"]);
-const escapeHtml = (value: string) => value.replace(/[&<>"']/gu, ch => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-})[ch]!);
-
-/** The Markdown parser and prepareNode whitelist both tags and attrs. Ruby's
- * rb/rp children are still missing from zudo-react's intrinsic vocabulary
- * (#3359), so only this bounded, non-executable subtree is opaque HTML. */
-function serializeRubyChild(node: IntroNode): string {
-  if (typeof node === "string") return escapeHtml(node);
-  const attrs = Object.entries(node.attrs).map(([key, value]) =>
-    value === true ? ` ${key}` : ` ${key}="${escapeHtml(String(value))}"`,
-  ).join("");
-  const body = node.children.map(serializeRubyChild).join("");
-  return voidTags.has(node.tag) ? `<${node.tag}${attrs}>` : `<${node.tag}${attrs}>${body}</${node.tag}>`;
-}
-
 function renderNode(node: IntroNode): Child {
   if (typeof node === "string") return node;
-  // workaround for https://github.com/Takazudo/zudo-front-builder/issues/3359
-  if (node.tag === "ruby") return h("ruby", { ...node.attrs, rawHtml: node.children.map(serializeRubyChild).join("") });
   const type = components[node.tag] ?? node.tag;
   return voidTags.has(node.tag)
     ? h(type, node.attrs)
     : h(type, node.attrs, ...node.children.map(renderNode));
 }
 
-/** Synchronous SSR view of output produced by home-intro/prepare. Ruby uses the bounded serializer above. */
+/** Synchronous SSR view of output produced by home-intro/prepare. Ruby uses the native zudo-react vocabulary. */
 export function CompactProse({ intro }: { intro: PreparedHomeIntro | null | undefined }) {
   if (!intro?.nodes.length) return null;
   return <div class="zd-content zd-compact-prose">{intro.nodes.map(renderNode)}</div>;

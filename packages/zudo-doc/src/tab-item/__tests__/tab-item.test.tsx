@@ -27,19 +27,14 @@ describe("<TabItem />", () => {
 
   it("encodes default={true} as a present data-tab-default attribute", () => {
     const html = render(<TabItem label="Banana" default />);
-    // preact-render-to-string emits boolean-style bare attributes for
-    // empty strings (`data-tab-default `); the Astro template emitted
-    // `data-tab-default=""`. Both forms satisfy `[data-tab-default]`
-    // selectors and `getAttribute("data-tab-default")` reads as "".
+    // Both bare and empty-string attributes satisfy `[data-tab-default]`.
     expect(html).toMatch(/data-tab-default(=""|\s|>)/);
   });
 
   it("omits the hidden attribute when default={true} so the SSR HTML paints the active panel", () => {
     // Wave 11 (zudolab/zudo-doc#1355): the default panel must be
     // visible from SSR so the no-JS path and pre-init paint both show
-    // the chosen tab. preact-render-to-string emits `hidden` as a bare
-    // attribute when truthy and omits it entirely when undefined, so
-    // the simple substring assertion below is sufficient.
+    // the chosen tab. The substring assertion covers omitted `hidden`.
     const html = render(<TabItem label="Banana" default />);
     expect(html).not.toContain("hidden");
   });

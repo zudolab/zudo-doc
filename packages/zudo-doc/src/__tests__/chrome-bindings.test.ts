@@ -44,7 +44,7 @@ export function _positiveCompileAssertions(): void {
     docHistoryMeta: {} as Record<string, unknown>,
     sidebarsConfig: concreteSidebars, // concrete object, no index signature — no cast
     tagVocabulary: [{ id: "topic" }],
-    frontmatterRenderers: { badge: (props) => props.value }, // reads a SUBSET of the renderer props
+    frontmatterRenderers: { badge: (props) => String(props.value) }, // reads a SUBSET of the renderer props
     mdxExtras: { Stub: (_p: unknown) => null }, // MdxStub edge — `unknown` props accepted
     buildFrontmatterPreviewEntries: (data) => Object.entries(data),
     loadTagsForLocale: (lang) => [{ tag: lang, count: 1 }], // (lang: string) => Tag[]
@@ -88,13 +88,12 @@ export function _positiveCompileAssertions(): void {
   });
 
   // A real renderer in `frontmatterRenderers` (typed by its call-side contract),
-  // and a loose `Record<string, unknown>` in `mdxExtras` (legitimately loose —
-  // author-controlled MDX has no fixed prop contract).
+  // and a component registry in `mdxExtras` for author-controlled MDX.
   defineChromeBindings({
     frontmatterRenderers: {
       badge: ({ value, entryKey }) => `${entryKey}:${String(value)}`,
     },
-    mdxExtras: {} as Record<string, unknown>,
+    mdxExtras: { Stub: (_p: Record<string, unknown>) => null },
   });
 }
 

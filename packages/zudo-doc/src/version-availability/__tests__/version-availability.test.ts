@@ -19,6 +19,7 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
+import { h } from "@takazudo/zfb/zudo-react";
 import {
   createGetUnavailableVersions,
   serializeUnavailableVersions,
@@ -37,7 +38,7 @@ function makeDoc(
     data: { title: slug, ...data },
     body: "",
     module_specifier: `${slug}.mdx`,
-    Content: () => ({ type: "div", props: {}, key: null }),
+    Content: () => h("div", {}),
   } as DocPageEntry;
 }
 

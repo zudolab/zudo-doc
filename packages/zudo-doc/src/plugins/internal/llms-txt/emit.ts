@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
 import { loadLlmsAssetEntries } from "./assets.js";
-import { loadDocEntries } from "./load.js";
+import { loadDocEntries, withLlmsBase } from "./load.js";
 import type { LlmsTxtEmitOptions, LlmsTxtEmitResult } from "./types.js";
 
 function assetsForLocale(
@@ -44,11 +44,20 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
     logger,
     projectRoot,
     assetScan,
+    defaultLocale,
+    agentExport,
+    mcp,
   } = options;
 
   const meta = { siteName, siteDescription };
   const written: string[] = [];
   const assetEntries = loadLlmsAssetEntries({ projectRoot, assetScan, siteUrl });
+  const generationOptions = {
+    agentExport: agentExport === true,
+    ...(mcp === true
+      ? { mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl) }
+      : {}),
+  };
 
   // Default locale.
   const defaultEntries = loadDocEntries({
@@ -56,6 +65,9 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
     locale: null,
     base,
     siteUrl,
+    ...(agentExport === true
+      ? { agentExportLocale: defaultLocale ?? "en" }
+      : {}),
   });
 
   mkdirSync(outDir, { recursive: true });
@@ -64,7 +76,12 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
   const defaultFullPath = join(outDir, "llms-full.txt");
   writeFileSync(
     defaultIndexPath,
-    generateLlmsTxt(defaultEntries, meta, assetsForLocale(assetEntries, null)),
+    generateLlmsTxt(
+      defaultEntries,
+      meta,
+      assetsForLocale(assetEntries, null),
+      generationOptions,
+    ),
   );
   writeFileSync(
     defaultFullPath,
@@ -82,13 +99,17 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
       locale: code,
       base,
       siteUrl,
+      ...(agentExport === true ? { agentExportLocale: code } : {}),
     });
     const localeDir = join(outDir, code);
     mkdirSync(localeDir, { recursive: true });
     const indexPath = join(localeDir, "llms.txt");
     const fullPath = join(localeDir, "llms-full.txt");
     const localeAssets = assetsForLocale(assetEntries, code);
-    writeFileSync(indexPath, generateLlmsTxt(localeEntries, meta, localeAssets));
+    writeFileSync(
+      indexPath,
+      generateLlmsTxt(localeEntries, meta, localeAssets, generationOptions),
+    );
     writeFileSync(fullPath, generateLlmsFullTxt(localeEntries, meta, localeAssets));
     written.push(indexPath, fullPath);
     logger?.info(

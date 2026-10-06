@@ -146,7 +146,7 @@ describe("AssetPageBody (plain props, no ChromeContext)", () => {
       />,
     );
 
-    expect(html).toContain('<video controls="" preload="metadata" src="/assets/movie.mp4?next=&quot;&gt;&lt;script&gt;bad&lt;/script&gt;&amp;part=1" width="640" height="360" class="max-w-full"></video>');
+    expect(html).toContain('<video controls preload="metadata" src="/assets/movie.mp4?next=&quot;&gt;&lt;script&gt;bad&lt;/script&gt;&amp;part=1" width="640" height="360" class="max-w-full"></video>');
     expect(html).not.toContain("<script>bad</script>");
   });
 });

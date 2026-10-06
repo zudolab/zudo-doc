@@ -93,36 +93,10 @@ export function AssetImageStage({ asset, rawUrl, labels }: { asset: AssetRecord;
   );
 }
 
-function escapeHtmlAttribute(value: string | number): string {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/'/g, "&#39;");
-}
-
-/**
- * workaround for https://github.com/Takazudo/zudo-front-builder/issues/3359:
- * zfb 3.1.0 does not declare all native video attributes in its JSX runtime.
- * Keep controls and metadata preload in a bounded static media fragment; all
- * variable attributes are escaped before rawHtml use. Remove this shell when
- * a published zfb release supports those native video props.
- */
-function assetVideoMarkup(asset: AssetRecord, rawUrl: string): string {
-  const attributes = [
-    'controls=""',
-    'preload="metadata"',
-    `src="${escapeHtmlAttribute(rawUrl)}"`,
-    ...(asset.width === undefined ? [] : [`width="${escapeHtmlAttribute(asset.width)}"`]),
-    ...(asset.height === undefined ? [] : [`height="${escapeHtmlAttribute(asset.height)}"`]),
-    'class="max-w-full"',
-  ];
-  return `<video ${attributes.join(" ")}></video>`;
-}
-
 export function AssetVideoStage({ asset, rawUrl }: { asset: AssetRecord; rawUrl: string }): Child {
-  return <div class="zd-asset-stage flex items-center justify-center rounded border border-muted bg-surface p-hsp-lg" rawHtml={assetVideoMarkup(asset, rawUrl)} />;
+  return <div class="zd-asset-stage flex items-center justify-center rounded border border-muted bg-surface p-hsp-lg">
+    <video controls preload="metadata" src={rawUrl} width={asset.width} height={asset.height} class="max-w-full" />
+  </div>;
 }
 
 export function AssetPdfStage({ asset, rawUrl, children }: { asset: AssetRecord; rawUrl: string; children: Child }): Child {

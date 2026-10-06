@@ -118,16 +118,16 @@
     }
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.31.0",
     "@takazudo/zdtp": "0.8.5",
-    "@takazudo/zfb": "3.1.0",
-    "@takazudo/zfb-adapter-cloudflare": "3.1.0",
-    "@takazudo/zfb-md-wasm": "3.1.0",
-    "@takazudo/zfb-runtime": "3.1.0",
+    "@takazudo/zfb": "4.0.0",
+    "@takazudo/zfb-adapter-cloudflare": "4.0.0",
+    "@takazudo/zfb-md-wasm": "4.0.0",
+    "@takazudo/zfb-runtime": "4.0.0",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "katex": "^0.16.38",
     "preact": "^10.29.1",
-    "preact-render-to-string": "^6.6.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {

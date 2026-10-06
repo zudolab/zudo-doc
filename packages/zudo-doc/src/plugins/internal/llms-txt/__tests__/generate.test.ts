@@ -62,6 +62,41 @@ describe("llms asset generators", () => {
     expect(generateLlmsFullTxt(docs, meta, [])).toBe(expected);
   });
 
+  it("keeps explicitly disabled agent discovery byte-identical", () => {
+    expect(
+      generateLlmsTxt(docs, meta, [], { agentExport: false }),
+    ).toBe(generateLlmsTxt(docs, meta));
+  });
+
+  it("uses Markdown artifact links and adds MCP discovery only when requested", () => {
+    const entry: LlmsDocEntry = {
+      ...docs[0]!,
+      agentMarkdownUrl: "/manual/agent/v1/pages/p-0000000000000001.md",
+    };
+    const markdownIndex = generateLlmsTxt([entry], meta, [], {
+      agentExport: true,
+    });
+
+    expect(markdownIndex).toContain(
+      "- [Introduction](/manual/agent/v1/pages/p-0000000000000001.md): Get started",
+    );
+    expect(markdownIndex).not.toContain("/docs/intro");
+    expect(markdownIndex).not.toContain("## MCP");
+
+    const mcpIndex = generateLlmsTxt([entry], meta, [], {
+      agentExport: true,
+      mcpEndpointUrl: "/manual/mcp",
+    });
+    expect(mcpIndex).toContain(
+      "## MCP\n\n- [Read-only MCP endpoint](/manual/mcp)",
+    );
+
+    // Full output continues to cite the human-facing HTML page URL.
+    expect(generateLlmsFullTxt([entry], meta)).toContain(
+      "> Source: /docs/intro",
+    );
+  });
+
   it("adds a Files section after Docs without changing the Docs entries", () => {
     const asset: LlmsAssetEntry = {
       path: "guide.txt",

@@ -61,6 +61,73 @@ export interface PresetMetaTagsConfig {
 
 const CHANGELOG_PACKAGE_SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
 
+/** The first and only MCP deployment preset supported by the initializer. */
+export const MCP_DEPLOY_TARGETS = ["cloudflare"] as const;
+export type McpDeployTarget = (typeof MCP_DEPLOY_TARGETS)[number];
+
+export interface AgentMcpChoicesInput {
+  agentExport?: boolean;
+  mcp?: boolean;
+  mcpDeploy?: unknown;
+  /** CLI flags may be layered over a preset that supplies the MCP feature. */
+  deferMcpRequirement?: boolean;
+}
+
+export interface AgentMcpChoicesNormalization {
+  error: string | null;
+  agentExport?: boolean;
+  mcpDeploy?: McpDeployTarget;
+}
+
+/**
+ * Validate and normalize the generator-only relationship between agent export
+ * and MCP. Callers pass `agentExport: false` only when it was explicitly
+ * disabled; an omitted value is eligible for MCP's required auto-enable.
+ */
+export function normalizeAgentMcpChoices(
+  input: AgentMcpChoicesInput,
+): AgentMcpChoicesNormalization {
+  if (
+    input.mcpDeploy !== undefined &&
+    !MCP_DEPLOY_TARGETS.includes(input.mcpDeploy as McpDeployTarget)
+  ) {
+    return {
+      error: `Unsupported mcpDeploy value. Supported value: cloudflare.`,
+    };
+  }
+
+  if (input.mcp === true && input.agentExport === false) {
+    return {
+      error:
+        `MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.`,
+    };
+  }
+
+  if (
+    input.mcpDeploy !== undefined &&
+    input.mcp !== true &&
+    !(input.deferMcpRequirement && input.mcp === undefined)
+  ) {
+    return {
+      error: `mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.`,
+    };
+  }
+
+  if (input.mcp === true) {
+    return {
+      error: null,
+      agentExport: true,
+      mcpDeploy: (input.mcpDeploy as McpDeployTarget | undefined) ?? "cloudflare",
+    };
+  }
+
+  return {
+    error: null,
+    agentExport: input.agentExport,
+    mcpDeploy: input.mcpDeploy as McpDeployTarget | undefined,
+  };
+}
+
 /**
  * Parse the comma-separated CLI form (or normalize the array form used by
  * presets and the programmatic API). Empty entries are ignored so a trailing
@@ -205,6 +272,8 @@ export interface PresetJson {
   /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. */
   themePack?: string;
   features?: string[];
+  /** MCP deployment preset; currently Cloudflare Workers Static Assets only. */
+  mcpDeploy?: McpDeployTarget;
   /** Package slugs for the nested changelog layout. */
   changelogPackages?: string[];
   githubUrl?: string;
@@ -253,6 +322,12 @@ export function validatePreset(json: unknown): string | null {
   if (p.features !== undefined && !Array.isArray(p.features)) {
     return `"features" must be an array in preset`;
   }
+  const agentMcp = normalizeAgentMcpChoices({
+    agentExport: p.features?.includes("agentExport") ? true : undefined,
+    mcp: p.features?.includes("mcp") ?? false,
+    mcpDeploy: p.mcpDeploy,
+  });
+  if (agentMcp.error) return agentMcp.error;
   if (p.changelogPackages !== undefined) {
     if (!Array.isArray(p.changelogPackages)) {
       return `"changelogPackages" must be an array in preset`;
@@ -366,6 +441,16 @@ export function presetToChoices(json: PresetJson): PartialChoices {
     choices.metaTags = json.metaTags;
   }
 
+  const agentMcp = normalizeAgentMcpChoices({
+    agentExport: json.features?.includes("agentExport") ? true : undefined,
+    mcp: json.features?.includes("mcp") ?? false,
+    mcpDeploy: json.mcpDeploy,
+  });
+  if (agentMcp.error) throw new Error(agentMcp.error);
+  if (agentMcp.mcpDeploy !== undefined) {
+    choices.mcpDeploy = agentMcp.mcpDeploy;
+  }
+
   if (json.features) {
     // Warn about unrecognized feature names
     for (const name of json.features) {
@@ -378,7 +463,10 @@ export function presetToChoices(json: PresetJson): PartialChoices {
     for (const f of FEATURES) {
       featureMap[f.value] = json.features.includes(f.value);
     }
+    if (agentMcp.agentExport === true) featureMap.agentExport = true;
     choices.features = featureMap;
+  } else if (agentMcp.agentExport === true) {
+    choices.features = { agentExport: true };
   }
 
   return choices;

@@ -118,6 +118,7 @@ interface RoutesSettings {
   trailingSlash?: boolean;
   docTags?: boolean;
   aiAssistant?: boolean;
+  mcp?: boolean;
   /** See `settings.ts` — whether `/sitemap.xml` is injected (#3931/#3933). When
    *  `false` or absent, the route is not injected at all — a disabled sitemap
    *  is now absent (404) rather than a served-but-empty `<urlset>`, matching
@@ -276,6 +277,10 @@ function deriveRoutes(
   const hasVersions = Array.isArray(settings.versions) && settings.versions.length > 0;
   const docTags = settings.docTags === true;
   const aiAssistant = settings.aiAssistant === true;
+  if (settings.mcp === true) {
+    const base = `/${String(settings.base ?? "").split("/").filter(Boolean).join("/")}`.replace(/\/$/, "");
+    routes.push({ pattern: `${base}/mcp`, entrypoint: "@takazudo/zudo-doc/routes/mcp", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
+  }
 
   if (options.packageOwnedRoutes === false) {
     if (options.assetViewer === true) {

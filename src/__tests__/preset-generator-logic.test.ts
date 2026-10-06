@@ -91,6 +91,19 @@ describe("buildJson", () => {
     const json = buildJson(makeState({ features: allValues, additionalLangs: "ja" }));
     expect(json.features).toEqual(allValues);
     expect((json.features as string[]).length).toBe(FEATURES.length);
+    expect(json.mcpDeploy).toBe("cloudflare");
+  });
+
+  it("MCP includes the static agent export and Cloudflare deployment preset", () => {
+    const json = buildJson(makeState({ features: ["mcp"] }));
+    expect(json.features).toEqual(["agentExport", "mcp"]);
+    expect(json).toHaveProperty("mcpDeploy", "cloudflare");
+  });
+
+  it("static agent export alone does not select a deployment preset", () => {
+    const json = buildJson(makeState({ features: ["agentExport"] }));
+    expect(json.features).toEqual(["agentExport"]);
+    expect(json).not.toHaveProperty("mcpDeploy");
   });
 
   it("normalizes an explicit additional language list and derives i18n", () => {
@@ -124,6 +137,15 @@ describe("buildCliCommand", () => {
   it("starts with pm create zudo-doc projectName", () => {
     const cmd = buildCliCommand(makeState());
     expect(cmd).toMatch(/^pnpm create zudo-doc my-docs /);
+  });
+
+  it("MCP CLI output includes the required export and Cloudflare preset", () => {
+    const command = buildCliCommand(makeState({ features: ["mcp"] }));
+    const firstLine = command.split("\n")[0]!;
+    expect(firstLine).toContain("--agent-export");
+    expect(firstLine).toContain("--mcp");
+    expect(firstLine).toContain("--mcp-deploy cloudflare");
+    expect(firstLine).not.toContain("--no-agent-export");
   });
 
   it("includes --lang flag", () => {

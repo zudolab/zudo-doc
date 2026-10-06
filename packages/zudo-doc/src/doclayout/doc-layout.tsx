@@ -16,8 +16,7 @@
 //
 //  - `head`: the shell owns the complete head sequence, including title,
 //    charset, viewport, ClientRouter output and the supplied head slot. The
-//    bounded serializer preserves pure head descriptions and emits one
-//    trusted rawHtml payload because zfb 3.1.0 rejects standard head attrs.
+//    native zudo-react descriptions preserve the authored head order.
 //
 //  - `header`: rendered first in `<body>`. The shell wraps it in nothing;
 //    the consumer is expected to ship a `<header>` element if they want
@@ -52,7 +51,6 @@
 
 import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
-import { serializeStaticHead } from "../head/serialize-static-head.js";
 
 // <ClientRouter /> from @takazudo/zfb-runtime: Strategy B SPA soft-swap
 // router. Intercepts same-origin link clicks, fetches the new page, and
@@ -111,7 +109,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * Pure head descriptions appended after the baseline tags and ClientRouter
    * metadata. Use this for OG/Twitter metadata, preload hints, color-scheme
    * providers, prepaint scripts and configured links. The shell serializes
-   * the complete sequence with the bounded #3359 workaround.
+   * the complete sequence as native head children.
    */
   head?: Child;
 
@@ -343,11 +341,10 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     );
   }
   if (head !== undefined) headChildren.push(head);
-  const staticHeadHtml = serializeStaticHead(headChildren);
 
   return (
     <html {...htmlAttrs}>
-      <head rawHtml={staticHeadHtml} />
+      <head>{headChildren}</head>
       <body class="min-h-screen antialiased">
         {header}
 

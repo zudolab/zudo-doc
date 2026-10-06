@@ -18,6 +18,10 @@ The optional [Search Worker](#server-side-search-search-worker) indexes the same
 
 </Note>
 
+## Agent retrieval is separate
+
+The optional [agent-readable export](./agent-export.mdx) builds a separate full-text corpus, including material beyond `searchMaxBodyLength`. Its [MCP server](./mcp-server.mdx) offers read-only `search` and `fetch` tools for documentation clients. Enabling either feature does not change the browser widget or this Search Worker's ranking and index contract.
+
 ## Using Search
 
 Open the search dialog with:

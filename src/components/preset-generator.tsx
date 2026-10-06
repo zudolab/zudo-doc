@@ -63,7 +63,7 @@ function FeatureRow({ feature, features }: { feature: FeatureEntry; features: Si
   return <label class="flex items-center gap-x-hsp-xs text-small text-fg">
     <input type="checkbox" modelChecked={checked} on:change={(event) => {
       const next = (event.currentTarget as HTMLInputElement).checked;
-      features.value = next ? [...new Set([...features.value, feature.value])] : features.value.filter((value) => value !== feature.value);
+      features.value = next ? [...new Set([...features.value, ...(feature.value === "mcp" ? ["agentExport"] : []), feature.value])] : features.value.filter((value) => value !== feature.value);
     }} class="accent-accent" />
     <span class="flex items-center gap-x-hsp-xs">{feature.label}
       {feature.docPath && <a href={feature.docPath} target="_blank" rel="noopener" aria-label={`${feature.label} documentation`} on:click={(event) => event.stopPropagation()} class="text-caption text-muted hover:text-accent">docs ↗</a>}
@@ -430,6 +430,10 @@ export default function PresetGenerator() {
       {/* Features */}
       <section>
         <SectionHeading>Features</SectionHeading>
+        <p class="mb-vsp-xs text-caption text-muted">
+          The read-only MCP option uses Cloudflare Workers, enables the static
+          agent-readable export, and adds the deployment preset to the output.
+        </p>
         <div class="flex flex-col gap-y-vsp-xs">
           {VISIBLE_FEATURES.map((feature) => <FeatureRow feature={feature} features={features} />)}
           <label class="flex items-center gap-x-hsp-xs text-small text-muted cursor-not-allowed opacity-50">

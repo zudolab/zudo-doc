@@ -262,6 +262,8 @@ describe("generateZfbConfig — simple boolean feature fields", () => {
   const cases: Array<[string, string]> = [
     ["docTags", "docTags: true"],
     ["llmsTxt", "llmsTxt: true"],
+    ["agentExport", "agentExport: true"],
+    ["mcp", "mcp: true"],
     ["designTokenPanel", "designTokenPanel: true"],
     ["sidebarResizer", "sidebarResizer: true"],
     ["sidebarToggle", "sidebarToggle: true"],
@@ -289,6 +291,24 @@ describe("generateZfbConfig — simple boolean feature fields", () => {
   function expected_field_name(feature: string): string {
     return feature;
   }
+});
+
+describe("generateZfbConfig — Cloudflare adapter is MCP-only", () => {
+  it("emits the adapter for the Cloudflare MCP preset", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["agentExport", "mcp"],
+      mcpDeploy: "cloudflare",
+    });
+    expect(result).toContain('adapter: "@takazudo/zfb-adapter-cloudflare"');
+  });
+
+  it("does not add an adapter to static agent-export or barebone config", () => {
+    expect(
+      generateZfbConfig({ ...baseChoices, features: ["agentExport"] }),
+    ).not.toContain("adapter:");
+    expect(generateZfbConfig(baseChoices)).not.toContain("adapter:");
+  });
 });
 
 describe("generateZfbConfig — findInPage rides the tauri feature (#2690)", () => {
@@ -661,16 +681,22 @@ describe("generateZfbConfig — field order mirrors ZudoDocConfig's declared ord
     // array-input order.
     const result = generateZfbConfig({
       ...baseChoices,
-      features: ["designTokenPanel", "tagGovernance", "llmsTxt"],
+      features: ["designTokenPanel", "tagGovernance", "mcp", "agentExport", "llmsTxt"],
     });
     const idxTagGovernance = result.indexOf("tagGovernance:");
     const idxLlmsTxt = result.indexOf("llmsTxt:");
+    const idxAgentExport = result.indexOf("agentExport:");
+    const idxMcp = result.indexOf("mcp:");
     const idxDesignTokenPanel = result.indexOf("designTokenPanel:");
     expect(idxTagGovernance).toBeGreaterThan(-1);
     expect(idxLlmsTxt).toBeGreaterThan(-1);
+    expect(idxAgentExport).toBeGreaterThan(-1);
+    expect(idxMcp).toBeGreaterThan(-1);
     expect(idxDesignTokenPanel).toBeGreaterThan(-1);
     expect(idxTagGovernance).toBeLessThan(idxLlmsTxt);
-    expect(idxLlmsTxt).toBeLessThan(idxDesignTokenPanel);
+    expect(idxLlmsTxt).toBeLessThan(idxAgentExport);
+    expect(idxAgentExport).toBeLessThan(idxMcp);
+    expect(idxMcp).toBeLessThan(idxDesignTokenPanel);
   });
 });
 

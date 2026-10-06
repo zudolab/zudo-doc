@@ -1004,6 +1004,22 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 [llms.txt](./llms-txt.mdx)を参照してください。
 
+### agentExport
+
+ドキュメントクライアント向けに、`<base>/agent/v1/`でバージョン付きの読み取り専用静的コーパスを公開します。マニフェスト、全文のエージェント検索インデックス、取得可能な項目JSON、ページ単位のMarkdownが含まれます。どの静的ホストでも利用できます。
+
+デフォルト: `false`
+
+[エージェント向けエクスポート](./agent-export.mdx)を参照してください。
+
+### mcp
+
+`<base>/mcp`に読み取り専用の`search`と`fetch` MCPエンドポイントを追加します。`agentExport: true`とリクエスト時に動作するデプロイアダプターが必要です。イニシャライザーの`mcpDeploy: "cloudflare"`はCloudflareアダプターとデプロイファイルを生成します。`mcpDeploy`は`zudoDoc`の設定ではありません。
+
+デフォルト: `false`
+
+[MCPサーバー](./mcp-server.mdx)を参照してください。
+
 ### changelogs
 
 Changelog 生成設定、または無効化するなら `false`。

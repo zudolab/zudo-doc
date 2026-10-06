@@ -37,6 +37,8 @@ export interface HeadWithDefaultsProps {
    * `<link rel="canonical" href="...">`.
    */
   canonical?: string;
+  /** Page-specific alternate links, such as an exported Markdown version. */
+  alternateLinks?: HeadProps["alternateLinks"];
 }
 
 /** Settings subset read by {@link createHeadWithDefaults}. Retained for the
@@ -52,12 +54,27 @@ export interface HeadWithDefaultsSettings {
     twitterCreator?: string;
   };
   siteName: string;
+  /** Emit agent-discovery links only when the opt-in static export is enabled. */
+  agentExport?: boolean;
+  /** Existing llms.txt output setting; retained independently from agent export. */
+  llmsTxt?: boolean;
   colorMode?: ColorSchemeProviderColorMode | null | false;
   sidebarResizer?: boolean;
   /** Configured theme-pack slug (ADR `docs/adr/theme-packs.md`, #2822). */
   themePack?: string;
   /** Favicon link set — see {@link resolveFaviconLinks} for the emission table. */
   favicon?: string | FaviconConfig | false;
+}
+
+/** Keep the configured media inside the same bounded inline handler accepted
+ * by the former head serializer. Native head rendering escapes HTML attributes,
+ * but it does not validate JavaScript inserted into an event attribute. */
+function mediaSwapHandler(media: string | undefined): string {
+  const handler = `this.media='${media ?? "all"}'`;
+  if (!/^this\.media='[a-z\d\s(),:.%+\-/*<>=]*'$/i.test(handler)) {
+    throw new TypeError("Async stylesheet media cannot form a safe onload handler");
+  }
+  return handler;
 }
 
 // ── favicon emission (#3460) ────────────────────────────────────────────────
@@ -238,6 +255,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
     title,
     description,
     canonical,
+    alternateLinks,
   }: HeadWithDefaultsProps): JSX.Element {
     const { metaTags } = settings;
 
@@ -323,6 +341,18 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
           <link key={i} {...attrs} />
         ))}
         {canonical !== undefined && <link rel="canonical" href={canonical} />}
+        {alternateLinks?.map((alternate, i) => (
+          <link
+            key={`page-alternate:${i}`}
+            rel={alternate.rel}
+            href={alternate.href}
+            {...(alternate.type ? { type: alternate.type } : {})}
+            {...(alternate.title ? { title: alternate.title } : {})}
+          />
+        ))}
+        {settings.agentExport && settings.llmsTxt && (
+          <link rel="alternate" href={withBase("/llms.txt")} type="text/plain" />
+        )}
         {/* Site-wide <head> extras from settings.head (SiteHeadConfig).
             The entire block is gated on ctx.settings.head being present so that
             the DEFAULT path (no settings.head) emits NOTHING — keeping the
@@ -354,8 +384,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                 //   <link rel="stylesheet" href media="print" onload="this.media='all'">
                 //   <noscript><link rel="stylesheet" href></noscript>
                 //
-                // The static-head serializer allows this bounded media swap
-                // handler and escapes it as an HTML attribute value.
+                // Preserve the bounded media swap before native JSX rendering.
                 <>
                   <link
                     key={`${i}-link`}
@@ -363,7 +392,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                     href={s.href}
                     {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
                     media="print"
-                    onload={`this.media='${s.media ?? "all"}'`}
+                    onload={mediaSwapHandler(s.media)}
                   />
                   <noscript key={`${i}-noscript`}>
                     <link

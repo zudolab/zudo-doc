@@ -373,7 +373,9 @@ export function validateCandidates(tokens) {
       if (result.error) throw result.error;
       if (result.status === 0) return candidates;
       const output = `${result.stdout}\n${result.stderr}`;
-      const invalid = new Set([...output.matchAll(/ZW00[1-8]: [^;\n]*? \(([^()]+)\)/g)].map((m) => m[1]));
+      const invalid = new Set([...output.matchAll(/manifest zudo-doc\[(\d+)\]\): ZW(?:00[1-8]|014)\b/g)]
+        .map((match) => candidates[Number(match[1])])
+        .filter((candidate) => candidate !== undefined));
       if (invalid.size === 0) {
         throw new Error(`zfb rejected manifest without parseable candidate diagnostics: ${output}`);
       }

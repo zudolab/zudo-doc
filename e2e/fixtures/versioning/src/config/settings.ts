@@ -42,6 +42,8 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   llmsTxt: false,
+  agentExport: true,
+  mcp: true,
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,

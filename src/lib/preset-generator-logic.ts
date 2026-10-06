@@ -274,6 +274,8 @@ export const FEATURES = [
   { value: "docHistory", label: "Document history", cliFlag: "doc-history", default: true, docPath: "/docs/guides/doc-history/" },
   { value: "bodyFootUtil", label: "Body foot util area", cliFlag: "body-foot-util", default: false, docPath: "/docs/guides/body-foot-util-area/" },
   { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: true, docPath: "/docs/guides/llms-txt/" },
+  { value: "agentExport", label: "Agent-readable documentation export", cliFlag: "agent-export", default: false },
+  { value: "mcp", label: "Read-only MCP server (Cloudflare Workers)", cliFlag: "mcp", default: false },
   { value: "skillSymlinker", label: "Skill symlinker", cliFlag: "skill-symlinker", default: false, docPath: "/docs/guides/doc-skill-symlinker/" },
   { value: "tauri", label: "Tauri desktop app", cliFlag: "tauri", default: false, docPath: "/docs/guides/tauri-modes/" },
   { value: "tauriDev", label: "Tauri dev wrapper (Mode 2)", cliFlag: "tauri-dev", default: false, docPath: "/docs/guides/tauri-modes/" },
@@ -415,10 +417,24 @@ export function normalizeAdditionalLangs(
 }
 
 function resolveFeatures(features: string[], i18n: boolean): string[] {
-  return i18n
+  const resolved = i18n
     ? [...new Set([...features, "i18n"])]
     : features.filter((feature) => feature !== "i18n");
+  const mcpIndex = resolved.indexOf("mcp");
+  if (mcpIndex >= 0) {
+    const agentExportIndex = resolved.indexOf("agentExport");
+    if (agentExportIndex < 0) {
+      resolved.splice(mcpIndex, 0, "agentExport");
+    } else if (agentExportIndex > mcpIndex) {
+      resolved.splice(agentExportIndex, 1);
+      resolved.splice(mcpIndex, 0, "agentExport");
+    }
+  }
+  return resolved;
 }
+
+/** The sole MCP deployment preset exposed by the v1 generator. */
+export const MCP_DEPLOY_TARGET = "cloudflare" as const;
 
 export interface FormState {
   projectName: string;
@@ -473,6 +489,9 @@ export function buildJson(state: FormState): Record<string, unknown> {
   }
 
   base.features = features;
+  if (features.includes("mcp")) {
+    base.mcpDeploy = MCP_DEPLOY_TARGET;
+  }
   base.cjkFriendly = state.cjkFriendly;
   base.packageManager = state.packageManager;
   // Always emit the canonical {type, trigger|component} shape (not the internal
@@ -553,6 +572,9 @@ export function buildCliCommand(state: FormState): string {
   for (const feat of FEATURES) {
     const enabled = features.includes(feat.value);
     parts.push(enabled ? `--${feat.cliFlag}` : `--no-${feat.cliFlag}`);
+  }
+  if (features.includes("mcp")) {
+    parts.push(`--mcp-deploy ${MCP_DEPLOY_TARGET}`);
   }
 
   parts.push(`--pm ${pm}`);

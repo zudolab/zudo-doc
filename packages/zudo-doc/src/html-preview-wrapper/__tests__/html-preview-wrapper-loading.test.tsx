@@ -88,9 +88,7 @@ describe("HtmlPreviewWrapper loading contract", () => {
     expect(eager).toBe(omitted);
     expect(eager).toContain('data-zfb-island="HtmlPreviewWrapperInner"');
     expect(eager).not.toContain("data-zfb-island-skip-ssr");
-    expect(eager).toContain("data-zd-html-preview-frame-host");
-    // zfb 3.1.0 rejects iframe children in islands (#3361); activation creates it.
-    expect(eager).not.toContain("<iframe");
+    expect(eager).toContain("<iframe");
     expect(eager).not.toMatch(/\sloading=/);
     expect(host.textContent).toContain("Lifecycle preview");
     expect(readSerializedProps(eager)).toEqual(COMPLETE_PROPS);
@@ -173,8 +171,7 @@ describe("HtmlPreviewWrapper loading contract", () => {
     const inner = renderSsr(
       <HtmlPreviewWrapperInner {...COMPLETE_PROPS} />,
     );
-    expect(inner).toContain("data-zd-html-preview-frame-host");
-    expect(inner).not.toContain("<iframe");
+    expect(inner).toContain("<iframe");
     expect(inner).not.toContain("data-zfb-island");
 
     const visible = renderWrapperSsr(

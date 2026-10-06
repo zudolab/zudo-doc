@@ -101,7 +101,7 @@ export function createContentLink({
         })}
       >
         <span class="inline-flex items-baseline gap-x-hsp-xs font-mono">
-          <AssetFileIcon className="h-icon-sm w-icon-sm shrink-0" />
+          <AssetFileIcon class="h-icon-sm w-icon-sm shrink-0" />
           <span>{children}</span>
           <span class="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
         </span>

@@ -1,8 +1,10 @@
 import * as p from "@clack/prompts";
 import { SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
 import {
+  normalizeAgentMcpChoices,
   parseChangelogPackages,
   validateChangelogPackages,
+  type McpDeployTarget,
   type PresetHeaderRightItem,
   type PresetMetaTagsConfig,
 } from "./preset.js";
@@ -31,6 +33,8 @@ export interface UserChoices {
   themePack?: string;
   // Features
   features: string[];
+  /** Generator-only deployment preset selected for the optional MCP feature. */
+  mcpDeploy?: McpDeployTarget;
   // Optional package slugs for the nested changelog layout. An empty array
   // means the single starter page; undefined means the interactive prompt has
   // not answered yet.
@@ -73,6 +77,8 @@ export interface PartialChoices {
   defaultMode?: "light" | "dark";
   themePack?: string;
   features?: Partial<Record<string, boolean>>;
+  /** Generator-only deployment preset selected for the optional MCP feature. */
+  mcpDeploy?: McpDeployTarget;
   changelogPackages?: string[];
   // Feature values explicitly disabled via --no-<flag> on the CLI. Threaded
   // through to UserChoices so scaffold.ts can warn on forced auto-enables.
@@ -250,6 +256,52 @@ export async function runPrompts(
     features = result;
   }
 
+  // MCP always includes the package-owned static agent export. Treat a false
+  // value as an explicit conflict only when it came from a --no-agent-export
+  // CLI flag; omitted preset/API choices remain eligible for auto-enable.
+  const agentExportExplicitlyDisabled =
+    prefilled.explicitlyDisabledFeatures?.includes("agentExport") ?? false;
+  const agentMcpBeforeDeploy = normalizeAgentMcpChoices({
+    agentExport: features.includes("agentExport")
+      ? true
+      : agentExportExplicitlyDisabled
+        ? false
+        : undefined,
+    mcp: features.includes("mcp"),
+    mcpDeploy: prefilled.mcpDeploy,
+  });
+  if (agentMcpBeforeDeploy.error) throw new Error(agentMcpBeforeDeploy.error);
+  if (agentMcpBeforeDeploy.agentExport === true && !features.includes("agentExport")) {
+    p.log.info("MCP requires agent export; enabling the static agent-readable documentation export.");
+    features.splice(features.indexOf("mcp"), 0, "agentExport");
+  }
+
+  // The v1 deployment preset is deliberately a single visible choice. In a
+  // non-interactive CLI/preset flow, index.ts supplies the normalized target.
+  let mcpDeploy = prefilled.mcpDeploy;
+  if (features.includes("mcp") && mcpDeploy === undefined) {
+    const result = await p.select({
+      message: "MCP deployment preset:",
+      options: [
+        {
+          value: "cloudflare" as const,
+          label: "Cloudflare Workers Static Assets",
+          hint: "Deploy your documentation site and read-only MCP endpoint to your own Cloudflare account",
+        },
+      ],
+      initialValue: "cloudflare",
+    });
+    if (p.isCancel(result)) process.exit(0);
+    mcpDeploy = result as McpDeployTarget;
+  }
+
+  const agentMcpAfterDeploy = normalizeAgentMcpChoices({
+    agentExport: features.includes("agentExport") ? true : undefined,
+    mcp: features.includes("mcp"),
+    mcpDeploy,
+  });
+  if (agentMcpAfterDeploy.error) throw new Error(agentMcpAfterDeploy.error);
+
   // 4.5 Changelog package layout. A blank answer deliberately preserves the
   // existing single-page starter. CLI/preset/--yes callers prefill this value
   // so they remain non-interactive.
@@ -332,6 +384,7 @@ export async function runPrompts(
     defaultMode,
     themePack,
     features,
+    mcpDeploy: agentMcpAfterDeploy.mcpDeploy,
     changelogPackages,
     explicitlyDisabledFeatures: prefilled.explicitlyDisabledFeatures,
     githubUrl,

@@ -289,6 +289,7 @@ describe("emitManifest", () => {
 
 describe("strict zfb validation", () => {
   it("retains a resolved utility and rejects unsupported candidates", () => {
-    expect(validateCandidates(new Set(["flex", "invisible", "flow-root"]))).toEqual(["flex"]);
+    // #4430: zfb v4 adds native flow-root; unknown candidates must still be rejected.
+    expect(validateCandidates(new Set(["flex", "invisible", "flow-root", "not-a-wind-utility"]))).toEqual(["flex", "flow-root", "invisible"]);
   });
 });

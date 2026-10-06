@@ -4,7 +4,6 @@
 import type { Child } from "@takazudo/zfb/zudo-react";
 // `@takazudo/zfb` is provided by the consumer at integration time;
 // types come from the package-level shim at `../_zfb-shim.d.ts`.
-import { Island } from "@takazudo/zfb";
 
 import { HtmlPreview, type HtmlPreviewLabels } from "./html-preview.js";
 
@@ -141,31 +140,13 @@ type HtmlPreviewWrapperInnerProps = Omit<
   "loading"
 >;
 
-function reservationHeight(height: number | undefined): number {
-  return height != null && height > 0 ? height : 200;
-}
-
-function HtmlPreviewReservation({
-  height,
-}: {
-  height: number | undefined;
-}): Child {
-  return (
-    <div
-      aria-hidden="true"
-      data-zd-html-preview-reservation
-      style={{ height: `${reservationHeight(height)}px` }}
-    />
-  );
-}
-
 /**
  * Bare HTML preview body — the actual island **hydration target**.
  *
  * Merges global (`settings.htmlPreview`) config with per-usage props and
  * forwards everything to `<HtmlPreview>`. Renders the preview tree
  * **directly**: it does NOT wrap itself in `<Island>`. `HtmlPreviewWrapper`
- * below applies the `<Island when="visible">` wrapper around it.
+ * in `wrapper.tsx` applies the `<Island when="visible">` wrapper around it.
  *
  * ## Island invariant (read before touching the displayName / Island wiring)
  *
@@ -232,40 +213,3 @@ export function HtmlPreviewWrapperInner(
 // minification renames the function. Per the invariant above, it must equal
 // the export name and must not match the self-wrapping `HtmlPreviewWrapper`.
 HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapperInner";
-
-/**
- * HTML preview wrapper component — the public MDX-registered binding
- * (`HtmlPreview: HtmlPreviewWrapper`).
- *
- * Eager mode wraps the bare `HtmlPreviewWrapperInner` in
- * `<Island when="visible">`, mirroring the legacy `client:visible` hydration
- * timing while preserving the server-rendered controls and iframe host. Visible mode
- * uses zfb's skip-SSR fallback path: static output contains only an inert
- * nonzero reservation, while the real serializable inner props remain on the
- * island marker for native visible scheduling and client mount.
- *
- * The public export name and signature are unchanged from before the
- * zudolab/zudo-doc#1925 fix, so existing consumers that register
- * `HtmlPreview: HtmlPreviewWrapper` keep working (and now hydrate correctly)
- * with no call-site change.
- */
-export function HtmlPreviewWrapper(
-  props: HtmlPreviewWrapperProps,
-): Child {
-  const { loading = "eager", ...innerProps } = props;
-
-  if (loading === "visible") {
-    const rendered = Island({
-      when: "visible",
-      ssrFallback: <HtmlPreviewReservation height={innerProps.height} />,
-      children: <HtmlPreviewWrapperInner {...innerProps} />,
-    });
-    return rendered as unknown as Child;
-  }
-
-  const rendered = Island({
-    when: "visible",
-    children: <HtmlPreviewWrapperInner {...innerProps} />,
-  });
-  return rendered as unknown as Child;
-}

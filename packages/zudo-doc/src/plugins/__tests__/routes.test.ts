@@ -45,7 +45,7 @@ function makeCtx(
 ) {
   const virtualModules = new Map<string, () => string | Promise<string>>();
   const virtualOptions = new Map<string, { watchFiles?: string[] } | undefined>();
-  const injectedRoutes: Array<{ pattern: string; entrypoint: string }> = [];
+  const injectedRoutes: Array<{ pattern: string; entrypoint: string; opts?: { prerender?: boolean } }> = [];
   const warnings: string[] = [];
   const ctx = {
     command: "build" as const,
@@ -68,8 +68,8 @@ function makeCtx(
       virtualModules.set(specifier, loader);
       virtualOptions.set(specifier, options);
     },
-    injectRoute(pattern: string, entrypoint: string) {
-      injectedRoutes.push({ pattern, entrypoint });
+    injectRoute(pattern: string, entrypoint: string, opts?: { prerender?: boolean }) {
+      injectedRoutes.push({ pattern, entrypoint, opts });
     },
     addClientEntry() {},
   };
@@ -87,6 +87,19 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+describe("MCP route injection", () => {
+  it("injects a base-prefixed runtime route even with ordinary package routes disabled", async () => {
+    const { ctx, injectedRoutes } = makeCtx(makeProjectRoot(), { base: "/manual/", mcp: true }, { packageOwnedRoutes: false });
+    await routesPlugin.setup!(ctx as never);
+    expect(injectedRoutes).toContainEqual(expect.objectContaining({ pattern: "/manual/mcp", opts: { prerender: false } }));
+  });
+  it("omits the route when MCP is disabled", async () => {
+    const { ctx, injectedRoutes } = makeCtx(makeProjectRoot(), { base: "/manual/", mcp: false }, { packageOwnedRoutes: false });
+    await routesPlugin.setup!(ctx as never);
+    expect(injectedRoutes.some(route => route.pattern.endsWith("/mcp"))).toBe(false);
+  });
 });
 
 /** Resolve the design-token-panel-config virtual module's emitted source for

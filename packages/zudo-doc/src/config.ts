@@ -107,6 +107,7 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
+  assertAgentDocsConsistent,
 } from "./config-assertions/index.js";
 import { validateAssetViewerSettings } from "./asset-path/index.js";
 
@@ -147,6 +148,22 @@ function assertValidAssetViewerSettings(dir: string, routePrefix: string): void 
   }
 }
 
+/** Add the package-required MCP resolution fields without reordering host fields. */
+function withMcpMainFields(
+  bundle: BundleConfig | undefined,
+  presetBundle: Pick<BundleConfig, "mainFields"> | undefined,
+): BundleConfig {
+  const mainFields = [...(bundle?.mainFields ?? presetBundle?.mainFields ?? [])];
+  if (!mainFields.includes("module")) mainFields.push("module");
+  if (!mainFields.includes("main")) mainFields.push("main");
+
+  return {
+    ...presetBundle,
+    ...bundle,
+    mainFields,
+  };
+}
+
 /** The `settings.claudeResources` block (or `false` when disabled). */
 type ClaudeResourcesConfig =
   | { claudeDir: string; projectRoot?: string; scanRoot?: string }
@@ -157,102 +174,10 @@ type CodexResourcesConfig =
   | { codexDir: string; projectRoot?: string; scanRoot?: string }
   | false;
 
-// ---------------------------------------------------------------------------
-// DEFAULT_SETTINGS — the documented default for EVERY serializable settings
-// field. `zudoDoc()` merges user fields over these per-field (user wins). Every
-// value here is the same default that the matching `ZudoDocConfig` field's
-// `@default` JSDoc records. Kept as a complete `Settings` object so the routes
-// plugin's virtual-module payload is fully populated for zero-override users.
-// ---------------------------------------------------------------------------
-
-export const DEFAULT_SETTINGS: Settings = {
-  colorScheme: "Default Dark",
-  colorMode: {
-    defaultMode: "dark",
-    lightScheme: "Default Light",
-    darkScheme: "Default Dark",
-    respectPrefersColorScheme: true,
-  },
-  siteName: "Docs",
-  siteDescription: "",
-  logo: "auto",
-  favicon: undefined,
-  base: "/",
-  trailingSlash: false,
-  home: { wide: false, introMarkdown: "", sitemapHeading: "" },
-  siteTreeNavIgnore: [],
-  siteTreeNavSecondary: [],
-  minifyHtml: true,
-  docsDir: "src/content/docs",
-  entryDocSlug: "getting-started",
-  dateFormat: "locale",
-  defaultLocale: "en",
-  locales: {},
-  mermaid: true,
-  transclude: false,
-  noindex: false,
-  editUrl: false,
-  githubUrl: false,
-  siteUrl: "",
-  metaTags: {
-    description: true,
-    keywords: false,
-    ogImage: false,
-    ogSiteName: true,
-    twitterCard: false,
-  },
-  sitemap: false,
-  docMetainfo: false,
-  docMetainfoFields: ["created", "updated", "author"],
-  docTags: false,
-  tagPlacement: "after-title",
-  tagGovernance: "off",
-  tagVocabulary: false,
-  llmsTxt: false,
-  changelogs: false,
-  math: false,
-  cjkFriendly: false,
-  onBrokenMarkdownLinks: "warn",
-  aiAssistant: false,
-  aiChatDemoMode: false,
-  aiChatAllowedOrigins: [],
-  // Exact UTC-day paid-call admission cap; false disables it. An admission is
-  // consumed before provider fetch and is not provider-confirmed accounting.
-  aiChatGlobalDailyLimit: false,
-  designTokenPanel: false,
-  tocMinDepth: 2,
-  tocMaxDepth: 4,
-  searchMaxBodyLength: 3000,
-  sidebarResizer: false,
-  sidebarToggle: false,
-  tocToggle: false,
-  imageEnlarge: false,
-  findInPage: false,
-  dynamicPageTransition: false,
-  frontmatterPreview: false,
-  docHistory: false,
-  docHistoryUi: true,
-  docHistoryExclude: [],
-  assetViewer: false,
-  assetViewerDir: "assets",
-  assetViewerRoutePrefix: "files",
-  assetViewerExclude: [],
-  assetViewerIndex: false,
-  assetViewerIndexing: false,
-  bodyFootUtilArea: false,
-  htmlPreview: undefined,
-  versions: false,
-  claudeResources: false,
-  codexResources: false,
-  defaultLocaleOnlyPrefixes: [],
-  footer: false,
-  headerNav: [],
-  headerRightItems: [{ type: "component", component: "theme-toggle" }],
-  packageOwnedRoutes: true,
-  themePack: "default",
-  themePackSwitcher: false,
-  themePacks: undefined,
-};
+// Keep the established config export while the plain defaults live in a
+// browser-safe leaf consumed by route-context-payload.
+export { DEFAULT_SETTINGS } from "./settings-defaults.js";
+import { DEFAULT_SETTINGS } from "./settings-defaults.js";
 
 // ---------------------------------------------------------------------------
 // ZudoDocConfig — the single user-facing settings reference. Every field is
@@ -473,6 +398,16 @@ export interface ZudoDocConfig {
    * @default false
    */
   llmsTxt?: boolean;
+  /**
+   * Generate the package-owned static agent documentation feed.
+   * @default false
+   */
+  agentExport?: boolean;
+  /**
+   * Enable the stateless read-only MCP endpoint. Requires `agentExport: true`.
+   * @default false
+   */
+  mcp?: boolean;
   /**
    * Changelog generation config(s), or `false` to disable.
    * @default false
@@ -902,6 +837,10 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // documented public API (zudolab/zudo-doc#4407).
   assertValidSearchMaxBodyLength(settings.searchMaxBodyLength);
 
+  // Guard JavaScript callers as well as typed config users; the preset checks
+  // again because it is also a public, directly-callable entry point.
+  assertAgentDocsConsistent(settings);
+
   const fragment = zudoDocPreset({
     settings,
     buildDocsSchema:
@@ -917,23 +856,31 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     tagVocabulary: userTagVocabularyEntries ?? [],
   });
 
+  const { bundle: presetBundle, ...presetConfig } = fragment;
+  // MCP needs explicit main fields for the SDK's CJS-only AJV imports. Keep
+  // this MCP-only: default/static configs retain the exact caller bundle shape.
+  const resolvedBundle =
+    settings.mcp === true
+      ? withMcpMainFields(bundle, presetBundle)
+      : bundle;
+
   return {
     // ── Host-owned shell fields ──────────────────────────────────────────
     port: port ?? 4321,
     base: settings.base,
     ...(adapter ? { adapter } : {}),
-    ...(bundle ? { bundle } : {}),
+    ...(resolvedBundle ? { bundle: resolvedBundle } : {}),
     ...(wind !== undefined ? { wind } : {}),
     ...(strictContentBridge !== undefined ? { strictContentBridge } : {}),
 
     // ── Preset-owned fields (collections, plugins, markdown, …) ──────────
-    ...fragment,
+    ...presetConfig,
     // The preset's `markdown.features` intentionally uses the loose Record
     // shape (the exact shape zfb's config shim binds against); the engine's
     // strict `MarkdownFeaturesConfig` is a structural subset of it. Every
     // other preset field type-checks against `ZfbConfig` directly, so only
     // `markdown` needs this single documented bridge — `satisfies ZfbConfig`
     // below keeps full strict checking on all the rest.
-    markdown: fragment.markdown as ZfbConfig["markdown"],
+    markdown: presetConfig.markdown as ZfbConfig["markdown"],
   } satisfies ZfbConfig;
 }

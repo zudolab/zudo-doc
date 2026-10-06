@@ -78,6 +78,8 @@ const veryLongExample = "${"long-example".repeat(30)}";
   docMetainfo: false,
   docTags: false,
   llmsTxt: true,
+  agentExport: true,
+  mcp: true,
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,

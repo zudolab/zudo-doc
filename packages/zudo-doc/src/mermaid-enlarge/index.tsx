@@ -87,11 +87,10 @@ export function MermaidEnlarge() {
   const isOpen = computed(() => open.value !== null);
   const zoomed = computed(() => scale.value > MIN_SCALE);
   const atMax = computed(() => scale.value >= MAX_SCALE);
-  // workaround for https://github.com/Takazudo/zudo-front-builder/issues/3375:
-  // retain the locked CSS-string form for the reactive transform style.
-  const transformStyle = computed(() =>
-    `transform: translate(${translate.value.x}px, ${translate.value.y}px) scale(${scale.value}); transform-origin: center;`,
-  );
+  const transformStyle = computed(() => ({
+    transform: `translate(${translate.value.x}px, ${translate.value.y}px) scale(${scale.value})`,
+    "transform-origin": "center",
+  }));
   const svgHtml = computed(() => open.value?.svgHtml ?? "");
   const panActiveAttr = computed(() => panActive.value && zoomed.value ? "" : undefined);
 
@@ -374,13 +373,3 @@ export function MermaidEnlarge() {
   );
 }
 MermaidEnlarge.displayName = "MermaidEnlarge";
-
-/**
- * Static SSR fallback for the {@link MermaidEnlarge} island.
- *
- * Renders an empty, closed `<dialog class="zd-mermaid-dialog ...">` so the
- * dist HTML carries the closed shell before activation.
- */
-export function MermaidEnlargeSsrFallback() {
-  return <dialog aria-label="Enlarged diagram" class={MERMAID_ENLARGE_DIALOG_CLASS} style={ENLARGE_DIALOG_STYLE} />;
-}

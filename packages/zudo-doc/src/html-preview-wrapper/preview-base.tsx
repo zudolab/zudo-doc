@@ -87,8 +87,7 @@ const DEFAULT_VIEWPORTS: Viewport[] = buildViewports(DEFAULT_LABELS);
  * Interactive preview base: iframe viewport switcher + collapsible code
  * section.
  *
- * The iframe is created in the reserved host during activation because zfb
- * 3.1.0 rejects iframe elements inside islands (#3361).
+ * The native iframe is rendered during SSR and hydrated by zudo-react.
  */
 export function PreviewBase({
   title,
@@ -113,60 +112,34 @@ export function PreviewBase({
   const activeViewport = signal(2); // default: Full
   const codeOpen = signal(sourceVisible && (defaultOpen ?? false));
   const iframeHeight = signal(height ?? 200);
-  const hostRef: Ref<HTMLDivElement> = { current: null };
+  const iframeRef: Ref<HTMLIFrameElement> = { current: null };
   const autoHeightEnabled = (autoHeight ?? true) && height == null;
-  let iframe: HTMLIFrameElement | null = null;
   let controller: ReturnType<typeof createPreviewAutoHeightController> | null = null;
 
   scope.onActivate(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    // srcdoc is assembled from author-trusted MDX/config. The iframe must be
-    // imperative because zudo-react 3.1.0 rejects iframe inside islands (#3361).
-    const frame = host.ownerDocument.createElement("iframe");
-    iframe = frame;
-    frame.className = "block w-full border-none bg-[#fff] rounded zd-preview-shadow";
-    frame.setAttribute("title", title ?? resolvedLabels.preview);
-    if (sandbox !== undefined) frame.setAttribute("sandbox", sandbox);
-    frame.style.height = `${iframeHeight.value}px`;
-    frame.srcdoc = srcdoc;
-    if (autoHeightEnabled) {
-      const nextController = createPreviewAutoHeightController({
-        iframe: frame,
-        syncDelay,
-        getCurrentHeight: () => iframeHeight.value,
-        setHeight: (nextHeight) => {
-          iframeHeight.value = nextHeight;
-        },
-      });
-      controller = nextController;
-      const onLoad = () => nextController.handleLoad();
-      frame.addEventListener("load", onLoad);
-      host.append(frame);
-      try {
-        if (frame.contentDocument?.readyState === "complete") nextController.handleLoad();
-      } catch {
-        // Opaque documents may still emit a later load.
-      }
-      return () => {
-        frame.removeEventListener("load", onLoad);
-        nextController.destroy();
-        controller = null;
-        iframe = null;
-        frame.remove();
-      };
+    const frame = iframeRef.current;
+    if (!frame || !autoHeightEnabled) return;
+    const nextController = createPreviewAutoHeightController({
+      iframe: frame,
+      syncDelay,
+      getCurrentHeight: () => iframeHeight.value,
+      setHeight: (nextHeight) => { iframeHeight.value = nextHeight; },
+    });
+    controller = nextController;
+    const onLoad = () => nextController.handleLoad();
+    frame.addEventListener("load", onLoad);
+    try {
+      if (frame.contentDocument?.readyState === "complete") nextController.handleLoad();
+    } catch {
+      // Opaque documents may still emit a later load.
     }
-    host.append(frame);
     return () => {
-      iframe = null;
-      frame.remove();
+      frame.removeEventListener("load", onLoad);
+      nextController.destroy();
+      controller = null;
     };
   });
 
-  scope.effect(() => {
-    const nextHeight = iframeHeight.value;
-    if (iframe) iframe.style.height = `${nextHeight}px`;
-  });
   scope.effect(() => {
     activeViewport.value;
     if (autoHeightEnabled) controller?.schedule();
@@ -213,13 +186,15 @@ export function PreviewBase({
       <div class="bg-surface p-hsp-lg">
         <div
           class="resize-x overflow-auto max-w-full mx-auto"
-          style={computed(() => `width:${containerWidth.value}`)}
+          style={computed(() => ({ width: containerWidth.value }))}
         >
-          {/* Imperative iframe appears here on activation; see #3361. */}
-          <div
-            ref={hostRef}
-            data-zd-html-preview-frame-host
-            style={`min-height:${height ?? 200}px`}
+          <iframe
+            ref={iframeRef}
+            class="block w-full border-none bg-[#fff] rounded zd-preview-shadow"
+            title={title ?? resolvedLabels.preview}
+            {...(sandbox !== undefined ? { sandbox } : {})}
+            srcdoc={srcdoc}
+            style={computed(() => ({ height: `${iframeHeight.value}px` }))}
           />
         </div>
       </div>

@@ -113,12 +113,9 @@ function cssUrl(url: string): string {
   return `url("${url.replace(/[\\"]/g, "\\$&")}")`;
 }
 
-// workaround for https://github.com/Takazudo/zudo-front-builder/issues/3375:
-// zfb 3.1.0 rejects the vendor-prefixed property in an object style, while a
-// CSS string preserves the exact mask declarations used by the v2 page.
-function logoMaskStyle(url: string): string {
+function logoMaskStyle(url: string) {
   const mask = `${cssUrl(url)} center/contain no-repeat`;
-  return `-webkit-mask:${mask};mask:${mask}`;
+  return { "-webkit-mask": mask, mask };
 }
 
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */

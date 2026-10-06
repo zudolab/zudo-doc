@@ -59,11 +59,12 @@ const TARGET_MANIFEST_PKG_PATH = resolve(
 // The single dependency the target-manifest fixture guards (surface #6).
 const FIXTURE_PACKAGE = "@takazudo/zudo-doc";
 
-// External upstream packages emitted by the scaffold: each pin must equal
-// root dependencies[pkg]. The Cloudflare adapter is intentionally absent: the
-// default scaffold is pure static and consumers choose their deploy adapter.
-// @takazudo/zdtp is included here so the scaffold's emitted zdtp pin is
-// parity-checked against root dependencies — same staleness class as #2381 / #2445.
+// External packages emitted by the scaffold: each pin must equal its source
+// in the root dependencies/devDependencies or zudo-doc's optional peer. The
+// adapter, MCP SDK, and Wrangler are emitted only by the explicit Cloudflare
+// MCP preset; the ordinary scaffold remains pure static. @takazudo/zdtp is
+// included here so the scaffold's emitted zdtp pin is parity-checked against
+// root dependencies — same staleness class as #2381 / #2445.
 // Exported (#3456) so scripts/check-scaffold-pin-freshness.mjs can reuse the
 // same package list against the npm registry instead of duplicating it.
 export const PINNED_PACKAGES = [
@@ -71,6 +72,9 @@ export const PINNED_PACKAGES = [
   "@takazudo/zfb-runtime",
   "@takazudo/zfb-md-wasm",
   "@takazudo/zdtp",
+  "@takazudo/zfb-adapter-cloudflare",
+  "@modelcontextprotocol/sdk",
+  "wrangler",
 ];
 
 // Internal packages published from this monorepo: scaffold pin (caret/tilde
@@ -482,15 +486,20 @@ function main() {
 
   const mismatches = [];
 
-  // ── External pins: scaffold literal must equal root dependencies[pkg] ──────
+  // ── External pins: scaffold literal must equal its reviewed source pin ─────
   for (const pkgName of PINNED_PACKAGES) {
-    const rootPin = rootPkg.dependencies?.[pkgName];
+    const rootPin =
+      rootPkg.dependencies?.[pkgName] ??
+      rootPkg.devDependencies?.[pkgName] ??
+      zudoDocPkg.peerDependencies?.[pkgName];
     const scaffoldPin = readScaffoldPin(scaffoldSrc, pkgName);
 
     if (rootPin === undefined) {
       mismatches.push({
         pkg: pkgName,
-        reason: `Missing in root package.json dependencies`,
+        reason:
+          `Missing from root dependencies/devDependencies and ` +
+          `@takazudo/zudo-doc peerDependencies`,
         rootPin,
         scaffoldPin,
         kind: "external",
@@ -516,6 +525,23 @@ function main() {
         kind: "external",
       });
     }
+  }
+
+  const zfbFamilyPin = rootPkg.dependencies?.["@takazudo/zfb"];
+  const cloudflareAdapterPin =
+    rootPkg.dependencies?.["@takazudo/zfb-adapter-cloudflare"];
+  if (cloudflareAdapterPin !== zfbFamilyPin) {
+    mismatches.push({
+      pkg: "@takazudo/zfb-adapter-cloudflare",
+      reason:
+        "The Cloudflare adapter must use the exact pinned zfb-family version",
+      rootPin: zfbFamilyPin,
+      scaffoldPin: readScaffoldPin(
+        scaffoldSrc,
+        "@takazudo/zfb-adapter-cloudflare",
+      ),
+      kind: "external",
+    });
   }
 
   // ── Internal pins: scaffold pin (stripped) must equal root version ─────────
@@ -734,7 +760,11 @@ function main() {
       `OK — pin parity verified for ${PINNED_PACKAGES.length} external + ${INTERNAL_PINNED_PACKAGES.length} internal + ${ZUDO_DOC_ZFB_PACKAGES.length * 2} workspace-package field(s) + ${FIRST_PARTY_PEER_CHECKS.length} first-party peer floor(s) + 1 fixture pin:`,
     );
     for (const pkgName of PINNED_PACKAGES) {
-      console.log(`  ${pkgName} = ${rootPkg.dependencies[pkgName]}`);
+      const pin =
+        rootPkg.dependencies?.[pkgName] ??
+        rootPkg.devDependencies?.[pkgName] ??
+        zudoDocPkg.peerDependencies?.[pkgName];
+      console.log(`  ${pkgName} = ${pin}`);
     }
     for (const pkgName of INTERNAL_PINNED_PACKAGES) {
       const scaffoldPin = readScaffoldPin(scaffoldSrc, pkgName);
@@ -772,7 +802,7 @@ function main() {
   for (const m of mismatches) {
     if (m.kind === "external") {
       console.error(`  [${m.pkg}]  ${m.reason}`);
-      console.error(`    root dependencies: ${m.rootPin ?? "(missing)"}`);
+      console.error(`    reviewed source pin: ${m.rootPin ?? "(missing)"}`);
       console.error(`    scaffold.ts:       ${m.scaffoldPin ?? "(missing)"}`);
     } else if (m.kind === "internal") {
       console.error(`  [${m.pkg}]  ${m.reason}`);
@@ -803,7 +833,8 @@ function main() {
   console.error("Fix — align the pin(s) in:");
   console.error(`  - ${ROOT_PKG_PATH}`);
   console.error(
-    `      external pins live in "dependencies"; the internal release version is the "version" field`,
+    `      update external pins in dependencies/devDependencies; MCP SDK parity uses ` +
+      `@takazudo/zudo-doc's optional peer pin; internal release pins use the "version" field`,
   );
   console.error(`  - ${SCAFFOLD_TS_PATH}`);
   console.error(`  - ${ZUDO_DOC_PKG_PATH}`);
