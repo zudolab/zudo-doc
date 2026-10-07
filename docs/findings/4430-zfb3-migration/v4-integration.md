@@ -1,3 +1,5 @@
+> Historical 4.0.0 round. See [4.1.0 integration results](v4.1-integration.md) for the active target and residual blocker #3992.
+
 # zfb v4 integration and consolidated PR
 
 Date: 2026-10-07 JST. Epic #4430; integration #4467; root PR #4477.

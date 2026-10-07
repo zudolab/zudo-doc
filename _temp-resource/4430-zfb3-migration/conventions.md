@@ -1,8 +1,8 @@
 # Locked zfb 3 migration conventions — #4434, round 2 #4480
 
-## Active v4 override (2026-10-07 JST)
+## Active v4 override (2026-10-07; latest published recheck)
 
-Owner-directed target: exact zfb family **4.0.0**, peers **^4.0.0**, superseding all 3.x pins and newest-3.x instructions below. Use published v4 contracts at tag `v4.0.0` (`defda240cd8f51a55a7cde14f761934e3d9ef171`). Keep baseline/parity and release gates unchanged. #4477 now consolidates #4498 and #4499. See [v4 integration findings](../../docs/findings/4430-zfb3-migration/v4-integration.md) for verified native paths, current blocker and resume sequence. Historical reproductions keep their original pins.
+Owner-directed target: exact zfb family **4.1.0**, peers **^4.1.0**, superseding all 3.x pins and newest-3.x instructions below. Use published v4 contracts at tag `v4.1.0`. Keep baseline/parity and release gates unchanged. #4477 now consolidates #4498 and #4499. See [v4.1 integration findings](../../docs/findings/4430-zfb3-migration/v4.1-integration.md) for verified native paths, current blocker and resume sequence. Historical reproductions keep their original pins.
 
 Round-2 decision: 2026-10-01, #4480, superseding the 2026-09-30 #4434 lock where stated below. Implementation target: zfb **3.1.0**, npm latest rechecked with `pnpm view @takazudo/zfb version` (output `3.1.0`). Normative `v3.1.0` tag commit: `baac44eac12d300d68fd8742c585567ea24e6aa9`. Baseline: zudo-doc 5.28.2 at `337b9f110`, zfb 2.22.1. This is a decision record, not a claim that ports or visual parity have passed.
 

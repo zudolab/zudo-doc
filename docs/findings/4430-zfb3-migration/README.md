@@ -1,10 +1,10 @@
 # zudo-doc 6 / zfb 4 migration matrix
 
-## Active target — zfb 4.0.0 (2026-10-07 JST)
+## Active target — zfb 4.1.0 (2026-10-07)
 
-The owner requested consolidation of #4477, #4498 and #4499 and continuation on **zfb v4**. This section supersedes older version locks below: all four published family packages are pinned to **4.0.0**, package peers to **^4.0.0**. Keep the existing branch and historical resource paths. [The v4 integration findings and remaining plan](v4-integration.md) are the current handoff; earlier rounds remain historical evidence, not proof of v4 parity.
+All four published family packages are pinned to **4.1.0**, package peers to **^4.1.0**. npm publication and the installed native binary were verified, not inferred from GitHub tags. [Current 4.1 integration results](v4.1-integration.md) supersede the [historical 4.0 round](v4-integration.md).
 
-The consolidated root PR is [#4477](https://github.com/zudolab/zudo-doc/pull/4477). Package/unit/type checks and the Wind audit pass; the site build is blocked by [upstream #3895](https://github.com/Takazudo/zudo-front-builder/issues/3895). Integration #4467 and final readiness #4475 remain open; do not merge the root PR or delete temporary resources yet.
+**BLOCKED:** root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft and unmerged. The original bounded factory reproduction now passes, but the application still fails on spread/conditional component injection. [Upstream #3992](https://github.com/Takazudo/zudo-front-builder/issues/3992) records the residual contract question and passing controls; #3895 is no longer the active issue. Full-site, packed-consumer, Worker and browser parity gates are not cleared. Keep #4467/#4475 open and retain temporary resources.
 
 Decision owners: round 1 [#4434](https://github.com/zudolab/zudo-doc/issues/4434), round 2 [#4480](https://github.com/zudolab/zudo-doc/issues/4480); epic [#4430](https://github.com/zudolab/zudo-doc/issues/4430). This permanent gap table implements upstream [#3328](https://github.com/Takazudo/zudo-front-builder/issues/3328). It survives deletion of temporary planning resources. All implementation and route verdicts start **pending**; #4476 copies measured parity verdicts and final released versions here.
 
