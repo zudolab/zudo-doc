@@ -733,6 +733,7 @@ body {
 }
 
 .zd-content :where(pre code) {
+  font-family: inherit;
   background: none;
   padding: 0;
   border: none;
