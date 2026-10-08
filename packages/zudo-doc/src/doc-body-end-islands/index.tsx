@@ -1,82 +1,14 @@
 /** @jsxRuntime automatic */
-// doc-body-end-islands — the PACKAGE-DEFAULT body-end islands for package-owned
-// routes (#2406 / #2401(c)).
-//
-// Package-owned routes (404 / index / locale-index / docs / versions / tags)
-// wire their `bodyEndComponents` slot through `routes/_chrome.tsx`. Before this
-// module they used a no-op `BodyEndIslandsStub` that rendered `<></>`, so the
-// island markers for AiChatModal / ImageEnlarge / MermaidEnlarge never reached
-// the DOM — image-enlarge / mermaid-enlarge / AI-chat were dead on `/404` and
-// every package route. This factory reconstructs the PACKAGE-ISLAND subset of
-// the host's `pages/lib/_body-end-islands.tsx` from the serializable `settings`
-// flags the route-context virtual module already carries.
-//
-// SCOPE — package islands + chrome (gated on serializable settings):
-//   - aiAssistant           → `<h2 sr-only>AI Assistant</h2>` + skip-ssr AiChatModal
-//   - imageEnlarge          → idle skip-ssr ImageEnlarge   (SSR dialog-shell fallback)
-//   - mermaid               → idle skip-ssr MermaidEnlarge (SSR dialog-shell fallback)
-//   - dynamicPageTransition → pure-SSR <PageLoadingOverlay/> (zudolab/zudo-doc#2482)
-//   - designTokenPanel      → load (non-skip-ssr*) DesignTokenPanelBootstrap (see below, #2658)
-//   - findInPage            → load (non-skip-ssr*) FindInPageInit — Cmd/Ctrl+F find
-//                             bar, self-gated on `window.__TAURI_INTERNALS__`
-//                             (zudolab/zudo-doc#2689)
-//   - themePackSwitcher     → load (hydrating, SSR'd launcher) ThemePackSwitcher
-//                             flyout — component + registry-derived props are
-//                             injected by `chrome/derive.tsx` (#2821), the
-//                             DesignTokenPanelBootstrap deps pattern
-// It deliberately OMITS the host-owned `ClientRouterBootstrap`: it imports from
-// `@/components/*` and is NOT reconstructable from package settings. The page-
-// loading overlay, by contrast, is a pure PACKAGE component (`../page-loading`)
-// with no host coupling, so it CAN be mounted here — and package-owned routes
-// already activate `<ClientRouter/>` via `enableClientRouter` on the same flag,
-// so the overlay only needed its markup mount (zudolab/zudo-doc#2482, the
-// package-owned-routes analog of the #1541 host-mount decision).
-//
-// `designTokenPanel` (#2658) is DIFFERENT from the AiChatModal/ImageEnlarge/
-// MermaidEnlarge trio above: the real `DesignTokenPanelBootstrap` component is
-// itself a package component (`@takazudo/zudo-doc/design-token-panel-bootstrap`),
-// but it is injected as an explicit `DesignTokenPanelBootstrap` dependency
-// (`BodyEndIslandsDeps`) rather than imported at module top-level, so this
-// factory keeps a single injection point for the two shapes the component can
-// take. `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports the
-// package default and supplies it as the slot DEFAULT for every `createChrome`
-// consumer (#2659 gate-2 fix; the scanner walks route → chrome → derive →
-// component, mirroring the DocHistory #2480 chain); on injected routes
-// `routes/_chrome.tsx` overrides that slot with the configured wrapper that
-// carries a host's `designTokenPanelConfigModule` (#3396). Neither module
-// imports a `virtual:` specifier any more — the original reason for the deps
-// injection (keeping `virtual:zudo-doc-design-token-panel-config` out of this
-// factory's routes-plugin-independent reachability graph) was retired by #3396,
-// but the injection stays because it is now what lets the routes graph swap the
-// component. See `../design-token-panel-bootstrap.tsx` for the full contract. *Not skip-ssr in the zfb-marker sense — it renders
-// `null` on both SSR and client, so it uses `Island({ when })` with no
-// `ssrFallback` (matches `ClientRouterBootstrap`'s host-side precedent), which
-// zfb marks `data-zfb-island` (no `-skip-ssr` suffix).
-//
-// WHY A FACTORY (and not a component that imports `settings` itself): this
-// module compiles to `dist/`, which a published consumer resolves INSIDE
-// node_modules. zfb's esbuild bundler does NOT run the route-context virtual-
-// module resolver on imports whose realpath is under node_modules (the S1
-// #2370 gap; the routes plugin stages only `routes-src/` outside node_modules,
-// not `dist/`). So this module must NOT import `routes/_context` — its
-// transitive `virtual:zudo-doc-route-context` import would dangle. Instead
-// `_chrome.tsx` (which DOES read the staged virtual-module `settings`) injects
-// the flags here, mirroring every other `createX({ settings, … })` factory in
-// that file.
-//
-// ISLAND-SCANNER / displayName: the real island components are imported at
-// module top-level so the scanner walks route → _chrome → here → component.
-// AiChatModal / ImageEnlarge / MermaidEnlarge each pin `displayName` internally
-// (src/{ai-chat-modal,image-enlarge,mermaid-enlarge}), so zfb's
-// `captureComponentName` emits a stable `data-zfb-island-skip-ssr="<name>"`
-// marker — no call-site pinning needed here. `DesignTokenPanelBootstrap` is
-// NOT imported at this module's top level (see the note above) — it arrives
-// as an already-real component via `deps.DesignTokenPanelBootstrap`, pinned by
-// its own module (`../design-token-panel-bootstrap.tsx`). `FindInPageInit`
-// (`../find-in-page/index.tsx`) follows the AiChatModal/ImageEnlarge/
-// MermaidEnlarge shape — a plain static top-level import, own `displayName`
-// pin — NOT the deps-injection dance, since it has no virtual-module
-// coupling to keep out of this factory's reachability graph.
+// Package-default body-end views. Settings and ordinary server dependencies
+// flow through this factory; concrete client identities stay at fixed Island
+// boundaries. DesignTokenPanelBootstrap and ThemePackSwitcher dependencies
+// are SERVER boundary components in v6, returning Fragment-wrapped Islands.
+// chrome/derive supplies package defaults; routes/_chrome supplies the configured
+// panel boundary and preserves explicit host precedence. These functions never
+// cross island JSON transport. Missing dependencies render no feature/shim.
+// The host-owned ClientRouterBootstrap remains outside this default view.
+// Settings arrive through the context rather than virtual imports because this
+// compiled package graph must also work outside staged package routes.
 
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
@@ -135,18 +67,7 @@ export interface BodyEndIslandsSettings {
 /** Dependencies injected by `_chrome.tsx` (carries the virtual-module settings). */
 export interface BodyEndIslandsDeps {
   settings: BodyEndIslandsSettings;
-  /**
-   * The real `DesignTokenPanelBootstrap` component (#2658) — see the module
-   * header note above for why it is NOT imported directly here.
-   * `chrome/derive.tsx`'s `deriveBodyEndIslands` supplies
-   * `@takazudo/zudo-doc/design-token-panel-bootstrap`'s
-   * `DesignTokenPanelBootstrap` as the default for every `createChrome`
-   * consumer (#2659 gate-2 fix), so chrome-derived callers always carry it.
-   * Omitted (a bare `createBodyEndIslands({ settings })` call outside the
-   * chrome path, as this factory's own unit tests do) means no panel island
-   * mounts even when `settings.designTokenPanel` is `true` — a safe no-op,
-   * not a crash.
-   */
+  /** Server boundary for a fixed panel client target. Omitted means no mount or shim. */
   DesignTokenPanelBootstrap?: FactoryComponent;
   /**
    * SSR props for the theme-pack switcher flyout (#2821) — derived from
@@ -161,13 +82,8 @@ export interface BodyEndIslandsDeps {
    * out of zudo-doc's pending affordance without changing zfb's marker.
    */
   pendingUntilHydrated?: boolean;
-  /**
-   * The real `ThemePackSwitcher` island component (#2821), injected by
-   * `chrome/derive.tsx` (which statically imports it — the island-scanner
-   * reachability chain, mirroring `DesignTokenPanelBootstrap` above).
-   * Omitted means no switcher island mounts — a safe no-op, not a crash.
-   */
-  ThemePackSwitcher?: FactoryComponent;
+  /** Server boundary accepting the serializable switcher props. Omitted means no mount. */
+  ThemePackSwitcher?: (props: ThemePackSwitcherProps) => JSX.Element | null;
 }
 
 /** Props for the produced `BodyEndIslands` component. */

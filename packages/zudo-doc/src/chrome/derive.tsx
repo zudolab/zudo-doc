@@ -19,6 +19,7 @@
 // This module is NOT in the preset eval graph (preset.ts never imports it), so
 // its host/runtime dependency graph never touches the node-free config surface.
 
+import { Island } from "@takazudo/zfb";
 import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { ChromeContext, FactoryComponent } from "../factory-context/index.js";
@@ -456,8 +457,8 @@ export function skipsPackageDefaultDesignTokenPanel(settings: Settings): boolean
  * (#2658 gate-2 fix; #2821), preserving route → chrome → derive → component
  * scanner reachability for bare `createChrome(routeCtx)` callers. A host may
  * still replace the DTP component through
- * `hostBindings.DesignTokenPanelBootstrap`, but the package remains the sole
- * owner of the mounts and settings gates.
+ * `hostBindings.DesignTokenPanelBootstrap`, as a fixed-target server boundary. The package retains settings gates and
+ * toggle-shim ownership; the supplied boundary owns its Island mount.
  *
  * Since #3396 the injected package routes use that same slot: `routes/_chrome.tsx`
  * supplies `ConfiguredDesignTokenPanelBootstrap`, which is identical to the
@@ -467,17 +468,25 @@ export function skipsPackageDefaultDesignTokenPanel(settings: Settings): boolean
  * `createChrome` caller keeps getting — EXCEPT under the one condition
  * {@link skipsPackageDefaultDesignTokenPanel} describes.
  */
+/** Fixed targets remain visible to the scanner; factories only select server views. */
+function DefaultDesignTokenPanelBoundary() {
+  return <><Island when="load"><DesignTokenPanelBootstrap /></Island></>;
+}
+function DefaultThemePackSwitcherBoundary(props: Parameters<typeof ThemePackSwitcher>[0]) {
+  return <><Island when="load"><ThemePackSwitcher {...props} /></Island></>;
+}
+
 export function deriveBodyEndIslands(ctx: ChromeContext) {
   const designTokenPanelDeps = {
     DesignTokenPanelBootstrap:
       ctx.hostBindings.DesignTokenPanelBootstrap ??
       (skipsPackageDefaultDesignTokenPanel(ctx.settings)
         ? undefined
-        : (DesignTokenPanelBootstrap as unknown as FactoryComponent)),
+        : (DefaultDesignTokenPanelBoundary as unknown as FactoryComponent)),
   };
   const themePackSwitcherDeps = {
     themePackSwitcherProps: deriveThemePackSwitcherProps(ctx),
-    ThemePackSwitcher: ThemePackSwitcher as unknown as FactoryComponent,
+    ThemePackSwitcher: DefaultThemePackSwitcherBoundary,
   };
   const HostBodyEndIslands = ctx.hostBindings.BodyEndIslands;
 

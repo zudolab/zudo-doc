@@ -41,7 +41,7 @@ export const docHistoryFeature: FeatureModule = () => ({
       // comment (explaining WHY this patch exists) mentions "DocHistory" in
       // prose, which would false-positive a weaker check and skip patching
       // on every run.
-      const importMarker = `import { DocHistory } from "@takazudo/zudo-doc/doc-history";`;
+      const importMarker = `import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area";`;
       if (content.includes(importMarker)) continue; // already patched
 
       content = content.replace(

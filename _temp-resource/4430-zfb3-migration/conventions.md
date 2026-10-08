@@ -2,7 +2,9 @@
 
 ## Active v4 override (2026-10-07; latest published recheck)
 
-Owner-directed target: exact zfb family **4.1.0**, peers **^4.1.0**, superseding all 3.x pins and newest-3.x instructions below. Use published v4 contracts at tag `v4.1.0`. Keep baseline/parity and release gates unchanged. #4477 now consolidates #4498 and #4499. See [v4.1 integration findings](../../docs/findings/4430-zfb3-migration/v4.1-integration.md) for verified native paths, current blocker and resume sequence. Historical reproductions keep their original pins.
+Owner-directed target: exact zfb family **4.2.0**, peers **^4.2.0**, superseding all 3.x pins and newest-3.x instructions below. Use published v4 contracts at tag `v4.2.0`. Keep baseline/parity and release gates unchanged. #4477 now consolidates #4498 and #4499. See [v4.2 integration findings](../../docs/findings/4430-zfb3-migration/v4.2-integration.md) for verified native paths, current blocker and resume sequence. Historical reproductions keep their original pins.
+
+The October 8 accepted upstream #4004 A+D decision explicitly supersedes the old exhaustive API-change restriction for Island composition: DTP/DocHistory host slots and the optional body-end theme dependency now accept fixed-target server boundaries. Preserve override precedence/settings; functions and fallback descriptions remain server-only. See the current findings for concrete migrated callers and tests.
 
 Round-2 decision: 2026-10-01, #4480, superseding the 2026-09-30 #4434 lock where stated below. Implementation target: zfb **3.1.0**, npm latest rechecked with `pnpm view @takazudo/zfb version` (output `3.1.0`). Normative `v3.1.0` tag commit: `baac44eac12d300d68fd8742c585567ea24e6aa9`. Baseline: zudo-doc 5.28.2 at `337b9f110`, zfb 2.22.1. This is a decision record, not a claim that ports or visual parity have passed.
 

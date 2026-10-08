@@ -1,10 +1,10 @@
 # zudo-doc 6 / zfb 4 migration matrix
 
-## Active target — zfb 4.1.0 (2026-10-07)
+## Active target — zfb 4.2.0 (2026-10-08)
 
-All four published family packages are pinned to **4.1.0**, package peers to **^4.1.0**. npm publication and the installed native binary were verified, not inferred from GitHub tags. [Current 4.1 integration results](v4.1-integration.md) supersede the [historical 4.0 round](v4-integration.md).
+All four published family packages are pinned to **4.2.0**, peers **^4.2.0**. npm and the native binary are verified. [Current 4.2 integration findings](v4.2-integration.md) supersede the historical [4.1 round](v4.1-integration.md).
 
-**BLOCKED:** root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft and unmerged. The original bounded factory reproduction now passes, but the application still fails on spread/conditional component injection. [Upstream #3992](https://github.com/Takazudo/zudo-front-builder/issues/3992) records the residual contract question and passing controls; #3895 is no longer the active issue. Full-site, packed-consumer, Worker and browser parity gates are not cleared. Keep #4467/#4475 open and retain temporary resources.
+**Not release-ready:** existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. The accepted upstream #4004 composition migration is implemented and the full site builds (793 pages). Packed identity/token-resolution and parity gates still need resolution/verification; keep #4467/#4475 open and temporary resources intact.
 
 Decision owners: round 1 [#4434](https://github.com/zudolab/zudo-doc/issues/4434), round 2 [#4480](https://github.com/zudolab/zudo-doc/issues/4480); epic [#4430](https://github.com/zudolab/zudo-doc/issues/4430). This permanent gap table implements upstream [#3328](https://github.com/Takazudo/zudo-front-builder/issues/3328). It survives deletion of temporary planning resources. All implementation and route verdicts start **pending**; #4476 copies measured parity verdicts and final released versions here.
 

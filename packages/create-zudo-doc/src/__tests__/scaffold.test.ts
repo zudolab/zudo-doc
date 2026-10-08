@@ -1665,7 +1665,7 @@ describe("scaffold — every docHistory × i18n route stub threads chrome bindin
         );
 
         const docHistoryImport =
-          'import { DocHistory } from "@takazudo/zudo-doc/doc-history";';
+          'import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area";';
         if (docHistory) {
           // The real component stays statically reachable by zfb's island
           // scanner, while the spread preserves every configured host slot.

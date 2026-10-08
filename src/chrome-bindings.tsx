@@ -39,7 +39,7 @@ import { SearchWidget } from "../pages/lib/_search-widget";
 import { BodyEndIslands as BodyEndIslandsSeam } from "../pages/lib/_body-end-islands";
 import { DetailsWrapper } from "../pages/lib/_details";
 import { PresetGeneratorFallback } from "../pages/lib/_preset-generator";
-import { DocHistory } from "@takazudo/zudo-doc/doc-history";
+import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area";
 // SSR author + date metadata — `#doc-history-meta` is the build-time manifest
 // alias (esbuild-inlined, no fs). Static import is load-bearing for the island
 // scanner chain noted below.

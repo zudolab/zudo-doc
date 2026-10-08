@@ -19,6 +19,7 @@
 
 import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { Island } from "@takazudo/zfb";
+import { DocHistory as DocHistoryClient } from "../doc-history/index.js";
 // Relative, NOT `@takazudo/zudo-doc-history-server/exclude` — that package is an
 // OPTIONAL peer and this module is in the always-bundled chrome graph, so the
 // cross-package import broke `docHistory: false` builds at esbuild (#3110).
@@ -55,6 +56,7 @@ export interface DocHistoryAreaSettings {
  * Must match the interface of `@takazudo/zudo-doc/doc-history`'s DocHistory.
  */
 export type DocHistoryComponent = (props: {
+  ssrFallback?: Child;
   slug: string;
   locale?: string;
   basePath?: string;
@@ -218,19 +220,14 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // In dates-only mode the conditional avoids emitting an island marker;
     // the source-link composition below remains independent of this value.
     const docHistoryIsland = showDocHistoryUi
-      ? (Island({
-          when: "idle",
-          ssrFallback: fallback,
-          children: (
-            <DocHistory
-              slug={historySlug}
-              {...(docHistoryLocale !== undefined ? { locale: docHistoryLocale } : {})}
-              basePath={docHistoryBasePath}
-              displayLocale={docHistoryDisplayLocale}
-              dateFormats={docHistoryDateFormats}
-            />
-          ),
-        }) as unknown as Description)
+      ? <DocHistory
+          ssrFallback={fallback}
+          slug={historySlug}
+          {...(docHistoryLocale !== undefined ? { locale: docHistoryLocale } : {})}
+          basePath={docHistoryBasePath}
+          displayLocale={docHistoryDisplayLocale}
+          dateFormats={docHistoryDateFormats}
+        />
       : null;
 
     // Suppress TS warning about historyLabel being unused — it is retained
@@ -271,4 +268,9 @@ export function createDocHistoryArea<S extends Settings = Settings>(
   }
 
   return DocHistoryArea;
+}
+
+/** Server-only fixed-target boundary. The fallback never crosses island JSON props. */
+export function DocHistoryBoundary({ ssrFallback, ...props }: Parameters<DocHistoryComponent>[0]): Description {
+  return <><Island when="idle" ssrFallback={ssrFallback}><DocHistoryClient {...props} /></Island></>;
 }

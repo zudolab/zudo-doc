@@ -2435,12 +2435,12 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 
   // #2480 published-shape guard: the injected chrome must statically import the
   // real DocHistory island so zfb registers it under packageOwnedRoutes. In the
-  // PUBLISHED tree the parent-relative `../doc-history/index.js` is rewritten to
+  // PUBLISHED tree the parent-relative `../doc-history-area/index.js` is rewritten to
   // the bare package subpath by copy-routes-src.mjs — prove the rewrite landed in
   // the packed output, not only in the in-repo `src/` shape.
   it("registration: published routes-src/_chrome.tsx imports the real DocHistory island (rewritten specifier)", () => {
     const chromeSrc = readFileSync(join(pkgDest, "routes-src/_chrome.tsx"), "utf-8");
-    expect(chromeSrc).toContain('from "@takazudo/zudo-doc/doc-history"');
+    expect(chromeSrc).toContain('import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area"');
     // …and threads it into the chrome builder (not left as a dead import).
     expect(chromeSrc).toMatch(/createChrome\(routeCtx,\s*\{/);
     // No residual parent-relative form survived the rewrite.
@@ -2602,8 +2602,11 @@ describe("OPT-ZDTP no-zdtp: the published package builds with the optional @taka
       join(pkgDest, "dist/design-token-panel-bootstrap.js"),
       "utf-8",
     );
-    expect(bootstrap).not.toContain("@takazudo/zdtp/constants");
-    expect(bootstrap).toContain('import("@takazudo/zudo-doc/zdtp-loader")');
+    expect(bootstrap).toContain('./design-token-panel-bootstrap-controller.js');
+    expect(bootstrap).toContain('./design-token-panel-bootstrap-island.js');
+    const controller = readFileSync(join(pkgDest, "dist/design-token-panel-bootstrap-controller.js"), "utf-8");
+    expect(bootstrap + controller).not.toContain("@takazudo/zdtp/constants");
+    expect(controller).toContain('import("@takazudo/zudo-doc/zdtp-loader")');
   });
 
   it("build: `zfb build` succeeds with zdtp absent from node_modules", { timeout: 180_000 }, () => {
@@ -3385,5 +3388,46 @@ describe("TM group 4: package-injected dev route works without the doc stub", ()
 
   it("teardown: kill the dev server", () => {
     dev?.kill();
+  });
+});
+
+// v4.2 composition contract: host boundaries win over configured-route defaults
+// and suppressed package defaults, but never bypass the package settings gate.
+describe.each([true, false])("fixed host panel boundary (enabled=%s)", (enabled) => {
+  it("preserves host selection on injected and self-contained routes", { timeout: 180_000 }, () => {
+    const dir = setupFixture({ emptyPages: true });
+    if (enabled) enableDesignTokenPanel(dir);
+    enableDesignTokenPanelConfigModule(dir);
+    const settingsPath = join(dir, "src/config/settings.ts");
+    writeFileSync(settingsPath, readFileSync(settingsPath, "utf-8").replace(
+      /packageOwnedRoutes:\s*true,/,
+      'packageOwnedRoutes: true, chromeBindingsModule: "./src/fixed-host-bindings.tsx",',
+    ));
+    writeFileSync(join(dir, "src/fixed-host-client.tsx"), `"use client";
+export function FixedHostPanel() { return <button>fixed host panel</button>; }
+`);
+    writeFileSync(join(dir, "src/fixed-host-bindings.tsx"), `
+import { Island } from "@takazudo/zfb";
+import { FixedHostPanel } from "./fixed-host-client";
+function HostBoundary() { return <><Island when="load"><FixedHostPanel /></Island></>; }
+export const chromeBindings = { DesignTokenPanelBootstrap: HostBoundary };
+`);
+    writeFileSync(join(dir, "pages/host-stub.tsx"), `
+import { routeContext } from "virtual:zudo-doc-route-context";
+import { createRouteContext } from "@takazudo/zudo-doc/route-context";
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+import { chromeBindings } from "../src/fixed-host-bindings";
+const { BodyEndIslands } = createChrome(createRouteContext(routeContext), chromeBindings);
+export default function Page() { return <html><body><BodyEndIslands basePath="/" /></body></html>; }
+`);
+    runZfbBuild(dir);
+    for (const path of ["docs/getting-started/index.html", "host-stub/index.html"]) {
+      const html = readBuiltHtml(dir, path);
+      expect(countHtmlAttr(html, "data-zfb-island", "FixedHostPanel")).toBe(enabled ? 1 : 0);
+      expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(0);
+      expect(countHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND)).toBe(0);
+      expect(html.includes("__zdtpToggleShimInstalled")).toBe(enabled);
+      expect(html.includes("fixed host panel")).toBe(enabled);
+    }
   });
 });

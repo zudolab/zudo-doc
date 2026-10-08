@@ -17,7 +17,7 @@ import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { MobileToc, getTocTitle } from "../toc/index.js";
+import { Toc as DefaultToc, MobileToc, getTocTitle } from "../toc/index.js";
 import { NavCardGrid } from "../nav-indexing/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -337,7 +337,7 @@ export function createDocPageShell<S extends Settings = Settings>(
             <div class="zd-toc-col hidden xl:flex">
               {Island({
                 when: "load",
-                children: <Toc headings={transportHeadings} title={tocTitle} />,
+                children: <DefaultToc headings={transportHeadings} title={tocTitle} />,
               })}
             </div>
           )

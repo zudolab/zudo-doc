@@ -33,7 +33,7 @@
 // would trip zfb's "island marker name collision" warning and drop one of them.
 
 import { getScope } from "@takazudo/zfb/zudo-react";
-import { runDesignTokenPanelBootstrapOnce } from "../design-token-panel-bootstrap-controller.js";
+import { runDesignTokenPanelBootstrapOnce } from "../design-token-panel-bootstrap.js";
 // Host-callables channel, third virtual module (#2658, mirrors #2501's
 // chromeBindingsModule): absent `settings.designTokenPanelConfigModule` →
 // re-exports the package default (`@takazudo/zudo-doc/design-token-panel-config`);

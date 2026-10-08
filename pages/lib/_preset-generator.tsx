@@ -68,9 +68,9 @@ export function PresetGeneratorFallback(): Description {
   //   the manifest under "PresetGenerator".
   // - The hydration runtime mounts the real interactive form into the
   //   skip-ssr placeholder on the client after load.
-  return Island({
+  return <>{Island({
     when: "load",
     ssrFallback: fallback,
     children: <PresetGenerator />,
-  }) as unknown as Description;
+  }) as unknown as Description}</>;
 }

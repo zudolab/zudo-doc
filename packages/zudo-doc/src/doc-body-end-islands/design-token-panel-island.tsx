@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
-import { Island } from "@takazudo/zfb";
 import type { FactoryComponent } from "../factory-context/index.js";
 
 /**
@@ -27,6 +25,7 @@ type DesignTokenPanelBootstrapComponent = () => JSX.Element | null;
 
 export interface DesignTokenPanelIslandDeps {
   designTokenPanel: boolean;
+  /** Server boundary with a fixed client target, not a raw client component. */
   DesignTokenPanelBootstrap?: FactoryComponent;
 }
 
@@ -49,12 +48,7 @@ export function createDesignTokenPanelIsland(
     return (
       <>
         <script rawHtml={ZDTP_TOGGLE_SHIM_SRC} />
-        {
-          Island({
-            when: "load",
-            children: <DesignTokenPanelBootstrap />,
-          }) as unknown as Description
-        }
+        <DesignTokenPanelBootstrap />
       </>
     );
   }

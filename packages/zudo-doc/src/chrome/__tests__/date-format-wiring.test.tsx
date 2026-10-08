@@ -21,12 +21,13 @@ import "../../__tests__/fixtures/install-island-metadata.js";
  * `"locale"` — i.e. today's output.
  */
 
+import { defineChromeBindings } from "../../chrome-bindings.js";
 import { describe, expect, it } from "vitest";
 import type { Description } from "@takazudo/zfb/zudo-react";
 import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveDateFormats } from "../derive.js";
-import { createDocHistoryArea } from "../../doc-history-area/index.js";
+import { createDocHistoryArea, DocHistoryBoundary } from "../../doc-history-area/index.js";
 import { createHeaderWithDefaults } from "../../header-with-defaults/index.js";
 import { createSidebarWithDefaults } from "../../sidebar-with-defaults/index.js";
 import { createSiteTreeNavWrapper } from "../../site-tree-nav/index.js";
@@ -147,6 +148,7 @@ describe("dateFormats reaches the serialized island data-props", () => {
   it("DocHistory resolves against the DISPLAY locale, not the storage-path locale", () => {
     const ctx = makeFakeChromeContext({
       settings: { bodyFootUtilArea: false, dateFormat: PER_LOCALE_SETTING },
+      overrides: { hostBindings: defineChromeBindings({ DocHistory: DocHistoryBoundary }) },
     });
     // isFallback swaps the fetch path back to the default locale; the reader is
     // still on the JA page, so the patterns must stay JA (#4073 + #4075).

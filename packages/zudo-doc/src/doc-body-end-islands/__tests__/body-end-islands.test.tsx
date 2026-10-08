@@ -24,6 +24,7 @@ import "../../__tests__/fixtures/install-island-metadata.js";
  * Pattern: src/image-enlarge/__tests__/image-enlarge-ssg.test.tsx.
  */
 
+import { Island } from "@takazudo/zfb";
 import { describe, expect, it } from "vitest";
 import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
@@ -73,19 +74,30 @@ function renderIslands(
 /** A fake `DesignTokenPanelBootstrap` — structurally what `_chrome.tsx` injects
  *  in production (the real package component), swapped for a marker function
  *  here so this stays a fast, build-free unit test. */
-const FakeDesignTokenPanelBootstrap = function DesignTokenPanelBootstrap() {
+const FakeDesignTokenPanelClient = function DesignTokenPanelBootstrap() {
   return null;
 };
-FakeDesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";
+FakeDesignTokenPanelClient.displayName = "DesignTokenPanelBootstrap";
 
 /** A fake `ThemePackSwitcher` (#2821) — the marker-only stand-in for the real
  *  flyout component `chrome/derive.tsx` injects in production; the real
  *  component's SSR shape is covered end-to-end by the deriveBodyEndIslands
  *  suite below and by theme-pack-switcher-ssr.test.tsx. */
-const FakeThemePackSwitcher = function ThemePackSwitcher() {
+const FakeThemePackClient = function ThemePackSwitcher(_props: ThemePackSwitcherProps) {
   return null;
 };
-FakeThemePackSwitcher.displayName = "ThemePackSwitcher";
+FakeThemePackClient.displayName = "ThemePackSwitcher";
+
+// Public v6 slots accept server boundaries; targets remain fixed and discoverable.
+function FakeDesignTokenPanelBootstrap() {
+  return <><Island when="load"><FakeDesignTokenPanelClient /></Island></>;
+}
+function FakeThemePackSwitcher(props: ThemePackSwitcherProps) {
+  return <><Island when="load"><FakeThemePackClient {...props} /></Island></>;
+}
+function RealThemePackBoundary(props: ThemePackSwitcherProps) {
+  return <><Island when="load"><RealThemePackSwitcher {...props} /></Island></>;
+}
 
 /** Serializable flyout props (ADR theme-packs.md Decision 7 shape). */
 const THEME_PACK_SWITCHER_PROPS: ThemePackSwitcherProps = {
@@ -330,6 +342,10 @@ describe("deriveBodyEndIslands — designTokenPanelConfigModule skips the packag
   }
   HostOwnDesignTokenPanelBootstrap.displayName = "HostOwnDesignTokenPanelBootstrap";
 
+  function HostPanelBoundary() {
+    return <><Island when="load"><HostOwnDesignTokenPanelBootstrap /></Island></>;
+  }
+
   function renderDerived(
     settings: Record<string, unknown>,
     hostBindings: Record<string, unknown> = {},
@@ -361,7 +377,7 @@ describe("deriveBodyEndIslands — designTokenPanelConfigModule skips the packag
   it("setting present + explicit chromeBindings binding: the host's component wins unchanged", () => {
     const html = renderDerived(
       { designTokenPanelConfigModule: "./src/design-token-panel-config.ts" },
-      { DesignTokenPanelBootstrap: HostOwnDesignTokenPanelBootstrap },
+      { DesignTokenPanelBootstrap: HostPanelBoundary },
     );
     expect(html).toContain(HOST_MARKER);
     expect(html).not.toContain(MARKER);
@@ -489,7 +505,7 @@ describe("BodyEndIslands — ThemePackSwitcher island gate (#2821)", () => {
         themePackSwitcherProps: THEME_PACK_SWITCHER_PROPS,
         // Use the real component here so this assertion covers the launcher
         // DOM contract rather than only the factory's marker wiring.
-        ThemePackSwitcher: RealThemePackSwitcher as unknown as typeof FakeThemePackSwitcher,
+        ThemePackSwitcher: RealThemePackBoundary as unknown as typeof FakeThemePackSwitcher,
       },
     );
     const launcher = html.match(/<button\b[^>]*data-switcher-launcher[^>]*>/)?.[0];

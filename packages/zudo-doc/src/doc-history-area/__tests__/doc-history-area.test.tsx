@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
-import { createDocHistoryArea } from "../index.js";
-import { DocHistory } from "../../doc-history/index.js";
+import { createDocHistoryArea, DocHistoryBoundary as DocHistory } from "../index.js";
 
 const GITHUB_URL = "https://github.com/example/docs";
 beforeEach(() => {
@@ -42,6 +41,15 @@ function renderArea(
 }
 
 describe("createDocHistoryArea exclusion render state", () => {
+  it("keeps the SSR fallback outside client JSON transport", () => {
+    const html = renderArea({}, ".mdx");
+    expect(html).toContain('<div class="sr-only"><span>doc.created</span><span>doc.updated</span></div>');
+    const encoded = html.match(/data-props="([^"]*)"/)?.[1];
+    expect(encoded).toBeDefined();
+    const props = JSON.parse(encoded!.replaceAll("&quot;", '"').replaceAll("&amp;", "&"));
+    expect(props.slug).toBe("guide");
+    expect(props).not.toHaveProperty("ssrFallback");
+  });
   it("suppresses the DocHistory island for a matched history slug", () => {
     const html = renderArea({}, ".mdx", ["guide"]);
 
