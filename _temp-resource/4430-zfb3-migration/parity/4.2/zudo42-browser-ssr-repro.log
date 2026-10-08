@@ -1,0 +1,2 @@
+ordinary component PASS <button>Counter</button>
+owned Island without build metadata FAIL TypeError: ZR_ISLAND_IDENTITY: Counter has no build identity

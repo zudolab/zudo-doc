@@ -4,7 +4,7 @@
 
 All four published family packages are pinned to **4.2.0**, peers **^4.2.0**. npm and the native binary are verified. [Current 4.2 integration findings](v4.2-integration.md) supersede the historical [4.1 round](v4.1-integration.md).
 
-**Not release-ready:** existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. The accepted upstream #4004 composition migration is implemented and the full site builds (793 pages). Packed identity/token-resolution and parity gates still need resolution/verification; keep #4467/#4475 open and temporary resources intact.
+**Release verdict: BLOCKED.** [Readiness checklist](../../../_temp-resource/4430-zfb3-migration/release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. The accepted upstream #4004 composition migration is implemented and the full site builds (793 pages). Packed identity/token-resolution (#4059/#4060 upstream), standalone browser composition (#4077 upstream), A2 and browser/static parity gates still need resolution/verification; keep #4467/#4475 open and temporary resources intact.
 
 Decision owners: round 1 [#4434](https://github.com/zudolab/zudo-doc/issues/4434), round 2 [#4480](https://github.com/zudolab/zudo-doc/issues/4480); epic [#4430](https://github.com/zudolab/zudo-doc/issues/4430). This permanent gap table implements upstream [#3328](https://github.com/Takazudo/zudo-front-builder/issues/3328). It survives deletion of temporary planning resources. All implementation and route verdicts start **pending**; #4476 copies measured parity verdicts and final released versions here.
 
