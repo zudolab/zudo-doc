@@ -94,12 +94,17 @@ function AppearanceMenu({ id, labels, preference, resolved, activeIndex, trigger
     };
     const onNavigate = () => close();
     position();
-    itemRefs[activeIndex.value]?.current?.focus();
+    // The placement signal commits visibility after this activation callback.
+    // Focus only after the visible popover has reached the browser layout.
+    const focusFrame = requestAnimationFrame(() => {
+      if (!scope.abortSignal.aborted) itemRefs[activeIndex.value]?.current?.focus();
+    });
     document.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("resize", position);
     window.addEventListener("scroll", position, true);
     document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
     return () => {
+      cancelAnimationFrame(focusFrame);
       if (menu.hidePopover && menu.matches(":popover-open")) menu.hidePopover();
       document.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("resize", position);

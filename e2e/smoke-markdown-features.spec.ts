@@ -201,14 +201,14 @@ test.describe("Math: KaTeX rendering via <MathBlock>", () => {
   });
 
   test("inline math renders a KaTeX span with the correct source annotation", () => {
-    expectHtmlTagWithClass(html, "span", "math-inline");
+    expectHtmlTagWithAttr(html, "span", "data-math", "inline");
     expectHtmlTagWithClass(html, "span", "katex");
     expectHtmlTagWithAttr(html, "annotation", "encoding", "application/x-tex");
     expect(html).toContain(">E = mc^2</annotation>");
   });
 
   test("block math renders a KaTeX display div with the correct source annotation", () => {
-    expectHtmlTagWithClass(html, "div", "math-display");
+    expectHtmlTagWithAttr(html, "div", "data-math", "display");
     expectHtmlTagWithAttr(html, "annotation", "encoding", "application/x-tex");
     expect(html).toContain(
       ">\\int_0^{\\infty} e^{-x^2} \\, dx = \\frac{\\sqrt{\\pi}}{2}</annotation>",

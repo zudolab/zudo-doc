@@ -49,9 +49,10 @@ export async function waitForThemePreference(
 export async function waitForAllThemePreferences(
   page: Page,
   preference: ThemePreference,
+  expectedCount = 2,
 ): Promise<void> {
   const triggers = appearanceTriggers(page);
-  await expect(triggers).toHaveCount(2);
+  await expect(triggers).toHaveCount(expectedCount);
   for (const trigger of await triggers.all()) {
     await waitForThemePreference(page, preference, trigger);
   }

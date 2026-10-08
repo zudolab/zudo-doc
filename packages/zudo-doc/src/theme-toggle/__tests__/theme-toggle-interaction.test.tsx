@@ -39,7 +39,7 @@ describe("ThemeToggle appearance menu", () => {
     expect(menu(root)?.getAttribute("popover")).toBe("manual");
     expect(menu(root)?.style.left).toMatch(/px$/);
     expect(items(root).map((item) => item.textContent?.trim())).toEqual(["Light", "Dark", "System✓"]);
-    expect(document.activeElement).toBe(items(root)[2]);
+    await vi.waitFor(() => expect(document.activeElement).toBe(items(root)[2]));
   });
 
   it("opens, closes, and opens again with keyboard focus and Escape ownership", async () => {

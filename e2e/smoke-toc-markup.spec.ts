@@ -21,7 +21,10 @@ function extractTocNav(html: string): string {
   const labelIndex = html.indexOf('aria-label="Table of contents"');
   const navStart = html.lastIndexOf("<nav", labelIndex);
   const navEnd = html.indexOf("</nav>", labelIndex);
-  return html.slice(navStart, navEnd);
+  // Native renderer boundary comments are protocol, not heading text.
+  // Keep the exact text and anchor structure assertion after removing only
+  // those known markers; arbitrary HTML comments remain visible to the test.
+  return html.slice(navStart, navEnd).replace(/<!--\/?zr:1:[^>]*-->/g, "");
 }
 
 test.describe("TOC: desktop table of contents markup", () => {

@@ -215,6 +215,9 @@
 }
 
 .zd-content :where(pre code) {
+  /* Keep the authored pre font: native preflight otherwise resets code to
+     a shorter monospace stack, changing line boxes versus the v2 baseline. */
+  font-family: inherit;
   background: transparent;
   padding: 0;
   border: none;

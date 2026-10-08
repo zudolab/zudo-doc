@@ -75,13 +75,13 @@ export function VersionsPageContent(
             <table class="w-full text-small">
               <thead>
                 <tr class="border-b border-muted bg-surface">
-                  <th class="px-hsp-lg py-vsp-sm text-left font-medium text-muted">
+                  <th class="px-hsp-md py-vsp-xs text-left font-semibold text-muted">
                     {labels.versionCol}
                   </th>
-                  <th class="px-hsp-lg py-vsp-sm text-left font-medium text-muted">
+                  <th class="px-hsp-md py-vsp-xs text-left font-semibold text-muted">
                     {labels.statusCol}
                   </th>
-                  <th class="px-hsp-lg py-vsp-sm text-left font-medium text-muted">
+                  <th class="px-hsp-md py-vsp-xs text-left font-semibold text-muted">
                     {labels.docsCol}
                   </th>
                 </tr>
@@ -92,10 +92,10 @@ export function VersionsPageContent(
                     key={`version-${v.slug}`}
                     class="border-b border-muted last:border-b-0"
                   >
-                    <td class="px-hsp-lg py-vsp-sm font-medium text-fg">
+                    <td class="px-hsp-md py-vsp-xs font-medium text-fg">
                       {v.label}
                     </td>
-                    <td class="px-hsp-lg py-vsp-sm">
+                    <td class="px-hsp-md py-vsp-xs">
                       {v.banner === "unmaintained" && (
                         <span class="inline-block rounded px-hsp-xs py-vsp-3xs text-caption bg-warning/10 text-warning">
                           {labels.unmaintained}
@@ -107,7 +107,7 @@ export function VersionsPageContent(
                         </span>
                       )}
                     </td>
-                    <td class="px-hsp-lg py-vsp-sm">
+                    <td class="px-hsp-md py-vsp-xs">
                       <a
                         href={v.docsHref}
                         class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
