@@ -78,7 +78,7 @@ test.describe("home hero heading with a long word at 390px / 24px", () => {
       // it holds the page's widest content (path-shaped leaf labels). Measuring
       // `documentElement.scrollWidth` before it lays out would make the
       // document-level assertion below both racy and partly vacuous.
-      await expect(page.locator(".zd-home-sitemap a").first()).toBeVisible();
+      await expect(page.locator("[data-zd-home-sitemap] a").first()).toBeVisible();
       await setHeroHeadingText(page, longSiteName);
 
       const m = await measureHero(page);

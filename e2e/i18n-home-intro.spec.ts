@@ -14,11 +14,11 @@ for (const width of [1440, 1024, 768, 390, 320]) {
     await expect(prose.locator(".hash-link")).toHaveCount(0);
     await expect(prose.locator("pre.hi-root")).toHaveCount(1);
     await expect(prose.locator(".hi-kw").first()).toBeVisible();
-    await expect(page.locator(".zd-home-sitemap > h2")).toHaveText("Explore the documentation");
+    await expect(page.locator("[data-zd-home-sitemap] > h2")).toHaveText("Explore the documentation");
 
     const geometry = await page.evaluate(() => {
-      const identity = document.querySelector<HTMLElement>(".zd-home-hero > .zd-home-inner")!;
-      const inner = document.querySelector<HTMLElement>(".zd-home-intro > .zd-home-inner")!;
+      const identity = document.querySelector<HTMLElement>("[data-zd-home-hero] > .zd-home-inner")!;
+      const inner = document.querySelector<HTMLElement>("[data-zd-home-intro] > .zd-home-inner")!;
       const rule = document.querySelector<HTMLElement>("[data-home-rule]")!;
       const outer = rule.parentElement!;
       const rect = (element: HTMLElement) => {
@@ -58,8 +58,8 @@ for (const width of [1440, 1024, 768, 390, 320]) {
     }
     // #4194: the intro h2 shares the sitemap heading's class list and size.
     await expect(prose.locator("h2").first()).toHaveClass(/\bzd-home-heading\b/);
-    await expect(page.locator(".zd-home-sitemap > h2")).toHaveClass(/\bzd-home-heading\b/);
-    await expect(page.locator(".zd-home-sitemap > h2")).toHaveCSS("font-size", "22.4px");
+    await expect(page.locator("[data-zd-home-sitemap] > h2")).toHaveClass(/\bzd-home-heading\b/);
+    await expect(page.locator("[data-zd-home-sitemap] > h2")).toHaveCSS("font-size", "22.4px");
     await expect(prose.locator(":scope > :first-child")).toHaveCSS("margin-top", "0px");
     await expect(prose.locator("h2").nth(1)).toHaveCSS("margin-top", "28px");
     await expect(prose.locator("h2 + p").first()).toHaveCSS("margin-top", "8px");
@@ -91,10 +91,10 @@ for (const width of [1440, 1024, 768, 390, 320]) {
 test("localized whitespace suppresses fallback prose and its upper separator", async ({ page }) => {
   await page.goto("/ja/");
   await expect(page.locator(".zd-compact-prose")).toHaveCount(0);
-  await expect(page.locator(".zd-home-intro")).toHaveCount(0);
+  await expect(page.locator("[data-zd-home-intro]")).toHaveCount(0);
   await expect(page.locator("[data-home-rule]")).toHaveCount(1);
   await expect(page.locator('[data-home-rule="lower"]')).toBeVisible();
-  await expect(page.locator(".zd-home-sitemap > h2")).toHaveText("ドキュメントを探す");
+  await expect(page.locator("[data-zd-home-sitemap] > h2")).toHaveText("ドキュメントを探す");
   await expect(page.locator("h1")).toHaveCount(1);
 });
 

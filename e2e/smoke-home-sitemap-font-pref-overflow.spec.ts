@@ -71,8 +71,8 @@ async function measure(page: Page) {
  */
 async function measureSitemapContentOverflow(page: Page) {
   return page.evaluate(() => {
-    const section = document.querySelector(".zd-home-sitemap");
-    if (!section) throw new Error(".zd-home-sitemap not found");
+    const section = document.querySelector("[data-zd-home-sitemap]");
+    if (!section) throw new Error("[data-zd-home-sitemap] not found");
     const worst = [section, ...section.querySelectorAll("a")]
       .map((el) => ({
         overflow: el.scrollWidth - el.clientWidth,
@@ -88,7 +88,7 @@ async function measureSitemapContentOverflow(page: Page) {
 /** Measure one sitemap link's laid-out content against its own box. */
 async function measureSitemapLinkContentOverflow(page: Page, title: string) {
   return page.evaluate((expectedTitle) => {
-    const link = [...document.querySelectorAll(".zd-home-sitemap a")].find(
+    const link = [...document.querySelectorAll("[data-zd-home-sitemap] a")].find(
       (el) => (el.textContent ?? "").trim() === expectedTitle,
     );
     if (!link) throw new Error(`sitemap link not found: ${expectedTitle}`);
@@ -105,7 +105,7 @@ async function measureSitemapLinkContentOverflow(page: Page, title: string) {
 /** `SiteTreeNav` is an `when: "idle"` island — wait for the long label to be laid out. */
 async function gotoHomeAndAwaitSitemap(page: Page): Promise<void> {
   await page.goto("/");
-  await expect(page.locator(".zd-home-sitemap a", { hasText: LONG_TITLE })).toBeVisible();
+  await expect(page.locator("[data-zd-home-sitemap] a", { hasText: LONG_TITLE })).toBeVisible();
 }
 
 test.describe("home sitemap with 24px browser font preference", () => {
@@ -128,7 +128,7 @@ test.describe("home sitemap with 24px browser font preference", () => {
   test("depth-0 path-shaped leaf stays inside its box at 390px / 24px", async ({ page }) => {
     await setFontPreference(page, 24);
     await gotoHomeAndAwaitSitemap(page);
-    await expect(page.locator(".zd-home-sitemap a", { hasText: ROOT_LONG_TITLE })).toBeVisible();
+    await expect(page.locator("[data-zd-home-sitemap] a", { hasText: ROOT_LONG_TITLE })).toBeVisible();
 
     const m = await measureSitemapLinkContentOverflow(page, ROOT_LONG_TITLE);
     expect(m.rootFont, "font-preference lever must have applied").toBe("24px");
