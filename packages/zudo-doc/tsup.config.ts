@@ -69,6 +69,11 @@ export default defineConfig((options) => ({
   // existence, not freshness, so it will accept that stale artifact. After a
   // delete/rename (or an exports-map removal), run `pnpm build:workspace`.
   clean: !options.watch,
+  // These build-time inputs are outside src; edits must refresh the frozen
+  // literals during the normal dev:js --watch session too.
+  watch: options.watch === true
+    ? ["src", "scripts/switcher-script-source.ts", "scripts/gen-switcher-scripts.mjs"]
+    : options.watch,
   bundle: false,
   sourcemap: false,
   // splitting + external are irrelevant when bundle:false — imports
