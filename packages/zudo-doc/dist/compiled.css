@@ -733,7 +733,7 @@ body {
 }
 
 .zd-content :where(pre code) {
-  font-family: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   background: none;
   padding: 0;
   border: none;
