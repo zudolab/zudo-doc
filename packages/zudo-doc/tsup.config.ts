@@ -106,6 +106,7 @@ export default defineConfig((options) => ({
     "node scripts/gen-wind-manifest.mjs",
     ...(!options.watch ? ["node scripts/gen-compiled-css.mjs"] : []),
     "node scripts/gen-nav-overflow-script.mjs",
+    "node scripts/gen-switcher-scripts.mjs",
     "node scripts/copy-eject-sources.mjs",
     "node scripts/copy-routes-src.mjs",
     "node scripts/copy-virtual-modules.mjs",
