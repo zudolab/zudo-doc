@@ -147,7 +147,16 @@ function prepareIncoming(live: Document, incoming: Document): void {
   for (const root of incoming.querySelectorAll(`[${PERSIST}]`)) {
     if (root.parentElement?.closest(`[${PERSIST}]`)) continue;
     const key = root.getAttribute(PERSIST);
-    if (!key || liveCounts.get(key) !== 1 || incomingCounts.get(key) !== 1) {
+    if (!key || incomingCounts.get(key) !== 1) {
+      root.removeAttribute(PERSIST);
+      continue;
+    }
+    const liveCount = liveCounts.get(key) ?? 0;
+    if (liveCount === 0) {
+      // Preserve unmatched named boundaries for native entry transitions.
+      continue;
+    }
+    if (liveCount !== 1) {
       root.removeAttribute(PERSIST);
       continue;
     }

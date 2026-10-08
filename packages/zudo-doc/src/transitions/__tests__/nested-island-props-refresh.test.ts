@@ -89,9 +89,25 @@ describe("zfb 3.1 persisted chrome preparation", () => {
       prepare(next);
       expect(next.querySelector("header")!.hasAttribute(PERSIST)).toBe(false);
     }
+    document.body.innerHTML = header(island()) + header(island());
+    const ambiguousLiveMatch = incoming(header(island()));
+    prepare(ambiguousLiveMatch);
+    expect(ambiguousLiveMatch.querySelector("header")!.hasAttribute(PERSIST)).toBe(false);
+    document.body.innerHTML = header(island());
     const added = incoming(header(island() + '<div data-zfb-island="Extra"></div>'));
     prepare(added);
     expect(added.querySelector("header")!.hasAttribute(PERSIST)).toBe(false);
+  });
+
+  it("keeps a unique incoming persist boundary when there is no live counterpart", () => {
+    install(); document.body.innerHTML = header(island());
+    const next = incoming(header(island()) + `<aside id="desktop-sidebar" ${PERSIST}="sidebar-en-guides">${island()}</aside>`);
+
+    prepare(next);
+
+    expect(document.querySelector('[data-zfb-transition-persist="sidebar-en-guides"]')).toBeNull();
+    expect(next.querySelector('[data-zfb-transition-persist="sidebar-en-guides"]')).not.toBeNull();
+    expect(next.querySelector("header")!.hasAttribute(PERSIST)).toBe(true);
   });
 
   it("opts out when scheduling metadata is added, changed or removed, including skip SSR", () => {
