@@ -46,7 +46,7 @@ export default defineConfig(
 
 このショーケースは、パッケージ所有のブートストラップとパッケージのデフォルトビルダーを使用します。自動注入されるブートストラップに独自のモードスコープなビルダーを読み込ませたい場合にのみ、`designTokenPanelConfigModule` を設定してください。
 
-この設定が適用されるのは、パッケージ注入ルートでレンダリングされるページだけである点に注意してください: 設定が存在する間、自己完結型のホスト `pages/` スタブでレンダリングされるドキュメントページは、パネルアイランド（およびヘッダーのパネルボタン）を一切マウントしません。これにより、スタブページがパッケージデフォルトのビルダーでセッション単位のパネル設定を横取りすることがなくなります。スタブでレンダリングされるページにもパネルを出したい場合は、ビルダーを `chromeBindings.DesignTokenPanelBootstrap` に通してください — このバインディングはどこでも勝ちます（[ホストクロームバインディング](./host-chrome-bindings.mdx)を参照）。
+この設定が適用されるのは、パッケージ注入ルートでレンダリングされるページだけである点に注意してください: 設定が存在する間、自己完結型のホスト `pages/` スタブでレンダリングされるドキュメントページは、パネルアイランド（およびヘッダーのパネルボタン）を一切マウントしません。これにより、スタブページがパッケージデフォルトのビルダーでセッション単位のパネル設定を横取りすることがなくなります。スタブでレンダリングされるページにもパネルを出したい場合は、クライアントのブートストラップを固定ターゲットのサーバー境界で包み、`chromeBindings.DesignTokenPanelBootstrap` に渡してください — この境界はどこでも優先されます（[ホストクロームバインディング](./host-chrome-bindings.mdx)を参照）。
 
 ## タブ構成
 
@@ -296,16 +296,20 @@ Layout のうち 3 つは読み取り専用として表示されます: `spacing
 ```tsx
 "use client";
 
+import { getScope } from "@takazudo/zfb/zudo-react";
 import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
 import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
 
 export function HostPanelBootstrap() {
-  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  const scope = getScope();
+  scope.onActivate(() => {
+    runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "configured", scope.abortSignal);
+  });
   return null;
 }
 ```
 
-このコンポーネントは、自前の `chromeBindings` モジュールの `BodyEndIslands` スロットに `Island({ when: "load" })` でラップして配線します — パッケージ自身のパネルアイランドとまったく同じ形です。描画結果はサーバー・クライアントのどちらでも空で、`bootstrapDesignTokenPanel` は自前の `typeof window === "undefined"` ガードにより SSR 時には何もしません。
+`HostPanelBootstrap` を静的にインポートし、`Island({ when: "load", children: <HostPanelBootstrap /> })` を Fragment で包んで返すサーバーコンポーネントを `BodyEndIslands` に渡します。クライアントのブートストラップはハイドレーション後に起動し、SSR 中にはパネルを設定しません。バインディングオブジェクト経由で渡す場合も Fragment を維持してください。
 
 これを機能させるには、2つの設定を連動させて変更します:
 

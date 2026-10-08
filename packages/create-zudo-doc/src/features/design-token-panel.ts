@@ -9,10 +9,12 @@ import type { FeatureModule } from "../compose.js";
  * bootstrap island, its config builder, and the pre-hydration toggle shim
  * are ALL package-owned now —
  * `chrome/derive.tsx`'s `deriveBodyEndIslands` auto-defaults the real
- * `DesignTokenPanelBootstrap` island for every `createChrome` consumer
+ * fixed-target `DesignTokenPanelBootstrap` server boundary for every `createChrome` consumer
  * (#2658 gate-2 fix, verified against the locked-manifest self-contained
  * doc stub in the target-manifest confirm fixture), and
- * `doc-body-end-islands/index.tsx` carries the toggle shim inline. So this
+ * `doc-body-end-islands/design-token-panel-island.tsx` gates the boundary and
+ * carries the toggle shim inline. Host overrides supply server boundaries,
+ * not raw client components. So this
  * feature has nothing left to inject into `pages/lib/_body-end-islands.tsx`
  * or `src/config/settings-types.ts` — both files are gone anyway.
  *

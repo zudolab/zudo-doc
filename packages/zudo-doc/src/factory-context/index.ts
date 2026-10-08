@@ -283,20 +283,21 @@ export interface ChromeHostBindings {
   /** Body-end islands (bootstrap islands). Default: the package-island subset
    *  derived from `settings` (no host-only client-router / token-panel boots). */
   BodyEndIslands?: FactoryComponent;
-  /** DocHistory island. Default: a no-op stub rendering an empty fragment. */
+  /** DocHistory server boundary. Default: a no-op stub rendering an empty fragment.
+   * Use DocHistoryBoundary from the doc-history-area entrypoint for the package
+   * client. Custom boundaries consume ssrFallback server-side and wrap their
+   * statically imported client target in a Fragment-wrapped Island. */
   DocHistory?: FactoryComponent;
   /**
-   * Design-token panel bootstrap island (#2658). Default: the PACKAGE-DEFAULT
-   * `DesignTokenPanelBootstrap` from
-   * `@takazudo/zudo-doc/design-token-panel-bootstrap`, statically imported by
-   * `chrome/derive.tsx` (`deriveBodyEndIslands`) so EVERY `createChrome`
-   * consumer — the injected `routes/_chrome.tsx` path and the locked-manifest
-   * self-contained doc stub alike — gets the settings-gated panel island with
-   * no explicit wiring (#2659 gate-2 fix; scanner reachability holds through
-   * the static route → chrome → derive → bootstrap chain, the #2480
-   * contract). Supply this slot only to REPLACE the island with a host's own
-   * bootstrap component. Mounting is still gated on
-   * `settings.designTokenPanel` inside `createBodyEndIslands` either way.
+   * Zero-prop server boundary for the design-token-panel bootstrap. Return a
+   * Fragment containing Island({ when: "load", children: <HostBootstrap /> })
+   * with a statically imported client target; a raw client component is not
+   * a boundary. The package default owns the same fixed-target shape.
+   * The package controls settings.designTokenPanel and the toggle shim; it
+   * renders this boundary unchanged and never wraps a dynamic Island target.
+   * An explicit host boundary wins over configured-route and package defaults,
+   * including when designTokenPanelConfigModule suppresses the package default.
+   * With designTokenPanel disabled neither this boundary nor the shim mounts.
    */
   DesignTokenPanelBootstrap?: FactoryComponent;
   /** MDX content-component overrides (Details / HtmlPreview / Island /

@@ -81,12 +81,14 @@ export interface BodyEndIslandsSlotProps {
 }
 
 /**
- * Props the chrome passes to the `DocHistory` island slot — matches
+ * Props the chrome passes to the `DocHistory` server boundary slot — matches
  * `DocHistoryProps` (`doc-history/index.tsx`) / `DocHistoryComponent`
  * (`doc-history-area`), rendered as
  * `<DocHistory slug=… locale=… basePath=… displayLocale=… dateFormats=… />`.
  */
 export interface DocHistorySlotProps {
+  /** Server-only fallback consumed by the boundary, never serialized as client props. */
+  ssrFallback?: Child;
   slug: string;
   locale?: string;
   basePath?: string;
@@ -98,8 +100,11 @@ export interface DocHistorySlotProps {
 
 /**
  * Props the chrome passes to the `DesignTokenPanelBootstrap` slot — NONE. It is
- * rendered as `<DesignTokenPanelBootstrap />` (zero props) inside
- * `createBodyEndIslands`. An empty object type (no index signature) so a
+ * a server boundary rendered with zero props behind the package settings gate.
+ * Return a Fragment containing an Island with a statically imported client
+ * target; do not pass the raw client component. The package owns the toggle
+ * shim but does not add an Island around this boundary.
+ * An empty object type (no index signature) so a
  * zero-prop or all-optional-prop component is accepted while a component that
  * REQUIRES any prop is drift.
  */
@@ -227,9 +232,9 @@ export interface ChromeBindingsInput {
   headerRightComponents?: HeaderRightComponentRegistry;
   /** Body-end bootstrap islands — see {@link BodyEndIslandsSlotProps}. */
   BodyEndIslands?: Component<BodyEndIslandsSlotProps>;
-  /** DocHistory island — see {@link DocHistorySlotProps}. */
+  /** Fixed-target DocHistory server boundary — see {@link DocHistorySlotProps}. */
   DocHistory?: Component<DocHistorySlotProps>;
-  /** Design-token-panel bootstrap island — see {@link DesignTokenPanelBootstrapSlotProps}. */
+  /** Server boundary for the design-token-panel bootstrap — see {@link DesignTokenPanelBootstrapSlotProps}. */
   DesignTokenPanelBootstrap?: Component<DesignTokenPanelBootstrapSlotProps>;
   /**
    * Per-page git-history meta manifest (data slot). Read as

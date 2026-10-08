@@ -19,7 +19,7 @@
 // "@takazudo/zudo-doc/doc-history" and merge it over chromeBindings in
 // createChrome's hostBindings (second) argument —
 // DocHistory's chrome-derive default is a no-op stub (unlike
-// DesignTokenPanelBootstrap, which the package auto-defaults), so without
+// DesignTokenPanelBootstrap server boundary, which the package auto-defaults), so without
 // that patch the doc-history button never hydrates on this route.
 
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";

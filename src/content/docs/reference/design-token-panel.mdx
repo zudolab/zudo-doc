@@ -46,7 +46,7 @@ export default defineConfig(
 
 This showcase uses the package-owned bootstrap and package-default builder. Set `designTokenPanelConfigModule` only when the auto-injected bootstrap should load a custom mode-scoped builder instead.
 
-Note that the setting applies only to pages rendered through the package-injected routes: while it is set, a doc page rendered by a self-contained host `pages/` stub mounts no panel island (and no header panel button) at all, so the stub page cannot hijack the once-per-session panel config with the package-default builder. To also get a panel on stub-rendered pages, thread your builder through `chromeBindings.DesignTokenPanelBootstrap` — that binding wins everywhere (see [Host chrome bindings](./host-chrome-bindings.mdx)).
+Note that the setting applies only to pages rendered through the package-injected routes: while it is set, a doc page rendered by a self-contained host `pages/` stub mounts no panel island (and no header panel button) at all, so the stub page cannot hijack the once-per-session panel config with the package-default builder. To also get a panel on stub-rendered pages, expose your client bootstrap through a fixed-target server boundary in `chromeBindings.DesignTokenPanelBootstrap` — that boundary wins everywhere (see [Host chrome bindings](./host-chrome-bindings.mdx)).
 
 ## The Tab Strip
 
@@ -296,16 +296,20 @@ Call the same bootstrap the package island calls, from your own `"use client"` i
 ```tsx
 "use client";
 
+import { getScope } from "@takazudo/zfb/zudo-react";
 import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
 import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
 
 export function HostPanelBootstrap() {
-  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  const scope = getScope();
+  scope.onActivate(() => {
+    runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "configured", scope.abortSignal);
+  });
   return null;
 }
 ```
 
-Wire that component into the `BodyEndIslands` slot of your `chromeBindings` module, wrapped in `Island({ when: "load" })` — the same shape the package's own panel island uses. It renders nothing on either side; `bootstrapDesignTokenPanel` no-ops during SSR through its own `typeof window === "undefined"` guard.
+Wire a server component into `BodyEndIslands` that returns a Fragment containing `Island({ when: "load", children: <HostPanelBootstrap /> })`, using a static import of `HostPanelBootstrap`. The client bootstrap activates after hydration; it does not configure the panel during SSR. Keep the Fragment around the Island result, including when passing the server component through a binding object.
 
 Two settings move together to make this work:
 
