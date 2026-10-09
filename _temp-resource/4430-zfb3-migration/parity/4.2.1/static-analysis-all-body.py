@@ -24,7 +24,8 @@ class P(HTMLParser):
   if self.inbody:self.events.append(('charref',t))
  def handle_comment(self,t):
   if self.inbody:self.comments.append(t)
-roots=[Path('/workspace/zudo-v2-baseline/dist'),Path('/workspace/zudo-doc/dist')];rows=[];rawrows=[];sc=collections.Counter();patterns={}
+output=Path('/tmp/zudo421-parity');output.mkdir(parents=True,exist_ok=True)
+roots=[Path('/workspace/zudo-v2-baseline/dist'),Path('/workspace/zudo-doc/dist')];rows=[];rawrows=[];sc=collections.Counter();patterns={};script_pairs={}
 for f in sorted(roots[0].rglob('*.html')):
  rel=str(f.relative_to(roots[0]));g=roots[1]/rel
  if not g.exists():continue
@@ -45,6 +46,12 @@ for f in sorted(roots[0].rglob('*.html')):
    x=a.scripts[i]if i<len(a.scripts)else'';y=b.scripts[i]if i<len(b.scripts)else''
    if x!=y:
     sig=hashlib.sha256((x+'\0'+y).encode()).hexdigest()[:16];sc[sig]+=1
+    if i in script_pairs:
+     assert script_pairs[i]==(x,y),f'Additional script pattern at index {i}: {rel}; classify separately'
+    else:
+     script_pairs[i]=(x,y)
+     (output/f'body-script-{i}-v2.js').write_text(x)
+     (output/f'body-script-{i}-current.js').write_text(y)
  row['attributeElementCounts']=[len(a.elements),len(b.elements)]
  rows.append(row)
  if len(rows)%100==0:print('parsed',len(rows),flush=True)
