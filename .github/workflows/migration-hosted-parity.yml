@@ -38,7 +38,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/migration-parity"
           test "$(git rev-parse HEAD)" = "$CURRENT_SHA"
           git rev-parse HEAD > "$RUNNER_TEMP/migration-parity/current-head.txt"
-          sha256sum pnpm-lock.yaml scripts/zfb3-parity/browser.mjs scripts/zfb3-parity/compare-browser.mjs > "$RUNNER_TEMP/migration-parity/current-inputs.sha256"
+          sha256sum pnpm-lock.yaml scripts/parity-build.sh scripts/zfb3-parity/browser.mjs scripts/zfb3-parity/compare-browser.mjs > "$RUNNER_TEMP/migration-parity/current-inputs.sha256"
           node --version > "$RUNNER_TEMP/migration-parity/toolchain.txt"
           pnpm --version >> "$RUNNER_TEMP/migration-parity/toolchain.txt"
           pnpm install --frozen-lockfile 2>&1 | tee "$RUNNER_TEMP/migration-parity/current-install.log"
