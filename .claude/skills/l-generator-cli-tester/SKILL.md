@@ -42,7 +42,7 @@ Where `<pattern>` is one of the test patterns listed below.
 Since the minimal-scaffold cutover (epic zudolab/zudo-doc#2651), a generated
 project is: one config file (`zfb.config.ts`, `zudoDoc({...only fields you
 chose})`) + markdown content + a handful of unavoidable root files.
-Everything else — layout, chrome, islands, default `@theme` tokens, even the
+Everything else — layout, chrome, islands, default `:root` tokens, even the
 doc ROUTES themselves — ships from `@takazudo/zudo-doc` in `node_modules`.
 
 **Consequence for this skill: almost every feature is now a pure

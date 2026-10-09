@@ -6,7 +6,7 @@ For the full architecture decision record — `meta.json` schema, asset emission
 
 ## (a) Real rendered markup skeleton
 
-The tree below is not reconstructed from memory or from the old prototype bundle — it is the literal output of `preact-render-to-string` rendering the real `createDocPageShell` factory (with real `Header`, `Sidebar`, `Toc`, `DocPager`, `Footer`, `DocContentHeader` components, via `derivePrimaryChromeSlots`) against a fake-but-complete `ChromeContext`, the same harness pattern used by `packages/zudo-doc/src/doc-page-shell/__tests__/data-doc-description.test.tsx`. Classes are trimmed to the ones relevant to structure; the full class lists are longer in the real build.
+The tree below is the structural reference for the real `createDocPageShell` factory (with `Header`, `Sidebar`, `Toc`, `DocPager`, `Footer`, `DocContentHeader`, via `derivePrimaryChromeSlots`). The current harness uses zfb's public `@takazudo/zfb/zudo-react/server` renderer; see `packages/zudo-doc/src/doc-page-shell/__tests__/data-doc-description.test.tsx`. Classes are trimmed to structural ones. Re-render current source before relying on exact DOM or computed style: this documentation edit does not establish new browser parity.
 
 ### Regular entry doc page
 
@@ -125,7 +125,7 @@ The switcher island (`ThemePackSwitcher`) renders CLOSED on the server — no ca
 
 ## (b) Stable DOM hooks — full table
 
-The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on these — never on Tailwind utility class names, and never on component internal structure:
+The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on these — never on Wind utility class names, and never on component internal structure:
 
 | Hook | What it is | When to use |
 |---|---|---|
@@ -153,7 +153,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-switcher-card]` | The switcher's open card (present only while open) | Card background/border/shadow |
 | `[data-switcher-launcher]` | The switcher's round launcher button | Launcher button styling |
 
-**Dev-server caveat (zudolab/zudo-doc#2898).** `aside[data-zd-mobile-sidebar]` and `div[data-zd-mobile-toc]` render correctly in the production build: both surfaces are zfb client islands, but Preact hydration preserves the SSR-rendered `data-*` attributes that match the virtual DOM, so both selectors match the live DOM and a `pack.css` rule against either one applies normally, for any CSS property. The one place this breaks is the zfb **dev server** (`pnpm dev`), which strips island-root `data-*` attributes as a dev-only quirk — these two selectors won't match while developing against `pnpm dev`. Verify a `pack.css` rule targeting either mobile hook against a build (`pnpm build` + `pnpm preview`), not the dev server.
+**Runtime verification.** `aside[data-zd-mobile-sidebar]` and `div[data-zd-mobile-toc]` are owned island hooks. The old Preact/zfb dev-server attribute-stripping issue (#2898) is historical evidence, not proof that the current 4.2.1 runtime has the same behavior. Verify mobile hooks after native hydration in both dev and the production build; do not infer current computed-style parity from SSR alone.
 
 ### Chrome font tokens — optional per-surface hooks
 
@@ -170,7 +170,7 @@ Four `--zdc-*` component tokens exist as **optional** hooks for a pack that deli
 
 Each falls back to the `--zdc-chrome-font` seam rather than `inherit` — deliberately, not an oversight: under an `inherit` default, a header-only override would leak into the mobile drawer (which mounts inside `header[data-header]`), and the mobile TOC (which mounts inside `.zd-content`) would follow the prose font instead of the chrome font. Anchoring to the seam keeps each knob dependent only on its own value.
 
-**Mobile reach (production build).** `--zdc-sidebar-font` and `--zdc-toc-font` are authored against a selector naming both a desktop and a mobile emitter, and both halves are delivered in the production build, for the reason given in the dev-server caveat above: Preact hydration preserves the SSR-rendered `data-*` attributes, so `aside[data-zd-mobile-sidebar]` / `div[data-zd-mobile-toc]` match the live DOM alongside `#desktop-sidebar` / `nav[data-zd-toc]`. A pack can rely on a single `--zdc-sidebar-font` / `--zdc-toc-font` override reaching the mobile drawer/TOC exactly as it reaches the desktop rail. The one exception is the zfb **dev server** (`pnpm dev`), which strips island-root `data-*` attributes — the two mobile selectors won't match while running `pnpm dev`, tracked as zudolab/zudo-doc#2898. Verify a per-surface mobile font against a build (`pnpm build` + `pnpm preview`), not the dev server.
+**Mobile reach.** `--zdc-sidebar-font` and `--zdc-toc-font` target both desktop and mobile emitters (`#desktop-sidebar` / `aside[data-zd-mobile-sidebar]`, and `nav[data-zd-toc]` / `div[data-zd-mobile-toc]`). Verify both halves after hydration and navigation on the current engine, including pack/mode changes; the historical dev-server caveat above does not excuse a current missing mobile selector.
 
 ## (c) The `!important` carve-out — heading border-image gradients
 
@@ -238,7 +238,7 @@ Packs select on the **stable hooks** (table (b)), not on any particular componen
 
 ## (g) Authoring workflow notes
 
-- **Verify selectors against real rendered output — never against prototypes or memory.** The old `_temp-resource/2812-theme-prototypes/` bundle (deleted, zudolab/zudo-doc#2856) was a static HTML reference that drifted from the real components and got the pager placement wrong (#2858). This document's skeleton in (a) was produced by SSR-rendering the actual `createDocPageShell` factory through `preact-render-to-string`, the same harness the package's own regression tests use — not hand-written or copied from a mockup. If you're unsure whether a hook still matches reality, render the real component the same way (see any `__tests__/*.test.tsx` file next to the component you care about for the pattern) or run a full `pnpm build` and inspect `dist/`.
+- **Verify selectors against real rendered output — never against prototypes or memory.** The old `_temp-resource/2812-theme-prototypes/` bundle (deleted, zudolab/zudo-doc#2856) was a static HTML reference that drifted from the real components and got the pager placement wrong (#2858). This document's skeleton in (a) is a structural reference; current regression tests render `createDocPageShell` through zfb's public `@takazudo/zfb/zudo-react/server` renderer. Re-render current source before claiming an exact DOM match. If you're unsure whether a hook still matches reality, render the real component the same way (see any `__tests__/*.test.tsx` file next to the component you care about for the pattern) or run a full `pnpm build` and inspect `dist/`.
 - **Every rule must be scoped** under `html[data-theme-pack="<slug>"]` (ADR Decision 6, rule 3) — this is what makes the pack swap atomic and lets the validator prove an inactive pack never leaks styles. A top-level `@media <condition> { ... }` block is allowed as long as every rule *inside* it is still pack-scoped the same way — the validator unwraps one level of `@media` and checks each inner rule's selector. Nesting stops there: an at-rule nested a second level (e.g. `@supports` inside `@media`) is rejected, and `@font-face` loses its usual scoping exemption once it's inside a `@media` block — `@font-face` stays top-level-only.
-- **Override `--zd-*` semantic roles, not `--color-*` Tailwind aliases**, and always via `light-dark()` for both modes (ADR Decision 6, rules 1–2).
+- **Override `--zd-*` semantic roles, not `--color-*` utility aliases**, and always via `light-dark()` for both modes (ADR Decision 6, rules 1–2).
 - For the full decision record — `meta.json` schema, asset emission paths, the runtime swap algorithm and its atomicity guarantee, zdtp per-pack persistence, font-loading policy (self-hosted OFL only, `local()` forbidden), and everything the build-time validator enforces — read [`docs/adr/theme-packs.md`](./adr/theme-packs.md). That document is the source of truth; this one is the pack-author's cheat sheet distilled from it.

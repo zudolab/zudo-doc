@@ -23,7 +23,7 @@ argument-hint: "[--dry-run] [--skip-hydration-check]"
 Migrate an existing generated project to the **minimal-scaffold** shape (epic
 zudolab/zudo-doc#2651): a single `zfb.config.ts` (`zudoDoc({...})`), a
 handful of unavoidable root files, and markdown content — everything else
-(chrome, islands, layout, default `@theme` tokens, even the doc ROUTES) ships
+(chrome, islands, layout, default `:root` tokens, even the doc ROUTES) ships
 from `@takazudo/zudo-doc` in `node_modules`. This is the v2 destination shape
 for what used to be called "preset-style" (the flat-config → `zudoDocPreset()`
 migration, Package-First Finale epic #2356) — the skill keeps its original
@@ -277,10 +277,7 @@ base" section for the full contract):
     // directory, not the base tsconfig's (which lives inside node_modules).
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "react": ["./node_modules/preact/compat/"],
-      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
-      "react-dom": ["./node_modules/preact/compat/"]
+      "@/*": ["src/*"]
     }
   }
 }

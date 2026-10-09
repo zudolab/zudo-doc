@@ -10,15 +10,15 @@ named exports and `./plugins/*` entrypoints listed below.
 
 Several parts of this surface are already protected by existing tooling — do NOT add duplicate guards:
 
-- **`@theme` design tokens** — `pnpm check:token-lint` (`design-token-lint`) is the authoritative guard.
-- **Z-index tokens** — `pnpm check:z-index` (`gen-z-index --check`) is the authoritative guard.
+- **Wind tokens and authored CSS variables** — `pnpm lint:tokens`, `pnpm check:package-wind-manifest`, and `pnpm exec zfb wind audit --project-root . --fail-on error` cover different parts of the contract. Audit success alone does not prove emitted-rule coverage.
+- **Z-index tokens** — package `theme.css` carries defaults; `./z-index-defaults` and token snapshots guard the registry. Consumers override specific `--z-index-*` variables in `:root`.
 - **`doclayout` slot anchors** — parity between `packages/zudo-doc/src/doclayout/anchors.ts` and the scaffolded doc-layout is enforced by `pnpm check:template-drift`.
 
 New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapshot.test.ts` and `packages/zudo-doc/src/__tests__/ejectable-snapshot.test.ts`) cover the previously-unguarded surfaces: the `package.json#exports` keyset, the `PresetSettings`/`Settings` field set, and the ejectable-component list.
 
 ---
 
-## 1. Subpath Exports (176 total)
+## 1. Subpath Exports (179 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -65,11 +65,20 @@ behaviour byte-for-byte.
 | `loadTagsForLocale` | `() => []` |
 | `tagVocabulary` | `[]` |
 | `BodyEndIslands` | The package-island subset derived from `settings` |
-| `DocHistory` | A no-op stub rendering an empty fragment |
-| `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; replace this slot only when replacing the island implementation. |
+| `DocHistory` | A no-op server boundary; use public `DocHistoryBoundary` from `./doc-history-area` for a real fixed-target history mount. It extracts server-only `ssrFallback` before client JSON transport. |
+| `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; an implementation override is a fixed-target server boundary that owns its static Island mount and accepts no required props. |
 | `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
 | `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. Rendered INLINE at the end of the links row, `/`-separated (#3012). |
+
+`BodyEndIslandsDeps.ThemePackSwitcher` also accepts a fixed-target server boundary.
+Boundaries statically import their client targets and return a Fragment; functions,
+signals and fallback descriptions remain on the server. Normalize finite JSON
+props before constructing the client description, using identical data for SSR and
+serialization. Existing image/mermaid fallback exports remain public through
+ordinary facades. Browser-safe defaults live in internal `settings-defaults.ts`
+and are re-exported by `./config`; `./settings` is types-only, and the config eval
+graph is not a browser import recipe.
 
 Host islands rendered through `headerRightComponents` can preserve session-scoped props across navigation that retains the same persisted root by placing `data-zd-props-preserve` on the live island or an ancestor inside that root. The live side governs this opt-out. Putting the attribute on the persisted root preserves every nested island; preserved islands receive neither a `data-props` write nor a remount flag.
 
@@ -426,8 +435,10 @@ the public domain name for `Component<ThemePackDialogProps>`; its `open` prop
 is a `ReadonlySignal<boolean>` used only within the dialog's component tree.
 `FrontmatterCellRenderer` is available from `./metainfo` and the root type
 barrel; `ThemePackDialogComponent` is available from the root type barrel.
-`EnlargeDialogProps` retains its name, uses `class`, and carries a CSS string
-in `style`.
+`EnlargeDialogProps` retains its name, uses `class`, and its `style` type is
+`typeof ENLARGE_DIALOG_STYLE`. On the current 4.2.1 target the exported constant
+is the literal object `{ position: "fixed", inset: 0, margin: "auto" }`; the old
+3.x plan to change it to a string was superseded by native style support.
 
 The modal helper keeps its existing subpath and exports this setup-only API:
 
@@ -558,12 +569,20 @@ Current limitations: `description` affects only the home page hero. `llms.txt` s
 
 ---
 
-## 3. `@theme` Design Tokens
+## 3. Wind Tokens and CSS Custom Properties
 
-The package's `theme.css` defines the default aliases. Consumers may override
-them in their own `@theme` block after importing the package stylesheet.
+The package's `theme.css` defines the default CSS variables in `:root`.
+`zudoDoc()` supplies `wind.tokens` mapping utility names to those variables and
+registers `@takazudo/zudo-doc/wind.json`. Override variable values in `:root`
+after the package imports, or deep-merge utility mappings through
+`zudoDoc({ wind: { tokens: { colors: { accent: "var(--brand-accent)" } } } })`.
+Reset is selected in `wind.reset`; `wind: false` disables generation. Remove
+Tailwind directives and the retired `safelist.css`/`theme-no-reset.css` imports.
+The retained public CSS exports are `theme.css`, `content.css`,
+`page-loading.css`, `features.css`, and `compiled.css`.
 
-**Authoritative drift guard:** `pnpm check:token-lint` (`design-token-lint`).
+**Guards:** `pnpm lint:tokens`, `pnpm check:package-wind-manifest`, native Wind
+audit, emitted-rule tests and computed-style/browser evidence.
 
 ### Color Tokens
 
