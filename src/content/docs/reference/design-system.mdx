@@ -26,6 +26,8 @@ The scaffold imports public package stylesheets and overrides values with ordina
 
 `theme.css` owns the custom properties and an authored `@layer base` reset patch. The preset selects `reset: "owned-v1"`; this is a zudo-wind reset plus the package patch, not identical Tailwind reset bytes. There are no Tailwind imports, `@source` directives, safelist stylesheet, or `@theme` token registration in this entry.
 
+<span id="what-tailwind-vocabulary-you-have" />
+
 ## What utility vocabulary you have
 
 Use named project tokens such as `text-caption`, `bg-accent`, `px-hsp-md`, `w-icon-sm`, and `z-modal`. Structural utilities such as `flex`, `hidden`, and `grid-cols-3` and supported explicit lengths such as `m-[13px]` remain available. Not every Tailwind spelling is supported by zudo-wind.

@@ -11,6 +11,8 @@ tags:
 
 単一のMDXファイルでインポートするか、再利用するコンポーネントを`mdxExtras`で登録します。どちらもzfbのzudo-reactのDescriptionを使用し、表示専用のコンポーネントはクライアントJavaScriptなしでサーバーHTMLを生成します。
 
+<span id="ファイル単位のインポート" />
+
 ## ファイルごとのインポート
 
 ```mdx
@@ -66,9 +68,13 @@ export default defineConfig(
 <MyBadge>New</MyBadge>
 ```
 
+<span id="組み込みコンポーネントのオーバーライド" />
+
 ## 組み込みコンポーネントの上書き
 
 extrasマップは組み込みMDXマップの後に適用されます。admonition（`Note`、`Tip`、`Info`、`Warning`、`Danger`、`Important`、`Caution`）、ヘルパー（`Details`、`HtmlPreview`、`CodeGroup`、`Tabs`、`TabItem`、`Island`、`Asset`、`AssetCode`）、`p`や`table`などのHTMLオーバーライドを置き換えられます。既存の記法とpropsの契約を維持します。全体の上書きが不要なら新しい名前のコンポーネントを選びます。マニフェストベースのアセットは[Asset Viewer](./asset-viewer.mdx)を参照してください。
+
+<span id="class-ではなく-classname" />
 
 ## JSXと厳密なprops
 
@@ -174,6 +180,8 @@ function handleInput(event: Event) {
 boolean分岐には`Show`、変化するリストにはキー付き`For`を使います。条件がtrueのままの`Show`は子スコープを保持します。`For`のキー変更は古いスコープを破棄して新しいスコープを作ります。通常の要素のJSX `key`には同じリセット動作はありません。tableの子はネイティブのsection/row、sectionの子はrow、rowの子はcellという構造を維持します。これらの制約された親の直下へ`Show`/`For`のマーカー構造を置かず、完全なtableの外側に構造境界を置きます。
 
 `rawHtml`は使用箇所ごとに信頼境界を確認してから使います。サニタイズは行いません。script/styleのraw bodyは静的文字列のみで、リアクティブな置き換えや子要素との混在はできません。ユーザーのテキストにはエスケープされる通常の子要素を優先します。`@takazudo/zudo-doc/use-modal-dialog`の`modalDialog(scope, options)`はスコープ内のネイティブdialogを所有します。条件付きdialogでは`Show`内の子コンポーネントでヘルパーを呼び、refと寿命をその子に所属させます。
+
+<span id="関連項目" />
 
 ## 関連ページ
 

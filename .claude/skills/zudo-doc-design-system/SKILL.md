@@ -23,6 +23,8 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 
 ## Quick Rules (always apply)
 
+<span id="quick-rules-always-apply-component-first-no-custom-css-classes" />
+
 ### Component First (supported utilities and deliberate authored CSS)
 
 - Prefer supported Wind utilities. Unsupported forms need authored `zd-` CSS with manifest/authored/emitted coverage; do not invent utility-root class collisions.
@@ -107,6 +109,8 @@ actually shipped 14 times before epic #4032 turned it into a stated rule.
 
 Full rule text, the `data-nav-active` trap, and the descendant-color trap: the
 `color-scheme-a11y` skill §7 and `packages/zudo-doc/CLAUDE.md`.
+
+<span id="quick-rules-always-apply-server-rendered-preact-vs-client-islands" />
 
 ### Server-rendered zudo-react vs client islands
 
