@@ -103,6 +103,16 @@ for (const ep of REQUIRED_ENTRYPOINTS) {
   }
 }
 
+// The staged helper must resolve to the same defining module as compiled route
+// consumers. A copied "use client" definition would be a distinct identity even
+// if its bytes matched (#4059); keep this checked at the publication boundary.
+const bootstrap = "_design-token-panel-bootstrap.tsx";
+const canonicalBootstrap = 'export { ConfiguredDesignTokenPanelBootstrap } from "@takazudo/zudo-doc/routes/design-token-panel-bootstrap";';
+if (!files.includes(bootstrap) || readFileSync(join(ROUTES_SRC, bootstrap), "utf8").trim() !== canonicalBootstrap) {
+  process.stderr.write(`[check-routes-src] ERROR: ${bootstrap} must re-export its canonical package boundary. Re-run the package build.\n`);
+  ok = false;
+}
+
 // ── (2) HYGIENE — no residual parent-relative imports ────────────────────────
 let residualCount = 0;
 for (const name of files) {

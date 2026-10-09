@@ -133,7 +133,14 @@ for (const entry of readdirSync(SRC_ROUTES, { withFileTypes: true })) {
   const destFile = join(DEST_ROUTES, name);
 
   const original = readFileSync(srcFile, "utf8");
-  const transformed = rewriteImports(original);
+  // A boundary definition must have one module identity in zfb v3+ (#4059).
+  // Host route stubs reach dist/routes while injected routes reach this staged
+  // tree. Re-export the compiled definition instead of making a second copy.
+  // Keep the virtual configuration import in the canonical module: it still
+  // evaluates independently in the SSR and hydrated client graphs.
+  const transformed = name === "_design-token-panel-bootstrap.tsx"
+    ? 'export { ConfiguredDesignTokenPanelBootstrap } from "@takazudo/zudo-doc/routes/design-token-panel-bootstrap";\n'
+    : rewriteImports(original);
   writeFileSync(destFile, transformed, "utf8");
   copied++;
   if (transformed !== original) rewritten++;

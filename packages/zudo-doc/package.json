@@ -514,6 +514,10 @@
       "types": "./dist/site-tree-nav/index.d.ts",
       "default": "./dist/site-tree-nav/index.js"
     },
+    "./routes/design-token-panel-bootstrap": {
+      "types": "./dist/routes/_design-token-panel-bootstrap.d.ts",
+      "default": "./dist/routes/_design-token-panel-bootstrap.js"
+    },
     "./routes/index": {
       "types": "./dist/routes/index.d.ts",
       "default": "./dist/routes/index.js"
