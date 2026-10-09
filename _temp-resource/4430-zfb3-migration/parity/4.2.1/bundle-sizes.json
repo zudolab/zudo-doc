@@ -1,0 +1,67 @@
+{
+  "baseline": {
+    "css": {
+      "files": 1,
+      "bytes": 238971,
+      "gzipBytes": 33178,
+      "paths": [
+        "styles-6e0b94f2.css"
+      ]
+    },
+    "islands-entry": {
+      "files": 10,
+      "bytes": 1295516,
+      "gzipBytes": 348319,
+      "paths": [
+        "islands-296e1cd1.js",
+        "islands-chunk-2T66W2WY.js",
+        "islands-chunk-3EEDAYV5.js",
+        "islands-chunk-6BTA65FO.js",
+        "islands-chunk-E25UPIOM.js",
+        "islands-chunk-EXQ2AJYW.js",
+        "islands-chunk-FX3XLCBF.js",
+        "islands-chunk-IKVEGRFG.js",
+        "islands-chunk-QHHKOGX6.js",
+        "islands-chunk-RW6FO7OL.js"
+      ]
+    },
+    "all-javascript": {
+      "files": 11,
+      "bytes": 1298402,
+      "gzipBytes": 349608,
+      "paths": []
+    }
+  },
+  "current": {
+    "css": {
+      "files": 1,
+      "bytes": 230424,
+      "gzipBytes": 31614,
+      "paths": [
+        "styles-758d05b4.css"
+      ]
+    },
+    "islands-entry": {
+      "files": 9,
+      "bytes": 1399379,
+      "gzipBytes": 384612,
+      "paths": [
+        "islands-b0050fec.js",
+        "islands-chunk-2MQK32A4.js",
+        "islands-chunk-ETVK4THE.js",
+        "islands-chunk-GY6PKH55.js",
+        "islands-chunk-LRLHB5FV.js",
+        "islands-chunk-PXNPBVNW.js",
+        "islands-chunk-VYZO2SS7.js",
+        "islands-chunk-WR5BZLHF.js",
+        "islands-chunk-XX2XB2V5.js"
+      ]
+    },
+    "all-javascript": {
+      "files": 10,
+      "bytes": 1402265,
+      "gzipBytes": 385901,
+      "paths": []
+    }
+  }
+}
