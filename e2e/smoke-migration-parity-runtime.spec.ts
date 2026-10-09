@@ -45,6 +45,8 @@ test("same-document navigation resolves its view transition and preserves the ch
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(GUIDES_PAGE_1, { waitUntil: "load" });
   await waitForSidebarHydration(page);
+  const initialDocumentRequestCount = documentRequests.length;
+  expect(initialDocumentRequestCount).toBeGreaterThanOrEqual(1);
 
   const filter = page.locator('#desktop-sidebar input[placeholder^="Filter"]');
   await filter.fill("Code Blocks Test");
@@ -118,7 +120,10 @@ test("same-document navigation resolves its view transition and preserves the ch
     };
   });
 
-  expect(documentRequests, "SPA navigation must not issue another document request").toHaveLength(1);
+  expect(
+    documentRequests,
+    "SPA navigation must not issue another document request after initial route redirects",
+  ).toHaveLength(initialDocumentRequestCount);
   expect(after.timeOrigin, "SPA navigation must keep the original Document alive").toBe(start.timeOrigin);
   expect(after.documentToken).toBe(start.token);
   expect(after.asideToken).toBe(start.token);
@@ -264,9 +269,8 @@ test("AI chat ignores Enter during IME composition, then submits normally", asyn
     element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
   });
   await input.press("Enter");
-  await expect(
-    dialog.getByRole("log", { name: "Chat messages" }).getByText("IME submission completed", { exact: true }),
-  ).toBeVisible();
+  await expect(dialog.getByRole("log", { name: "Chat messages" }).locator(".ai-chat-md p"))
+    .toHaveText("IME submission completed");
   expect(submissions).toBe(1);
 });
 
