@@ -1,0 +1,22 @@
+{
+  "engine": "4.2.1",
+  "contractFile": "/workspace/zudo-doc/node_modules/@takazudo/zfb/dist/config.d.ts",
+  "contractSHA256": "22eb73a307ef0445cb78613e98fb2208821cc92a2ef68f75036c5b0648094ee0",
+  "baseContractLines": {
+    "start": 425,
+    "end": 453,
+    "text": "    /**\n     * Public URL prefix mounted in front of every absolute HTML asset\n     * URL the build emits \u2014 `<link rel=\"stylesheet\">`, `<script type=\"module\">`,\n     * and any other `/assets/...`-prefixed reference rewritten by the\n     * production asset pipeline.\n     *\n     * Use this when the site is deployed under a sub-path (e.g.\n     * `https://example.com/pj/zudo-doc/`) instead of the domain root.\n     * With `base: \"/pj/zudo-doc/\"` the dist HTML emits\n     * `<link rel=\"stylesheet\" href=\"/pj/zudo-doc/assets/styles-<hash>.css\">`\n     * instead of the unprefixed `/assets/styles-<hash>.css`.\n     *\n     * Accepted shapes (all normalised to a single canonical form\n     * internally):\n     *\n     * - omitted / `undefined` / `\"\"` / `\"/\"` \u2014 no prefix; behaviour is\n     *   byte-identical to the pre-`base` build (root-mounted site).\n     * - leading-and-trailing-slash path like `\"/pj/zudo-doc/\"` \u2014 prefix\n     *   that path onto every asset URL.\n     * - absolute URL like `\"https://cdn.example.com/\"` \u2014 emit absolute\n     *   URLs (CDN-hosted assets).\n     *\n     * Inputs missing a leading or trailing `/` are normalised at config-\n     * load time (paths) or asset-emit time (URL prefixes); callers do\n     * not have to pre-trim.\n     *\n     * Mirrors `Config::base` in crates/zfb/src/config.rs.\n     */\n    base?: string;"
+  },
+  "deploymentContractLines": {
+    "start": 609,
+    "end": 632,
+    "text": "    /**\n     * Whether `copy_public_dir` copies `public/` under the `base`\n     * sub-path segment (`true`, default) or flat to the `dist/` root\n     * (`false`).\n     *\n     * - **`true` (default):** files land at\n     *   `<outDir>/<base-segment>/<rel>`, matching the base-prefixed URLs\n     *   that `withBase()` emits in the rendered HTML. Use this for\n     *   projects served directly at their configured sub-path.\n     * - **`false`:** files land flat at `<outDir>/<rel>` regardless of\n     *   `base`. Use this when the deploy pipeline relocates the entire\n     *   `dist/` tree into the base segment itself (e.g.\n     *   `cp -a dist/. deploy-root/pj/site/`), so putting the files under\n     *   `<outDir>/<base>/...` would result in a double-nested path.\n     *\n     * **Note on `zfb preview`:** with `false`, base-prefixed public-asset\n     * URLs 404 under `zfb preview` because the flat copy lives at the\n     * dist root and `zfb preview` does not simulate deploy-side\n     * relocation. This is a known trade-off of the flat-copy deploy\n     * scheme.\n     *\n     * Mirrors `Config::copy_public_with_base` in crates/zfb/src/config.rs.\n     */\n    copyPublicWithBase?: boolean;"
+  },
+  "preparedOnly": false,
+  "managerExecutionRequired": false,
+  "previousNativePreviewObservationFile": "/tmp/zudo421-base-probe/diagnostic-results.json",
+  "previousMountedObservationFile": "/tmp/zudo421-base-probe/mount-results.json",
+  "previousEvidenceLimitation": "Prior project lacked current generated consumer stylesheet and interactive SPA input/navigation checks; new disposable control is required.",
+  "executedBuildSource": "244df66de42179608c57d841c974e0a52404f734",
+  "executionReport": "static-analysis-basepath-report.json"
+}
