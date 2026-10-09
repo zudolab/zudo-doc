@@ -1,0 +1,380 @@
+{
+  "browser": "151.0.7922.173",
+  "method": "Real-route transition-colors candidate measurements; settled default/hover/focus; no network stubs or product patches",
+  "variants": {
+    "baseline": {
+      "root": "/workspace/zudo-v2-baseline/dist",
+      "states": {
+        "light/history-default": {
+          "tag": "BUTTON",
+          "classes": "doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.48 0.008 65)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.48 0.008 65)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+            "transitionDuration": "0s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "light/history-hover": {
+          "tag": "BUTTON",
+          "classes": "doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.47 0.12 56)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.47 0.12 56)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+            "transitionDuration": "0s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "light/history-focus": {
+          "tag": "BUTTON",
+          "classes": "doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.47 0.12 56)",
+            "backgroundImage": "none",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "oklch(0.47 0.12 56)",
+            "outlineOffset": "2px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+            "transitionDuration": "0s",
+            "transitionTimingFunction": "ease",
+            "focused": true,
+            "focusVisible": true
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "dark/history-default": {
+          "tag": "BUTTON",
+          "classes": "doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.705 0.008 65)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.705 0.008 65)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+            "transitionDuration": "0s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "dark/history-hover": {
+          "tag": "BUTTON",
+          "classes": "doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.7 0.158 62)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.7 0.158 62)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+            "transitionDuration": "0s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "dark/history-focus": {
+          "tag": "BUTTON",
+          "classes": "doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.7 0.158 62)",
+            "backgroundImage": "none",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "oklch(0.7 0.158 62)",
+            "outlineOffset": "2px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+            "transitionDuration": "0s",
+            "transitionTimingFunction": "ease",
+            "focused": true,
+            "focusVisible": true
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        }
+      }
+    },
+    "current": {
+      "root": "/workspace/zudo-doc/dist",
+      "states": {
+        "light/history-default": {
+          "tag": "BUTTON",
+          "classes": "flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.48 0.008 65)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.48 0.008 65)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+            "transitionDuration": "0.15s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "light/history-hover": {
+          "tag": "BUTTON",
+          "classes": "flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.47 0.12 56)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.47 0.12 56)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+            "transitionDuration": "0.15s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "light/history-focus": {
+          "tag": "BUTTON",
+          "classes": "flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.47 0.12 56)",
+            "backgroundImage": "none",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "oklch(0.47 0.12 56)",
+            "outlineOffset": "2px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+            "transitionDuration": "0.15s",
+            "transitionTimingFunction": "ease",
+            "focused": true,
+            "focusVisible": true
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "dark/history-default": {
+          "tag": "BUTTON",
+          "classes": "flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.705 0.008 65)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.705 0.008 65)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+            "transitionDuration": "0.15s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "dark/history-hover": {
+          "tag": "BUTTON",
+          "classes": "flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.7 0.158 62)",
+            "backgroundImage": "none",
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "outlineColor": "oklch(0.7 0.158 62)",
+            "outlineOffset": "0px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+            "transitionDuration": "0.15s",
+            "transitionTimingFunction": "ease",
+            "focused": false,
+            "focusVisible": false
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        },
+        "dark/history-focus": {
+          "tag": "BUTTON",
+          "classes": "flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors",
+          "computed": {
+            "color": "oklch(0.7 0.158 62)",
+            "backgroundImage": "none",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "oklch(0.7 0.158 62)",
+            "outlineOffset": "2px",
+            "opacity": "1",
+            "margin": "0px",
+            "width": "105.875px",
+            "height": "56px",
+            "textDecorationLine": "none",
+            "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+            "transitionDuration": "0.15s",
+            "transitionTimingFunction": "ease",
+            "focused": true,
+            "focusVisible": true
+          },
+          "href": null,
+          "ariaLabel": "View document history"
+        }
+      }
+    }
+  },
+  "gaps": [],
+  "differences": [
+    {
+      "key": "light/history-default",
+      "property": "transitionProperty",
+      "baseline": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "current": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke"
+    },
+    {
+      "key": "light/history-default",
+      "property": "transitionDuration",
+      "baseline": "0s",
+      "current": "0.15s"
+    },
+    {
+      "key": "light/history-hover",
+      "property": "transitionProperty",
+      "baseline": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "current": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke"
+    },
+    {
+      "key": "light/history-hover",
+      "property": "transitionDuration",
+      "baseline": "0s",
+      "current": "0.15s"
+    },
+    {
+      "key": "light/history-focus",
+      "property": "transitionProperty",
+      "baseline": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "current": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke"
+    },
+    {
+      "key": "light/history-focus",
+      "property": "transitionDuration",
+      "baseline": "0s",
+      "current": "0.15s"
+    },
+    {
+      "key": "dark/history-default",
+      "property": "transitionProperty",
+      "baseline": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "current": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke"
+    },
+    {
+      "key": "dark/history-default",
+      "property": "transitionDuration",
+      "baseline": "0s",
+      "current": "0.15s"
+    },
+    {
+      "key": "dark/history-hover",
+      "property": "transitionProperty",
+      "baseline": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "current": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke"
+    },
+    {
+      "key": "dark/history-hover",
+      "property": "transitionDuration",
+      "baseline": "0s",
+      "current": "0.15s"
+    },
+    {
+      "key": "dark/history-focus",
+      "property": "transitionProperty",
+      "baseline": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "current": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke"
+    },
+    {
+      "key": "dark/history-focus",
+      "property": "transitionDuration",
+      "baseline": "0s",
+      "current": "0.15s"
+    }
+  ],
+  "unavailableCandidates": []
+}
