@@ -4,13 +4,10 @@ import {
   checkParity,
   extractB4pushInvocations,
   REQUIRED_CI_GUARDS,
+  type CiGuard,
 } from "../check-b4push-ci-parity.mjs";
 
-type Guard = {
-  ciNeedle: string;
-  b4pushScript: string | null;
-  comment: string;
-};
+type Guard = CiGuard;
 
 const REGION_OPEN = "# >>> b4push-ci-parity:guards:begin";
 const REGION_CLOSE = "# <<< b4push-ci-parity:guards:end";

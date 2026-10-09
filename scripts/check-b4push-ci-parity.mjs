@@ -51,6 +51,15 @@ const ROOT = resolve(__dirname, "..");
 // paths while b4push invokes colon-delimited pnpm scripts. A single string
 // would fail to match one direction on the clean tree.
 
+/**
+ * @typedef {Object} CiGuard
+ * @property {string} ciNeedle
+ * @property {string | null} b4pushScript
+ * @property {string} comment
+ * @property {string} [b4pushCommand] Exact command required in addition to its pnpm token.
+ */
+
+/** @type {CiGuard[]} */
 export const REQUIRED_CI_GUARDS = [
   {
     ciNeedle: "pnpm exec zfb wind audit --project-root . --fail-on error",
@@ -330,6 +339,8 @@ export function stripYamlComments(src) {
  * `workflowSrc` and `b4pushSrc` are raw file contents. `allowlist` may be a
  * Set (the CLI form) or any Set-like object exposing `has`; `guards` defaults
  * to the production manifest so tests can provide a small fixture manifest.
+ *
+ * @param {{workflowSrc: string, b4pushSrc: string, allowlist?: Pick<Set<string>, "has">, guards?: readonly CiGuard[]}} options
  */
 export function checkParity({
   workflowSrc,
