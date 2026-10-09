@@ -1,0 +1,165 @@
+---
+title: Migrating to zudo-doc 6
+sidebar_position: 80
+description: Prepare a 5.x consumer for the planned zudo-react and Wind major release.
+---
+
+## Release status
+
+This guide describes the planned **zudo-doc 6.0.0** migration from 5.x. The coordinated major release is **not published yet**; the repository package version still reads 5.28.2. The current engine target is the published, aligned **zfb 4.2.1** family, with package peer floor **^4.2.1**. Do not install historical 3.0/3.1 targets or treat this guide as a release announcement.
+
+The upstream [#4097 browser/navigation gate](https://github.com/Takazudo/zudo-front-builder/issues/4097) remains open. Packed consumers, rendered docs and browser parity must pass before release; a closed upstream issue or a successful typecheck alone does not establish readiness.
+
+## Dependencies and TypeScript
+
+After the coordinated major becomes available, upgrade zudo-doc and create-zudo-doc together. Align every installed engine package (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm`, and the Cloudflare adapter when used) to 4.2.1. Core rendering no longer requires Preact.
+
+Extend the package base below. It owns `jsx: "react-jsx"` and `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove `react`, `react-dom`, and `react/jsx-runtime` → Preact compatibility paths and replace type imports from React/Preact. Retain project aliases only when needed; a project-local `baseUrl` anchors them. Do not replace the base's top-level `files`, which loads the config and virtual-module declarations.
+
+```json
+{
+  "extends": "@takazudo/zudo-doc/tsconfig.base.json",
+  "include": ["src", "pages", "zfb.config.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
+  }
+}
+```
+
+## CSS and Wind
+
+Remove Tailwind imports, `@theme`, `@source`, `@tailwind`, `@apply`, `@utility`, and `@plugin` directives from your CSS entry. Move token declarations to ordinary `:root` rules, retaining their variable names. Remove the `--color-*: initial` palette reset. Replace `theme-no-reset.css` with `theme.css` and delete the `safelist.css` import: both former subpath exports are removed.
+
+Keep the public CSS imports below. Add `@takazudo/zdtp/styles.css` only when the panel is enabled. Do not import physical `dist/*.css` paths. `compiled.css` remains a public browser-ready export for embedding without a zfb CSS build; it is not an additional required import in this setup.
+
+```css
+@layer zw-reset, zd-flow;
+@import "@takazudo/zudo-doc/theme.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
+
+:root {
+  --spacing-hsp-md: 1rem;
+  --z-index-toolbar: 25;
+}
+```
+
+`zudoDoc()` registers the new public `@takazudo/zudo-doc/wind.json` manifest automatically. It supplies the package utility candidates without scanning package `dist/`; you normally do not import or register this manifest yourself. Wind tokens point at the existing CSS variables so live theme/panel updates still work.
+
+Use `:root` for variable values, or the top-level `wind` option for utility mappings. zfb deep-merges this override over package defaults. `wind` is not a `Settings` field. Choose reset with `wind.reset` (`"owned-v1"` is the package default); `wind: false` disables Wind entirely.
+
+```ts
+import { defineConfig } from "@takazudo/zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  wind: {
+    tokens: { colors: { accent: "var(--brand-accent)" } },
+    reset: "owned-v1",
+  },
+}));
+```
+
+Wind is a defined utility language, not Tailwind compatibility. The package config has named spacing, no implicit numeric spacing scale, `sm`/`lg`/`xl` breakpoints (640/1024/1280px), and no dark utility mode; existing `data-theme` variable switching remains. Unsupported utilities need explicit authored CSS with `zd-` class names and corresponding coverage. Generated utilities are unlayered and follow authored CSS; check selector specificity when porting overrides.
+
+Run `pnpm exec zfb wind audit --project-root . --fail-on error`. The error exit flag is required. Audit success does not prove package manifest completeness or emitted/computed CSS: retain manifest, authored-class, emitted-rule and browser checks.
+
+## Public type and prop census
+
+| 5.x contract | 6.0 migration target |
+| --- | --- |
+| Preact `VNode` / React `ReactNode` | zudo-react `Description` for element descriptions; `Child` for renderable values/returns |
+| Preact component callback types | zudo-react `Component<P>`; retain domain names such as `FrontmatterCellRenderer` and `ThemePackDialogComponent` |
+| Preact intrinsic attributes | `JSX.IntrinsicElements["button"]` (or the actual tag) from `@takazudo/zfb/zudo-react/jsx-runtime` |
+| Intrinsic-compatible content components and shared icons `className` | `class`; `EnlargeDialogProps.class` follows the same rule |
+| `ThemePackDialogProps.open: boolean` | `ReadonlySignal<boolean>` within one client component tree; never serialize this signal through Island props |
+| `useModalDialog(...)` | `modalDialog(scope, options)` at the retained `./use-modal-dialog` subpath, with `ModalDialogOptions` / `ModalDialogResult` |
+| `./safelist.css`, `./theme-no-reset.css` | Removed; `./wind.json` added; other public CSS exports retained |
+| Required Preact peer for core | Removed; zdtp-enabled consumers install zdtp's Preact peer |
+
+`ThemeToggle` retains `defaultMode`, `respectPrefersColorScheme`, `labels`, and `pendingUntilHydrated`. Keep other domain prop names: the `class` change is for intrinsic-compatible APIs, not a blanket rename of custom `className` props (for example, `SidebarTree` retains its custom `className`).
+
+`ENLARGE_DIALOG_STYLE` remains exported from `./island-types`. On the actual 4.2.1 target it is the literal style object `{ position: "fixed", inset: 0, margin: "auto" }`, and `EnlargeDialogProps.style` is `typeof ENLARGE_DIALOG_STYLE`. The earlier 3.x plan for a string is superseded by native style support. Use supported CSS property names and explicit units for nonzero lengths; strings remain valid for complete CSS declarations.
+
+## Ejected and host components
+
+Rewrite interactive components using setup-time signals, `computed`, `Show`, `For`, and scope activation/cleanup. JSX runs once per scope; reading `count.value` as a plain snapshot will not make text reactive. Intrinsic events use `on:click`, `on:input`, and `on:change`. Native `change` fires on commit; use `input` or a supported `modelValue` binding for updates while typing. Do not mechanically convert every React `onChange` into native `change`.
+
+Call `modalDialog` during setup in the scope that owns the dialog. If the dialog is conditional, place a child component inside `Show` and call the helper in that child. The options are `isOpen`, `onClose`, `navigateEvent`, `backdropClickClose`, `manageFocus`, `restoreFocusOnly`, and `returnFocusRef`; the result contains `dialogRef` and `handleBackdropClick`. It is an ordinary-module helper, not a `"use client"` island export.
+
+```tsx
+"use client";
+import { computed, getScope, signal } from "@takazudo/zfb/zudo-react";
+import { modalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
+
+export function ExampleDialog() {
+  const scope = getScope();
+  const open = signal(false);
+  const { dialogRef, handleBackdropClick } = modalDialog(scope, {
+    isOpen: open,
+    onClose: () => { open.value = false; },
+    backdropClickClose: true,
+    manageFocus: true,
+  });
+  return <>
+    <button type="button" on:click={() => { open.value = true; }}>Open</button>
+    <dialog ref={dialogRef} on:click={handleBackdropClick}>
+      <p>{computed(() => open.value ? "Open" : "Closed")}</p>
+      <button type="button" on:click={() => { open.value = false; }}>Close</button>
+    </dialog>
+  </>;
+}
+```
+
+## Fixed-target server boundaries
+
+Keep `defineChromeBindings` and the six primary replacement keys (`Header`, `Footer`, `Sidebar`, `Toc`, `Breadcrumb`, `DocPager`); omitted slots retain defaults. Import runtime values from topic subpaths: the package root is type-only. Config evaluation (`./config`, `./preset`) is a different graph from browser imports. browser-safe defaults live in the internal `settings-defaults.ts` leaf and are re-exported by `./config`; `./settings` is types-only; `./site-schema` remains engine-free. Never import host virtual route modules from a client entry.
+
+`DocHistory` and `DesignTokenPanelBootstrap` host overrides now receive **server boundaries**, not a dynamic client component that the package wraps in Island. Each boundary statically imports its own named client target, owns the Island mount, and returns a Fragment. The optional `BodyEndIslandsDeps.ThemePackSwitcher` follows the same boundary rule. Keep package settings gates and override precedence; a custom panel configuration usually belongs in `designTokenPanelConfigModule`, not a replacement island.
+
+For standard history use the retained public `DocHistoryBoundary` export. It removes `ssrFallback` before creating client props, so fallback markup stays on the server while slug/locale/base/date data crosses JSON transport.
+
+```tsx
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { DocHistoryBoundary } from "@takazudo/zudo-doc/doc-history-area";
+
+export const chromeBindings = defineChromeBindings({
+  DocHistory: DocHistoryBoundary,
+});
+```
+
+A custom panel boundary uses the same static shape; the client target is your own uniquely named `"use client"` component.
+
+```tsx
+import { Island } from "@takazudo/zfb";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { MyPanelClient } from "./my-panel-client";
+
+function MyPanelBoundary() {
+  return <><Island when="load"><MyPanelClient /></Island></>;
+}
+
+export const chromeBindings = defineChromeBindings({
+  DesignTokenPanelBootstrap: MyPanelBoundary,
+});
+```
+
+Only finite JSON scalars, dense arrays and plain records cross an Island boundary. Explicitly omit absent optional object keys before constructing the client description; use the same normalized data for SSR and serialization. Functions, signals, descriptions, dates/classes, cycles, getters, symbols and undefined array entries are invalid. Do not pass `ssrFallback` inside the client child's props or sanitize props by a JSON round trip. `DocHistory` client and the existing public fallback components (such as `ImageEnlargeSsrFallback` and `MermaidEnlargeSsrFallback`) remain available at their documented subpaths.
+
+## zdtp and runtime limits
+
+The installed **zdtp 0.8.5** manifest requires **Preact ^10.29.1** and exports `./styles.css` (also `./styles`) to its own CSS. Install both when using the panel. zdtp owns its opaque Preact subtree and internal Tailwind browser dependency; this does not restore Preact or Tailwind as the host rendering engine. Keep lazy loading, persisted mode-scoped panel state and root CSS-variable updates.
+
+Use native ordered lists, leading-line-feed handling and unchanged-root persistence from the current engine. Unchanged island identity/props preserve live scope state; changed identity/props recreate it. The package's `zfb:before-swap` adapter updates only the detached incoming document, honors live `data-zd-props-preserve`, and removes incoming persistence for unsafe structure changes. Do not restore blanket remounts.
+
+Parser rules are part of the owned JSX contract. Keep legal table/select structure; use explicit `tbody` and do not place `Show`/`For`/component regions directly at table structural levels. `rawHtml` accepts trusted strings and is mutually exclusive with children; it does not sanitize. Do not insert island wrappers or runtime protocol markers through raw HTML. Script/style payloads require static raw text with closing-tag guards. Native support has evolved since the 3.x spike: consult the published 4.2.1 declarations/contract rather than copying old iframe/head/style shims.
+
+Track current limitations through [upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097), [fixed-target composition #4004](https://github.com/Takazudo/zudo-front-builder/issues/4004), and [Wind coverage #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371). Earlier issues are historical context, not evidence that current release gates passed.
+
+## Optional adoption and verification
+
+Static agent exports and MCP are separate opt-in features, not required for this core migration. `mcp` and `llmsTxt` remain `false` by default; keep existing choices unless you explicitly adopt those features.
+
+Before upgrading a production site, verify a fresh packed consumer: strict types (including rejected retired exports/invalid props), public CSS/manifest resolution, a real build, hydration and repeated navigation. Exercise base paths and locale fallback, history fallback serialization, open dialogs, persisted sidebar state and live panel variables. Reconcile both language versions and run formatting/link checks. Publication and release coordination remain separate owner gates.

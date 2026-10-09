@@ -1,0 +1,165 @@
+---
+title: zudo-doc 6 への移行
+sidebar_position: 80
+description: 予定されている zudo-react・Wind のメジャーリリースに向けて 5.x の利用側を更新します。
+---
+
+## リリース状況
+
+このガイドは、5.x から移行する予定の **zudo-doc 6.0.0** を説明します。協調して公開するメジャーリリースは **まだ未公開** で、リポジトリのパッケージバージョンは 5.28.2 のままです。現在のエンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.2.1** ファミリーで、パッケージの peer 下限は **^4.2.1** です。過去の 3.0/3.1 を移行先としてインストールしたり、このページを公開告知として扱ったりしないでください。
+
+上流の [#4097 ブラウザー・ナビゲーションゲート](https://github.com/Takazudo/zudo-front-builder/issues/4097) は未解決です。公開前に、パックしたパッケージの利用側、ドキュメントの描画、ブラウザーでの同等性を検証する必要があります。上流 issue のクローズや型検査の成功だけでは公開準備完了を意味しません。
+
+## 依存関係と TypeScript
+
+協調メジャーリリースの公開後、zudo-doc と create-zudo-doc を一緒に更新します。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.2.1 に揃えてください。コアの描画には Preact は不要です。
+
+次のようにパッケージのベース設定を継承します。ベースが `jsx: "react-jsx"` と `jsxImportSource: "@takazudo/zfb/zudo-react"` を所有します。`react`、`react-dom`、`react/jsx-runtime` から Preact への互換パスを削除し、React/Preact の型 import も変更します。必要なプロジェクト固有のエイリアスだけを残し、プロジェクト側の `baseUrl` で基準を指定してください。config と仮想モジュールの宣言を読み込むベースのトップレベル `files` を上書きしないでください。
+
+```json
+{
+  "extends": "@takazudo/zudo-doc/tsconfig.base.json",
+  "include": ["src", "pages", "zfb.config.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
+  }
+}
+```
+
+## CSS と Wind
+
+CSS のエントリから Tailwind の import と `@theme`、`@source`、`@tailwind`、`@apply`、`@utility`、`@plugin` の各ディレクティブを削除します。トークンの宣言は変数名を維持して通常の `:root` に移します。`--color-*: initial` によるパレットのリセットも削除します。`theme-no-reset.css` は `theme.css` に変更し、`safelist.css` の import は削除してください。以前の二つのサブパス export は廃止されます。
+
+次の公開 CSS import を使います。パネルを有効にする場合だけ `@takazudo/zdtp/styles.css` を追加してください。物理的な `dist/*.css` パスは import しません。`compiled.css` は zfb の CSS ビルドを使わない埋め込み用に、ブラウザーで使える公開 export として残ります。この構成で追加する必須 import ではありません。
+
+```css
+@layer zw-reset, zd-flow;
+@import "@takazudo/zudo-doc/theme.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
+
+:root {
+  --spacing-hsp-md: 1rem;
+  --z-index-toolbar: 25;
+}
+```
+
+`zudoDoc()` が新しい公開 manifest `@takazudo/zudo-doc/wind.json` を自動で登録します。パッケージの `dist/` をスキャンせずに、必要なユーティリティ候補を供給するため、通常は自分で manifest を import・登録する必要はありません。Wind のトークンは既存の CSS 変数を参照し、テーマやパネルによる動的な更新を維持します。
+
+変数の値は `:root`、ユーティリティの対応付けはトップレベルの `wind` オプションで変更します。zfb がパッケージの既定値にこの変更を deep-merge します。`wind` は `Settings` のフィールドではありません。リセットは `wind.reset` で選びます（パッケージの既定値は `"owned-v1"`）。`wind: false` は Wind 全体を無効にします。
+
+```ts
+import { defineConfig } from "@takazudo/zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  wind: {
+    tokens: { colors: { accent: "var(--brand-accent)" } },
+    reset: "owned-v1",
+  },
+}));
+```
+
+Wind は独自に定義されたユーティリティ言語で、Tailwind の互換実装ではありません。パッケージ設定は名前付きの spacing を使い、暗黙の数値 spacing スケールはありません。ブレークポイントは `sm`/`lg`/`xl`（640/1024/1280px）で、dark ユーティリティモードも使いません。既存の `data-theme` による変数切り替えは継続します。未対応のユーティリティは `zd-` クラスの明示的な CSS と、その出力を確認する検証が必要です。生成されたユーティリティは layer に属さず、 authored CSS の後に置かれるため、移行時はセレクターの詳細度を確認してください。
+
+`pnpm exec zfb wind audit --project-root . --fail-on error` を実行します。エラー時の終了フラグは必須です。audit の成功だけでは manifest の網羅性や CSS の出力・計算結果を証明できません。manifest、 authored class、出力されたルール、ブラウザーの検証を維持してください。
+
+## 公開型・props の変更一覧
+
+| 5.x の契約 | 6.0 の移行先 |
+| --- | --- |
+| Preact `VNode` / React `ReactNode` | 要素 description には zudo-react `Description`、描画できる値・戻り値には `Child` |
+| Preact の component callback 型 | zudo-react `Component<P>`。`FrontmatterCellRenderer`、`ThemePackDialogComponent` などのドメイン名は維持 |
+| Preact の intrinsic attributes | `@takazudo/zfb/zudo-react/jsx-runtime` の `JSX.IntrinsicElements["button"]`（または対象のタグ） |
+| intrinsic と互換の content component・共有 icon の `className` | `class`。`EnlargeDialogProps.class` も同じ規則 |
+| `ThemePackDialogProps.open: boolean` | 一つの client component tree 内の `ReadonlySignal<boolean>`。Island props にこの signal をシリアライズしない |
+| `useModalDialog(...)` | 既存の `./use-modal-dialog` サブパスにある `modalDialog(scope, options)` と `ModalDialogOptions` / `ModalDialogResult` |
+| `./safelist.css`、`./theme-no-reset.css` | 廃止。`./wind.json` を追加し、ほかの公開 CSS export は維持 |
+| コアの必須 Preact peer | 廃止。zdtp を使う利用側は zdtp の Preact peer をインストール |
+
+`ThemeToggle` の `defaultMode`、`respectPrefersColorScheme`、`labels`、`pendingUntilHydrated` は維持します。ほかのドメイン props 名も維持してください。`class` への変更は intrinsic と互換の API が対象で、独自の `className` props を一律に変更するものではありません（たとえば `SidebarTree` は独自の `className` を維持します）。
+
+`ENLARGE_DIALOG_STYLE` は `./island-types` から引き続き export されます。実際の 4.2.1 対象では固定の style object `{ position: "fixed", inset: 0, margin: "auto" }` で、`EnlargeDialogProps.style` は `typeof ENLARGE_DIALOG_STYLE` です。以前の 3.x 計画にあった文字列化は、ネイティブの style 対応によって不要になりました。対応する CSS property 名を使い、ゼロ以外の長さには単位を明示してください。完全な CSS 宣言の文字列も使用できます。
+
+## eject した component と host component
+
+対話的な component は、setup 時の signals、`computed`、`Show`、`For`、scope の activation/cleanup を使って書き換えます。JSX は scope ごとに一度だけ実行されるので、単に `count.value` を読んだ snapshot ではテキストはリアクティブになりません。intrinsic event は `on:click`、`on:input`、`on:change` を使います。ネイティブの `change` は確定時に発生するため、入力中の更新には `input` または対応する `modelValue` を使います。React の `onChange` を機械的にすべてネイティブの `change` に変更しないでください。
+
+`modalDialog` は dialog を所有する scope の setup 中に呼び出します。dialog が条件付きなら `Show` の中に子 component を置き、その子で helper を呼び出します。options は `isOpen`、`onClose`、`navigateEvent`、`backdropClickClose`、`manageFocus`、`restoreFocusOnly`、`returnFocusRef` です。結果は `dialogRef` と `handleBackdropClick` を含みます。通常のモジュールの helper であり、`"use client"` の island export ではありません。
+
+```tsx
+"use client";
+import { computed, getScope, signal } from "@takazudo/zfb/zudo-react";
+import { modalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
+
+export function ExampleDialog() {
+  const scope = getScope();
+  const open = signal(false);
+  const { dialogRef, handleBackdropClick } = modalDialog(scope, {
+    isOpen: open,
+    onClose: () => { open.value = false; },
+    backdropClickClose: true,
+    manageFocus: true,
+  });
+  return <>
+    <button type="button" on:click={() => { open.value = true; }}>Open</button>
+    <dialog ref={dialogRef} on:click={handleBackdropClick}>
+      <p>{computed(() => open.value ? "Open" : "Closed")}</p>
+      <button type="button" on:click={() => { open.value = false; }}>Close</button>
+    </dialog>
+  </>;
+}
+```
+
+## 固定 target の server boundary
+
+`defineChromeBindings` と六つの主要置換キー（`Header`、`Footer`、`Sidebar`、`Toc`、`Breadcrumb`、`DocPager`）を維持します。省略した slot は既定の実装を使います。runtime の値はトピックごとのサブパスから import してください。パッケージ root は型専用です。config 評価（`./config`、`./preset`）と browser import は異なる graph です。browser-safe な既定値は内部の `settings-defaults.ts` にあり、`./config` が再 export します。`./settings` は型専用、`./site-schema` は engine-free のままです。client entry から host の仮想 route module を import しないでください。
+
+host override の `DocHistory` と `DesignTokenPanelBootstrap` は、パッケージが Island で包む動的な client component ではなく、**server boundary** を受け取るようになります。boundary は自身の名前付き client target を静的に import し、Island の mount を所有し、Fragment を返します。任意の `BodyEndIslandsDeps.ThemePackSwitcher` も同じ boundary 規則です。パッケージの settings gate と override の優先順位を維持してください。独自のパネル設定は通常、island の置換ではなく `designTokenPanelConfigModule` を使います。
+
+標準の history には、維持される公開 export `DocHistoryBoundary` を使います。client props を構築する前に `ssrFallback` を取り除き、fallback markup は server に残し、slug/locale/base/date のデータだけを JSON で渡します。
+
+```tsx
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { DocHistoryBoundary } from "@takazudo/zudo-doc/doc-history-area";
+
+export const chromeBindings = defineChromeBindings({
+  DocHistory: DocHistoryBoundary,
+});
+```
+
+独自のパネル boundary も同じ静的な形を使います。client target は、一意の名前を持つ自作の `"use client"` component です。
+
+```tsx
+import { Island } from "@takazudo/zfb";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { MyPanelClient } from "./my-panel-client";
+
+function MyPanelBoundary() {
+  return <><Island when="load"><MyPanelClient /></Island></>;
+}
+
+export const chromeBindings = defineChromeBindings({
+  DesignTokenPanelBootstrap: MyPanelBoundary,
+});
+```
+
+Island boundary を越えられるのは有限の JSON scalar、dense array、plain record だけです。client description を作る前に、値のない任意の object key を明示的に省略し、SSR とシリアライズで同じ正規化済みデータを使います。function、signal、description、date/class、循環参照、getter、symbol、undefined の array 要素は無効です。client child の props に `ssrFallback` を含めたり、JSON の往復で props を消毒したりしないでください。`DocHistory` client と、`ImageEnlargeSsrFallback`、`MermaidEnlargeSsrFallback` など既存の公開 fallback component は、それぞれの公開サブパスで引き続き使用できます。
+
+## zdtp と runtime の制約
+
+インストール済みの **zdtp 0.8.5** manifest は **Preact ^10.29.1** を要求し、自身の CSS を `./styles.css`（`./styles` も）から export します。パネルを使う場合は両方をインストールしてください。zdtp が opaque な Preact subtree と内部の Tailwind browser 依存を所有します。host の描画エンジンを Preact/Tailwind に戻すものではありません。lazy load、mode ごとのパネル永続状態、root の CSS 変数更新を維持します。
+
+現在のエンジンにあるネイティブの順序付きリスト、先頭改行の処理、変更のない root の永続化を使います。island の identity/props が同じなら live scope の状態を維持し、変更されたら再生成します。パッケージの `zfb:before-swap` adapter は切り離された incoming document だけを更新し、live 側の `data-zd-props-preserve` を尊重し、安全でない構造変更には incoming の persistence を取り除きます。一律 remount は復活させないでください。
+
+parser の規則も owned JSX の契約です。table/select は正しい構造を維持し、`tbody` を明示し、table の構造レベルに `Show`/`For`/component region を直接置きません。`rawHtml` は信頼できる文字列を受け取り、children と同時に使えません。サニタイズは行いません。raw HTML に island wrapper や runtime protocol marker を入れないでください。script/style の payload は closing-tag guard を付けた静的な raw text が必要です。ネイティブ対応は 3.x の調査時点から変化しているので、古い iframe/head/style shim をコピーせず、公開済み 4.2.1 の型宣言と契約を確認してください。
+
+現在の制約は [上流 #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097)、[固定 target の composition #4004](https://github.com/Takazudo/zudo-front-builder/issues/4004)、[Wind coverage #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371) で追跡します。過去の issue は背景情報であり、現在の公開ゲートが通過した証拠ではありません。
+
+## 任意の導入と検証
+
+静的な agent export と MCP は個別に選択する任意の機能で、このコア移行の必須条件ではありません。`mcp` と `llmsTxt` の既定値は引き続き `false` です。明示的に導入しない限り、既存の選択を維持してください。
+
+本番サイトの更新前に、パックしたパッケージを新しい利用側で検証します。strict な型検査（廃止 export・無効 props が拒否されることも）、公開 CSS/manifest の解決、実ビルド、hydration、繰り返すナビゲーションが対象です。base path、locale fallback、history fallback のシリアライズ、開いた dialog、sidebar の永続状態、パネルによる変数更新も確認します。二言語の内容を揃え、format と link 検査を実行してください。公開とリリース調整は別の担当ゲートです。

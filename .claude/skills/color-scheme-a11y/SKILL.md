@@ -226,7 +226,7 @@ Dark 7.10:1, Default Light 5.91:1 — `pnpm contrast:audit`).
    "heavier" (weight/thickness is unchanged).
 3. **Splitting a border token is disproportionate churn.** A new `--zd-border` would ripple
    through the package API (`SEMANTIC_KEYS`, `SEMANTIC_CSS_NAMES`, `resolveSemanticColors`,
-   `schemeToCssPairs` in `color-scheme-utils.ts`), both `global.css` `@theme` blocks, every
+   `schemeToCssPairs` in `color-scheme-utils.ts`), both `theme.css` `:root` blocks, every
    `border-muted` site in `content.css` / `features.css` / ~20 components, the
    `create-zudo-doc` templates, e2e fixtures, and `settings.ts` — for a fraction of a ratio
    point of border crispness.

@@ -37,7 +37,7 @@ consumer relationship. This adds no unique formatter package to the lockfile.
 | `minimist`, `fs-extra`, `picocolors` | Live CLI, scaffolding, eject, theme, and audit consumers. No handwritten replacements attempted. |
 | `diff`, `katex`, `@takazudo/zdtp`, `@takazudo/zfb-md-wasm` | Framework peer contracts enable history comparison, math, design-token controls, and browser highlighting. Imports alone are not a sufficient removal oracle. |
 | `preact`, `zod`, zfb packages | Preact remains installed for `@takazudo/zdtp`'s peer and opaque bundle; zod is the runtime schema contract; zfb packages are engine contracts, and the Cloudflare adapter also has a direct import in `pages/api/ai-chat.tsx`. |
-| `preact-render-to-string`, `vite` | The browser-embed fixture now uses zfb's public zudo-react server renderer; removing the now-unused renderer dependency from the root manifest is assigned to #4467. Vite remains the direct fixture build dependency. |
+| `preact-render-to-string`, `vite` | The browser-embed fixture now uses zfb's public zudo-react server renderer; the unused renderer dependency has been removed from the root manifest. Vite remains the direct fixture build dependency. |
 | `pluralize`, `@types/pluralize`, `culori`, `@types/culori` | Tag tests and contrast tooling import these directly. Retention elsewhere does not replace a direct declaration. |
 | `@takazudo/zudo-design-token-lint`, `html-validate`, `wrangler` | Depcheck false positives: binary names and script/CI consumers differ from import usage. |
 | `minisearch` in `packages/search-worker` | Direct import in `src/search.ts`; the optional search Worker still needs it even though default site search does not. |
@@ -51,7 +51,7 @@ consumer relationship. This adds no unique formatter package to the lockfile.
   or changing a framework feature requires a separate behavioral evaluation.
 - Node type versions differ intentionally between package toolchains; framework
   peer/dev pins and root/scaffold engine pins also serve distinct consumers.
-- Depcheck reports virtual modules, Preact's React aliases, package self-imports,
+- The historical detector reported virtual modules, old React compatibility aliases, package self-imports,
   and scaffold-template imports as missing. Package tests also consume root
   workspace tooling (`vite`, `culori`, and framework fixtures); this audit did
   not redesign test dependency ownership.
@@ -80,3 +80,13 @@ were removed and template drift passed. The package rerun hit machine-load
 timeouts; retrying with `pnpm test:packages --maxWorkers=2` passed, as did the
 plugin-resolution check. No test assertions or timeouts were changed.
 Manual interactive smoke was skipped; browser E2E is outside this local suite.
+
+## Current migration dependency contract
+
+The source migration now pins the published zfb family to 4.2.1 and peers to
+^4.2.1; the coordinated zudo-doc/create-zudo-doc 6.0.0 is not released. The
+September audit above is historical evidence, not a new dependency/build run.
+Core JSX uses zudo-react. Installed zdtp 0.8.5 requires Preact ^10.29.1 and owns
+its internal Tailwind browser dependency; those remain intentional panel-only
+engine mentions. Native Wind uses package defaults plus the public wind.json
+manifest, and no host Tailwind compiler dependency is required.

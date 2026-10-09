@@ -1,6 +1,6 @@
 # zudo-doc
 
-Documentation base framework built with [zfb](https://www.npmjs.com/package/@takazudo/zfb), MDX, Tailwind CSS v4, and Preact islands.
+Documentation base framework built with [zfb](https://www.npmjs.com/package/@takazudo/zfb), MDX, zudo-wind, and zudo-react islands.
 
 This repository is both the framework's source and its own showcase: the content under `src/content/` is the live documentation you see when running the dev server.
 
@@ -10,8 +10,8 @@ This repository is both the framework's source and its own showcase: the content
 
 - **[zfb](https://www.npmjs.com/package/@takazudo/zfb)** (`@takazudo/zfb`) — static site generator with MDX content collections, file-routed `pages/`, and a built-in dev/build/preview/check CLI
 - **MDX** — content authored under `src/content/`; pipeline configured in `zfb.config.ts`
-- **Tailwind CSS v4** — compiled by zfb's built-in engine (a Rust binary + esbuild embedding tailwindcss-oxide), with a three-tier design token system
-- **Preact** — interactive islands (TOC scroll spy, sidebar toggle, theme switch, search) and server-rendered typography components
+- **zudo-wind** — zfb's owned utility compiler, configured by `zudoDoc()` and the package `wind.json` manifest
+- **zudo-react** — interactive islands (TOC scroll spy, sidebar toggle, theme switch, search) and server-rendered typography components
 - **TypeScript** — strict mode throughout
 
 ## Quick Start
@@ -71,10 +71,10 @@ zfb.config.ts          # zfb engine config (content collections, MDX pipeline, p
 pages/                 # File-routed pages (.tsx)
 packages/              # Workspace packages (layout + engine plugins, workers, generator, doc-history-server)
 src/
-├── components/        # Preact components (islands and server-rendered overrides)
+├── components/        # zudo-react components (islands and server-rendered overrides)
 ├── config/            # Settings, sidebars, i18n, tag vocabulary, contrast utils
 ├── content/           # MDX content — docs/ (EN) and docs-ja/ (JA)
-└── styles/            # Design tokens (@theme) & Tailwind config
+└── styles/            # CSS custom properties (`:root`); Wind configuration lives in `zfb.config.ts`
 ```
 
 ## Documentation

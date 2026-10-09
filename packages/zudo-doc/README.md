@@ -9,14 +9,14 @@ instead of editing the generated markdown directly.
 This package provides the missing-by-design framework concerns:
 
 - **Sidebar tree builder** (`./sidebar-tree`) — turns collection entries + `_category_.json` into breadcrumb/navigation nodes.
-- **Theme controls** (`./theme`) — color scheme provider + design-token tweak panel (Preact island that wraps an iframe).
+- **Theme controls** (`./theme`) — color scheme provider + design-token panel bootstrap (the optional zdtp package owns its opaque Preact UI).
 - **Theme toggle (bare)** (`./theme-toggle`) — the un-wrapped ThemeToggle component for call sites that compose their own `<Island>` (the `./theme` barrel exports an Island-wrapped variant of the same component).
-- **TOC** (`./toc`) — desktop and mobile TOC Preact islands fed by MDX `headings` export.
+- **TOC** (`./toc`) — desktop and mobile TOC zudo-react islands fed by MDX `headings` export.
 - **Breadcrumb** (`./breadcrumb`) — JSX breadcrumb fed by the sidebar tree.
 - **DocLayout** (`./doclayout`) — composable layout shell with explicit `<Header>`, `<Sidebar>`, `<Main>`, `<Toc>`, `<Footer>` props; ships a `<DocLayoutWithDefaults>` wrapper that holds the 16 `create-zudo-doc` injection anchors.
 - **View Transitions** (`./transitions`) — native View Transitions API shim (Chrome/Edge/Safari 18+); persistent regions via `view-transition-name`. No-op fallback in Firefox.
 - **Head injection** (`./head`) — canonical, og:\*, twitter:\*, robots, preload hints, RSS link, sitemap link, and theme-color output.
-- **SSR-skip wrappers** (`./ssr-skip`) — `<AiChatModalIsland>`, `<ImageEnlargeIsland>`, `<DesignTokenTweakPanelIsland>`, `<MockInitIsland>` — wrap zfb's `<Island ssrFallback>` with the right fallback markup so doc pages don't have to re-implement the SSR-skip pattern.
+- **SSR fallbacks** — fixed-target Island boundaries keep server fallback markup outside serialized client props; the image/mermaid fallback components remain public.
 - **Site schema** (`./site-schema`) — browser-safe nav tree / breadcrumb / pager domain, with zero zfb engine or filesystem coupling. See below.
 
 ## `./site-schema` — the browser-safe site-shape domain
@@ -105,25 +105,53 @@ If your project renders **semi-trusted or user-submitted** HTML in a preview, ov
 
 **Caveat:** removing `allow-same-origin` gives the iframe an opaque origin, which blocks the parent from reading `iframe.contentDocument`. That **disables auto-height** — always pair a stricter `sandbox` with a fixed `height`. Passing the empty string `""` is honored verbatim (only omitting the prop falls back to the computed default).
 
-## Styling — Tailwind setup for consumers
+## Planned 6.0 migration and peers
 
-This package ships **no precompiled CSS** — the component utility classes are inlined in the `dist/` JavaScript, and Tailwind v4 does not scan `node_modules`. Without help, those utilities never make it into your build, so the components render unstyled.
+The coordinated zudo-doc/create-zudo-doc **6.0.0 has not been published**. This
+source tree targets the published **zfb 4.2.1** family (peer floor **^4.2.1**);
+package versions still read 5.28.2 pending release coordination. The open
+[upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097)
+browser/navigation gate is not declared passed here. See the
+[5.x → 6.0 migration guide](../../src/content/docs/guides/migrating-to-zudo-doc-6.mdx)
+for the full public API and host-boundary census.
 
-The fix is to import the package's build-generated safelist into your Tailwind CSS entry, right next to your `@import "tailwindcss";`:
+Core rendering uses `@takazudo/zfb/zudo-react`, not Preact. Extend
+`@takazudo/zudo-doc/tsconfig.base.json`, remove React→Preact compatibility paths,
+and port host/ejected components to owned JSX/signals. zod remains required;
+`katex`, `diff`, `@takazudo/zfb-md-wasm`, history-server, zdtp and MCP SDK peers
+are feature-dependent. `mcp` and `llmsTxt` remain off by default.
+
+For the panel, the installed **zdtp 0.8.5** manifest requires **Preact ^10.29.1**
+and exports `./styles.css` (also `./styles`) to `dist/zdtp.css`. Its internal
+Tailwind browser dependency and Preact subtree are isolated from host JSX.
+Install the panel peers and import `@takazudo/zdtp/styles.css` when enabling it.
+
+## Styling — Wind and public CSS
+
+`zudoDoc()` registers the public `@takazudo/zudo-doc/wind.json` manifest and
+var-backed Wind defaults automatically. No package-dist scanning or consumer
+manifest import is needed. Remove the retired `safelist.css` and
+`theme-no-reset.css` imports, Tailwind imports/directives and palette reset.
 
 ```css
-@import "tailwindcss";
-@import "@takazudo/zudo-doc/safelist.css";
+@layer zw-reset, zd-flow;
+@import "@takazudo/zudo-doc/theme.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
+
+:root { --spacing-hsp-md: 1rem; }
 ```
 
-`dist/safelist.css` is generated at package build time and contains an `@source inline()` set covering every utility the components use (including arbitrary-value classes like `w-[var(--zd-sidebar-w)]`). It auto-syncs whenever you upgrade the package — no drift, no manual maintenance. Available in `@takazudo/zudo-doc` **>= 0.2.0**.
-
-> **Don't `@source` into `node_modules`.** A glob like `@source "../node_modules/@takazudo/zudo-doc/dist/**"` looks plausible but is unreliable: pnpm surfaces packages via symlinks and Tailwind v4's file scanner does not reliably traverse them, so utilities get intermittently dropped across rebuilds (see zudolab/zudo-doc#1989). Import the package safelist instead.
-
-**Migrating from a pre-0.2.0 workaround?** If you vendored or copied the package `dist/` to get its styles, delete that workaround and replace it with the single `@import "@takazudo/zudo-doc/safelist.css";` line above.
+Override CSS variable values in `:root` after package imports, or utility token
+mappings with `zudoDoc({ wind: { tokens: { colors: { accent: "var(--brand-accent)" } } } })`.
+The top-level `wind` override deep-merges over package defaults; reset is
+selected with `wind.reset` (default `"owned-v1"`), and `wind: false` disables it.
+Public `compiled.css` remains the browser-ready embedding option when not using
+zfb CSS generation. Do not use physical package `dist/*.css` import paths.
 
 ## Dev workflow (in this repo)
 
 This package is published to npm as `@takazudo/zudo-doc` (since `0.2.0`, `latest` tracks the current line). Inside this repo the host site consumes it as a workspace package through its compiled `dist/` — `pnpm dev` at the repo root runs two watchers in parallel, `tsup --watch` for the JS and `tsc -p tsconfig.build.json --watch` for the `.d.ts`, so edits under `src/` rebuild both halves automatically; for a one-off rebuild use `pnpm --filter @takazudo/zudo-doc build`.
 
-zfb itself comes from npm (versions pinned in the root `package.json`). To develop against a local zfb checkout, use the temporary `pnpm.overrides` link escape hatch documented in the root `CLAUDE.md` — do not commit the override.
+zfb itself comes from npm (versions pinned in the root `package.json`). To develop against a local zfb checkout, use the temporary `pnpm.overrides` link escape hatch documented in root `CONTRIBUTING.md` — do not commit the override.

@@ -1,6 +1,6 @@
 ---
 name: test-flow-html-preview-hydration
-description: "AI-judged verification that the HTML Preview component (`data-zfb-island=\"HtmlPreviewWrapperInner\"`) hydrates into the correct vertical-stack layout — title bar on top, preview iframe below, code toggle beneath — and NOT the broken side-by-side layout caused by Preact island hydration mis-nesting. Use when /verify-ui-ai dispatches a subagent for html-preview hydration verification. Procedure drives a built/served site (default http://localhost:8899/docs/components/html-preview/) via /headless-browser playwright-cli, scrolls to hydrate the `when=\"visible\"` islands, reads the post-hydration DOM tree + computed styles of every preview block, and visually checks a captured screenshot."
+description: "AI-judged verification that the HTML Preview component (`data-zfb-island=\"HtmlPreviewWrapperInner\"`) hydrates into the correct vertical-stack layout — title bar on top, preview iframe below, code toggle beneath — and NOT the broken side-by-side layout caused by island hydration mis-nesting. Use when /verify-ui-ai dispatches a subagent for html-preview hydration verification. Procedure drives a built/served site (default http://localhost:8899/docs/components/html-preview/) via /headless-browser playwright-cli, scrolls to hydrate the `when=\"visible\"` islands, reads the post-hydration DOM tree + computed styles of every preview block, and visually checks a captured screenshot."
 ---
 
 # Test flow: html-preview island hydration layout
@@ -29,19 +29,11 @@ Each preview block has this SSR structure:
 The outer container's three children are block `<div>`s that MUST stack
 vertically (title bar on top, preview below, code beneath).
 
-**The bug under verification (Astro→zfb migration regression):** the bare
-inner component carried the *outer* wrapper's name as its
-`displayName` (`"HtmlPreviewWrapper"`) and was not exported, so the SSG
-marker resolved to the exported self-wrapping `HtmlPreviewWrapper`. On the
-client `hydrate(<HtmlPreviewWrapper/>, markerDiv)` re-emitted another
-`data-zfb-island` wrapper and Preact reused the SSR'd children one level
-off — re-parenting the preview + code sections INSIDE the flex title bar.
-Result: the title bar + buttons squished on the LEFT, preview iframe
-floating on the RIGHT (a broken side-by-side / flex-row layout). The fix
-gives the bare inner component its OWN name+marker
-(`HtmlPreviewWrapperInner`) and exports it, while `HtmlPreviewWrapper`
-stays the `<Island>` wrapper that MDX registers — so the bundle hydrates
-the bare component in-place.
+**Historical regression:** the old Preact port resolved an inner island marker to a
+self-wrapping component, nesting the preview inside the flex title bar. The current
+zudo-react runtime requires one static client target per Island and unique client
+export identities. Preserve this visual regression check across the new runtime;
+do not copy the former `hydrate()` recipe into current code.
 
 The raw SSR DOM (JS disabled) was ALWAYS correct — the breakage appears
 only AFTER hydration. So the test MUST run with JS enabled and MUST scroll
