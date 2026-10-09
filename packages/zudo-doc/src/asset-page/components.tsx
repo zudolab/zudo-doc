@@ -151,10 +151,11 @@ export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: As
   if (asset.updatedDate) rows.push([labels.updated, asset.updatedDate]);
   // `data-zd-asset-details-list` is the hook features.css resets the inherited
   // prose `dt`/`dd` rules through (#3944) — this <dl> is a LAYOUT grid, not a
-  // prose definition list. The reset MUST live in CSS, not in utility classes
-  // here: `.zd-content :where(dt)` still scores (0,1,0) from `.zd-content`
-  // (`:where()` zeroes only its own contents), which TIES with `.mt-0` and then
-  // wins on source order, since content.css is imported before the utilities.
+  // prose definition list. Keep the scoped CSS reset: `.zd-content :where(dt)`
+  // and a single utility both score (0,1,0), so their winner depends on engine
+  // ordering (authored CSS won in v2; utilities follow it in zudo-wind). The
+  // details-list selector wins by specificity under either ordering. Explicit
+  // semibold below preserves the measured v2 term weight without that tie.
   return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl data-zd-asset-details-list class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-semibold text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
 }
 
