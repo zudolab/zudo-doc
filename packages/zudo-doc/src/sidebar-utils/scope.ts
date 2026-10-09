@@ -21,7 +21,14 @@ export function sidebarScopeNodes(context: SidebarNavigationContext, baseline: S
 /** Only an actual shared parent can enclose a configured forest. */
 export function broaderSidebarScope(context: SidebarNavigationContext, baseline: SidebarNavNode[], selected: string | null): string | null {
   if (selected === SIDEBAR_FOREST_SCOPE) return null;
-  if (selected !== null) return context.parents[selected] ?? SIDEBAR_FOREST_SCOPE;
+  if (selected !== null) {
+    const parent = context.parents[selected];
+    if (parent) return parent;
+    // A one-root forest is already completely visible at its root occurrence.
+    // Only a forest with additional roots introduces a broader view.
+    if (context.roots.length === 1 && context.roots[0]?.occurrenceId === selected) return null;
+    return SIDEBAR_FOREST_SCOPE;
+  }
   if (!baseline.length) return null;
   const parents = baseline.map((node) => node.occurrenceId ? context.parents[node.occurrenceId] : undefined);
   if (parents.some((parent) => parent === undefined || parent !== parents[0])) return context.localParentId ?? null;

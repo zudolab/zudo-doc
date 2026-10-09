@@ -160,7 +160,6 @@ test("keyboard scope actions preserve URL hash, article position and desktop TOC
   await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
   await page.keyboard.press("Space");
   await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
-  await page.keyboard.press("Space");
   await expect(sidebar.locator("[data-sidebar-broaden]")).toBeDisabled();
   await expect(sidebar.locator("[data-sidebar-restore]")).toBeFocused();
   await page.keyboard.press("Enter");
@@ -210,7 +209,7 @@ test("native article links widen only to the nearest common editorial ancestor",
   expect(await spaClickSelector(page, 'main a[href$="/editorial/motion/"], main a[href$="/editorial/motion"]')).toBe(true);
   await waitForSidebarHydration(page);
   await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
-  await expect(sidebar.locator("[data-sidebar-broaden]")).toBeEnabled();
+  await expect(sidebar.locator("[data-sidebar-broaden]")).toBeDisabled();
   await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/motion\/?$/);
   assertNoConsoleErrors();
 });
