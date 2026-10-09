@@ -186,3 +186,7 @@ The command ledger below gives observed exit codes and elapsed wall time where c
 | Timed guarded theme fixture | 143 | 139 s | Intentionally canceled CPU-active build; no fixture verdict. |
 | Guarded b4push | 143 | step 23 build: 126 s | Steps 1–22 passed; step 23 root build intentionally canceled on #3648, steps 24–34 not reached; no suite verdict. |
 | Published 3.2.0 one-page `chrome` import repro | 124 | 60 s | Diagnostic cap after plugin setup, CPU-active; upstream #3648. |
+
+## Published 4.2.1 integration checkpoint (2026-10-09)
+
+The [4.2.1 evidence table](v4.2.1-integration.md) supersedes historical live blocker/version claims above. Integration at `2926b1da` passes complete b4push (33 automated checks; manual smoke unverified), 3,488 package units, 127/130 package slow tests (only the three explicitly deferred A2 hashes fail), all 454 hosted browser tests, 793-page generated/CI-faithful builds, strict Wind audit, Worker proof, and current scratch/factory controls. No Preact imports remain in owned package/root/pages TypeScript or TSX; the root peer remains for zdtp. #4468 onward and DD9 remain unfinished; no final parity, aggregate hosted CI, merge or release PASS is claimed.
