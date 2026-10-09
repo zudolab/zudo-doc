@@ -604,20 +604,20 @@ echo "All fixtures set up."
 # Smoke fixture: per-fixture git repo for doc-history specs.
 # ---------------------------------------------------------------------------
 # The doc-history integration walks the *fixture* directory's git history
-# (not the repo root's) so we need a self-contained two-commit repo here.
-# This mirrors the legacy harness — only the build invocation downstream
-# changed.
+# (not the repo root's). Seed getting-started with two commits and the
+# migration-parity article with three, without changing getting-started's
+# existing 2-entry contract.
 #
 # Run even if smoke wasn't in FIXTURES? No — only when smoke is targeted,
 # otherwise we leave the existing smoke git repo intact (the freshness check
 # below will skip rebuilding if inputs are unchanged anyway).
 #
-# Outer-tree hygiene (#2104): synthesizing commit #2 requires mutating the
-# OUTER-tracked seed file on disk (`--allow-empty` won't do — it leaves the
-# file untouched, so `git log --follow` yields 1 entry, not the 2 the
-# doc-history data specs assert on). To keep the outer working tree clean
+# Outer-tree hygiene (#2104): synthesizing the history commits requires
+# mutating the OUTER-tracked seed files on disk (`--allow-empty` won't do — it
+# leaves them untouched, so `git log --follow` yields only the initial entry).
+# To keep the outer working tree clean
 # between runs we register an EXIT finalizer (restore_smoke_seed) that
-# `git checkout HEAD`s the file back. The finalizer runs on success,
+# `git checkout HEAD`s both files back. The finalizer runs on success,
 # fresh-skip (the build below is bypassed), AND failure — because the
 # freshness hash covers `src/content` bytes, a restore wired only into the
 # build-executed path would leave the tree dirty on the common fresh-skip run.
@@ -629,27 +629,31 @@ for fixture in "${FIXTURES[@]}"; do
   fi
 done
 
-smoke_history_outer_path="e2e/fixtures/smoke/src/content/docs/getting-started/index.mdx"
+smoke_history_outer_paths=(
+  "e2e/fixtures/smoke/src/content/docs/getting-started/index.mdx"
+  "e2e/fixtures/smoke/src/content/docs/guides/migration-parity-test.mdx"
+)
 
-# EXIT finalizer: restore the outer-tracked seed file to HEAD so a `pnpm
-# test:e2e` / `bash e2e/setup-fixtures.sh smoke` run never leaves the outer
-# working tree dirty for this file. By the time this fires the smoke build has
-# already consumed the on-disk "Updated for history test." content into dist/
-# (or the build was skipped as fresh, in which case dist/ already has it), so
-# discarding the on-disk mutation here is safe.
+# EXIT finalizer: restore both outer-tracked history seed files to HEAD so a
+# `pnpm test:e2e` / `bash e2e/setup-fixtures.sh smoke` run never leaves the
+# outer working tree dirty. By the time this fires the smoke build has already
+# consumed their on-disk history versions into dist/ (or the build was skipped
+# as fresh, in which case dist/ already has them), so restoring them is safe.
 #
 # NOTE: this restores ONLY the OUTER repo's working-tree copy of the file. The
 # nested fixture repo at e2e/fixtures/smoke/.git is intentionally left dirty vs
-# its own HEAD (its commit #2 captured the mutated bytes) — that is fine for
-# `git log` / `git cat-file --follow` history walks and for the already-built
-# dist/, and is the whole point of seeding a 2-commit history.
+# its own HEAD (the last history commit captured the mutated bytes) — that is
+# fine for `git log` / `git cat-file --follow` history walks and for the
+# already-built dist/, and is the whole point of seeding these per-page histories.
 restore_smoke_seed() {
   [ "$smoke_targeted" = "1" ] || return 0
   (
     cd "$REPO_ROOT"
-    if git ls-files --error-unmatch "$smoke_history_outer_path" >/dev/null 2>&1; then
-      git checkout HEAD -- "$smoke_history_outer_path" 2>/dev/null || true
-    fi
+    for path in "${smoke_history_outer_paths[@]}"; do
+      if git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+        git checkout HEAD -- "$path" 2>/dev/null || true
+      fi
+    done
   )
 }
 trap restore_smoke_seed EXIT
@@ -659,17 +663,18 @@ if [ "$smoke_targeted" = "1" ]; then
   echo "Setting up git repo for smoke fixture (doc history)..."
   smoke_dir="$REPO_ROOT/e2e/fixtures/smoke"
   smoke_history_target="src/content/docs/getting-started/index.mdx"
+  smoke_parity_history_target="src/content/docs/guides/migration-parity-test.mdx"
 
-  # Reset the seed file to its repo-committed state every run so the
-  # "Updated for history test." block doesn't accumulate across re-bootstraps.
-  # (The previous .git was a *fixture-local* repo seeded by the last run, so we
-  # reach back to the *outer* repo for the canonical contents.)
+  # Reset both seed files to their outer-repo contents every run so revision
+  # markers do not accumulate across re-bootstraps.
   rm -rf "$smoke_dir/.git"
   (
     cd "$REPO_ROOT"
-    if git ls-files --error-unmatch "$smoke_history_outer_path" >/dev/null 2>&1; then
-      git checkout HEAD -- "$smoke_history_outer_path"
-    fi
+    for path in "${smoke_history_outer_paths[@]}"; do
+      if git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+        git checkout HEAD -- "$path"
+      fi
+    done
   )
   (
     cd "$smoke_dir"
@@ -678,10 +683,16 @@ if [ "$smoke_targeted" = "1" ]; then
     git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Initial content"
     echo "" >> "$smoke_history_target"
     echo "Updated for history test." >> "$smoke_history_target"
+    echo "" >> "$smoke_parity_history_target"
+    echo "History revision two." >> "$smoke_parity_history_target"
     git add -A
-    git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Update getting started content"
+    git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Update getting started and parity fixture"
+    echo "" >> "$smoke_parity_history_target"
+    echo "History revision three." >> "$smoke_parity_history_target"
+    git add -A
+    git -c user.email="test@example.com" -c user.name="Test" commit -q -m "Add third parity fixture revision"
   )
-  echo "  Done: smoke git repo"
+  echo "  Done: smoke git repo (getting-started: 2 entries; parity fixture: 3)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -701,7 +712,7 @@ fi
 # SKIP_DOC_HISTORY=1 keeps the build independent of the host's git state
 # for non-smoke fixtures. The smoke fixture instead builds with
 # GEN_DOC_HISTORY=1 (postBuild JSON is opt-in for local builds, #1986) so its
-# per-fixture two-commit repo (above) actually drives history output.
+# per-page fixture history above actually drives history output.
 echo ""
 echo "Pre-building fixtures sequentially..."
 for fixture in "${FIXTURES[@]}"; do
@@ -738,12 +749,12 @@ for fixture in "${FIXTURES[@]}"; do
     # against INIT_CWD (the pnpm --filter dev:history / CI build-history contract).
     # Under `pnpm test:e2e:ci`, pnpm sets INIT_CWD=<repo-root>, so the generate
     # scans the OUTER repo's src/content/docs (136 files) instead of THIS fixture's
-    # (12). The git walk roots at the nested smoke .git (cwd), so the outer paths
+    # (13). The git walk roots at the nested smoke .git (cwd), so the outer paths
     # become ../../../src/content/docs/... — outside the nested repo — and
     # `git log --follow` returns 0 entries, shipping an empty getting-started.json.
     # The smoke fixture build's true project root IS the fixture dir, so pin
     # INIT_CWD to it: content-dir then resolves to the fixture's own content and
-    # the two-commit history is generated correctly. (The previously-attempted
+    # the per-page two-/three-entry histories are generated correctly. (The previously-attempted
     # safe.directory fix targeted a different, simulated mechanism and was
     # disproven by CI; this is the confirmed cause.)
     (cd "$REPO_ROOT/e2e/fixtures/$fixture" && INIT_CWD="$REPO_ROOT/e2e/fixtures/$fixture" GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {

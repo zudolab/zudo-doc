@@ -7,6 +7,7 @@ import {
   appearanceTrigger,
   openAppearanceMenu,
 } from "./theme-helpers";
+import { readDistFile } from "./smoke-dist-helper";
 
 declare global {
   interface Window {
@@ -22,6 +23,11 @@ const GUIDES_PAGE_1 = "/docs/guides/sub-a/page-1";
 const GUIDES_PAGE_2 = "/docs/guides/sub-a/page-2";
 const PRESET_PAGE = "/docs/guides/preset-generator-test";
 const CODE_PAGE = "/docs/guides/code-blocks-test";
+const MIGRATION_PARITY_PAGE = "/docs/guides/migration-parity-test";
+const MIGRATION_PARITY_DIST_PAGE = "docs/guides/migration-parity-test/index.html";
+const EXPECTED_NATIVE_PRE = "\nfirst line\nsecond line";
+const EXPECTED_MIGRATION_CODE =
+  "\nconst migrationParityFirst = 1;\nconst migrationParitySecond = 2;\n";
 
 test("same-document navigation resolves its view transition and preserves mutated nested sidebar state", async ({
   page,
@@ -239,39 +245,89 @@ test("AI chat ignores Enter during IME composition, then submits normally", asyn
   expect(submissions).toBe(1);
 });
 
-test("browser HTML parser keeps ordered-list start and the intended leading pre newline", async ({
+test("DocHistory keeps the open revision panel current across two distinct comparisons", async ({
   page,
 }) => {
-  await page.goto("/", { waitUntil: "load" });
-  const parsed = await page.evaluate(() => {
-    const template = document.createElement("template");
-    template.innerHTML = "<ol start=\"3\"><li>three</li><li>four</li></ol><pre>\n\nfirst\nsecond</pre>";
-    const list = template.content.querySelector("ol");
-    const pre = template.content.querySelector("pre");
-    if (!list || !pre) throw new Error("HTML parser probe markup did not parse");
-    return {
-      listStart: list.start,
-      listItems: Array.from(list.children, (item) => item.textContent),
-      preText: pre.textContent,
-    };
-  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(MIGRATION_PARITY_PAGE, { waitUntil: "load" });
 
-  expect(parsed.listStart).toBe(3);
-  expect(parsed.listItems).toEqual(["three", "four"]);
-  // The HTML parser drops one LF immediately after <pre>; zfb's SSR renderer
-  // must emit the extra protective LF that the existing SSR contract test
-  // verifies. Here the browser confirms the parser half of that contract.
-  expect(parsed.preText).toBe("\nfirst\nsecond");
+  const trigger = page.locator('[aria-label="View document history"]');
+  await trigger.waitFor({ state: "visible", timeout: 15_000 });
+  await trigger.click();
+
+  const panel = page.locator('dialog[aria-label="Document revision history"]');
+  await expect(panel).toHaveAttribute("open", "");
+  const revisionA = panel.locator(
+    '[aria-label^="Select revision"][aria-label$="as A"]',
+  );
+  await expect(revisionA).toHaveCount(3, { timeout: 15_000 });
+
+  const hashes = await revisionA.evaluateAll((buttons) => buttons.map((button) => {
+    const match = button.getAttribute("aria-label")?.match(
+      /^Select revision ([0-9a-f]+) as A$/,
+    );
+    if (!match?.[1]) throw new Error("revision button omitted its hash");
+    return match[1];
+  }));
+  expect(new Set(hashes).size).toBe(3);
+
+  const compare = panel.getByRole("button", { name: "Compare", exact: true });
+  await compare.click();
+  await expect(panel.getByRole("heading", { name: "Diff", exact: true })).toBeVisible();
+  await expect(panel).toHaveAttribute("open", "");
+  const diffCells = panel.locator("td.diff-line-content");
+
+  // The initial pair is the newest two revisions: revision two is shared
+  // context on both sides and revision three is newly added.
+  const revisionTwoCells = diffCells.filter({ hasText: "History revision two." });
+  const revisionThreeCells = diffCells.filter({ hasText: "History revision three." });
+  await expect(revisionTwoCells).toHaveCount(2);
+  const firstRevisionTwoClasses = await revisionTwoCells.evaluateAll((cells) =>
+    cells.map((cell) => cell.className),
+  );
+  expect(firstRevisionTwoClasses.every((className) => !className.includes("diff-line-added"))).toBe(true);
+  await expect(revisionThreeCells).toHaveCount(1);
+  await expect(revisionThreeCells).toHaveClass(/diff-line-added/);
+
+  // Select the oldest revision as A while the same dialog and diff Show remain
+  // open. This creates a different pair (oldest,newest), whose table must now
+  // show both added history markers rather than the previous pair's one.
+  await revisionA.nth(2).click();
+  expect(hashes[2]).not.toBe(hashes[1]);
+  await compare.click();
+  await expect(panel.getByRole("heading", { name: "Diff", exact: true })).toBeVisible();
+  await expect(panel).toHaveAttribute("open", "");
+  await expect(revisionTwoCells).toHaveCount(1);
+  await expect(revisionTwoCells).toHaveClass(/diff-line-added/);
+  await expect(revisionThreeCells).toHaveCount(1);
+  await expect(revisionThreeCells).toHaveClass(/diff-line-added/);
 });
 
-test("copy writes the exact code text from the hydrated code block", async ({ page }) => {
-  await page.goto(CODE_PAGE, { waitUntil: "load" });
+test("built article preserves list start and pre LF, then copies the authored code exactly", async ({
+  page,
+}) => {
+  const builtHtml = readDistFile(MIGRATION_PARITY_DIST_PAGE);
+  expect(builtHtml).toMatch(/<ol\b(?=[^>]*\bstart="3")[^>]*>/);
+  const renderedPre = builtHtml.match(
+    /<pre\b[^>]*data-migration-parity-lf[^>]*>([\s\S]*?)<\/pre>/,
+  );
+  expect(renderedPre?.[1]).toBe("\n\nfirst line\nsecond line");
+
+  await page.goto(MIGRATION_PARITY_PAGE, { waitUntil: "load" });
+  const list = page.locator("main ol[start=\"3\"]");
+  await expect(list).toHaveCount(1);
+  await expect(list.locator("li")).toHaveText(["Third step", "Fourth step"]);
+
+  const nativePre = page.locator("main pre[data-migration-parity-lf]");
+  await expect(nativePre).toHaveCount(1);
+  expect(await nativePre.textContent()).toBe(EXPECTED_NATIVE_PRE);
+
   const codeBlock = page
-    .locator(".code-block-container", { hasText: "class-mode-native.js" })
+    .locator("main .code-block-container", { hasText: "migration-parity-leading-lf.js" })
     .locator("pre.hi-root");
   const code = codeBlock.locator("code");
   await expect(code).toBeAttached();
-  const expectedCode = await code.evaluate((element) => element.textContent ?? "");
+  expect(await code.textContent()).toBe(EXPECTED_MIGRATION_CODE);
 
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   const copyButton = codeBlock
@@ -284,5 +340,5 @@ test("copy writes the exact code text from the hydrated code block", async ({ pa
   await expect(copyButton).toHaveClass(/copied/);
 
   const copiedCode = await page.evaluate(() => navigator.clipboard.readText());
-  expect(copiedCode).toBe(expectedCode);
+  expect(copiedCode).toBe(EXPECTED_MIGRATION_CODE);
 });
