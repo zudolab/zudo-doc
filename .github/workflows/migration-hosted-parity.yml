@@ -129,6 +129,33 @@ jobs:
         if: always() && steps.current-build.outcome == 'success' && steps.baseline-build.outcome == 'success'
         run: |
           node scripts/zfb3-parity/compare-browser.mjs --baseline "$RUNNER_TEMP/migration-parity/baseline/browser-report.json" --current "$RUNNER_TEMP/migration-parity/current/browser-report.json" --output "$RUNNER_TEMP/migration-parity/browser-compare"
+      - name: Print compact parity evidence to job log
+        if: always() && steps.current-build.outcome == 'success' && steps.baseline-build.outcome == 'success'
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const root = `${process.env.RUNNER_TEMP}/migration-parity`;
+          const files = ['browser-compare.json', 'browser-compare.md', 'baseline-head.txt', 'current-head.txt', 'baseline-native.txt', 'current-native.txt', 'baseline-inputs.sha256', 'current-inputs.sha256', 'toolchain.txt', 'playwright-version.txt', 'chromium-version.txt'];
+          for (const name of files) {
+            try {
+              const content = await readFile(`${root}/${name}`, 'utf8');
+              console.log(`Evidence: ${name}\n${name.endsWith('.json') ? JSON.stringify(JSON.parse(content)) : content}`);
+            } catch (error) {
+              console.error(`Evidence unavailable: ${name}: ${error.message}`);
+              process.exitCode = 1;
+            }
+          }
+          for (const variant of ['baseline', 'current']) {
+            try {
+              const report = JSON.parse(await readFile(`${root}/${variant}/browser-report.json`, 'utf8'));
+              const keys = report.states.map(({ route, viewport, scheme, state }) => JSON.stringify([route, viewport, scheme, state]));
+              console.log(JSON.stringify({ variant, stateCount: keys.length, uniqueStateCount: new Set(keys).size, expectedStateCount: 65, screenshotReferenceCount: report.states.filter(state => state.screenshot).length, errorCount: (report.errors ?? []).length }));
+            } catch (error) {
+              console.error(`State inventory unavailable: ${variant}: ${error.message}`);
+              process.exitCode = 1;
+            }
+          }
+          NODE
       - name: Upload evidence, including failures
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
