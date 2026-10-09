@@ -33,7 +33,7 @@ export function DesktopTocToggle() {
     <button
       type="button"
       on:click={toggle}
-      class="zd-desktop-toc-toggle hidden xl:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 text-muted cursor-pointer transition-[right,color] duration-200 ease-in-out hover:text-fg"
+      class="zd-desktop-toc-toggle hidden xl:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 text-muted cursor-pointer transition-[right,color] duration-200 hover:text-fg"
       style="border-radius:var(--radius-DEFAULT) 0 0 var(--radius-DEFAULT)"
       aria-label={computed(() => visible.value ? "Hide table of contents" : "Show table of contents")}
       aria-pressed={visible}

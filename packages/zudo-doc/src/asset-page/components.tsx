@@ -155,7 +155,7 @@ export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: As
   // here: `.zd-content :where(dt)` still scores (0,1,0) from `.zd-content`
   // (`:where()` zeroes only its own contents), which TIES with `.mt-0` and then
   // wins on source order, since content.css is imported before the utilities.
-  return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl data-zd-asset-details-list class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
+  return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl data-zd-asset-details-list class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-semibold text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
 }
 
 /** Stable DOM id of the details rail — the collapse toggle's `aria-controls` points at it. */

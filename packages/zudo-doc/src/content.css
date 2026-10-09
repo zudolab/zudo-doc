@@ -119,24 +119,20 @@
 
 /* ── Heading auto-links ── */
 
+/* Native heading links are empty, as in v2. Preserve their ordinary link
+   styling without adding a visible glyph or changing heading geometry. */
 .zd-content :where(h2, h3, h4, h5, h6) .hash-link {
-  text-decoration: none;
-  margin-left: var(--spacing-hsp-sm);
-  opacity: 0;
-  transition: opacity var(--default-transition-duration);
-}
-
-.zd-content :where(h2, h3, h4, h5, h6) .hash-link::after {
-  content: "#";
   color: var(--color-accent);
+  text-decoration: underline;
 }
 
-.zd-content :where(h2, h3, h4, h5, h6):hover .hash-link {
-  opacity: 1;
+@media (hover: hover) {
+  .zd-content :where(h2, h3, h4, h5, h6) .hash-link:hover {
+    color: var(--color-accent-hover);
+  }
 }
 
 .zd-content :where(h2, h3, h4, h5, h6) .hash-link:focus-visible {
-  opacity: 1;
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }

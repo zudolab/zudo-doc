@@ -33,7 +33,7 @@ export function DesktopSidebarToggle() {
     <button
       type="button"
       on:click={toggle}
-      class="zd-desktop-sidebar-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-l-0 text-muted cursor-pointer transition-[left,color] duration-200 ease-in-out hover:text-fg"
+      class="zd-desktop-sidebar-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-l-0 text-muted cursor-pointer transition-[left,color] duration-200 hover:text-fg"
       style="border-radius:0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0"
       aria-label={computed(() => visible.value ? "Hide sidebar" : "Show sidebar")}
       aria-pressed={visible}

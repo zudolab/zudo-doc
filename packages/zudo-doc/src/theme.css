@@ -193,7 +193,7 @@
   --text-scale-xl:  3rem;       /* 48px */
   --text-scale-2xl: 3.75rem;    /* 60px */
 
-  --default-transition-duration: 150ms; /* consumed by image-enlarge and hash-link opacity fade */
+  --default-transition-duration: 150ms; /* consumed by image-enlarge transitions */
   --zd-transition-slow: 200ms;          /* sidebar transform/visibility and content-band max-width */
   --zd-transition-slower: 300ms;        /* view-transition fade-in (contentFadeIn animation) */
   --zd-header-h: 80px;                  /* sticky header height; consumed by scroll-margin-top on [id] anchors */
@@ -219,6 +219,12 @@ body {
 
 @layer base {
   /* zudo-wind preflight parity missing from zudo-wind owned-v1. */
+  ::backdrop, ::file-selector-button {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
   [hidden]:where(:not([hidden="until-found"])) { display: none !important; }
   html { font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; }
   code, kbd, samp, pre { font-family: var(--font-mono); }
@@ -229,8 +235,15 @@ body {
   button, ::file-selector-button { appearance: button; }
   :disabled { opacity: 1; }
   ::placeholder { opacity: 1; color: color-mix(in oklab, currentColor 50%, transparent); }
-  ::backdrop { background-color: rgb(0 0 0 / 0.5); }
-  ::file-selector-button { font: inherit; }
+  ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    margin-inline-end: 4px;
+  }
   hr { color: inherit; }
   abbr:where([title]) { text-decoration: underline dotted; }
   small { font-size: 80%; }
