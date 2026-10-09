@@ -74,7 +74,7 @@ describe("broader sidebar editorial provenance", () => {
     let scope: string | null = leafId;
     let count = 0;
     while ((scope = broaderSidebarScope(result.navigation, result.nodes, scope)) !== null) count++;
-    expect(count).toBe(13);
+    expect(count).toBe(12);
     const changed = buildSidebarNavigation([], "ja", undefined, undefined, {}, () => [deep], []);
     expect(changed.navigation.id).not.toBe(result.navigation.id);
   });
@@ -104,4 +104,15 @@ it("widens to include the canonical root-index page with an empty slug", () => {
   const selected = nodes[1]!.occurrenceId!;
   expect(reconcileSidebarScope(navigation, nodes, selected, undefined)).toBe(selected);
   expect(reconcileSidebarScope(navigation, nodes, selected, "")).toBe(SIDEBAR_FOREST_SCOPE);
+});
+
+
+it("stops at a sole canonical root but retains the additional-root forest step", () => {
+  const single = buildSidebarNavigation([], "en", undefined, undefined, {}, () => [tree[0]!], []);
+  const rootId = single.nodes[0]!.occurrenceId!;
+  expect(sidebarScopeNodes(single.navigation, single.nodes, rootId)).toEqual(sidebarScopeNodes(single.navigation, single.nodes, SIDEBAR_FOREST_SCOPE));
+  expect(broaderSidebarScope(single.navigation, single.nodes, rootId)).toBeNull();
+  const multiple = build();
+  expect(broaderSidebarScope(multiple.navigation, multiple.nodes, multiple.nodes[0]!.occurrenceId!)).toBe(SIDEBAR_FOREST_SCOPE);
+  expect(sidebarScopeNodes(multiple.navigation, multiple.nodes, SIDEBAR_FOREST_SCOPE)).toHaveLength(2);
 });
