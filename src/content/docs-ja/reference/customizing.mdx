@@ -18,7 +18,7 @@ tags:
 | **1. `buildDocsSchema` の上書き** | カスタムの検証付きフロントマターキーが必要 | 関数を1つ置き換え、スキーマを所有する |
 | **2. 設定フィールド** | 機能のオン/オフや挙動の調整 | なし — ただのフィールド |
 | **3. テーマパック** | 手作業の調整ではなく、完成された見た目一式が欲しい | なし — フィールド1つか CLI コマンド1つ |
-| **4. トークンの上書き** | 色・スペーシング・タイポグラフィの再テーマ | `global.css` の `@theme` ブロック |
+| **4. トークンの上書き** | 色・スペーシング・タイポグラフィの再テーマ | `global.css` の `:root` ブロック |
 | **5. `zudo-doc eject`** | 再参照するコンテンツ層コンポーネントを変更する必要 | eject したコピーとそのインポートを所有する |
 | **6. `chromeBindingsModule`** | 主要クロームの置換や、[カスタム MDX コンポーネント](../guides/custom-components.mdx#グローバル登録-mdxextras)を含むホストコーラブルの注入 | ホストモジュール1つ |
 | **7. 自前の `pages/*.tsx`** | ルート全体を自分のものにする必要 | そのルートを所有する |
@@ -110,12 +110,12 @@ pnpm exec zudo-doc theme apply foundry
 
 ## 第4段 — トークンの上書き
 
-スキャフォールドの `src/styles/global.css` は短い `@import` チェーンで、パッケージの `theme.css`（すべての `@theme` デザイントークン）、`content.css`、`features.css` を取り込み、その後にあなた用の空の `@theme { … }` ブロックが続きます。これはパッケージのインポートの**後**に来るため、そこで再定義したものはカスケードで勝ちます:
+スキャフォールドの `src/styles/global.css` は短い `@import` チェーンで、パッケージの `theme.css`（すべての `:root` デザイントークン）、`content.css`、`features.css` を取り込み、その後にあなた用の空の `:root { … }` ブロックが続きます。これはパッケージのインポートの**後**に来るため、そこで再定義したものはカスケードで勝ちます:
 
 ```css title="src/styles/global.css"
 /* ...package @imports above... */
 
-@theme {
+:root {
   --color-accent: oklch(0.6 0.2 250);
   --font-sans: "Inter", system-ui, sans-serif;
   --z-index-modal: 200; /* override a single default z-index tier */
@@ -128,7 +128,7 @@ pnpm exec zudo-doc theme apply foundry
 
 **限界:** トークンは再スタイルしますが、マークアップは再構成しません。[デザインシステム](./design-system.mdx)、[Color](./color.mdx)、[コンポーネントトークン](./component-tokens.mdx)を参照してください。
 
-プロジェクトで別のデザインシステムの `@theme` も統合する場合は、[別の `@theme` との共存](./design-system.mdx#別の-theme-との共存)を参照してください。
+プロジェクトで別のデザインシステムの `:root` も統合する場合は、[別の `@theme` との共存](./design-system.mdx#別の-theme-との共存)を参照してください。
 
 ## 第5段 — コンポーネントのエジェクト
 
@@ -253,7 +253,7 @@ showcaseの[デプロイガイド](../guides/deployment.mdx)と[AI Assistant API
 
 <Note>
 
-`gen:z-index` / `check:z-index` のコードジェネレーションも同様に生成プロジェクトから削除されました — 13 のデフォルト z-index ティアは `@takazudo/zudo-doc/theme.css` から無条件に出荷されるため、プロジェクトが*カスタム*ティアセットを保守する場合にのみそのコードジェネレーションを再追加します。単一ティアの上書きは 1 行の `@theme` 変更（第4段）であり、コードジェネレーションの問題ではありません。
+`gen:z-index` / `check:z-index` のコードジェネレーションも同様に生成プロジェクトから削除されました — 13 のデフォルト z-index ティアは `@takazudo/zudo-doc/theme.css` から無条件に出荷されるため、プロジェクトが*カスタム*ティアセットを保守する場合にのみそのコードジェネレーションを再追加します。単一ティアの上書きは 1 行の `:root` 変更（第4段）であり、コードジェネレーションの問題ではありません。
 
 </Note>
 

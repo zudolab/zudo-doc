@@ -145,14 +145,14 @@ status: released
 
 ### コンポーネントの型
 
-各レンダラーは `@takazudo/zudo-doc/metainfo` の `FrontmatterCellRendererProps` を受け取る Preact コンポーネントです：
+各レンダラーは `@takazudo/zudo-doc/metainfo` の `FrontmatterCellRendererProps` を受け取る zudo-react コンポーネントです：
 
 | プロップ | 型 | 説明 |
 |------|------|-------------|
 | `value` | `NonNullable<unknown>` | フロントマターの値（null/undefined は渡されません） |
 | `entryKey` | `string` | フロントマターのキー名 |
 | `data` | `Record<string, unknown>` | 現在のページのフロントマター全体 |
-| `locale` | `Locale \| undefined` | アクティブなロケール |
+| `locale` | `string \| undefined` | アクティブなロケール |
 
 ### レンダラーの登録
 
@@ -162,7 +162,7 @@ status: released
 discount: ({ value }) => {
   if (value !== true) return null;
   return (
-    <span className="inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full bg-danger text-fg">
+    <span class="inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full bg-danger text-fg">
       ON SALE
     </span>
   );
