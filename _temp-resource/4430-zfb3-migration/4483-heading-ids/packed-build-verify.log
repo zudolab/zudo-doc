@@ -1,0 +1,87 @@
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild@0.28.2.                                     │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Done in 424ms using pnpm v10.30.3
+
+> heading-4483-native-probe@ build /tmp/zudo4483-native-probe/project
+> zfb build
+
+info package route `/404` → pages/404.tsx
+info package route `/robots.txt` → pages/robots.txt.tsx
+info package route `/docs/[[...slug]]` → pages/docs/[[...slug]].tsx
+zfb info: ZB010 plugin:search-index: Generated search index with 2 entries
+✓ 4 pages built in 2.84s
+Checking links (base: /, trailingSlash: false)...
+Source scan: src/content/docs; dist/ pass enabled
+
+✓ No broken links, invalid anchors, or absolute path issues found
+
+Built HTML scan: 112 internal links and 28 ID attributes inspected.
+ 
+Checking links (base: /, trailingSlash: false)...
+Source scan: src/content/docs; dist/ pass enabled
+
+=== Invalid Anchors ===
+  src/content/docs/planted.mdx:5  /docs/probe/#genuinely-missing  (fragment: #genuinely-missing; missing target id)
+
+✗ Found 1 invalid anchor
+
+Built HTML scan: 112 internal links and 28 ID attributes inspected.
+
+❌ STRICT FAIL: 1 invalid anchor (after allowlist).
+ 
+Checking links (base: /, trailingSlash: false)...
+Source scan: src/content/docs; dist/ pass enabled
+
+=== Invalid Anchors ===
+  src/content/docs/planted.mdx:5  /docs/probe/#code-block-target  (fragment: #code-block-target; missing target id)
+
+✗ Found 1 invalid anchor
+
+Built HTML scan: 112 internal links and 28 ID attributes inspected.
+
+❌ STRICT FAIL: 1 invalid anchor (after allowlist).
+ 
+{
+  "version": "4.2.1",
+  "orderedIds": [
+    "1000ms",
+    "2mm",
+    "1000ms-1",
+    "1000ms-1-child-©-≂̸",
+    "1000ms-1-child-©-≂̸-deep-a",
+    "1000ms-1-child-©-≂̸-deep-a-deeper-b",
+    "1000ms-1-child-©-≂̸-sibling",
+    "after-inline-span",
+    "code-lt-and-ordinary",
+    "escaped-gt-and-literal",
+    "once-lt-and-65",
+    "unknown-notarealentity-and-incomplete-copy",
+    "unicode-日本語-→-café-🚀",
+    "numeric-a-b",
+    "invalid-�-�-�-�-�-�-�-�-�",
+    "valid-�",
+    "after-backtick-fence",
+    "after-tilde-fence",
+    "after-mixed-run",
+    "after-indented-code",
+    "repeat",
+    "repeat-nested",
+    "repeat-1",
+    "repeat-1-nested",
+    "repeat-1-nested-below-toc",
+    "repeat-1-nested-below-toc-below-deep",
+    "repeat-1-nested-visible-sibling"
+  ],
+  "tocTargets": 46,
+  "validAnchors": 27,
+  "plantedFailures": 2
+}
+heavy-guard: verdict=PASS exit=0 secs=4 min_mem_mb=13599 reason=-

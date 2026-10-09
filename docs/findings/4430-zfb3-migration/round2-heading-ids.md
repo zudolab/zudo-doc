@@ -23,12 +23,49 @@ PATH=/tmp/zudo-tools/node_modules/.bin:$PATH ZFB3_SOURCE_RESOLVE=1 pnpm --filter
 
 The focused existing TOC regressions passed **62 tests across nine files**. Durable logs beside the migration probe: `focused.log` and `toc-focused.log`. An earlier argument-forwarding attempt began a broader package suite and was terminated; `/tmp/zudo-headings4483-toc.log` is not successful verification evidence.
 
-## Manager built and packed proof handoff
+## Manager built and packed proof — PASS
 
-Prepared `/tmp/zudo4483-native-probe/project` is a new no-stub `zudoDoc` site with the same probe, authored links to all 27 native IDs, actual generated scaffold `scripts/check-links.js`, published 4.2.1 engine pins and a candidate-tarball dependency placeholder. It has no workspace links. The manager must substitute the freshly packed candidate, install/freeze dependencies, and run the build through the heavy guard. `/tmp/zudo4483-native-probe/verify.mjs` (durable copy: `verify-built-packed.mjs` beside the probe) then verifies:
+On 2026-10-09 the manager built and packed combined source head `05c35801` (heading integration commits `3f35` / `4337`, from worker commits `90fad516` / `e61fafca`). The package prepack contract passed. The actual candidate was `takazudo-zudo-doc-5.28.2.tgz`, SHA-256 **816d652b7c20b34412c9c03f368506168ef3b42e36de7fbb4847420b50102272**. The candidate version is still the migration checkout's 5.28.2; this is local candidate proof, not a release publication.
 
-- The complete ordered built h2–h6 IDs equal the native 27-ID oracle and the installed packed public helper.
-- The actual TOC contains the complete depth 2–4 sequence (23 unique targets); each resolves to an emitted element ID.
-- The strict scaffold checker accepts all 27 valid source anchors, including h5/h6, then separately rejects planted `genuinely-missing` and `code-block-target` anchors.
+The no-stub scratch site's frozen install and native build passed: **four pages built in 2.84 seconds**, guard `verdict=PASS exit=0`. Actual built output and the installed packed public helper matched the complete **27 ordered native IDs**. Both actual TOC views yielded **46 links / 23 unique depth 2–4 targets**, all resolving to emitted IDs. The strict scaffold checker accepted all 27 authored valid anchors (including h5/h6), inspected 112 built internal links / 28 IDs, and separately returned exit 1 for planted `genuinely-missing` and `code-block-target` anchors with `missing target id`. Planting was undone after each check.
 
-The built-output/packed proof is pending manager execution; the WASM and focused checks do not substitute for it. #4475 must recheck the final merged build. The permanent tests depend only on their adjacent fixtures; deleting `_temp-resource` in #4476 cannot break the suite. The reproduction script reads those fixtures and writes the oracle only with explicit `--capture`; ordinary reproduction is read-only. No archived headings, allowlists or compatibility shims changed.
+A subsequent cheap verifier run also asserted installed manifest names/4.2.1 engine versions and resolved real paths for `@takazudo/zudo-doc`, `@takazudo/zfb`, `@takazudo/zfb-md-wasm`, and `@takazudo/zfb-runtime`. Every path is inside `/tmp/zudo4483-native-probe/project/node_modules/.pnpm/`; none uses the workspace. The candidate manifest declares a local tarball, not a workspace dependency. `packed-provenance-verify.log` records those paths and the repeated passing assertions.
+
+Raw evidence under `_temp-resource/4430-zfb3-migration/4483-heading-ids/`: `manager-build-pack.log` (workspace/prepack/guard), `packed-install.log` (initial resolution), `packed-build-verify.log` (frozen install/build/strict proof/guard), and `packed-provenance-verify.log` (installed paths plus complete proof). These are actual runs, not planned commands.
+
+Manager commands used this environment:
+
+```sh
+export PATH=/tmp/zudo-tools/node_modules/.bin:$PATH
+export NODE_USE_ENV_PROXY=1 NODE_OPTIONS=--disable-warning=UNDICI-EHPA
+export npm_config_store_dir=/tmp/zudo-pnpm-store npm_config_cache=/tmp/zudo-npm-cache
+```
+
+From `/workspace/zudo-doc`:
+
+```sh
+bash "$HOME/.codex/scripts/heavy-guard.sh" -- bash -c 'set -e; pnpm build:workspace; pnpm --filter @takazudo/zudo-doc pack --pack-destination /tmp/zudo4483-native-probe; E2E_FIXTURES=smoke E2E_FORCE_REBUILD=1 bash e2e/setup-fixtures.sh' > /tmp/zudo4482-4483-build.log 2>&1
+```
+
+After setting the scratch manifest candidate dependency to `file:/tmp/zudo4483-native-probe/takazudo-zudo-doc-5.28.2.tgz`, the manager ran `pnpm install` from its project directory into `install.log`. Then, from `/tmp/zudo4483-native-probe/project`:
+
+```sh
+bash "$HOME/.codex/scripts/heavy-guard.sh" -- bash -c 'set -e; pnpm install --frozen-lockfile; pnpm build; node ../verify.mjs' > /tmp/zudo4483-native-probe/build-verify.log 2>&1
+```
+
+## Reproduction
+
+The archived `project-template/` retains the tested manifest, lockfile, config, stylesheet, and actual scaffold checker; its candidate path is normalized to `file:../candidate.tgz`. No tarball, installed dependencies, or build output is committed. `setup-packed-probe.mjs` takes an explicit candidate tarball and a **new** scratch destination, copies the single canonical permanent probe/oracle there, and generates the 27 authored links from that oracle. Thus there is no second maintained fixture source. For the recorded tarball the archived lock integrity applies; a different candidate needs one `pnpm install` to update integrity before freezing.
+
+From the repository root, with the environment above:
+
+```sh
+node _temp-resource/4430-zfb3-migration/4483-heading-ids/setup-packed-probe.mjs /path/to/candidate.tgz /tmp/heading-4483-reproduction
+pnpm --dir /tmp/heading-4483-reproduction/project install --frozen-lockfile
+bash "$HOME/.codex/scripts/heavy-guard.sh" -- pnpm --dir /tmp/heading-4483-reproduction/project build
+node _temp-resource/4430-zfb3-migration/4483-heading-ids/verify-built-packed.mjs /tmp/heading-4483-reproduction
+```
+
+The verifier accepts the assembled scratch root, reads its copied canonical oracle, asserts real installed package provenance, and repeats complete ordered built/packed parity, both TOC views and positive/negative strict checking. Assembly and syntax checks passed without another heavy build; the manager's original build evidence above remains the build proof.
+
+#4475 must recheck the final merged build. The permanent tests depend only on their adjacent fixtures; deleting `_temp-resource` in #4476 cannot break the suite. The native reproduction script reads those fixtures and writes the oracle only with explicit `--capture`; ordinary native reproduction is read-only. No archived headings, allowlists or compatibility shims changed.

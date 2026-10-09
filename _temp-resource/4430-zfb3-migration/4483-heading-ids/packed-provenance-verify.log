@@ -1,0 +1,90 @@
+{
+  "installedProvenance": [
+    {
+      "name": "@takazudo/zudo-doc",
+      "version": "5.28.2",
+      "realpath": "/tmp/zudo4483-native-probe/project/node_modules/.pnpm/@takazudo+zudo-doc@file+..+takazudo-zudo-doc-5.28.2.tgz_@takazudo+zfb-md-wasm@4.2.1_@ta_2ee6cd59c3d22396c8de680d11973319/node_modules/@takazudo/zudo-doc"
+    },
+    {
+      "name": "@takazudo/zfb",
+      "version": "4.2.1",
+      "realpath": "/tmp/zudo4483-native-probe/project/node_modules/.pnpm/@takazudo+zfb@4.2.1/node_modules/@takazudo/zfb"
+    },
+    {
+      "name": "@takazudo/zfb-md-wasm",
+      "version": "4.2.1",
+      "realpath": "/tmp/zudo4483-native-probe/project/node_modules/.pnpm/@takazudo+zfb-md-wasm@4.2.1/node_modules/@takazudo/zfb-md-wasm"
+    },
+    {
+      "name": "@takazudo/zfb-runtime",
+      "version": "4.2.1",
+      "realpath": "/tmp/zudo4483-native-probe/project/node_modules/.pnpm/@takazudo+zfb-runtime@4.2.1_@takazudo+zfb@4.2.1/node_modules/@takazudo/zfb-runtime"
+    }
+  ]
+}
+Checking links (base: /, trailingSlash: false)...
+Source scan: src/content/docs; dist/ pass enabled
+
+✓ No broken links, invalid anchors, or absolute path issues found
+
+Built HTML scan: 112 internal links and 28 ID attributes inspected.
+ 
+Checking links (base: /, trailingSlash: false)...
+Source scan: src/content/docs; dist/ pass enabled
+
+=== Invalid Anchors ===
+  src/content/docs/planted.mdx:5  /docs/probe/#genuinely-missing  (fragment: #genuinely-missing; missing target id)
+
+✗ Found 1 invalid anchor
+
+Built HTML scan: 112 internal links and 28 ID attributes inspected.
+
+❌ STRICT FAIL: 1 invalid anchor (after allowlist).
+ 
+Checking links (base: /, trailingSlash: false)...
+Source scan: src/content/docs; dist/ pass enabled
+
+=== Invalid Anchors ===
+  src/content/docs/planted.mdx:5  /docs/probe/#code-block-target  (fragment: #code-block-target; missing target id)
+
+✗ Found 1 invalid anchor
+
+Built HTML scan: 112 internal links and 28 ID attributes inspected.
+
+❌ STRICT FAIL: 1 invalid anchor (after allowlist).
+ 
+{
+  "version": "4.2.1",
+  "orderedIds": [
+    "1000ms",
+    "2mm",
+    "1000ms-1",
+    "1000ms-1-child-©-≂̸",
+    "1000ms-1-child-©-≂̸-deep-a",
+    "1000ms-1-child-©-≂̸-deep-a-deeper-b",
+    "1000ms-1-child-©-≂̸-sibling",
+    "after-inline-span",
+    "code-lt-and-ordinary",
+    "escaped-gt-and-literal",
+    "once-lt-and-65",
+    "unknown-notarealentity-and-incomplete-copy",
+    "unicode-日本語-→-café-🚀",
+    "numeric-a-b",
+    "invalid-�-�-�-�-�-�-�-�-�",
+    "valid-�",
+    "after-backtick-fence",
+    "after-tilde-fence",
+    "after-mixed-run",
+    "after-indented-code",
+    "repeat",
+    "repeat-nested",
+    "repeat-1",
+    "repeat-1-nested",
+    "repeat-1-nested-below-toc",
+    "repeat-1-nested-below-toc-below-deep",
+    "repeat-1-nested-visible-sibling"
+  ],
+  "tocTargets": 46,
+  "validAnchors": 27,
+  "plantedFailures": 2
+}
