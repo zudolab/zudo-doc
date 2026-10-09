@@ -32,7 +32,7 @@ const EXPECTED_NATIVE_PRE = "\nfirst line\nsecond line";
 const EXPECTED_MIGRATION_CODE =
   "\nconst migrationParityFirst = 1;\nconst migrationParitySecond = 2;";
 
-test("same-document navigation finishes, resets the sidebar filter, and keeps filtering active", async ({
+test("same-document navigation finishes, retains the sidebar filter, and keeps filtering active", async ({
   page,
 }) => {
   const documentRequests: string[] = [];
@@ -138,20 +138,25 @@ test("same-document navigation finishes, resets the sidebar filter, and keeps fi
   expect(after.documentToken).toBe(start.token);
   expect(after.asideToken).toBe(start.token);
   expect(after.treeToken).toBe(start.token);
-  // The reconstructed pinned zfb 2.22.1 control and zfb 4.2.1 both replace
-  // SidebarTree's controlled input when currentSlug changes, resetting its
-  // query. Treat that measured reset as the migration baseline; verify the
-  // replacement remains interactive below instead of inventing state retention.
+  // Native navigation still replaces SidebarTree's controlled input. The
+  // accepted 06R contract (#4500) retains the query within the same sidebar
+  // context, so the replacement must restore it and remain interactive.
   expect(after.inputPresent).toBe(true);
   expect(after.inputToken).toBeUndefined();
-  expect(after.filterValue).toBe("");
+  expect(after.filterValue).toBe("Code Blocks Test");
   expect(after.activeRouteHref?.replace(/\/$/, "")).toBe(GUIDES_PAGE_2);
   expect(after.activeRouteAriaCurrent).toBe("page");
   expect(after.transition).toMatchObject({ calls: 1, status: "fulfilled" });
   await expect(guidesToggle).toHaveAttribute("aria-label", "Collapse Guides");
-  await expect(filter).toHaveValue("");
+  await expect(filter).toHaveValue("Code Blocks Test");
   const currentRouteLink = page.locator('#desktop-sidebar a[href="/docs/guides/code-blocks-test"]');
   const priorRouteLink = page.locator('#desktop-sidebar a[href="/docs/guides/page-1"]');
+  await expect(currentRouteLink).toBeVisible();
+  await expect(currentRouteLink).toHaveAttribute("aria-current", "page");
+  await expect(priorRouteLink).toBeHidden();
+
+  await filter.fill("");
+  await expect(filter).toHaveValue("");
   await expect(currentRouteLink).toBeVisible();
   await expect(priorRouteLink).toBeVisible();
 
