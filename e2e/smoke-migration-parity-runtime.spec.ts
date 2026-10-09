@@ -269,8 +269,11 @@ test("AI chat ignores Enter during IME composition, then submits normally", asyn
     element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
   });
   await input.press("Enter");
-  await expect(dialog.getByRole("log", { name: "Chat messages" }).locator(".ai-chat-md p"))
-    .toHaveText("IME submission completed");
+  const assistantResponse = dialog
+    .getByRole("log", { name: "Chat messages" })
+    .locator(".ai-chat-md p");
+  await expect(assistantResponse).toBeVisible();
+  await expect(assistantResponse).toHaveText("IME submission completed");
   expect(submissions).toBe(1);
 });
 
