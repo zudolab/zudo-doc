@@ -99,10 +99,11 @@ for (const platform of PLATFORMS) {
       element.remove();
       document.body.append(element);
     });
-    await expect(results.locator("article a").first()).toBeVisible();
+    await expect(results.locator("article a")).toHaveCount(1);
     await page.keyboard.press(platform.openKey);
     await expect(dialog).toBeVisible();
     await expect(input).toHaveValue("Getting Started");
+    await expect(results.locator("article a").first()).toBeVisible();
     await input.fill("");
     await expect(placeholder).toBeVisible();
     await expect(shortcut).toHaveText(platform.shortcut);
