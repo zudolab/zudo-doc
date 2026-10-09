@@ -346,17 +346,18 @@ export function buildSearchWidgetScript() {
       this._searchUnavailable = this.dataset.searchUnavailable || "Search unavailable";
       this._loadingIndex = this.dataset.loadingIndex || "Loading search index\\u2026";
       this._noResults = this.dataset.noResults || "No results found.";
-      // Snapshot the placeholder HTML before any search renders overwrite it.
-      this._placeholderHtml = this._results ? this._results.innerHTML : "";
-
       // Platform keyboard-shortcut label — injected into [data-kbd-shortcut]
       var nav = navigator;
-      var isMac = /Mac|iPhone|iPad|iPod/.test(
+      var isMac = /Mac|iPhone|iPad|iPod/i.test(
         (nav.userAgentData && nav.userAgentData.platform) || nav.userAgent
       );
       this._shortcut = isMac ? "\\u2318K" : "Ctrl+K";
       var kbdEl = this.querySelector("[data-kbd-shortcut]");
       if (kbdEl) kbdEl.textContent = this._shortcut;
+
+      // Snapshot the placeholder after its platform shortcut is populated so
+      // every empty-query restore keeps the same label shown on first open.
+      this._placeholderHtml = this._results ? this._results.innerHTML : "";
 
       // Wire open/close handlers
       var self = this;
