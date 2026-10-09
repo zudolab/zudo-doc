@@ -3079,9 +3079,10 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
     expect(css).toContain("--text-scale-md: 1.2rem");
   });
 
-  it("group 5: the --color-*: initial tight-token guardrail is effective (no default Tailwind color utilities leak in)", () => {
+  it("group 5: the semantic token palette stays closed (no default color utilities leak in)", () => {
     const css = readBuiltCss(fixtureDir);
-    // Tailwind's built-in red-500 swatch must NOT survive the guardrail —
+    // zudo-wind uses the package's explicit semantic color token map. The
+    // former framework's built-in red-500 swatch must NOT leak into output —
     // neither as a --color-red-500 custom property nor a .bg-red-500 utility.
     expect(css).not.toContain("--color-red-500");
     expect(css).not.toContain(".bg-red-500");
