@@ -6,6 +6,8 @@ tags:
   - design-system
 ---
 
+<span id="the-problem" />
+
 ## The Rule
 
 The component is the UI abstraction. Compose zudo-react `.tsx` components with the supported zudo-wind utilities and semantic design tokens. Use props for variants. For a feature the utility compiler does not support, add narrowly scoped authored CSS with a `zd-` name and register its authored-class coverage; do not invent a utility spelling and assume it emits CSS.
@@ -73,6 +75,8 @@ Compose small components. For changing lists use keyed `For`; ordinary array map
 ## Using zudo-doc's Design Tokens
 
 Use `text-fg`, `bg-surface`, `p-hsp-md`, and `text-small`. Defining a CSS custom property changes an existing token value. Adding a new utility name also requires `wind.tokens` configuration. See [Design System](./design-system.mdx) and [Color](./color.mdx).
+
+<span id="in-zudo-doc-anti-pattern" />
 
 ## When Custom CSS Is Acceptable
 

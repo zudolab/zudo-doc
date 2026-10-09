@@ -291,6 +291,8 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   `tagVocabulary`; everything callable is an importable package subpath; package
   routes use `@takazudo/zfb/content`, not the host `zfb/content` tsconfig alias).
 
+<span id="shipped-css-artifacts-six-static-one-compiled" />
+
 ## Shipped CSS artifacts and Wind manifest
 
 The current migration target is published zfb family **4.2.1**, peers **^4.2.1**.
@@ -530,6 +532,8 @@ specifier end-to-end.
    attribute on the persisted root is a blanket opt-out for every nested
    island, and an opted-out island receives neither a props write nor a forced remount
    flag.
+
+<span id="shipped-ambient-type-shims-tsconfig-base-2656-minimal-scaffold-epic-2651-gotcha-—-preact-compat-paths-stay-in-the-project-tsconfig-not-the-base" />
 
 ### Owned JSX and project-local aliases
 

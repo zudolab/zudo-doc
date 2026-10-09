@@ -70,6 +70,8 @@ Generated routes consume `virtual:zudo-doc-chrome-bindings`. Omitted slots retai
 
 The extras map is applied after the built-in MDX map. It can replace admonitions (`Note`, `Tip`, `Info`, `Warning`, `Danger`, `Important`, `Caution`), helpers (`Details`, `HtmlPreview`, `CodeGroup`, `Tabs`, `TabItem`, `Island`, `Asset`, `AssetCode`), and HTML overrides such as `p` or `table`. Preserve the authored syntax and prop contract. Prefer a new named component when a global override is unnecessary. See [Asset Viewer](./asset-viewer.mdx) for manifest-backed assets.
 
+<span id="classname-not-class" />
+
 ## JSX and strict props
 
 The shared tsconfig uses `jsxImportSource: "@takazudo/zfb/zudo-react"`. Import `Child`, `Component`, and `Description` from that public entry; import the `JSX` namespace from `@takazudo/zfb/zudo-react/jsx-runtime`. Use `class`, not `className`. Native props use explicit DOM spellings and units: lengths in a style object need strings such as `"12px"`, rather than unitless numbers. Native `<ol start={3}>` and leading newlines in `<pre>` use the current native contract.
