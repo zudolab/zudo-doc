@@ -132,10 +132,10 @@ function PaletteIcon({ className }: { className?: string }): Child {
 }
 
 const CONTROL_BUTTON_CLASS =
-  "flex items-center gap-hsp-xs rounded border border-muted bg-bg px-hsp-md py-hsp-2xs text-caption text-fg transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+  "flex items-center gap-hsp-xs rounded border border-muted bg-bg px-hsp-md py-hsp-2xs text-caption text-fg transition-colors duration-0 hover:border-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
 
 const ICON_BUTTON_CLASS =
-  "flex items-center justify-center rounded p-hsp-2xs text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+  "flex items-center justify-center rounded p-hsp-2xs text-muted transition-colors duration-0 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
 
 /**
  * The bottom-right theme-pack switcher flyout. Mounted (settings-gated on
@@ -279,7 +279,7 @@ export function ThemePackSwitcher({
           if (pending.value) return;
           open.value = !open.value;
         }}
-        class="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        class="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors duration-0 hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       >
         <PaletteIcon className="h-icon-md w-icon-md" />
       </button>

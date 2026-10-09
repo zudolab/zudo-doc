@@ -237,7 +237,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): Child {
     <div class="relative" data-version-switcher {...rewireAttrs}>
       <button
         type="button"
-        class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"
+        class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors duration-0 cursor-pointer whitespace-nowrap"
         aria-expanded="false"
         aria-controls={menuId}
         data-version-toggle

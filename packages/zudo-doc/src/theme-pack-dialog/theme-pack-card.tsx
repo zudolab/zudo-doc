@@ -48,7 +48,7 @@ export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardP
       on:click={onSelect}
       aria-pressed={selected}
       aria-label={`Apply ${meta.name} theme pack — ${meta.mode === "dark" ? "Dark" : "Light"}. ${meta.description}`}
-      class={computed(() => `flex flex-col gap-vsp-2xs rounded-lg border p-hsp-sm text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${selected.value ? "border-accent zd-theme-pack-active-ring" : "border-muted hover:border-accent"}`)}
+      class={computed(() => `flex flex-col gap-vsp-2xs rounded-lg border p-hsp-sm text-left transition-colors duration-0 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${selected.value ? "border-accent zd-theme-pack-active-ring" : "border-muted hover:border-accent"}`)}
     >
       <div
         aria-hidden="true"

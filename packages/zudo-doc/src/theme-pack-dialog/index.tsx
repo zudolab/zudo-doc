@@ -93,7 +93,7 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
             type="button"
             on:click={() => dialogRef.current?.close()}
             aria-label="Close"
-            class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+            class="flex items-center justify-center text-muted transition-colors duration-0 hover:text-fg"
           >
             <Close class="h-icon-sm w-icon-sm" />
           </button>

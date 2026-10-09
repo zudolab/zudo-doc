@@ -115,7 +115,7 @@ export function LanguageSwitcher({
       <button
         type="button"
         id={toggleId}
-        class="flex max-w-[16rem] cursor-pointer items-center gap-hsp-2xs whitespace-nowrap rounded border border-muted px-hsp-sm py-vsp-3xs text-small text-muted transition-colors hover:border-accent hover:text-accent focus-visible:border-accent focus-visible:text-accent"
+        class="flex max-w-[16rem] cursor-pointer items-center gap-hsp-2xs whitespace-nowrap rounded border border-muted px-hsp-sm py-vsp-3xs text-small text-muted transition-colors duration-0 hover:border-accent hover:text-accent focus-visible:border-accent focus-visible:text-accent"
         aria-label={accessibleLabel}
         aria-controls={menuId}
         aria-expanded="false"

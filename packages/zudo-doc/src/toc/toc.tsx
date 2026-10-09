@@ -79,7 +79,7 @@ export function Toc({ headings, title = "On this page" }: TocProps): Child {
             const isActive = computed(() => heading.slug === activeId.value);
             const linkClass = computed(() =>
               cx(
-                "block py-vsp-2xs text-small leading-snug transition-colors",
+                "block py-vsp-2xs text-small leading-snug transition-colors duration-0",
                 isActive.value
                   ? "bg-fg text-bg font-medium"
                   : "text-muted hover:underline focus:underline",

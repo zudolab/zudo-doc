@@ -25,7 +25,7 @@ import { TabItem } from "../tab-item/tab-item.js";
 import type { TabItemProps } from "../tab-item/tab-item.js";
 
 const BASE_BTN_CLASS =
-  "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors";
+  "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors duration-0";
 /**
  * Wave 11 (zudolab/zudo-doc#1355): the default tab's button now ships
  * with active styles and `aria-selected="true"` straight from SSR — see

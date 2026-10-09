@@ -517,7 +517,7 @@ function renderNavItem(
           aria-haspopup="true"
           aria-expanded="false"
           class={[
-            "flex items-center gap-x-hsp-xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
+            "flex items-center gap-x-hsp-xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors duration-0",
             isActive
               ? NAV_TOP_ACTIVE.join(" ")
               : NAV_TOP_INACTIVE.join(" "),
@@ -579,7 +579,7 @@ function renderNavItem(
       data-nav-category={item.categoryMatch}
       data-nav-item
       class={[
-        "px-hsp-md py-vsp-2xs text-small font-medium transition-colors shrink-0",
+        "px-hsp-md py-vsp-2xs text-small font-medium transition-colors duration-0 shrink-0",
         isActive
           ? NAV_TOP_ACTIVE.join(" ")
           : NAV_TOP_INACTIVE.join(" "),
@@ -645,7 +645,7 @@ function TriggerButton({
       key={`right-${index}`}
       id={id}
       type="button"
-      class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+      class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors duration-0 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       aria-label={ariaLabel}
       {...inlineOnclick}
     >
@@ -753,7 +753,7 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         href={ctx.githubRepoUrl}
         target="_blank"
         rel="noopener noreferrer"
-        class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors duration-0 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
         aria-label={ctx.githubLabel}
         title={ctx.githubLabel}
       >

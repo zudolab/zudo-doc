@@ -252,7 +252,7 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
           <button
             type="button"
             on:click={() => dialogRef.current?.close()}
-            class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+            class="flex items-center justify-center text-muted transition-colors duration-0 hover:text-fg"
             aria-label="Close"
           >
             <svg

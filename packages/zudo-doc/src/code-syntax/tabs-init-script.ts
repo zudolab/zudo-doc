@@ -23,7 +23,7 @@
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 export const TABS_INIT_SCRIPT = `(function () {
-  var BASE_BTN = "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors";
+  var BASE_BTN = "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors duration-0";
   var ACTIVE_BTN = BASE_BTN + " text-accent border-accent";
   var INACTIVE_BTN = BASE_BTN + " text-muted border-transparent hover:text-fg";
 

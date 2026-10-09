@@ -607,7 +607,7 @@ export function DocHistory({
           type="button"
           on:click={handleOpen}
           data-doc-history-trigger=""
-          class="flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors"
+          class="flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors duration-0"
           aria-label="View document history"
         >
           <History class="h-icon-md w-icon-md" />
