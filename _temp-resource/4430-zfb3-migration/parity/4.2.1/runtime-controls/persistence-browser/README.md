@@ -84,3 +84,9 @@ below viewport at scrollY=0 while the native persisted case activates. Direct
 and nonpersisted controls stay deferred. An isolated registry consumer repeats
 2 passes/1 failure; source/lock/report are in native-published-repro. No strict
 assertion was weakened and the upstream disposition remains open.
+
+The manager filed the measured native discrepancy as
+[upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097).
+The report is a release-verification blocker pending published resolution or
+explicit contract disposition; no upstream implementation or consumer shim was
+authorized or applied.

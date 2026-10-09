@@ -28,3 +28,9 @@ The persisted case retains expected zero activations before explicit scroll;
 the isolated registry consumer also records one activation below the viewport.
 Direct-load and fresh nonpersisted changed-props controls pass. Both probe ports
 44293/44294 were free after the manager runs. See run.log and report.json. Do not describe a failing expected-zero case as a passing gate.
+
+The manager filed the measured native discrepancy as
+[upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097).
+The report is a release-verification blocker pending published resolution or
+explicit contract disposition; no upstream implementation or consumer shim was
+authorized or applied.
