@@ -195,7 +195,7 @@ function AssetDetailsToggle({ labels }: { labels: AssetDetailsToggleLabels }): C
       aria-controls={ASSET_DETAILS_RAIL_ID}
       aria-expanded="true"
       aria-label={labels.collapse}
-      class="zd-asset-details-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 text-muted cursor-pointer transition-colors duration-200 ease-in-out hover:text-fg disabled:cursor-default disabled:opacity-50"
+      class="zd-asset-details-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 text-muted cursor-pointer transition-colors duration-200 hover:text-fg disabled:cursor-default disabled:opacity-50"
       style="border-top-left-radius:var(--radius-DEFAULT);border-bottom-left-radius:var(--radius-DEFAULT)"
     >
       <span data-zd-asset-details-chevron="collapse"><ChevronRight class="h-icon-sm w-icon-sm" /></span>
