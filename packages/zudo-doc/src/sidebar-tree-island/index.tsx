@@ -781,7 +781,7 @@ function NodeList({
 
 function subtreeContainsSlug(node: SidebarNavNode, slug?: string): boolean {
   return (
-    !!slug &&
+    slug !== undefined &&
     (node.slug === slug ||
       node.children.some((child) => subtreeContainsSlug(child, slug)))
   );
@@ -808,7 +808,7 @@ function CategoryNode({
   scope.effect(() => {
     const slug = currentSlug.value;
     const revision = scopeControls?.reveal.value;
-    if (slug && subtreeContainsSlug(node.value, slug)) open.value = true;
+    if (slug !== undefined && subtreeContainsSlug(node.value, slug)) open.value = true;
     void revision;
   });
   scope.effect(() => {

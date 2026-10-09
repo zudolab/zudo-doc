@@ -305,3 +305,31 @@ it("preserves an off-article branch across same-page refresh and a second deskto
     }
   } finally { second.dispose(); }
 });
+
+
+it("widens a focused branch and reveals the empty-slug root page on native navigation", async () => {
+  const rootGroup: SidebarNavNode = {
+    slug: "root-group", label: "Root group", position: 0, hasPage: false, collapsed: true,
+    children: [{ slug: "", label: "Root index", position: 0, hasPage: true, href: "/docs/", children: [] }],
+  };
+  const data = buildSidebarNavigation([], "en", undefined, undefined, {}, () => [rootGroup, ...NODES], []);
+  const root = await mount({ ...data, currentSlug: "guides/first" });
+  click(root.querySelector('button[aria-label="Show only this branch: Guides"]'));
+  await flushAll();
+  expect(root.querySelector('a[href="/docs/"]')).toBeNull();
+  document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/";
+  document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+  await flushAll();
+  expect(root.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe("/docs/");
+  expect(root.querySelector('button[aria-label="Collapse Root group"]')).not.toBeNull();
+});
+
+it("opens the root-index active path even when its canonical slug is empty", async () => {
+  const root = await mount({
+    nodes: [{ slug: "root-group", label: "Root group", position: 0, hasPage: false, collapsed: true,
+      children: [{ slug: "", label: "Root index", position: 0, hasPage: true, href: "/docs/", children: [] }],
+    }], currentSlug: "",
+  });
+  expect(root.querySelector('button[aria-label="Collapse Root group"]')).not.toBeNull();
+  expect(root.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe("/docs/");
+});

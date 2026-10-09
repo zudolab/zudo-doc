@@ -97,3 +97,11 @@ it("rejects invalid explicit paths rather than fabricating an enclosing group", 
   expect(() => build(config)).toThrow("Invalid sidebar initialPath");
   expect(() => buildSidebarForSection([], "en", "utility", undefined, config, () => tree, [])).toThrow("Invalid sidebar initialPath");
 });
+
+
+it("widens to include the canonical root-index page with an empty slug", () => {
+  const { nodes, navigation } = buildSidebarNavigation([], "en", undefined, undefined, {}, () => [leaf(""), ...tree], []);
+  const selected = nodes[1]!.occurrenceId!;
+  expect(reconcileSidebarScope(navigation, nodes, selected, undefined)).toBe(selected);
+  expect(reconcileSidebarScope(navigation, nodes, selected, "")).toBe(SIDEBAR_FOREST_SCOPE);
+});

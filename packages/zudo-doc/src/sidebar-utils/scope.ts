@@ -32,7 +32,7 @@ export function broaderSidebarScope(context: SidebarNavigationContext, baseline:
 
 /** On navigation, widen only to the nearest common editorial ancestor. */
 export function reconcileSidebarScope(context: SidebarNavigationContext, baseline: SidebarNavNode[], selected: string | null, slug?: string): string | null {
-  if (selected === null || !slug) return selected;
+  if (selected === null || slug === undefined) return selected;
   const index = indexSidebarOccurrences(context.roots);
   if (selected !== SIDEBAR_FOREST_SCOPE && !index.has(selected)) return null;
   const contains = (nodes: SidebarNavNode[]): boolean => nodes.some((node) => node.slug === slug || contains(node.children));
