@@ -1,9 +1,8 @@
 name: CSS-shape smoke gate
 description: >
-  Defends against #1395 (Sub-4 host-side workaround: @theme reset).
-  Fetches the deployed CSS and asserts three structural invariants —
-  byte size, @media count, and leaked Tailwind default color tokens —
-  without class-name greps that are fragile against minification churn.
+  Checks coherent deployed CSS against measured native Wind output: byte size,
+  media-rule coverage, owned reset/token layers and responsive package utilities.
+  Rejects retired Tailwind directives and known unsupported palette utilities.
 
 inputs:
   deploy-url:
