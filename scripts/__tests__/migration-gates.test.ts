@@ -139,4 +139,20 @@ describe("#4470 A2 workflow selection", () => {
     }
     expect(matcher.test("A2 islands-on: unrelated describe")).toBe(false);
   });
+  it("captures outside the package and uploads only bounded public diagnostics even on failure", () => {
+    const suite = workflow.match(/- name: Run A2 no-stub parity slow-suite subset[\s\S]*?(?=      - name:)/)?.[0];
+    expect(suite).toContain("ZUDO_A2_CAPTURE_DIR: ${{ runner.temp }}/zudo-a2-route-parity");
+    const upload = workflow.match(/- name: Upload A2 fixture diagnostics[\s\S]*?(?=      - name:)/)?.[0];
+    expect(upload).toContain("if: always() && steps.detect-emitters.outputs.run_parity == 'true'");
+    expect(upload).toContain("uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f");
+    const paths = upload?.match(/          path: \|\n([\s\S]*?)(?=          if-no-files-found:)/)?.[1]
+      .trim().split("\n").map((path) => path.trim());
+    const files = ["404.html", "docs--getting-started--index.html", "docs--getting-started--coverage--index.html"];
+    expect(paths).toEqual([
+      ...files.flatMap((file) => [file, file + ".normalized.html"]), "manifest.json", "build.log",
+    ].map((file) => "${{ runner.temp }}/zudo-a2-route-parity/" + file));
+    expect(upload).toContain("retention-days: 7");
+    expect(upload).not.toContain("continue-on-error");
+    expect(suite).not.toContain("continue-on-error");
+  });
 });

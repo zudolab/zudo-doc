@@ -797,12 +797,35 @@ jobs:
         id: parity
         if: steps.detect-emitters.outputs.run_parity == 'true'
         working-directory: packages/zudo-doc
+        env:
+          # Keep captured public fixture bytes outside the linked package so
+          # diagnostics do not feed back into its native source digest.
+          ZUDO_A2_CAPTURE_DIR: ${{ runner.temp }}/zudo-a2-route-parity
         # Block scalar (not inline `run: <value>`) — the --testNamePattern
         # value contains unquoted-looking `: ` sequences ("A2 no-stub: ...",
         # "setup: ...") that a YAML plain scalar parses as a nested mapping
         # key. Indentation-scoped block scalars have no such ambiguity.
         run: |
           pnpm exec vitest run --config vitest.slow.config.ts --testNamePattern "A2 no-stub: injected routes render correct HTML"
+
+      - name: Upload A2 fixture diagnostics
+        if: always() && steps.detect-emitters.outputs.run_parity == 'true'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: a2-route-parity-diagnostics
+          # Explicit public fixture outputs only; never upload a fixture tree,
+          # workspace, environment dump, or dependency directory.
+          path: |
+            ${{ runner.temp }}/zudo-a2-route-parity/404.html
+            ${{ runner.temp }}/zudo-a2-route-parity/404.html.normalized.html
+            ${{ runner.temp }}/zudo-a2-route-parity/docs--getting-started--index.html
+            ${{ runner.temp }}/zudo-a2-route-parity/docs--getting-started--index.html.normalized.html
+            ${{ runner.temp }}/zudo-a2-route-parity/docs--getting-started--coverage--index.html
+            ${{ runner.temp }}/zudo-a2-route-parity/docs--getting-started--coverage--index.html.normalized.html
+            ${{ runner.temp }}/zudo-a2-route-parity/manifest.json
+            ${{ runner.temp }}/zudo-a2-route-parity/build.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Re-baseline guidance
         # Scoped to the parity step's own outcome (not bare `if: failure()`,
