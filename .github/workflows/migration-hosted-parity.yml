@@ -1,0 +1,139 @@
+# Temporary #4468 baseline/current measurement on existing migration PR4477.
+# This is additive evidence: differences and missing states remain failures.
+# No deployment/publishing; remove only after evidence preservation in #4476.
+name: Migration Hosted Parity
+on:
+  push:
+    branches: ['base/zfb3-migration']
+permissions:
+  contents: read
+concurrency:
+  group: migration-hosted-parity
+  cancel-in-progress: true
+jobs:
+  baseline-current:
+    name: Migration baseline/current browser measurement
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-node-pnpm
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+      - name: Current exact provenance and frozen install
+        env:
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/migration-parity"
+          test "$(git rev-parse HEAD)" = "$CURRENT_SHA"
+          git rev-parse HEAD > "$RUNNER_TEMP/migration-parity/current-head.txt"
+          sha256sum pnpm-lock.yaml scripts/zfb3-parity/browser.mjs scripts/zfb3-parity/compare-browser.mjs > "$RUNNER_TEMP/migration-parity/current-inputs.sha256"
+          node --version > "$RUNNER_TEMP/migration-parity/toolchain.txt"
+          pnpm --version >> "$RUNNER_TEMP/migration-parity/toolchain.txt"
+          pnpm install --frozen-lockfile 2>&1 | tee "$RUNNER_TEMP/migration-parity/current-install.log"
+          pnpm list --depth 0 --json > "$RUNNER_TEMP/migration-parity/current-dependencies.json"
+          pnpm exec zfb --version > "$RUNNER_TEMP/migration-parity/current-native.txt"
+      - name: Hosted browser provenance
+        run: |
+          set -euo pipefail
+          pnpm exec playwright --version > "$RUNNER_TEMP/migration-parity/playwright-version.txt"
+          node --input-type=module > "$RUNNER_TEMP/migration-parity/chromium-version.txt" <<'NODE'
+          import { chromium } from '@playwright/test';
+          import { execFileSync } from 'node:child_process';
+          console.log(execFileSync(chromium.executablePath(), ['--version'], { encoding: 'utf8' }).trim());
+          NODE
+      - name: Current CI-faithful build
+        id: current-build
+        run: |
+          set -euo pipefail
+          bash scripts/parity-build.sh 2>&1 | tee "$RUNNER_TEMP/migration-parity/current-build.log"
+          git diff --stat > "$RUNNER_TEMP/migration-parity/current-post-build-diff.txt"
+      - name: Baseline exact checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: 337b9f110793dccb4759bddd5273eab38cd9d2f0
+          path: _parity-baseline
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Baseline frozen install and CI-faithful build
+        id: baseline-build
+        working-directory: _parity-baseline
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 337b9f110793dccb4759bddd5273eab38cd9d2f0
+          git rev-parse HEAD > "$RUNNER_TEMP/migration-parity/baseline-head.txt"
+          sha256sum pnpm-lock.yaml scripts/parity-build.sh > "$RUNNER_TEMP/migration-parity/baseline-inputs.sha256"
+          pnpm install --frozen-lockfile 2>&1 | tee "$RUNNER_TEMP/migration-parity/baseline-install.log"
+          pnpm list --depth 0 --json > "$RUNNER_TEMP/migration-parity/baseline-dependencies.json"
+          pnpm exec zfb --version > "$RUNNER_TEMP/migration-parity/baseline-native.txt"
+          bash scripts/parity-build.sh 2>&1 | tee "$RUNNER_TEMP/migration-parity/baseline-build.log"
+          git diff --stat > "$RUNNER_TEMP/migration-parity/baseline-post-build-diff.txt"
+      - name: Same harness, independent distributions
+        id: captures
+        run: |
+          set -euo pipefail
+          failed=0
+          for variant in baseline current; do
+            if [[ "$variant" == baseline ]]; then input_dist="$GITHUB_WORKSPACE/_parity-baseline/dist"; else input_dist="$GITHUB_WORKSPACE/dist"; fi
+            if node scripts/zfb3-parity/browser.mjs --dist "$input_dist" --output "$RUNNER_TEMP/migration-parity/$variant" > "$RUNNER_TEMP/migration-parity/$variant-capture.log" 2>&1; then
+              capture_rc=0
+            else
+              capture_rc=$?
+              failed=1
+            fi
+            printf '%s\n' "$capture_rc" > "$RUNNER_TEMP/migration-parity/$variant-capture.exit"
+            cat "$RUNNER_TEMP/migration-parity/$variant-capture.log"
+          done
+          test "$failed" = 0
+      - name: Required state inventory
+        if: always() && steps.current-build.outcome == 'success' && steps.baseline-build.outcome == 'success'
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, stat } from 'node:fs/promises';
+          import assert from 'node:assert/strict';
+          const routes = ['/', '/docs/getting-started/', '/docs/guides/', '/docs/components/html-preview/', '/docs/components/mermaid-diagrams/', '/docs/components/math-equations/', '/docs/tags/', '/docs/versions/', '/ja/docs/getting-started/', '/v/1.0/docs/getting-started/', '/does-not-exist/', '/docs/reference/design-token-panel/'];
+          const key = (route, viewport, scheme, state) => JSON.stringify([route, viewport, scheme, state]);
+          const required = [];
+          for (const route of routes) for (const width of [375,1280]) for (const scheme of ['light','dark']) required.push(key(route,width,scheme,'default'));
+          for (const width of [639,640,1023,1024,1279,1280]) required.push(key('/docs/getting-started/',width,'light','breakpoint'));
+          for (const state of ['loading-spinner','footer-hover','footer-focus','group-hover','doc-history','ai-chat']) required.push(key('/docs/getting-started/',1280,'light',state));
+          required.push(key('/docs/getting-started/',375,'light','mobile-drawer'));
+          required.push(key('/docs/markdown-features/image-enlarge/',1280,'light','image-enlarge'));
+          required.push(key('/docs/components/mermaid-diagrams/',1280,'light','mermaid-enlarge'));
+          for (const state of ['theme-pack-dialog','theme-pack-selected-card']) required.push(key('/',1280,'light',state));
+          assert.equal(required.length,65);
+          for (const variant of ['baseline','current']) {
+            const report = JSON.parse(await readFile(`${process.env.RUNNER_TEMP}/migration-parity/${variant}/browser-report.json`,'utf8'));
+            assert.deepEqual(report.errors ?? [],[],`${variant} capture errors`);
+            const keys = report.states.map(s=>key(s.route,s.viewport,s.scheme,s.state));
+            assert.equal(new Set(keys).size,keys.length,`${variant} duplicate state keys`);
+            assert.deepEqual([...keys].sort(),[...required].sort(),`${variant} missing/unexpected states`);
+            for (const s of report.states) {
+              assert.ok(s.screenshot,`${variant} ${s.state} screenshot missing`);
+              assert.ok((await stat(`${process.env.RUNNER_TEMP}/migration-parity/${variant}/${s.screenshot}`)).isFile(),`${variant} screenshot file absent`);
+            }
+          }
+          NODE
+      - name: Compare without accepting differences
+        if: always() && steps.current-build.outcome == 'success' && steps.baseline-build.outcome == 'success'
+        run: |
+          node scripts/zfb3-parity/compare-browser.mjs --baseline "$RUNNER_TEMP/migration-parity/baseline/browser-report.json" --current "$RUNNER_TEMP/migration-parity/current/browser-report.json" --output "$RUNNER_TEMP/migration-parity/browser-compare"
+      - name: Upload evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: migration-parity-${{ github.sha }}
+          path: ${{ runner.temp }}/migration-parity/
+          retention-days: 7
+          if-no-files-found: error
