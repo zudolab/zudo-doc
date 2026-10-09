@@ -27,10 +27,13 @@ reload. No browser expectation was relaxed from an observed result.
 ## Recreate and run
 
 Copy this directory's contents into `/tmp/zudo421-persistence-browser`, preserving
-project/src and project/pages. Do not copy a previous dist or generated .zfb.
+project/src and project/pages. The archived browser source is
+`persistence.spec.ts.txt` because repository browser specs belong in e2e; restore
+its execution filename before running: Do not copy a previous dist or generated .zfb.
 Create dependency links (not tracked):
 
 ```sh
+cp /tmp/zudo421-persistence-browser/persistence.spec.ts.txt /tmp/zudo421-persistence-browser/persistence.spec.ts
 ln -s /workspace/zudo-doc/node_modules /tmp/zudo421-persistence-browser/node_modules
 ln -s /workspace/zudo-doc/node_modules /tmp/zudo421-persistence-browser/project/node_modules
 chmod +x /tmp/zudo421-persistence-browser/run.sh
