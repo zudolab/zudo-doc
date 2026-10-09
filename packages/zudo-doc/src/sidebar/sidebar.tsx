@@ -24,6 +24,7 @@ export function Sidebar(props: SidebarProps): Child {
     treeComponent: TreeComponent,
     children,
     nodes,
+    navigation,
     currentSlug,
     rootMenuItems,
     backToMenuLabel,
@@ -37,6 +38,7 @@ export function Sidebar(props: SidebarProps): Child {
     return (
       <TreeComponent
         nodes={nodes}
+        navigation={navigation}
         currentSlug={currentSlug}
         rootMenuItems={rootMenuItems}
         backToMenuLabel={backToMenuLabel}

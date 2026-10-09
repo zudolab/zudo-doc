@@ -11,6 +11,7 @@ import {
 } from "@takazudo/zfb/zudo-react";
 import type {
   SidebarNavNode,
+  SidebarNavigationContext,
   SidebarRootMenuItem,
   SidebarLocaleLink,
 } from "../sidebar/types.js";
@@ -26,6 +27,7 @@ import { ChevronRight, ChevronLeft, Search } from "../icons/index.js";
 import { ThemeToggle, type ThemeToggleLabels } from "../theme-toggle/index.js";
 import { smartBreakToHtml } from "../smart-break/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { useSidebarScope, type ScopeControls } from "./scope-state.js";
 import { filterTree } from "../sidebar-filter/index.js";
 import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
 import {
@@ -188,6 +190,7 @@ function RootMenuItemEntry({
 
 export interface SidebarTreeProps {
   nodes: SidebarNavNode[];
+  navigation?: SidebarNavigationContext;
   currentSlug?: string;
   /** Route override used on activation before dataset and location. */
   currentPath?: string;
@@ -256,6 +259,7 @@ function SidebarFooter({
 
 export function SidebarTree({
   nodes,
+  navigation,
   currentSlug,
   currentPath,
   rootMenuItems,
@@ -268,8 +272,12 @@ export function SidebarTree({
   dateFormats,
 }: SidebarTreeProps) {
   const scope = getScope();
-  const activeSlug = useActiveSlug(nodes, currentSlug, currentPath);
+  const activeSlug = useActiveSlug(navigation?.roots ?? nodes, currentSlug, currentPath);
   const query = signal("");
+  const { selected, selectedNodes, broader, labels, hint, changeScope, save, navRef, scopeControls } = useSidebarScope({
+    nodes, navigation, activeSlug, query,
+    locale: localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en",
+  });
   const showingRootMenu = signal(false);
   const filterRef: Ref<HTMLInputElement> = { current: null };
   const filterPlaceholder = signal("Filter...");
@@ -299,16 +307,7 @@ export function SidebarTree({
     return () => document.removeEventListener("keydown", handleKeyDown);
   });
   const filteredNodes = computed(() =>
-    query.value ? filterTree(nodes, query.value) : nodes,
-  );
-  const noteTrayRoot =
-    nodes.length === 1 && nodes[0]?.shape === "note-tray"
-      ? nodes[0]
-      : undefined;
-  const filteredNoteTrayRoot = computed(() =>
-    noteTrayRoot
-      ? filteredNodes.value.find((node) => node.slug === noteTrayRoot.slug)
-      : undefined,
+    query.value ? filterTree(selectedNodes.value, query.value) : selectedNodes.value,
   );
   const locale =
     localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en";
@@ -334,7 +333,7 @@ export function SidebarTree({
             () => activeSlug.value === undefined && !!rootMenuItems,
           )}
           fallback={() => (
-            <nav>
+            <nav ref={navRef} tabindex={-1}>
               {rootMenuItems ? (
                 <button
                   type="button"
@@ -356,31 +355,36 @@ export function SidebarTree({
                     aria-label="Filter navigation"
                     placeholder={filterPlaceholder}
                     modelValue={query}
+                    on:input={(event: Event) => { query.value = (event.target as HTMLInputElement).value; save(); }}
                     class="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
                   />
                 </div>
               </div>
-              {noteTrayRoot ? (
-                <Show when={computed(() => !!filteredNoteTrayRoot.value)}>
-                  {() => (
-                    <TrayList
-                      tray={computed(() => filteredNoteTrayRoot.value!)}
-                      itemCount={getNoteTrayItems(noteTrayRoot).length}
-                      currentSlug={activeSlug}
-                      forceOpen={computed(() => !!query.value)}
-                      locale={locale}
-                      dateFormats={dateFormats}
-                    />
-                  )}
+              {navigation ? (
+                <div class="flex flex-wrap items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-2xs text-caption" data-sidebar-scope-toolbar>
+                  <button type="button" data-sidebar-broaden disabled={computed(() => broader.value === null)}
+                    on:click={() => { if (broader.value !== null) changeScope(broader.value); }}
+                    class="flex items-center gap-hsp-xs rounded border border-muted px-hsp-xs py-vsp-3xs text-fg hover:bg-surface focus-visible:bg-surface disabled:text-muted">
+                    <span aria-hidden="true">↑</span>{labels.broaden}
+                  </button>
+                  <span class="min-w-0 break-words text-muted">{hint}</span>
+                  <Show when={computed(() => selected.value !== null)}>{() => (
+                    <button type="button" data-sidebar-restore on:click={() => changeScope(null)}
+                      class="flex items-center gap-hsp-xs rounded border border-muted px-hsp-xs py-vsp-3xs text-fg hover:bg-surface focus-visible:bg-surface">
+                      <span aria-hidden="true">◎</span>{labels.restore}
+                    </button>
+                  )}</Show>
+                </div>
+              ) : null}
+              <div data-sidebar-tree-root>
+                <Show when={computed(() => selectedNodes.value.length === 1 && selectedNodes.value[0]?.shape === "note-tray")}
+                  fallback={() => <NodeList nodes={filteredNodes} currentSlug={activeSlug} depth={0} forceOpen={computed(() => !!query.value)} scopeControls={scopeControls} />}>
+                  {() => <Show when={computed(() => !!filteredNodes.value[0])}>{() => (
+                    <TrayList tray={computed(() => filteredNodes.value[0]!)} itemCount={getNoteTrayItems(selectedNodes.value[0]!).length}
+                      currentSlug={activeSlug} forceOpen={computed(() => !!query.value)} locale={locale} dateFormats={dateFormats} scopeControls={scopeControls} />
+                  )}</Show>}
                 </Show>
-              ) : (
-                <NodeList
-                  nodes={filteredNodes}
-                  currentSlug={activeSlug}
-                  depth={0}
-                  forceOpen={computed(() => !!query.value)}
-                />
-              )}
+              </div>
               {footer}
             </nav>
           )}
@@ -416,6 +420,7 @@ export function SidebarTree({
 SidebarTree.displayName = "SidebarTree";
 
 interface ActiveProps {
+  scopeControls?: ScopeControls;
   currentSlug: ReadonlySignal<string | undefined>;
   forceOpen: ReadonlySignal<boolean>;
 }
@@ -430,6 +435,7 @@ function TrayList({
   itemCount,
   currentSlug,
   forceOpen,
+  scopeControls,
   locale,
   dateFormats,
 }: {
@@ -466,6 +472,8 @@ function TrayList({
             {(group, index) => (
               <TrayGroupNode
                 traySlug={computed(() => tray.value.slug)}
+                trayOccurrence={computed(() => tray.value.occurrenceId ?? tray.value.slug)}
+                scopeControls={scopeControls}
                 group={group}
                 grouping={computed(
                   () => sidebarStyle.value as "year" | "month",
@@ -618,6 +626,8 @@ function noteTrayGroupStorageKey(traySlug: string, groupKey: string): string {
 
 function TrayGroupNode({
   traySlug,
+  trayOccurrence,
+  scopeControls,
   group,
   grouping,
   locale,
@@ -627,6 +637,7 @@ function TrayGroupNode({
   isLast,
 }: {
   traySlug: ReadonlySignal<string>;
+  trayOccurrence: ReadonlySignal<string>;
   group: ReadonlySignal<NoteTrayGroup<SidebarNavNode>>;
   grouping: ReadonlySignal<"year" | "month">;
   locale: string;
@@ -637,7 +648,8 @@ function TrayGroupNode({
   const containsCurrent = computed(() =>
     group.value.items.some((item) => item.slug === currentSlug.value),
   );
-  const open = signal(containsCurrent.value);
+  const occurrenceKey = computed(() => `${trayOccurrence.value}#${group.value.key}`);
+  const open = signal(scopeControls?.expansion.value[occurrenceKey.value] ?? containsCurrent.value);
   const storageKey = computed(() =>
     noteTrayGroupStorageKey(traySlug.value, group.value.key),
   );
@@ -647,13 +659,13 @@ function TrayGroupNode({
       : formatYearMonthLabel(group.value.key, locale, dateFormats?.yearMonth),
   );
   scope.onActivate(() => {
-    if (getOpenSet().has(storageKey.value)) open.value = true;
+    if (!scopeControls && getOpenSet().has(storageKey.value)) open.value = true;
   });
   scope.effect(() => {
     if (containsCurrent.value) open.value = true;
   });
   scope.effect(() => {
-    if (open.value) {
+    if (!scopeControls && open.value) {
       const stored = getOpenSet();
       if (!stored.has(storageKey.value)) {
         stored.add(storageKey.value);
@@ -663,11 +675,20 @@ function TrayGroupNode({
   });
   const toggle = () => {
     open.value = !open.value;
+    if (scopeControls) {
+      scopeControls.expansion.value = { ...scopeControls.expansion.value, [occurrenceKey.value]: open.value };
+      scopeControls.save();
+      return;
+    }
     const stored = getOpenSet();
     if (open.value) stored.add(storageKey.value);
     else stored.delete(storageKey.value);
     saveOpenSet(stored);
   };
+  scope.effect(() => {
+    const stored = scopeControls?.expansion.value[occurrenceKey.value];
+    if (stored !== undefined) open.value = stored;
+  });
   const expanded = computed(() => forceOpen.value || open.value);
   const items = computed(() => group.value.items);
   return (
@@ -737,9 +758,10 @@ function NodeList({
   currentSlug,
   depth,
   forceOpen,
+  scopeControls,
 }: { nodes: ReadonlySignal<SidebarNavNode[]>; depth: number } & ActiveProps) {
   return (
-    <For each={nodes} by={(node) => node.slug}>
+    <For each={nodes} by={(node) => node.occurrenceId ?? node.slug}>
       {(node, index) => {
         const isLast = computed(() => index.value === nodes.value.length - 1);
         return (
@@ -752,6 +774,7 @@ function NodeList({
                 depth={depth}
                 isLast={isLast}
                 forceOpen={forceOpen}
+                scopeControls={scopeControls}
               />
             )}
           >
@@ -762,6 +785,7 @@ function NodeList({
                 depth={depth}
                 isLast={isLast}
                 forceOpen={forceOpen}
+                scopeControls={scopeControls}
               />
             )}
           </Show>
@@ -773,7 +797,7 @@ function NodeList({
 
 function subtreeContainsSlug(node: SidebarNavNode, slug?: string): boolean {
   return (
-    !!slug &&
+    slug !== undefined &&
     (node.slug === slug ||
       node.children.some((child) => subtreeContainsSlug(child, slug)))
   );
@@ -785,21 +809,26 @@ function CategoryNode({
   depth,
   isLast,
   forceOpen,
+  scopeControls,
 }: RowProps) {
   const scope = getScope();
   const containsCurrent = computed(() =>
     subtreeContainsSlug(node.value, currentSlug.value),
   );
   const active = computed(() => node.value.slug === currentSlug.value);
-  const open = signal(containsCurrent.value || !node.value.collapsed);
+  const occurrenceKey = () => node.value.occurrenceId ?? node.value.slug;
+  const open = signal(scopeControls?.expansion.value[occurrenceKey()] ?? (containsCurrent.value || !node.value.collapsed));
   scope.onActivate(() => {
-    if (getOpenSet().has(node.value.slug)) open.value = true;
+    if (!scopeControls && getOpenSet().has(node.value.slug)) open.value = true;
   });
   scope.effect(() => {
-    if (containsCurrent.value) open.value = true;
+    const slug = currentSlug.value;
+    const revision = scopeControls?.reveal.value;
+    if (slug !== undefined && subtreeContainsSlug(node.value, slug)) open.value = true;
+    void revision;
   });
   scope.effect(() => {
-    if (open.value) {
+    if (!scopeControls && open.value) {
       const stored = getOpenSet();
       if (!stored.has(node.value.slug)) {
         stored.add(node.value.slug);
@@ -809,12 +838,30 @@ function CategoryNode({
   });
   const toggle = () => {
     open.value = !open.value;
+    if (scopeControls) {
+      scopeControls.expansion.value = { ...scopeControls.expansion.value, [occurrenceKey()]: open.value };
+      scopeControls.save();
+      return;
+    }
     const stored = getOpenSet();
     if (open.value) stored.add(node.value.slug);
     else stored.delete(node.value.slug);
     saveOpenSet(stored);
   };
+  scope.effect(() => {
+    const stored = scopeControls?.expansion.value[occurrenceKey()];
+    if (stored !== undefined) open.value = stored;
+  });
   const expanded = computed(() => forceOpen.value || open.value);
+  const focusButton = scopeControls ? (
+    <button type="button" data-sidebar-focus
+      on:click={() => scopeControls.focus(node.value)}
+      aria-label={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
+      title={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
+      class={computed(() => `shrink-0 rounded px-hsp-xs py-vsp-2xs ${active.value ? "text-bg hover:bg-bg/10 focus-visible:bg-bg/10" : "text-muted hover:bg-surface hover:text-fg focus-visible:bg-surface focus-visible:text-fg"}`)}>
+      <span aria-hidden="true">◎</span>
+    </button>
+  ) : null;
   const paddingLeft = padLeft(depth, true);
   return (
     <div
@@ -842,10 +889,11 @@ function CategoryNode({
         <Show
           when={computed(() => !!node.value.href)}
           fallback={() => (
+            <div class="flex items-center">
             <button
               type="button"
               on:click={toggle}
-              class="flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
+              class="flex flex-1 min-w-0 items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
               style={{ "padding-left": paddingLeft }}
               aria-expanded={computed(() =>
                 expanded.value ? "true" : "false",
@@ -862,6 +910,8 @@ function CategoryNode({
                 rawHtml={computed(() => smartBreakToHtml(node.value.label))}
               />
             </button>
+            {focusButton}
+            </div>
           )}
         >
           {() => (
@@ -889,6 +939,7 @@ function CategoryNode({
                   rawHtml={computed(() => smartBreakToHtml(node.value.label))}
                 />
               </a>
+              {focusButton}
               <button
                 type="button"
                 on:click={toggle}
@@ -923,6 +974,7 @@ function CategoryNode({
               currentSlug={currentSlug}
               depth={depth + 1}
               forceOpen={forceOpen}
+              scopeControls={scopeControls}
             />
           </div>
         )}

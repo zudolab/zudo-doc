@@ -52,7 +52,7 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
   const defaultLocale = ctx.defaultLocale;
   const localeCount = ctx.locales.length;
   const t = ctx.t;
-  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode } =
+  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarContext, getThemeDefaultMode } =
     deriveNavDataPrep(ctx);
   const dateFormatsFor = deriveDateFormats(ctx);
 
@@ -86,13 +86,14 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
     // emptyWhenUnsectioned=false: the desktop sidebar falls back to the FULL
     // tree for pages whose slug matches no headerNav categoryMatch (legacy
     // behavior) — only the header's mobile drawer collapses to root menu.
-    const nodes = buildSidebarNodes(lang, navSection, currentVersion, false);
+    const { nodes, navigation } = buildSidebarContext(lang, navSection, currentVersion, false);
 
     const localeLinks = buildLocaleLinksForNav(currentPath, lang, localeCount);
     const themeDefaultMode = getThemeDefaultMode();
 
     const treeProps = normalizeIslandData({
       nodes,
+      navigation,
       ...(currentSlug !== undefined ? { currentSlug } : {}),
       rootMenuItems,
       ...(backToMenuLabel !== undefined ? { backToMenuLabel } : {}),

@@ -26,6 +26,8 @@
  * Matches `NavNode` in the host project's `src/utils/docs.ts`.
  */
 export interface SidebarNavNode {
+  /** Stable identity of this editorial occurrence, independent of the page slug. */
+  occurrenceId?: string;
   slug: string;
   label: string;
   description?: string;
@@ -71,9 +73,20 @@ export interface SidebarLocaleLink {
  */
 export interface SidebarTreeIslandProps {
   nodes: SidebarNavNode[];
+  navigation?: SidebarNavigationContext;
   currentSlug?: string;
   rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
+}
+
+/** Complete editorial topology, captured before local scoping or filtering. */
+export interface SidebarNavigationContext {
+  /** Locale/version/document-context identity including the topology revision. */
+  id: string;
+  roots: SidebarNavNode[];
+  parents: Record<string, string | null>;
+  /** Explicit enclosing occurrence for a local forest spanning emitted children. */
+  localParentId?: string;
 }

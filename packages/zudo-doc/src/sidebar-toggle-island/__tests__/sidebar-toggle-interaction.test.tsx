@@ -10,6 +10,7 @@ import { islandRoot, renderToString } from "@takazudo/zfb/zudo-react/server";
 import { swapFunctions } from "@takazudo/zfb-runtime/client-router";
 import { renderIsland, flushAll } from "../../__tests__/helpers/zudo-react.js";
 import { disposeSidebarScrollPreserve } from "../../sidebar-tree-island/sidebar-scroll-preserve.js";
+import { buildSidebarNavigation } from "../../sidebar-utils/index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 import { BEFORE_SWAP_EVENT } from "../../transitions/page-events.js";
@@ -339,4 +340,28 @@ describe("SidebarToggle — persisted same-locale navigation", () => {
     expect(hamburger.getAttribute("aria-expanded")).toBe("false");
     expect(root.querySelector("aside")!.hasAttribute("inert")).toBe(true);
   });
+});
+
+
+it("keeps the mobile drawer open for focus, broaden and restore; native navigation closes it", async () => {
+  const data = buildSidebarNavigation([], "en", undefined, undefined, {
+    default: [{ type: "category", label: "Editorial", items: [{ type: "category", label: "Branch", items: ["introduction"] }] }, "introduction"],
+  }, () => NODES, []);
+  const { root } = await mount({ ...data, currentSlug: "introduction" });
+  const hamburger = root.querySelector<HTMLButtonElement>('button[aria-label="Open sidebar"]')!;
+  click(hamburger);
+  await flushAll();
+  click(root.querySelector('button[aria-label="Show only this branch: Branch"]'));
+  await flushAll();
+  expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+  click(root.querySelector('[data-sidebar-broaden]'));
+  await flushAll();
+  click(root.querySelector('[data-sidebar-restore]'));
+  await flushAll();
+  expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+  expect(document.body.style.overflow).toBe("hidden");
+  document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+  await flushAll();
+  expect(hamburger.getAttribute("aria-expanded")).toBe("false");
+  expect(document.body.style.overflow).toBe("");
 });

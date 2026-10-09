@@ -80,7 +80,7 @@ describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
     expect(getSidebarToggleNodes(withoutSection)).toEqual([]);
 
     const withSection = HeaderWithDefaults({ lang: "en", navSection: "guides" }) as AnyVNode;
-    expect(getSidebarToggleNodes(withSection)).toEqual([fixedNode("guides/intro")]);
+    expect(getSidebarToggleNodes(withSection)).toEqual([{ ...fixedNode("guides/intro"), occurrenceId: "auto/0" }]);
   });
 
   it("omits undefined values from nested island props before constructing descriptions", () => {
