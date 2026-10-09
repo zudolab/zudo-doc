@@ -156,6 +156,7 @@ describe("package.json exports keyset snapshot", () => {
         "./routes-src/*",
         "./routes/404",
         "./routes/api-ai-chat",
+        "./routes/design-token-panel-bootstrap",
         "./routes/docs-slug",
         "./routes/docs-tags-index",
         "./routes/docs-tags-tag",
