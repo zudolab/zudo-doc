@@ -95,11 +95,15 @@ for (const platform of PLATFORMS) {
     });
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
+    const populatedResultsHtml = await results.innerHTML();
     await search.evaluate((element) => {
+      const parent = element.parentNode;
+      const nextSibling = element.nextSibling;
+      if (!parent) throw new Error("search widget has no parent");
       element.remove();
-      document.body.append(element);
+      parent.insertBefore(element, nextSibling);
     });
-    await expect(results.locator("article a")).toHaveCount(1);
+    expect(await results.innerHTML()).toBe(populatedResultsHtml);
     await page.keyboard.press(platform.openKey);
     await expect(dialog).toBeVisible();
     await expect(input).toHaveValue("Getting Started");
@@ -128,8 +132,11 @@ for (const platform of PLATFORMS) {
     // listener or lose the platform label.
     const host = page.locator("site-search").first();
     await host.evaluate((element) => {
+      const parent = element.parentNode;
+      const nextSibling = element.nextSibling;
+      if (!parent) throw new Error("search widget has no parent");
       element.remove();
-      document.body.append(element);
+      parent.insertBefore(element, nextSibling);
     });
     await expect(host.locator("[data-kbd-shortcut]")).toHaveText(
       platform.shortcut,
