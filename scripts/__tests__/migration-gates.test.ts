@@ -145,8 +145,9 @@ describe("#4470 A2 workflow selection", () => {
     const upload = workflow.match(/- name: Upload A2 fixture diagnostics[\s\S]*?(?=      - name:)/)?.[0];
     expect(upload).toContain("if: always() && steps.detect-emitters.outputs.run_parity == 'true'");
     expect(upload).toContain("uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f");
-    const paths = upload?.match(/          path: \|\n([\s\S]*?)(?=          if-no-files-found:)/)?.[1]
-      .trim().split("\n").map((path) => path.trim());
+    const pathBlock = upload?.match(/          path: \|\n([\s\S]*?)(?=          if-no-files-found:)/)?.[1];
+    if (pathBlock === undefined) throw new Error("A2 diagnostic upload must define its explicit file paths");
+    const paths = pathBlock.trim().split("\n").map((path) => path.trim());
     const files = ["404.html", "docs--getting-started--index.html", "docs--getting-started--coverage--index.html"];
     expect(paths).toEqual([
       ...files.flatMap((file) => [file, file + ".normalized.html"]), "manifest.json", "build.log",
