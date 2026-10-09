@@ -1,6 +1,6 @@
 # Real-browser nested-island persistence control
 
-Prepared for #4468; browser result pending. This is a standalone authored zfb
+Prepared for #4468; corrected manager browser run passes all four tests. This is a standalone authored zfb
 consumer, separate from the already passed package-injected dev route control.
 It uses installed published `@takazudo/zfb` and `@takazudo/zfb-runtime` 4.2.1,
 the manager checkout's built public `@takazudo/zudo-doc/transitions` export,
@@ -50,4 +50,16 @@ in `/tmp/zudo421-persistence-browser/report.json` and `test-results/`.
 
 Preparation checks passed: project TypeScript, spec TypeScript, shell syntax,
 and config JavaScript syntax. The worker did not launch a browser/server/build.
-The manager must preserve run output/results here before claiming the gate passes.
+Both initial failure and corrected manager run output/results are preserved here.
+
+## First manager run
+
+The first manager run failed all four tests at the final empty-console-error
+assertion with one resource 404; every preceding lifecycle, node identity, signal,
+and same-document assertion completed. See initial-failure.log and
+initial-failure-report.json. The original capture did not record the failed URL.
+The fixture omitted a favicon, so it now supplies and explicitly links a real
+public/favicon.svg. This diagnosis is provisional until rerun: the spec now
+records console locations and every HTTP error URL/status, preserves lifecycle
+attachments before error assertions, and asserts no HTTP errors. No errors are
+ignored or allowlisted. The corrected manager run passes all four tests (6.9s), with heavy-guard PASS (8s). The original failed URL was not captured, so the favicon cause remains inferred from the successful real-asset correction; no URL-level proof is claimed for the first run. The corrected report records zero console/HTTP errors and attaches measured lifecycle/navigation values. See passed-run.log and passed-report.json.

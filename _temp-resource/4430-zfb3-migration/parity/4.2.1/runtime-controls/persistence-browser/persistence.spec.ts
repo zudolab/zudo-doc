@@ -10,7 +10,9 @@ for (const scenario of ["unchanged", "changed", "preserve", "structural"] as con
   test(`real navigation: ${scenario}`, async ({ page }, testInfo) => {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
-    page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+    page.on("console", message => { if (message.type() === "error") errors.push(`${message.text()} at ${JSON.stringify(message.location())}`); });
+    const failedResponses: { url: string; status: number }[] = [];
+    page.on("response", response => { if (response.status() >= 400) failedResponses.push({ url: response.url(), status: response.status() }); });
     let documentRequests = 0;
     page.on("request", request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentRequests++; });
     const start = scenario === "preserve" ? "preserve-a" : "same-a";
@@ -50,7 +52,8 @@ for (const scenario of ["unchanged", "changed", "preserve", "structural"] as con
     // A retained event listener must still drive the original local signal.
     await page.locator("#increment").click();
     await expect(page.locator("#count")).toHaveText(scenario === "unchanged" || scenario === "preserve" ? "3" : "1");
+    await testInfo.attach("lifecycle-and-navigation", { body: JSON.stringify({ captures, errors, failedResponses }, null, 2), contentType: "application/json" });
     expect(errors).toEqual([]);
-    await testInfo.attach("lifecycle-and-navigation", { body: JSON.stringify(captures, null, 2), contentType: "application/json" });
+    expect(failedResponses).toEqual([]);
   });
 }

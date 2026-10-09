@@ -5,7 +5,7 @@ import PolicyBootstrap from "./policy";
 export default function Layout({ route, label, preserve = false, structural = false }: {
   route: string; label: string; preserve?: boolean; structural?: boolean;
 }) {
-  return <html lang="en"><head><meta charset="utf-8"/><title>Persistence {route}</title><ClientRouter/></head>
+  return <html lang="en"><head><meta charset="utf-8"/><title>Persistence {route}</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"/><ClientRouter/></head>
     <body>
       <header id="persisted" data-zfb-transition-persist="counter-header"
         data-zd-props-preserve={preserve ? "" : undefined}>
