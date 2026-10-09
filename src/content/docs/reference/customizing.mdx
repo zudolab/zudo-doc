@@ -18,7 +18,7 @@ That "one config file" ideal covers the common cases. This page is the **escalat
 | **1. `buildDocsSchema` override** | You need a custom, validated frontmatter key | Replace one function; own the schema |
 | **2. Config fields** | Toggling a feature or tuning behavior | None — it is just a field |
 | **3. Theme packs** | You want a whole prebuilt look, not a hand-tune | None — one field or one CLI command |
-| **4. Token overrides** | Re-theming colors, spacing, typography | A `@theme` block in `global.css` |
+| **4. Token overrides** | Re-theming colors, spacing, typography | A `:root` block in `global.css` |
 | **5. `zudo-doc eject`** | A content-layer component you re-reference must change | You own the ejected copy and its imports |
 | **6. `chromeBindingsModule`** | Replacing primary chrome or injecting host callables, including [custom MDX components](../guides/custom-components.mdx#global-registration-mdxextras) | One host module |
 | **7. Your own `pages/*.tsx`** | A whole route must be yours | You own that route |
@@ -110,12 +110,12 @@ Every pack defines both its light and dark values, so readers can keep choosing 
 
 ## Rung 4 — Token overrides
 
-The scaffold's `src/styles/global.css` is a short `@import` chain that pulls the package's `theme.css` (all the `@theme` design tokens), `content.css`, and `features.css` — followed by an empty `@theme { … }` block reserved for you. Because it comes **after** the package imports, anything you redefine there wins the cascade:
+The scaffold's `src/styles/global.css` is a short `@import` chain that pulls the package's `theme.css` (all the `:root` design tokens), `content.css`, and `features.css` — followed by an empty `:root { … }` block reserved for you. Because it comes **after** the package imports, anything you redefine there wins the cascade:
 
 ```css title="src/styles/global.css"
 /* ...package @imports above... */
 
-@theme {
+:root {
   --color-accent: oklch(0.6 0.2 250);
   --font-sans: "Inter", system-ui, sans-serif;
   --z-index-modal: 200; /* override a single default z-index tier */
@@ -128,7 +128,7 @@ For per-component rebranding without touching every element that reads a global 
 
 **Limit:** tokens restyle; they do not restructure markup. See [Design System](./design-system.mdx), [Color](./color.mdx), and [Component Tokens](./component-tokens.mdx).
 
-If your project also merges a second design system’s `@theme`, read [Coexisting with another `@theme`](./design-system.mdx#coexisting-with-another-theme).
+If your project also merges a second design system’s `:root`, read [Coexisting with another `@theme`](./design-system.mdx#coexisting-with-another-theme).
 
 ## Rung 5 — Ejecting a component
 
@@ -253,7 +253,7 @@ The minimal scaffold **drops the validation gates** the showcase runs — they w
 
 <Note>
 
-The `gen:z-index` / `check:z-index` codegen was likewise removed from generated projects — the 13 default z-index tiers now ship unconditionally from `@takazudo/zudo-doc/theme.css`, so a project only re-adds that codegen if it maintains a *custom* tier set. Overriding a single tier is a one-line `@theme` change (rung 4), not a codegen concern.
+The `gen:z-index` / `check:z-index` codegen was likewise removed from generated projects — the 13 default z-index tiers now ship unconditionally from `@takazudo/zudo-doc/theme.css`, so a project only re-adds that codegen if it maintains a *custom* tier set. Overriding a single tier is a one-line `:root` change (rung 4), not a codegen concern.
 
 </Note>
 

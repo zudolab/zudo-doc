@@ -15,9 +15,9 @@ zudo-docのデザイントークンシステムによってスタイリングさ
 #### 見出し4
 
 ```mdx
-## 見出し2
-### 見出し3
-#### 見出し4
+## Heading 2
+### Heading 3
+#### Heading 4
 ```
 
 ### コンテンツタイポグラフィの上書き
@@ -53,8 +53,8 @@ zudo-docのデザイントークンシステムによってスタイリングさ
 **太字テキスト**、*イタリックテキスト*、~~取り消し線~~。組み合わせも可能です：***太字かつイタリック***。
 
 ```mdx
-**太字テキスト**、*イタリックテキスト*、~~取り消し線~~。
-組み合わせも可能です：***太字かつイタリック***。
+**Bold text**, *italic text*, and ~~strikethrough~~.
+Combine them: ***bold and italic***.
 ```
 
 ## インラインコード
@@ -62,7 +62,7 @@ zudo-docのデザイントークンシステムによってスタイリングさ
 バッククォートを使って、文中に `インラインコード` を挿入できます。
 
 ```mdx
-バッククォートを使って、文中に `インラインコード` を挿入できます。
+Use backticks to mark `inline code` within a sentence.
 ```
 
 ## コードブロック
@@ -121,12 +121,12 @@ zfbのクラスモードハイライターは幅広い言語をサポートし�
 - 3つ目の項目
 
 ```mdx
-- 1つ目の項目
-- 2つ目の項目
-  - ネストされた項目
-  - もう1つのネストされた項目
-    - 深いネスト
-- 3つ目の項目
+- First item
+- Second item
+  - Nested item
+  - Another nested item
+    - Deeply nested
+- Third item
 ```
 
 ## 番号付きリスト
@@ -138,11 +138,11 @@ zfbのクラスモードハイライターは幅広い言語をサポートし�
 3. ステップ3
 
 ```mdx
-1. ステップ1
-2. ステップ2
-   1. サブステップ1
-   2. サブステップ2
-3. ステップ3
+1. First step
+2. Second step
+   1. Sub-step one
+   2. Sub-step two
+3. Third step
 ```
 
 ## 引用
@@ -151,8 +151,8 @@ zfbのクラスモードハイライターは幅広い言語をサポートし�
 > 内部で**書式付きテキスト**も使用できます。
 
 ```mdx
-> これは引用ブロックです。複数行にまたがることができ、
-> 内部で**書式付きテキスト**も使用できます。
+> This is a blockquote. It can span multiple lines
+> and supports **formatting** within it.
 ```
 
 ## テーブル
@@ -161,14 +161,14 @@ zfbのクラスモードハイライターは幅広い言語をサポートし�
 | ---------- | ----------- | ------------------ |
 | MDX        | サポート済み | zfb組み込み         |
 | zfbクラスモード | 組み込み | コードハイライト |
-| Tailwind   | v4          | トークンベースの設計 |
+| zudo-wind | spec 1          | トークンベースの設計 |
 
 ```mdx
-| 機能       | 状態        | 備考               |
+| Feature    | Status      | Notes              |
 | ---------- | ----------- | ------------------ |
-| MDX        | サポート済み | zfb組み込み         |
-| zfbクラスモード | 組み込み | コードハイライト |
-| Tailwind   | v4          | トークンベースの設計 |
+| MDX        | Supported   | Built into zfb     |
+| zfb class mode | Built-in | Code highlighting |
+| zudo-wind | spec 1          | Token-based design |
 ```
 
 ## リンク
@@ -178,9 +178,9 @@ zfbのクラスモードハイライターは幅広い言語をサポートし�
 外部リンク：[外部サイトの例](https://example.com)
 
 ```mdx
-内部リンク：[はじめに](../getting-started/index.mdx)
+Internal link: [Getting Started](../getting-started/index.mdx)
 
-外部リンク：[外部サイトの例](https://example.com)
+External link: [Example external site](https://example.com)
 ```
 
 ## 水平線

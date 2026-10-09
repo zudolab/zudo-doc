@@ -1177,6 +1177,12 @@ zfb bundler options (`exclude` / `mainFields` / `external`), passed through verb
 
 Default: `undefined`
 
+### wind
+
+Top-level `WindConfig | false` override, passed to zfb rather than added to serialized `Settings`. Default: `undefined` (inherit the package preset).
+
+The preset registers var-backed semantic tokens, `reset: "owned-v1"`, `dark: false`, the public `@takazudo/zudo-doc/wind.json` manifest, and the `sm`/`lg`/`xl` pixel breakpoints. It omits `spacingUnit`. zfb deep-merges an explicit override over those defaults; `wind: false` disables generation. Use ordinary `:root` declarations to change an existing token value; use `wind.tokens` when introducing a new utility name. See [Design System](../reference/design-system.mdx) for examples and audit coverage limits.
+
 ## An extended project as reference
 
 This showcase's own `zfb.config.ts` is the canonical "extended project" example — it spreads a typed `settings` object and passes genuinely showcase-specific data blocks (tag vocabulary, custom translations) through the escape-hatch fields, then adds the shell fields (`port`, `adapter`, `bundle`):

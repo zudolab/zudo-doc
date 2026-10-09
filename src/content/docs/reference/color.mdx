@@ -6,7 +6,7 @@ tags:
   - design-system
 ---
 
-zudo-doc uses a **three-tier color strategy** to keep every color on the site themeable. The package's `@takazudo/zudo-doc/theme.css` does not import Tailwind's default color theme: its `@theme` block resets the color namespace with `--color-*: initial` before defining the shipped tokens. A project's later `@theme` block is an override point. This ensures switching a color scheme updates the entire site at once.
+zudo-doc uses a three-tier color strategy. `theme.css` defines ordinary custom-property aliases; the zudo-wind preset registers their utility names with `var(...)` values. Later `:root` declarations override values through the CSS cascade.
 
 ## Three-Tier Color Strategy
 
@@ -15,7 +15,7 @@ Colors are organized into three tiers. Each tier only references the tier above 
 | Tier | Name | Purpose | Defined In |
 |------|------|---------|------------|
 | 1 | **Ramps** | Shared OKLCH color ramps a scheme is built from | your `colorSchemes` override in `zfb.config.ts` (optional — packaged defaults otherwise) → `ColorSchemeProvider` → `:root` |
-| 2 | **Semantic** | Design meaning — what each color represents | packaged `@takazudo/zudo-doc/theme.css` `@theme` (a project's later `@theme` block can override it) |
+| 2 | **Semantic** | Design meaning — what each color represents | packaged `@takazudo/zudo-doc/theme.css` `:root` (a project's later `:root` block can override it) |
 | 3 | **Component** | Scoped overrides for specific components | `.zd-content` (shared `content.css`) |
 
 This layering means you can:
@@ -86,47 +86,18 @@ The `ColorSchemeProvider` component (`packages/zudo-doc/src/theme/color-scheme-p
 }
 ```
 
-The `--zd-*` properties (base roles + semantic roles) are the source of truth everything downstream resolves back to. The bare `--palette-*` ramp properties exist for the [Design Token Panel](./design-token-panel.mdx)'s **Palette** tab and for scheme authors — content and components consume the semantic `--zd-*` tokens; there is no Tailwind utility for a raw ramp stop (see [Reaching a raw ramp stop](#reaching-a-raw-ramp-stop-rare)).
+The `--zd-*` properties (base roles + semantic roles) are the source of truth everything downstream resolves back to. The bare `--palette-*` ramp properties exist for the [Design Token Panel](./design-token-panel.mdx)'s **Palette** tab and for scheme authors — content and components consume the semantic `--zd-*` tokens; there is no zudo-wind utility for a raw ramp stop (see [Reaching a raw ramp stop](#reaching-a-raw-ramp-stop-rare)).
 
 ## Tier 2: Semantic Tokens
 
-The package's `@takazudo/zudo-doc/theme.css` exposes 23 bare color aliases and 23 matching `--color-zd-*` aliases. A scaffold imports that file before its own `src/styles/global.css` `@theme` override block, so redefine only the project aliases you need to change. These are the shipped bare-token and namespaced-token blocks, including the non-color defaults in the first block:
+The package's `@takazudo/zudo-doc/theme.css` exposes 23 bare color aliases and 23 matching `--color-zd-*` aliases. A scaffold imports that file before its own `src/styles/global.css` `:root` override block, so redefine only the project aliases you need to change. These are the shipped bare-token and namespaced-token blocks, showing the color aliases:
 
-```css title="@takazudo/zudo-doc/theme.css"
-@theme {
-  /* ========================================
-   * Tight-token color reset
-   *
-   * Wipes all Tailwind default color tokens (`--color-*`) so only
-   * project-defined palette and semantic tokens remain. This enforces
-   * zudo-doc's tight-token policy: "NEVER use Tailwind default colors"
-   * (documented per-project in src/CLAUDE.md's Color Rules). Semantic color
-   * tokens (defined below) are added back after this reset.
-   *
-   * The upstream split-import fix (zfb#159 / 9e37551, shipped in f68a9ba)
-   * eliminated the original leak cause (zfb no longer prepends the full
-   * @import "tailwindcss" bundle). The reset is retained as an explicit
-   * design guardrail — it prevents accidental default palette bleed from any
-   * future upstream change and keeps the color surface intentional.
-   *
-   * NOT reset: `--spacing` (the base spacing scale, default 0.25rem).
-   * Tailwind spacing utilities compute as calc(var(--spacing) * N); wiping
-   * `--spacing` collapses them to zero (observed in Wave 4 Sub-7 #1403).
-   * This guardrail resets ONLY the color namespace — never widen it.
-   * ======================================== */
-  --color-*: initial;
-
-  /* ========================================
-   * Colors — Three-tier token system
-   * ======================================== */
-
-  /* ── Base ── */
+```css title="@takazudo/zudo-doc/theme.css (color aliases)"
+:root {
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
   --color-sel-bg: var(--zd-selection-bg);
   --color-sel-fg: var(--zd-selection-fg);
-
-  /* ── Semantic aliases ── */
   --color-surface: var(--zd-surface);
   --color-muted: var(--zd-muted);
   --color-accent: var(--zd-accent);
@@ -137,7 +108,7 @@ The package's `@takazudo/zudo-doc/theme.css` exposes 23 bare color aliases and 2
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
-  /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
+  /* The scrim is intentionally theme-independent. */
   --color-overlay: #000;
   --color-image-overlay-bg: var(--zd-image-overlay-bg);
   --color-image-overlay-fg: var(--zd-image-overlay-fg);
@@ -147,104 +118,6 @@ The package's `@takazudo/zudo-doc/theme.css` exposes 23 bare color aliases and 2
   --color-chat-assistant-text: var(--zd-chat-assistant-text);
   --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
   --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
-
-  /* ========================================
-   * Spacing — hsp (horizontal) + vsp (vertical)
-   * ======================================== */
-  --spacing-0: 0;
-  --spacing-px: 1px;
-
-  /* Horizontal spacing (7 steps) */
-  --spacing-hsp-2xs: 0.125rem;   /* 2px  — tight inline */
-  --spacing-hsp-xs: 0.375rem;   /* 6px  — compact inline */
-  --spacing-hsp-sm: 0.5rem;     /* 8px  — small padding */
-  --spacing-hsp-md: 0.75rem;    /* 12px — default gaps */
-  --spacing-hsp-lg: 1rem;       /* 16px — standard padding */
-  --spacing-hsp-xl: 1.5rem;     /* 24px — generous padding */
-  --spacing-hsp-2xl: 2rem;      /* 32px — large padding */
-
-  /* Vertical spacing (8 steps) */
-  --spacing-vsp-3xs: 0.25rem;     /* 4px — hairline gap */
-  --spacing-vsp-2xs: 0.4375rem;   /* 7px — tight gap */
-  --spacing-vsp-xs: 0.875rem;    /* 14px — small gap */
-  --spacing-vsp-sm: 1.25rem;     /* 20px — compact gap */
-  --spacing-vsp-md: 1.5rem;      /* 24px — standard gap */
-  --spacing-vsp-lg: 1.75rem;     /* 28px — section gap */
-  --spacing-vsp-xl: 2.5rem;      /* 40px — large section gap */
-  --spacing-vsp-2xl: 3.5rem;     /* 56px — page-level gap */
-
-  /* ========================================
-   * Element sizes — semantic icon dimensions
-   * ======================================== */
-  --spacing-icon-xs: 0.75rem;    /* 12px — inline meta icons, chevrons */
-  --spacing-icon-sm: 1rem;       /* 16px — standard UI icons */
-  --spacing-icon-md: 1.25rem;    /* 20px — medium emphasis icons */
-  --spacing-icon-lg: 1.5rem;     /* 24px — large / mobile icons */
-
-  /* Image overlay button chrome */
-  --spacing-image-overlay-inset: 0.5rem;  /* 8px — overlay button corner inset + internal padding */
-
-  /* ========================================
-   * Elevation — the tight `@import "tailwindcss/utilities"` (no default
-   * @theme) drops Tailwind's default shadow scale, so `shadow-*` utilities
-   * generate nothing. Re-add the one elevation the components use: header
-   * and version-switcher dropdown panels apply `shadow-lg`. Value is
-   * Tailwind v4's default shadow-lg; the black is intentionally
-   * theme-independent (a drop shadow is absence of light, not a themed color).
-   * ======================================== */
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-
-  /* ========================================
-   * Typography
-   * ======================================== */
-
-  /* ── Tier 2: Semantic font-size tokens (reference Tier 1 scale only) ── */
-  --text-micro:      var(--text-scale-2xs);  /* 12px — compact panel labels, color swatch annotations */
-  --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
-  --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
-  --text-body:       var(--text-scale-md);   /* paragraphs, default */
-  --text-title:      var(--text-scale-lg);   /* card titles, section labels */
-  --text-heading:    var(--text-scale-xl);   /* page headings */
-  --text-display:    var(--text-scale-2xl);  /* hero text */
-
-  /* Font families */
-  --font-sans: system-ui, sans-serif;
-  --font-mono: ui-monospace, monospace;
-
-  /* Font weights (4 steps) */
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-
-  /* Line heights (4 steps) */
-  --leading-tight: 1.25;
-  --leading-snug: 1.375;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.625;
-
-  /* Letter spacing / tracking (4 steps) */
-  --tracking-tight: -0.025em;   /* headings, display text */
-  --tracking-normal: normal;    /* browser default — resets any inherited tracking */
-  --tracking-wide: 0.05em;      /* labels, UI text */
-  --tracking-wider: 0.1em;      /* small caps, decorative */
-
-  /* ========================================
-   * Border radius (3 steps)
-   * ======================================== */
-  --radius-DEFAULT: 0.25rem;    /* 4px — rounded */
-  --radius-lg: 0.5rem;          /* 8px — rounded-lg */
-  --radius-full: 9999px;        /* rounded-full */
-
-  /* ========================================
-   * Breakpoints (3 steps)
-   * ======================================== */
-  --breakpoint-sm: 640px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
-}
-
-@theme static {
   --color-zd-bg: var(--zd-bg);
   --color-zd-fg: var(--zd-fg);
   --color-zd-sel-bg: var(--zd-selection-bg);
@@ -271,7 +144,7 @@ The package's `@takazudo/zudo-doc/theme.css` exposes 23 bare color aliases and 2
 }
 ```
 
-Once registered in `@theme`, these become standard Tailwind utility classes: `bg-surface`, `text-accent`, `border-muted`, etc.
+The package wind preset registers these aliases, enabling `bg-surface`, `text-accent`, and `border-muted`. For a new name, add `wind.tokens.colors` as well as its CSS value; see [Design System](./design-system.mdx).
 
 Bare aliases are the surface for project code; `--color-zd-*` is the surface for embedders — see [Coexisting with another `@theme`](./design-system.mdx#coexisting-with-another-theme).
 
@@ -372,7 +245,7 @@ const darkMap: ModeMap = {
 
 ## Reaching a raw ramp stop (rare)
 
-There is no Tailwind utility for the raw `--palette-*` ramp stops — semantic tokens are the only Tailwind-facing color surface. If a one-off style genuinely needs a raw ramp stop, reference the CSS custom property directly:
+There is no zudo-wind utility for the raw `--palette-*` ramp stops — semantic tokens are the only zudo-wind-facing color surface. If a one-off style genuinely needs a raw ramp stop, reference the CSS custom property directly:
 
 ```html
 <div style="background: var(--palette-accent-1)">...</div>
@@ -572,7 +445,7 @@ In this showcase repository, contributors run `pnpm contrast:audit` and use the 
 
 <Danger title="Color Anti-Patterns">
 
-**Don't use Tailwind defaults** — they are reset to `initial`:
+**Use registered colors** — default palette names are not registered:
 
 ```html
 <!-- WRONG -->

@@ -157,7 +157,7 @@ pnpm check
 my-docs/
 ├── .gitignore              # node_modules, dist, .zfb
 ├── .npmrc                  # trust-policy-exclude[]=undici-types@6.21.0
-├── pnpm-workspace.yaml     # minimumReleaseAge: 0（pnpm 11 のリリース経過時間ゲートを無効化）
+├── pnpm-workspace.yaml     # minimumReleaseAge: 0 (disables pnpm 11's release-age gate)
 ├── CLAUDE.md               # project notes for Claude Code
 ├── package.json            # deps + dev/build/preview/check scripts
 ├── tsconfig.json           # 5-line extends of the package base config
@@ -182,8 +182,8 @@ my-docs/
 | ファイル | 役割 |
 | --- | --- |
 | `zfb.config.ts` | プロジェクト全体の設定。`@takazudo/zudo-doc/config` から `zudoDoc` をインポートし、選んだフィールドを渡します。それ以外はすべて文書化されたデフォルトにフォールバックします。 |
-| `tsconfig.json` | `@takazudo/zudo-doc/tsconfig.base.json` を extends し、`include` と preact-compat の `paths` だけを足します。 |
-| `src/styles/global.css` | パッケージの `theme.css` / `content.css` / `features.css` を `@import` し、トークン上書き用に `@theme { … }` ブロックを残します。 |
+| `tsconfig.json` | `@takazudo/zudo-doc/tsconfig.base.json`をextendsし、JSX sourceは`@takazudo/zfb/zudo-react`です。React/Preact互換エイリアスはありません。 |
+| `src/styles/global.css` | パッケージの `theme.css` / `content.css` / `features.css` を `@import` し、トークン上書き用に `:root { … }` ブロックを残します。 |
 | `src/content/docs/` | MDX で書くドキュメント本体。スキャフォールドは差し替え用に `getting-started/` ページをいくつかシードします。 |
 | `pages/index.tsx`, `pages/docs/[[...slug]].tsx` | 薄いルートスタブ — 下記を参照。 |
 

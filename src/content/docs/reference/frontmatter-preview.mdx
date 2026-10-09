@@ -148,14 +148,14 @@ By default, frontmatter values render as plain text. To replace a value with a s
 
 ### Component contract
 
-Each renderer is a Preact component that receives `FrontmatterCellRendererProps` from `@takazudo/zudo-doc/metainfo`:
+Each renderer is a zudo-react component that receives `FrontmatterCellRendererProps` from `@takazudo/zudo-doc/metainfo`:
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `value` | `NonNullable<unknown>` | The frontmatter value (null/undefined values are never passed) |
 | `entryKey` | `string` | The frontmatter key name |
 | `data` | `Record<string, unknown>` | Full frontmatter of the current page |
-| `locale` | `Locale \| undefined` | Active locale |
+| `locale` | `string \| undefined` | Active locale |
 
 ### Registering a renderer
 
@@ -165,7 +165,7 @@ Add a key to your renderer map. Each value is a component function that receives
 discount: ({ value }) => {
   if (value !== true) return null;
   return (
-    <span className="inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full bg-danger text-fg">
+    <span class="inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full bg-danger text-fg">
       ON SALE
     </span>
   );

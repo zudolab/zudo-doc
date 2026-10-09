@@ -182,8 +182,8 @@ When additional locales are configured, the same `src/content/` tree also contai
 | File | Purpose |
 | --- | --- |
 | `zfb.config.ts` | Your entire configuration. Imports `zudoDoc` from `@takazudo/zudo-doc/config` and passes the fields you chose; everything else falls back to a documented default. |
-| `tsconfig.json` | Extends `@takazudo/zudo-doc/tsconfig.base.json`; adds only `include` and the preact-compat `paths`. |
-| `src/styles/global.css` | `@import`s the package's `theme.css` / `content.css` / `features.css` and leaves you a `@theme { … }` block for token overrides. |
+| `tsconfig.json` | Extends `@takazudo/zudo-doc/tsconfig.base.json`, with JSX source `@takazudo/zfb/zudo-react` and no React/Preact compatibility aliases. |
+| `src/styles/global.css` | `@import`s the package's `theme.css` / `content.css` / `features.css` and leaves you a `:root { … }` block for token overrides. |
 | `src/content/docs/` | Your documentation, authored as MDX. The scaffold seeds a few `getting-started/` pages to replace. |
 | `pages/index.tsx`, `pages/docs/[[...slug]].tsx` | Thin route stubs — see below. |
 

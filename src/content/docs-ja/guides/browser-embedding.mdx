@@ -25,7 +25,7 @@ sidebar_position: 16.5
 <script type="module" src="/browser-embed.js"></script>
 ```
 
-このファイルはすでにコンパイル済みです。ブラウザー側の利用者が zfb の Tailwind パイプライン、zfb のコンテンツツリー、`zfb build` のいずれかを用意する必要はありません。選択したテーマパックのスタイルは別レイヤーとして扱い、このベースファイルの後に読み込みます。
+このファイルはすでにコンパイル済みです。ブラウザー側の利用者が zfb の zudo-wind パイプライン、zfb のコンテンツツリー、`zfb build` のいずれかを用意する必要はありません。選択したテーマパックのスタイルは別レイヤーとして扱い、このベースファイルの後に読み込みます。
 
 ## 2. ペイロードを組み立ててクロームを描画する
 
@@ -33,9 +33,14 @@ sidebar_position: 16.5
 
 ```tsx title="src/browser-embed.tsx"
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
 
-import { render as renderToString } from "preact-render-to-string";
+import { renderToString } from "@takazudo/zfb/zudo-react/server";
+import { withIslandTestContext } from "@takazudo/zfb/zudo-react/testing";
+import { SidebarToggle } from "@takazudo/zudo-doc/sidebar-toggle-island";
+import { SidebarTree } from "@takazudo/zudo-doc/sidebar-tree-island";
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+import { MermaidEnlarge } from "@takazudo/zudo-doc/mermaid-enlarge";
 import catalog from "@takazudo/zudo-doc/catalog";
 import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
 import { createRouteContext } from "@takazudo/zudo-doc/route-context";
@@ -86,12 +91,19 @@ const page = chrome.renderDocPage(
   { locale: "en" },
 );
 
-document.querySelector("#browser-embed-root")!.innerHTML = renderToString(page);
+const html = withIslandTestContext(
+  {
+    components: [SidebarToggle, ThemeToggle, SidebarTree, MermaidEnlarge],
+    build: "browser-embed-v1",
+  },
+  () => renderToString(page),
+);
+document.querySelector("#browser-embed-root")!.innerHTML = html;
 ```
 
 `createRouteContextPayload` は、最初にドキュメント化されたパッケージデフォルトを適用し、最後にトップレベルの `settings` を上書きします。ネストした設定オブジェクトはディープマージされず、オブジェクト単位で置き換わります。`catalog` を渡すと、パッケージビルドと同じ順序・検証規則で、有効なテーマパックのレジストリがペイロードビルダーから導出されます。
 
-この例では描画面だけが必要なため、返された Preact ノードを HTML へシリアライズしています。Preact ランタイムを管理しているホストなら、そのランタイムから返されたノードを描画することもできます。
+この例はbrowser-embed fixtureが使用する公開SDKの描画証明であり、アイランドのbootloaderを置き換えるものではありません。`renderToString`はzudo-reactのDescriptionを受け取り、Preactノードは描画できません。公開testingヘルパーはこの証明用の固定ターゲットidentity contextを一時的に提供し、終了後に元へ戻します。アイランドを構築するクロームをcontextなしで描画すると`ZR_ISLAND_IDENTITY`が発生します。HTMLマーカーだけではアイランドは有効になりません。本番のembedには対応したdiscovery/activation統合を提供するか、静的コンポーネントに描画面を限定します。非公開シリアライザーをコピーしたり、このfixtureが完全なブラウザー操作を提供すると説明したりしないでください。
 
 ## `createRouteContext` の境界では zfb の解決が必要
 
@@ -173,7 +185,7 @@ DOM フックは両方とも契約の一部です。スタイルシートのリ�
 
 両方のベアコンポーネントは `pendingUntilHydrated?: boolean` を公開しており、デフォルトは `true` です。ハイドレーション前から実際に機能するプログレッシブエンハンスメントを持つ直接利用者は、`pendingUntilHydrated={false}` を渡せます。その場合、pending 属性、ARIA 状態、ハンドラーのガード、パッケージの pending スタイルがすべて外れます。このライフサイクル用エスケープハッチに対応する zudo-doc のグローバル設定はありません。
 
-最初のクライアント `useEffect` がマウント後に pending 状態を解除します。これにより SSR とクライアントの初回描画は一致します。クライアントルーターによるナビゲーションで island が新しく再マウントされると、pending 状態が短時間戻る場合があります。再マウント中はまだ操作できないため、この挙動は意図したものです。
+activationコールバック がマウント後に pending 状態を解除します。これにより SSR とクライアントの初回描画は一致します。クライアントルーターによるナビゲーションで island が新しく再マウントされると、pending 状態が短時間戻る場合があります。再マウント中はまだ操作できないため、この挙動は意図したものです。
 
 ## zfb のマウント済みマーカーは読み取り専用の別シグナル
 

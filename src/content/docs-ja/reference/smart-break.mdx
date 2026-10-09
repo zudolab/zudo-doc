@@ -26,7 +26,7 @@ zudo-doc のいくつかの表示面では、すでに smart-break が自動的�
 
 ## 手動適用：`SmartBreak` コンポーネント
 
-Preact アイランド（あるいはプロジェクト内の任意の `.tsx` コンポーネント）では `SmartBreak` コンポーネントを使います。子要素を文字列化し、適切な位置に `<wbr>` を挿入します：
+クライアントアイランド（あるいはプロジェクト内の任意の `.tsx` コンポーネント）では `SmartBreak` コンポーネントを使います。子要素を文字列化し、適切な位置に `<wbr>` を挿入します：
 
 ```tsx
 import { SmartBreak } from "@takazudo/zudo-doc/smart-break";
@@ -44,17 +44,17 @@ export function FileBadge({ path }: { path: string }) {
 
 ## 手動適用：`smartBreakToHtml` ヘルパー
 
-HTML 文字列を描画するコードパス（`dangerouslySetInnerHTML` など）では、Preact の VNode を直接マウントできません。その場合は `smartBreakToHtml` を使ってください。HTML エスケープ済みの文字列に、リテラルの `<wbr>` タグを挿入した結果を返します：
+HTML 文字列を描画するコードパス（`rawHtml` など）では、zudo-react の Description を直接マウントできません。その場合は `smartBreakToHtml` を使ってください。HTML エスケープ済みの文字列に、リテラルの `<wbr>` タグを挿入した結果を返します：
 
 ```tsx
 import { smartBreakToHtml } from "@takazudo/zudo-doc/smart-break";
 
 export function PathLabel({ label }: { label: string }) {
-  return <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(label) }} />;
+  return <span rawHtml={smartBreakToHtml(label)} />;
 }
 ```
 
-返される文字列はすでに HTML エスケープ済みなので、そのまま `dangerouslySetInnerHTML` に渡しても安全です。
+返される文字列はすでに HTML エスケープ済みなので、そのまま `rawHtml` に渡しても安全です。
 
 ## 判定のしくみ
 

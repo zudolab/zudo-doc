@@ -7,13 +7,13 @@ tags:
   - customization
 ---
 
-zudo-doc ships its layout and content components from the `@takazudo/zudo-doc` package. Those components hardcode their Tailwind utility classes — the doc-page title is literally `<h1 class="text-heading font-bold">`. That is the right call for a shipped component (see [Component First Strategy](./component-first.mdx)), but it leaves consumers a question: how do you re-style a component you do not own?
+zudo-doc ships its layout and content components from the `@takazudo/zudo-doc` package. Those components hardcode their zudo-wind utility classes — the doc-page title is literally `<h1 class="text-heading font-bold">`. That is the right call for a shipped component (see [Component First Strategy](./component-first.mdx)), but it leaves consumers a question: how do you re-style a component you do not own?
 
 The `--zdc-*` **component tokens** are the answer. They are a small, curated set of CSS custom properties that the package exposes as supported override seams — redefine one in your own `:root` and the matching component restyles across every route, with no `!important` and no eject.
 
 ## The component-library ownership inversion
 
-The usual component-first guidance is: _the component is the abstraction, so if you want a different look, change the component._ That works when the component is yours. Here it is not — it lives in `node_modules/@takazudo/zudo-doc`. Editing it means forking or ejecting the whole component, and trying to override it from the outside means fighting unlayered Tailwind-utility specificity with `!important`. Both are bad doors.
+The usual component-first guidance is: _the component is the abstraction, so if you want a different look, change the component._ That works when the component is yours. Here it is not — it lives in `node_modules/@takazudo/zudo-doc`. Editing it means forking or ejecting the whole component, and trying to override it from the outside means fighting unlayered zudo-wind utility specificity with `!important`. Both are bad doors.
 
 So the conclusion inverts. When you cannot edit the component file, **the component token becomes your scope.** Instead of reaching into the component, you redefine a value the component already reads. The component-first rule still holds inside the package; the `--zdc-*` surface is simply the seam it exposes outward.
 
@@ -85,7 +85,7 @@ Tokens are split by **rendering surface**. Content tokens target the `.zd-conten
 
 `--zdc-sidebar-font` and `--zdc-toc-font` are optional per-surface art-direction hooks, not tokens every pack is expected to set — the chrome font seam (`--zdc-chrome-font`, defaulting to `--font-sans`) already delivers a single cohesive typeface across the whole shell, which is what every bundled theme pack wants. Reach for one of these only when a pack deliberately wants the sidebar or TOC to diverge from the rest of the chrome.
 
-Their selectors name a desktop AND a mobile surface, and both are delivered in the production build: the mobile sidebar drawer and mobile TOC are zfb client islands, but Preact hydration preserves the SSR-rendered `data-*` attributes that match the virtual DOM, so `aside[data-zd-mobile-sidebar]` / `div[data-zd-mobile-toc]` are present in the live DOM alongside their desktop counterparts. `--zdc-sidebar-font` / `--zdc-toc-font` therefore reach the mobile drawer and mobile TOC exactly as they reach the desktop rail. The one exception is the zfb **dev server** (`pnpm dev`), which strips island-root `data-*` attributes as a dev-only quirk — these two selectors won't match while running `pnpm dev`, so verify a per-surface mobile font against a build (`pnpm build` + `pnpm preview`), not the dev server. Tracked as [zudolab/zudo-doc#2898](https://github.com/zudolab/zudo-doc/issues/2898). `--zdc-header-font` is unaffected either way — its selector, `header[data-header]`, is not an island.
+The component selectors cover desktop and mobile chrome. Check their computed values on built pages, including repeated client navigation; retained islands preserve unchanged effective identity and props, while changed identity or props recreate their render scope.
 
 </Note>
 

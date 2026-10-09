@@ -48,7 +48,7 @@ Use `pnpm dev:stable` when you're adding or removing showcase content files freq
 |---|---|
 | `pnpm build` | Static HTML export to `dist/` |
 | `pnpm check` | TypeScript type checking |
-| `pnpm b4push` | Pre-push validation: 23-step pipeline (format check → ... → Worker contract proof → build → link check → HTML validation → preview smoke); `scripts/run-b4push.sh` is authoritative for the current count. E2E runs in CI (pr-checks), not in b4push, for time-budget reasons |
+| `pnpm b4push` | Pre-push validation: validation pipeline (format check → ... → Worker contract proof → build → link check → HTML validation → preview smoke); `scripts/run-b4push.sh` is authoritative for the current count. E2E runs in CI (pr-checks), not in b4push, for time-budget reasons |
 | `pnpm format` | Format MDX files |
 | `pnpm test:unit` | Run unit tests (Vitest) |
 | `pnpm test:e2e` | Run E2E tests (Playwright) |
@@ -63,9 +63,9 @@ The canonical, authoritative b4push step list lives in the header comment of `sc
 
 ## Component Development
 
-zudo-doc is a Preact-only project running on zfb. All components are `.tsx` files. The distinction is **whether a component runs only on the server, or also hydrates on the client**.
+zudo-doc uses zfb’s zudo-react runtime. All components are `.tsx` files. The distinction is **whether a component runs only on the server, or also hydrates on the client**.
 
-### Server-rendered Preact components
+### Server-rendered zudo-react components
 
 By default, every `.tsx` component renders to HTML at build time and ships zero client-side JavaScript. This is the right choice for:
 
@@ -91,7 +91,7 @@ Use client-hydrated islands for:
 
 ### Content Typography Components
 
-Content typography is package-owned. `@takazudo/zudo-doc/content.css` supplies the shared `.zd-content` stylesheet, while package Preact components render the major MDX HTML overrides on the server with no client hydration.
+Content typography is package-owned. `@takazudo/zudo-doc/content.css` supplies the shared `.zd-content` stylesheet, while package zudo-react components render the major MDX HTML overrides on the server with no client hydration.
 
 The default component map covers headings (h2–h4), paragraph, link, strong, blockquote, lists (ul/ol), and tables. A project can override those bindings, or add other MDX components, through `mdxExtras`.
 

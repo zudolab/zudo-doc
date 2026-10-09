@@ -78,7 +78,7 @@ export default defineConfig(
   type: "link",
   href: "https://discord.example",
   ariaLabel: "Discord",
-  icon: "github", // 現在同梱されているアイコンは "github" のみ
+  icon: "github", // only "github" is bundled today
 }
 ```
 
@@ -117,7 +117,7 @@ export default defineConfig(
 ```ts
 headerRightItems: [
   { type: "trigger", trigger: "design-token-panel" },
-  // { type: "trigger", trigger: "ai-chat" },  // 削除
+  // { type: "trigger", trigger: "ai-chat" },  // removed
   { type: "component", component: "version-switcher" },
   { type: "component", component: "github-link" },
   { type: "component", component: "theme-toggle" },
@@ -129,12 +129,12 @@ headerRightItems: [
 
 ```ts
 headerRightItems: [
-  // ...既存のアイテム
+  // ...existing items
   {
     type: "link",
     href: "https://discord.gg/your-server",
     ariaLabel: "Discord",
-    icon: "github", // 他アイコン同梱までの暫定
+    icon: "github", // until more icons are bundled
   },
 ],
 ```
@@ -147,7 +147,7 @@ headerRightItems: [
 
 ## 外観メニューのカスタマイズ
 
-組み込みの `theme-toggle` コンポーネントでたいていのサイトは事足ります。それでも、トグルを独自の場所に配置したい、自前の island ラッパーに組み込みたい、あるいは `@takazudo/zudo-doc/theme` バレル(React 解決の落とし穴があります — 後述)を避けたいといった理由で、プロジェクト内に **自前の** `ThemeToggle` を持ち続ける場合があります。いずれの場合も、ローカルにコンポーネントを手でコピーするのではなく、**専用の `@takazudo/zudo-doc/theme-toggle` サブパスから `ThemeToggle` をインポート**してください。
+組み込みの`theme-toggle`は標準ヘッダーの外観メニューです。同じメニューを別の場所へ置く場合は、公開`@takazudo/zudo-doc/theme-toggle`サブパスから`ThemeToggle`をインポートし、固定ターゲットのサーバー境界で合成します。
 
 ```tsx
 import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
@@ -157,19 +157,13 @@ import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 
 ### なぜパッケージの island をインポートするのか
 
-zfb は(`0.1.0-next.39` 以降)npm の `dist/` に同梱された `"use client"` モジュールをスキャンします。`@takazudo/zudo-doc` はスキャナから見える `ThemeToggle` island を同梱しています。同じ名前のローカル `ThemeToggle` を手でコピーすると、zfb は `ThemeToggle` という island マーカーを主張するコンポーネントを **2 つ** 検出し、ビルドのたびに衝突警告を出します:
+各クライアントエントリーには一意のアイランドidentityが必要です。別のソースファイルが`ThemeToggle`を名乗る状態は、無害な警告やスキャン順による上書きではなくエラーです。パッケージのエントリーを再利用します。別のメニューを作る場合は、クライアントエントリーに異なるエクスポート名を付け、その1つのターゲットをサーバー境界へ静的にインポートします。`displayName`の設定や重複するローカルshimでパッケージのアイランドを置き換えないでください。
 
-```
-⚠ island marker name collision: "ThemeToggle" is produced by two different source files —
-keeping <consumer>/src/components/theme-toggle.tsx and dropping
-<pkg>/@takazudo/zudo-doc/dist/theme-toggle/index.js. ...
-```
-
-この警告は無害です — ローカルのコンポーネントが勝ち、正しくハイドレートされます — が、ノイズになりますし、「片方を残し、片方を捨てる」という解決はスキャン順に依存します。パッケージから `ThemeToggle` をインポートすれば同じマーカーに登録されるため、衝突するものがなくなり、手書きコピーの保守負担からも解放されます。
+このリポジトリは`node scripts/check-client-export-names.mjs`でエントリーグラフを検証し、ビルド前にidentityの重複を拒否します。virtual bindings内のレンダラーだけでは、クライアントエントリーへのスキャナー到達性を保証できません。[Custom Components](./custom-components.mdx#インタラクティブアイランド（実験的）)の具体的な静的ルートインポートに従ってください。
 
 <Warning title="/theme ではなく /theme-toggle からインポートする">
 
-トグルは必ず専用の `@takazudo/zudo-doc/theme-toggle` サブパスからインポートしてください。より広い `@takazudo/zudo-doc/theme` バレルからは **インポートしないでください**: このバレルは react をインポートする design-token-panel モジュールを esbuild のグラフに引き込み、そこでは `react` が `preact/compat` にエイリアスされて **いません**。`/theme-toggle` サブパスは preact のみのクリーンなモジュールで、react バレルの落とし穴がありません。
+外観コントロールは公開 `@takazudo/zudo-doc/theme-toggle` サブパスからインポートします。zudo-react のクライアントコンポーネントなので、静的にインポートしたサーバー境界から `Island` でマウントします。
 
 </Warning>
 

@@ -1170,6 +1170,12 @@ zfb バンドラーオプション（`exclude` / `mainFields` / `external`）。
 
 デフォルト: `undefined`
 
+### wind
+
+zfbへ渡すトップレベルの`WindConfig | false`上書きです。シリアライズされる`Settings`には追加しません。デフォルトは`undefined`（パッケージのプリセットを継承）です。
+
+プリセットはvarベースのセマンティックトークン、`reset: "owned-v1"`、`dark: false`、公開`@takazudo/zudo-doc/wind.json`マニフェスト、`sm`/`lg`/`xl`のピクセルブレークポイントを登録します。`spacingUnit`は指定しません。zfbは明示的な上書きをこれらへ深くマージし、`wind: false`は生成を無効にします。既存トークンの値は通常の`:root`宣言で変更し、新しいユーティリティ名には`wind.tokens`を使います。例とauditのカバレッジの限界は[Design System](../reference/design-system.mdx)を参照してください。
+
 ## リファレンスとしての拡張プロジェクト
 
 このショーケース自身の `zfb.config.ts` が標準的な「拡張プロジェクト」の例です — 型付き `settings` オブジェクトをスプレッドし、真にショーケース固有のデータブロック（タグ語彙、カスタム翻訳）をエスケープハッチフィールド経由で渡し、そしてシェルフィールド（`port`、`adapter`、`bundle`）を足します:

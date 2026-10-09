@@ -6,55 +6,59 @@ tags:
   - design-system
 ---
 
-zudo-doc uses a **tight token strategy** — instead of importing the full Tailwind framework, only `preflight` and `utilities` are loaded, skipping the default theme entirely. The package then supplies a small, intentional set of design tokens. This page covers the full system: spacing, typography, colors, border radius, breakpoints, and layering.
+zudo-doc uses a **tight token strategy** with zfb's zudo-wind compiler. Authored CSS custom properties hold the values; the package preset registers the supported utility tokens. This reference targets the aligned zfb 4.2.1 family.
 
 ## Tight Token Strategy
 
-Tailwind CSS ships with hundreds of built-in values — colors, spacing scales, font sizes, and more. In a themeable project, these defaults cause problems: hardcoded values ignore theme changes and create inconsistency.
+The scaffold imports public package stylesheets and overrides values with ordinary CSS:
 
-The scaffold's `src/styles/global.css` imports only Tailwind's `preflight` (reset) and `utilities` (functional classes), then imports the package's token stylesheet. The default Tailwind theme layer is deliberately skipped:
-
-```css
-@layer zd-preflight, zd-flow;
-@import "tailwindcss/preflight" layer(zd-preflight);
-@import "tailwindcss/utilities";
+```css title="src/styles/global.css"
+@layer zw-reset, zd-flow;
 @import "@takazudo/zudo-doc/theme.css";
-@import "@takazudo/zudo-doc/safelist.css";
 @import "@takazudo/zudo-doc/content.css";
 @import "@takazudo/zudo-doc/page-loading.css";
 @import "@takazudo/zudo-doc/features.css";
 
-/* Override package defaults here when the project needs to. */
-@theme {
-  /* e.g. --color-accent: oklch(0.6 0.2 250); */
+:root {
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 ```
 
-`@takazudo/zudo-doc/theme.css` ships the default `@theme` tokens. Its package source, `packages/zudo-doc/src/theme.css`, is the source of truth; the scaffold's later, empty `@theme` block is an override point. The shipped block opens with `--color-*: initial` to wipe Tailwind's default palette before adding back project color tokens.
+`theme.css` owns the custom properties and an authored `@layer base` reset patch. The preset selects `reset: "owned-v1"`; this is a zudo-wind reset plus the package patch, not identical Tailwind reset bytes. There are no Tailwind imports, `@source` directives, safelist stylesheet, or `@theme` token registration in this entry.
 
-<Info>
+## What utility vocabulary you have
 
-This is the core philosophy: define only what the project needs. Every value in the system is intentional, and accidental use of Tailwind defaults is immediately visible.
+Use named project tokens such as `text-caption`, `bg-accent`, `px-hsp-md`, `w-icon-sm`, and `z-modal`. Structural utilities such as `flex`, `hidden`, and `grid-cols-3` and supported explicit lengths such as `m-[13px]` remain available. Not every Tailwind spelling is supported by zudo-wind.
 
-</Info>
+The preset intentionally omits `spacingUnit`: nonzero numeric spacing such as `p-4` does not acquire an implicit quarter-rem scale. Use named spacing or explicit bracket lengths. Zero and `px` remain available. Default palette names such as `bg-blue-500` are not registered. Named group/peer variants, peer-checked, rings, and animations require authored CSS rather than an assumed utility.
 
-## What Tailwind vocabulary you have
+Package classes are declared through the public `@takazudo/zudo-doc/wind.json` manifest. Project classes must be detectable by zfb's scanner. Add new semantic utility tokens through `zudoDoc({ wind })`; defining a custom property alone does not register a new utility:
 
-The tight token strategy does not remove Tailwind's utility syntax. It narrows which token-backed utilities have values. Use the project vocabulary below when writing MDX or components.
+```ts title="zfb.config.ts"
+import { defineConfig } from "@takazudo/zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
 
-| Works | Dead (silently unstyled) |
-|-------|--------------------------|
-| project tokens: `text-caption`, `bg-accent`, `px-hsp-*`, `py-vsp-*`, `w-icon-*`, z-index tiers such as `z-modal` | numeric spacing: `p-4`, `mt-8`, `w-64` |
-| `tracking-tight`, `tracking-normal`, `tracking-wide`, `tracking-wider` | `tracking-tighter`, `tracking-widest` |
-| `rounded`, `rounded-lg`, `rounded-full` | default type scale: `text-sm`, `text-lg` |
-| static utilities: `flex`, `grid-cols-3`, `hidden`, ... | default palette: `bg-blue-500` (reset by design) |
-| arbitrary values: `m-[13.37px]`, `w-[42%]` — the full escape hatch | `shadow-md` (only `shadow-lg` exists) |
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    wind: {
+      tokens: {
+        colors: { brand: "var(--project-brand)" },
+      },
+    },
+  }),
+);
+```
 
-The scaffold scans MDX content, `src/components/`, `src/chrome-bindings.tsx`, and `pages/` through its `@source` coverage and Tailwind's automatic detection. A class used in a location that is not scanned is emitted as unstyled markup, so add an `@source` directive when you introduce a new source location.
+```css title="src/styles/global.css (after package imports)"
+:root {
+  --project-brand: var(--zd-accent);
+}
+```
 
-To re-enable a default Tailwind vocabulary, import `tailwindcss/theme`, or define the specific tokens you need in the project's `@theme` override block. Prefer a local semantic token when the value is part of the project's design language.
+zfb deep-merges this override over the preset, retaining the other package tokens. `wind: false` explicitly disables generation. The theme continues to use `html[data-theme]` and custom properties with `dark: false`; it does not add a separate dark-utility theme.
 
-For examples of using this vocabulary in MDX components, see [Custom Components](../guides/custom-components.mdx).
+Run `pnpm exec zfb wind audit --project-root . --fail-on error`. The flag makes error diagnostics fail the command. A clean audit does not prove every conditional class was discovered or every intended rule was emitted: also check `pnpm check:package-wind-manifest` in this repository and inspect generated CSS and computed values on representative pages.
 
 ## Spacing
 
@@ -199,13 +203,15 @@ Four steps from negative to open. Use `tracking-tight` on large headings to keep
 |-------|-------|---------|
 | `sm` | `640px` | `sm:flex` |
 | `lg` | `1024px` | `lg:grid-cols-2` |
-| `xl` | `1280px` | `xl:max-w-5xl` |
+| `xl` | `1280px` | `xl:max-w-[80rem]` |
 
 ```html
 <div class="px-hsp-sm sm:px-hsp-md lg:px-hsp-lg xl:px-hsp-xl">
   Responsive horizontal padding
 </div>
 ```
+
+`max-sm`, `max-lg`, and `max-xl` use a strict width less than the configured pixel value. No `md` or `2xl` breakpoint is configured.
 
 ## Z-index Tiers
 
@@ -235,61 +241,15 @@ See the [Color reference](./color.mdx) for full details on the color token syste
 
 ## Coexisting with another `@theme`
 
-Tailwind v4 merges every `@theme` block reached from the stylesheet entry into one variable set. When a key appears more than once, the last declaration wins. CSS reports no error for a duplicate or for the resulting overwrite.
+A host's separate Tailwind build may still use `@theme`, but zudo-doc's entry uses ordinary `:root` properties and zudo-wind token configuration. Keep the host namespace separate. zudo-doc reserves its 23 bare `--color-*` aliases and the `--color-zd-*` prefix; redefining a reserved property affects package chrome regardless of which compiler produced the stylesheet.
 
-zudo-doc **reserves 23 bare `--color-*` alias names and the `--color-zd-*` prefix**. The bare aliases have these suffixes:
-
-`bg`, `fg`, `sel-bg`, `sel-fg`, `surface`, `muted`, `accent`, `accent-hover`, `code-bg`, `code-fg`, `success`, `danger`, `warning`, `info`, `overlay`, `image-overlay-bg`, `image-overlay-fg`, `chat-user-bg`, `chat-user-text`, `chat-assistant-bg`, `chat-assistant-text`, `matched-keyword-bg`, `matched-keyword-fg`.
-
-Other names, such as `--color-acme-*`, are yours. The package chrome consumes the bare aliases through `bg-bg`, `text-fg`, `border-muted`, `var(--color-muted)`, and similar references. A second design system's `@theme` that defines any of these reserved names is **unsupported**: whichever declaration is imported last wins silently. This is separate from intentionally overriding zudo-doc's own theme for your project.
-
-The `--color-*: initial` guardrail clears every `--color-*` declaration **before** it, from any file, not just Tailwind's defaults. **Import `@takazudo/zudo-doc/theme.css` before your own `@theme` block**, as the scaffold already does.
-
-If the host stylesheet cannot be reordered after zudo-doc's import, use `@takazudo/zudo-doc/theme-no-reset.css` in place of `theme.css`. It has identical tokens and rules, with only the color reset removed. Under zfb's split imports (`tailwindcss/preflight` + `tailwindcss/utilities`), the default palette never exists: the variant loses nothing there, and the reset in `theme.css` is a defensive guardrail. A host that imports `tailwindcss/theme` (or uses a non-zfb `@import "tailwindcss"` entry) keeps the whole default palette with the variant; `theme.css` clears that palette when it is declared before the reset.
-
-The `--color-zd-*` aliases provide one namespaced counterpart per bare alias, with the same default value. Another design system can consume zudo-doc colors through `bg-zd-*`, `text-zd-*`, and `border-zd-*` utilities without using the bare tier. The aliases are declared in `@theme static`, so their variables are always present in `:root`, even when your Tailwind scan uses none of them. The utilities themselves are generated only for classes your own scan sees.
-
-For example, give the host design system an `acme` namespace and import its tokens after zudo-doc:
-
-```css title="consumer.css"
-@theme {
-  --color-acme-bg: oklch(0.97 0.01 250);
-  --color-acme-fg: oklch(0.25 0.02 250);
-}
-```
-
-```css title="src/styles/global.css"
-@layer zd-preflight, zd-flow;
-@import "tailwindcss/preflight" layer(zd-preflight);
-@import "tailwindcss/utilities";
-@import "@takazudo/zudo-doc/theme.css";
-@import "./consumer.css";
-@import "@takazudo/zudo-doc/safelist.css";
-@import "@takazudo/zudo-doc/content.css";
-@import "@takazudo/zudo-doc/page-loading.css";
-@import "@takazudo/zudo-doc/features.css";
-```
-
-What you get with this entry:
-
-| Surface | Result |
-| --- | --- |
-| `--color-acme-bg`, `--color-acme-fg` | Survive the reset because they are declared after it |
-| zudo-doc's bare aliases | Stay intact; `acme` defines no reserved names |
-| `bg-zd-accent` | Available to `acme` components when the class is found by your Tailwind scan |
-| Tailwind's default palette | Absent; the entry uses only the split imports |
-
-Keep the two spellings distinct: the raw `--zd-*` tier is **prefix-first**, outside `@theme`, and injected by `ColorSchemeProvider`; the semantic `--color-zd-*` tier is **category-first**, inside `@theme`. Never insert `color-` after the raw `--zd-` prefix: that third spelling connects to neither tier. Check the built CSS as well as the source to confirm that the utilities you use were emitted and reference the intended tokens.
-
-Moving the package chrome to the namespaced tier is explicitly outside this contract. Package and showcase code keep using the bare tier; a host design system that also defines the bare names remains unsupported, including with `theme-no-reset.css`.
+Import `@takazudo/zudo-doc/theme.css` before project overrides. There is no palette reset or `theme-no-reset.css` variant to choose. Existing `--color-zd-*` aliases remain available and are registered as wind color tokens; raw `--zd-*` properties belong to the color-scheme provider. Check emitted rules and the winning declaration when multiple stylesheets share a page.
 
 ## Usage Rules
 
-<Warning title="Tailwind's default theme is disabled">
+<Warning title="Use registered tokens">
 
-The default Tailwind theme is not imported. Project tokens come from `@takazudo/zudo-doc/theme.css`, then the project's `@theme` override block. A token that is not defined produces unstyled markup.
-
-When another design system shares the entry, follow the import order and reserved-name rules in [Coexisting with another `@theme`](#coexisting-with-another-theme).
+Custom properties supply values; wind configuration registers utility names. Check the generated CSS whenever you add a token or an authored class.
 
 </Warning>
 

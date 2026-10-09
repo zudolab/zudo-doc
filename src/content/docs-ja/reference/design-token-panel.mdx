@@ -263,9 +263,23 @@ Layout のうち 3 つは読み取り専用として表示されます: `spacing
 
 </Note>
 
+## ランタイム依存とCSS
+
+インストールされた公開`@takazudo/zdtp` 0.8.5は、`preact: ^10.29.1`をpeerとして宣言しています。パネルを有効にする場合やカスタムマウント用にバンドルする場合はこのpeerもインストールします。zudo-doc自体のコンポーネントはzudo-reactを使い、Preactノードを必要としません。パネルは独立したPreactサブツリーとTailwind browser engineを所有し、サイトのユーティリティを登録しません。
+
+```sh
+pnpm add @takazudo/zdtp@0.8.5 preact@^10.29.1
+```
+
+```css
+@import "@takazudo/zdtp/styles.css";
+```
+
+`./styles.css`と`./styles`は同じ配布CSSの公開エクスポートです。他の先頭インポートと一緒に置き、物理的な`dist/`パスを参照しないでください。スキャフォールドが追加するのはパネル機能を選択した場合だけです。
+
 ## 実装
 
-パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。パッケージ所有の `DesignTokenPanelBootstrap` アイランドと、`configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure の仕組みは `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。アイランドは `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出します。`buildDesignTokenPanelConfig` は `(mode) => PanelConfig` のビルダーであり、これが Color タブをライト/ダークに追従させる仕組みです。アイランドがハイドレートすると、パネルはその副作用として自己マウントされます。
+パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。パッケージ所有の `DesignTokenPanelBootstrap` アイランドと、`configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure の仕組みは `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。固定ターゲットのサーバー境界がクライアントbootstrapをマウントし、`scope.onActivate`内で`runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "default", scope.abortSignal)`を呼び出します。`buildDesignTokenPanelConfig` は `(mode) => PanelConfig` のビルダーであり、これが Color タブをライト/ダークに追従させる仕組みです。アイランドがハイドレートすると、パネルはその副作用として自己マウントされます。
 
 ### 遅延読み込み
 
@@ -336,7 +350,7 @@ export function HostPanelBootstrap() {
 | `bundleZdtp` | `boolean` | `@takazudo/zdtp` をビルドにバンドルします。デフォルトは `undefined`（`designTokenPanel` に追従: `bundleZdtp ?? designTokenPanel`）。`designTokenPanel: false` のまま `true` にすると、パッケージのパネルはマウントせずに zdtp だけをバンドルします — 自前のパネルをマウントするための組み合わせです（[自前のパネルをマウントする](#実装-自前のパネルをマウントする)を参照）。`designTokenPanel: true` のまま `false` にすると設定解決の時点で拒否されます。 |
 | `designTokenPanelConfigModule` | `string` | 完全にカスタムなパネル用に `buildDesignTokenPanelConfig(mode)` をエクスポートするモジュールへの、プロジェクトルート相対パス。デフォルトは `undefined`（パッケージのデフォルトビルダーを使用）。 |
 
-デフォルトのトークンそのもの（スペーシングスケール・フォントスケール・アイコンサイズ・パレットのエイリアス）は`@takazudo/zudo-doc/theme.css`から提供されます。スキャフォールドの後続の`src/styles/global.css`にある`@theme`ブロックはオーバーライドポイントです。カラーランプとマッピングには、パッケージの`@takazudo/zudo-doc/color-schemes-defaults`または自作の`colorSchemes`上書き（[Color](./color.mdx)を参照）を使います。パネルはブラウザ内のコピーを編集するだけで、ソースファイルに書き戻すことはありません。
+デフォルトのトークンそのもの（スペーシングスケール・フォントスケール・アイコンサイズ・パレットのエイリアス）は`@takazudo/zudo-doc/theme.css`から提供されます。スキャフォールドの後続の`src/styles/global.css`にある`:root`ブロックはオーバーライドポイントです。カラーランプとマッピングには、パッケージの`@takazudo/zudo-doc/color-schemes-defaults`または自作の`colorSchemes`上書き（[Color](./color.mdx)を参照）を使います。パネルはブラウザ内のコピーを編集するだけで、ソースファイルに書き戻すことはありません。
 
 <Tip>
 

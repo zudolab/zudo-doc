@@ -32,6 +32,10 @@ chrome要素（`<header>`、デスクトップサイドバー、`<footer>`、サ
 
 </Info>
 
+## ナビゲーション中のアイランド状態
+
+クロームの祖先を保持しても、内側のすべてのアイランドが固定されるわけではありません。実効的なidentityとシリアライズされたpropsが変わらなければ、ネイティブランタイムはDOM、handle、スコープ内の状態を保持します。identityやpropsの変更時は描画スコープを再作成し、構造やスケジューリングの変更時は対象の永続化境界を無効にします。セッションが所有するホストpropsには`data-zd-props-preserve`を使えます。ページ由来のpropsは更新を維持します。[Host Chrome Bindings](../reference/host-chrome-bindings.mdx)を参照してください。
+
 ## ローディングオーバーレイ
 
 遷移先ページの取得中、zudo-docは中央にスピナーを配置したフルスクリーンの**ローディングオーバーレイ**を表示します。ナビゲーションが始まると表示され、新しいコンテンツが差し替えられると同時に消えるため、クリックが受け付けられたことが即座にフィードバックされます。取得に少し時間がかかる低速な接続では特に有用です。
@@ -75,10 +79,10 @@ export default defineConfig(
 `create-zudo-doc`で新しいプロジェクトを生成する際、このオプションは**「Dynamic page transition」**というラベルで表示され、デフォルトで有効です。CLIフラグで非対話的に制御できます。
 
 ```sh
-# 明示的に有効化（これがデフォルト）
+# Explicitly enable (this is the default)
 create-zudo-doc my-docs --dynamic-page-transition
 
-# 無効化 — 通常のフルページナビゲーションのプロジェクトを生成
+# Disable — generate a project with plain full-page navigation
 create-zudo-doc my-docs --no-dynamic-page-transition
 ```
 
@@ -111,7 +115,7 @@ create-zudo-doc my-docs --no-dynamic-page-transition
 ```tsx
 import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 
-// ...レイアウト内、<body>の末尾で:
+// ...inside your layout, at the end of <body>:
 <PageLoadingOverlay />;
 ```
 
@@ -133,7 +137,7 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 
 <Warning>
 
-このインポートは、`global.css`内のあらゆるルール文よりも**前**に置かなければなりません。CSSではすべての`@import`ルールが他のルールに先行する必要があります。セレクターや`@theme`ブロックの後ろに置くと、インポートは黙って破棄され、オーバーレイはスタイルが当たらないまま表示されてしまいます。
+このインポートは、`global.css`内のあらゆるルール文よりも**前**に置かなければなりません。CSSではすべての`@import`ルールが他のルールに先行する必要があります。セレクターや`:root`ブロックの後ろに置くと、インポートは黙って破棄され、オーバーレイはスタイルが当たらないまま表示されてしまいます。
 
 </Warning>
 
@@ -156,9 +160,9 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 スクリムは**専用**のトークン`--color-page-loading-overlay`を読むようになり、ライトボックス（画像拡大）の背景（`--color-overlay`）とは**切り離されています**。これを設定すれば、他のオーバーレイに一切触れることなく、ローディングのスクリムだけを調整できます。
 
 ```css
-@theme {
-  /* ローディングオーバーレイ専用の、明るくすりガラス調のブランドスクリム。
-     画像ライトボックスは引き続き --color-overlay を使う。 */
+:root {
+  /* A light, frosted brand scrim for the loading overlay only —
+     the image lightbox keeps using --color-overlay. */
   --color-page-loading-overlay: color-mix(
     in oklch,
     var(--color-bg) 70%,
@@ -178,9 +182,9 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 スクリムを明るい色に変更する場合は、リングも合わせて上書きしてください。
 
 ```css
-@theme {
+:root {
   --color-page-loading-overlay: color-mix(in oklch, var(--color-bg) 70%, transparent);
-  /* スキームに追従するスクリムには、スキームに追従するリングを。 */
+  /* A scheme-aware scrim wants a scheme-aware ring. */
   --color-page-loading-spinner: var(--color-fg);
 }
 ```
