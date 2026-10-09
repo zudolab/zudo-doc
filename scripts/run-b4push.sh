@@ -13,35 +13,36 @@ set -euo pipefail
 #   7. Tags audit (--ci) + canonical authored/template tag guard
 #   8. Current-only compatibility contract
 #   9. Design token lint
-#  10. Component-tokens codegen drift check (check:component-tokens — #2448)
-#  11. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
-#  12. @flaky/@local-only tracking-issue guard (#2292) — every quarantined test must link an issue
-#  13. Wait-debt guard (#2538) — zero-tolerance waitForTimeout wait-ok annotation check
-#  14. Search-widget-script commit drift check (#3421, #3431) — committed generated-script.ts
+#  10. Native Wind audit (--fail-on error)
+#  11. Component-tokens codegen drift check (check:component-tokens — #2448)
+#  12. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
+#  13. @flaky/@local-only tracking-issue guard (#2292) — every quarantined test must link an issue
+#  14. Wait-debt guard (#2538) — zero-tolerance waitForTimeout wait-ok annotation check
+#  15. Search-widget-script commit drift check (#3421, #3431) — committed generated-script.ts
 #      must match a fresh regeneration
-#  15. Nav-overflow-script commit drift check (#3534, #3535) — committed
+#  16. Nav-overflow-script commit drift check (#3534, #3535) — committed
 #      nav-overflow-generated-script.ts must match a fresh regeneration
-#  16. @takazudo/zudo-doc publish contract (check:prepack-contract)
-#  17. Default-lane dist-mutating test guard (#3488)
-#  18. Bash 3.2 compatibility lint (#4049)
-#  19. Required-checks manifest + B4push/CI parity meta-checks (#3494, #1967)
-#  20. Scaffold pin published guard (release-window-aware; #3549)
-#  21. Type checking (zfb check + workspace package typechecks)
-#  22. e2e/ type checking (check:e2e — #4322, #4324)
-#  23. Worker contract proof (types + Workers runtime + Wrangler dry-run)
-#  24. Root unit tests (test:unit) — 903 tests (901 passed, 2 skipped); builds @takazudo/zudo-doc
-#  25. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — 60 slow root tests +
+#  17. @takazudo/zudo-doc publish contract (check:prepack-contract)
+#  18. Default-lane dist-mutating test guard (#3488)
+#  19. Bash 3.2 compatibility lint (#4049)
+#  20. Required-checks manifest + B4push/CI parity meta-checks (#3494, #1967)
+#  21. Scaffold pin published guard (release-window-aware; #3549)
+#  22. Type checking (zfb check + workspace package typechecks)
+#  23. e2e/ type checking (check:e2e — #4322, #4324)
+#  24. Worker contract proof (types + Workers runtime + Wrangler dry-run)
+#  25. Root unit tests (test:unit) — 903 tests (901 passed, 2 skipped); builds @takazudo/zudo-doc
+#  26. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — 60 slow root tests +
 #      5 retiered create-zudo-doc tests; blocking
-#  26. Package tests (test:packages) — 2,988 suite tests across 4 workspace packages
+#  27. Package tests (test:packages) — 2,988 suite tests across 4 workspace packages
 #      (44/73/596/2,275; 5 retiered create-zudo-doc tests run in Slow Unit Tests)
-#  27. Package wind manifest check (#1994) — requires dist/wind.json from step 24
-#  28. Build (zfb build)
-#  29. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
-#  30. Link check
-#  31. Image check (zudo-doc check images)
-#  32. HTML validation (html-validate dist/**/*.html)
-#  33. Automated preview smoke (blocking)
-#  34. Manual interactive smoke (operator-driven)
+#  28. Package wind manifest check (#1994) — requires dist/wind.json from step 25
+#  29. Build (zfb build)
+#  30. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
+#  31. Link check
+#  32. Image check (zudo-doc check images)
+#  33. HTML validation (html-validate dist/**/*.html)
+#  34. Automated preview smoke (blocking)
+#  35. Manual interactive smoke (operator-driven)
 #
 # The former "Z-index codegen drift check" step was retired in
 # zudolab/zudo-doc#2661: the project-side src/config/z-index-tokens.ts (and
@@ -54,10 +55,10 @@ set -euo pipefail
 # it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_PIN_PUBLISHED=1  — skip the release-window guard (step 20)
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 32)
-#   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke (step 33)
-#   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke (step 34)
+#   B4PUSH_SKIP_PIN_PUBLISHED=1  — skip the release-window guard (step 21)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 33)
+#   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke (step 34)
+#   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke (step 35)
 
 # Machine-wide queue for heavy steps, shared by every agent session on this machine
 # (owner's ~/.claude or ~/.codex). Absent on CI and on other machines → runs directly.
@@ -92,7 +93,7 @@ heavy() {
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=34
+TOTAL_STEPS=35
 CURRENT_STEP=0
 
 # Per-step elapsed timing (#2538) — makes budget creep in any one step
@@ -101,7 +102,7 @@ CURRENT_STEP=0
 # STEP_LABEL track the step currently in flight. Timing is recorded when the
 # *next* step() call fires (or once more at script end for the last step) —
 # this covers steps that run several sequential checks under one header
-# (e.g. step 21 "Type checking") without needing every pass/fail/skip call
+# (e.g. step 22 "Type checking") without needing every pass/fail/skip call
 # site to know about timing.
 STEP_START_TIME=0
 STEP_LABEL=""
@@ -235,7 +236,15 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 10: Component-tokens codegen drift check ─────
+# Native Wind diagnostics must fail on error severity; unflagged exit 0 is not proof.
+step "Wind audit (native error gate)"
+if (cd "$ROOT_DIR" && pnpm exec zfb wind audit --project-root . --fail-on error); then
+  pass "Wind audit passed"
+else
+  fail "Wind audit"
+fi
+
+# ── Step 11: Component-tokens codegen drift check ─────
 # pnpm check:component-tokens routes through the @takazudo/zudo-doc
 # `gen-component-tokens` bin (--check mode, #2448) — re-runs the --zdc-*
 # component token codegen into a buffer and fails if
@@ -248,7 +257,7 @@ else
   fail "Component-tokens codegen drift check"
 fi
 
-# ── Step 11: E2E spec naming guard (#2095, hardened #2538) ───────────
+# ── Step 12: E2E spec naming guard (#2095, hardened #2538) ───────────
 # Pure-Node check — asserts (a) every e2e/**/*.spec.ts (recursive, excluding
 # e2e/fixtures/) starts with a known fixture prefix so Playwright's testMatch
 # glob actually picks it up, (b) no *.spec.ts files exist outside e2e/ except
@@ -262,7 +271,7 @@ else
   fail "E2E spec naming guard"
 fi
 
-# ── Step 12: @flaky/@local-only tracking-issue guard ──
+# ── Step 13: @flaky/@local-only tracking-issue guard ──
 # Pure-Node check — asserts every test tagged @flaky or @local-only has a
 # GitHub issue URL in a comment on the line(s) immediately preceding the
 # test() call. Without the URL, quarantine telemetry (report-flaky-lane.mjs)
@@ -274,7 +283,7 @@ else
   fail "@flaky/@local-only tracking-issue guard"
 fi
 
-# ── Step 13: Wait-debt guard (#2538) ──────────────────
+# ── Step 14: Wait-debt guard (#2538) ──────────────────
 # Pure-Node check — zero-tolerance enforcement of TESTING.md's Wait-Pattern
 # Rules: every `waitForTimeout` call under e2e/ (excluding fixtures) must
 # carry a trailing `// wait-ok: <why>` comment on the same line. Closes the
@@ -287,7 +296,7 @@ else
   fail "Wait-debt guard"
 fi
 
-# ── Step 14: Search-widget-script commit drift check (#3421, #3431) ──
+# ── Step 15: Search-widget-script commit drift check (#3421, #3431) ──
 # Regenerates packages/zudo-doc/src/search-widget-script/generated-script.ts
 # (write-if-changed) and git-diffs the committed file against the result —
 # that generated file is tracked in git (a deliberate departure from the
@@ -301,7 +310,7 @@ else
   fail "Search-widget-script commit drift check"
 fi
 
-# ── Step 15: Nav-overflow-script commit drift check (#3534, #3535) ──
+# ── Step 16: Nav-overflow-script commit drift check (#3534, #3535) ──
 # Regenerates packages/zudo-doc/src/header/nav-overflow-generated-script.ts
 # (write-if-changed) and git-diffs the committed file against the result —
 # mirrors the search-widget-script drift check above. See
@@ -313,7 +322,7 @@ else
   fail "Nav-overflow-script commit drift check"
 fi
 
-# ── Step 16: @takazudo/zudo-doc publish contract ─────
+# ── Step 17: @takazudo/zudo-doc publish contract ─────
 # Runs the extracted prepack guards in the local heavy lane before any publish.
 step "@takazudo/zudo-doc publish contract (check:prepack-contract)"
 if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc check:prepack-contract); then
@@ -322,7 +331,7 @@ else
   fail "@takazudo/zudo-doc publish contract"
 fi
 
-# ── Step 17: Default-lane dist-mutating test guard (#3488) ──
+# ── Step 18: Default-lane dist-mutating test guard (#3488) ──
 # Pure-Node check — scans tracked default-lane test specs for direct launches
 # of known build/package-lifecycle commands. The scanner intentionally has a
 # narrow scope; see scripts/check-dist-mutating-tests.mjs.
@@ -333,7 +342,7 @@ else
   fail "Default-lane dist-mutating test guard"
 fi
 
-# ── Step 18: Bash 3.2 compatibility lint (#4049) ─────
+# ── Step 19: Bash 3.2 compatibility lint (#4049) ─────
 # Static scan of the shipped template shell scripts (setup-doc-skill.sh, both
 # copies) for the two constructs that break on stock macOS bash 3.2: a
 # heredoc opened inside $(...), and an unguarded "${arr[@]}"/"${arr[*]}"
@@ -347,7 +356,7 @@ else
   fail "Bash 3.2 compatibility lint"
 fi
 
-# ── Step 19: Guard-manifest meta-checks ──────────────
+# ── Step 20: Guard-manifest meta-checks ──────────────
 # Both checks are pure Node and dependency-free. The first verifies that every
 # PR workflow job is classified as required or reasoned-allowlisted; the second
 # verifies every lightweight local guard has corresponding CI coverage.
@@ -360,7 +369,7 @@ fi
 
 # <<< b4push-ci-parity:guards:end
 
-# ── Step 20: Scaffold pin published guard (#3549) ─────
+# ── Step 21: Scaffold pin published guard (#3549) ─────
 # This live npm-registry check belongs outside the parity guard region: the
 # scaffold intentionally points at the in-flight release version before that
 # version is published. Release callers opt out during that window; nightly
@@ -376,7 +385,7 @@ else
   fi
 fi
 
-# ── Step 21: Type checking ─────────────────────────────
+# ── Step 22: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -409,7 +418,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 22: e2e/ type checking (check:e2e — #4322, #4324) ──
+# ── Step 23: e2e/ type checking (check:e2e — #4322, #4324) ──
 # Type-checks e2e/**/*.ts (e2e/tsconfig.json) plus fixture-owned tracked
 # sources (e2e/tsconfig.fixtures.json), outside the parity region like the
 # other typecheck steps above — heavy steps are excluded from
@@ -421,7 +430,7 @@ else
   fail "e2e/ type checking"
 fi
 
-# ── Step 23: Worker contract proof ───────────────────
+# ── Step 24: Worker contract proof ───────────────────
 step "Worker contract proof (types + runtime + dry-run)"
 if (cd "$ROOT_DIR" && pnpm verify:worker-contract); then
   pass "Worker contract proof passed"
@@ -429,7 +438,7 @@ else
   fail "Worker contract proof"
 fi
 
-# ── Step 24: Root unit tests ──────────────────────────
+# ── Step 25: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -439,7 +448,7 @@ fi
 # rather than whatever dist/ happened to be lying around (the preflight above
 # only repairs a MISSING dist/, it never refreshes a stale one). CI's package
 # and root test jobs build for the same reason. Building here also leaves
-# dist/wind.json ready for the safelist check in step 27.
+# dist/wind.json ready for the safelist check in step 28.
 #
 # `build:workspace` — not `pnpm --filter @takazudo/zudo-doc build` — because
 # that package's own tsc pass needs @takazudo/zudo-doc-history-server's
@@ -457,7 +466,7 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 25: Slow unit tests ──────────────────────────
+# ── Step 26: Slow unit tests ──────────────────────────
 # The subprocess-heavy root specs and the two retiered create-zudo-doc specs
 # are excluded from their default lanes and remain blocking local gates.
 # Keep both invocations in this existing step so b4push retains its current
@@ -479,12 +488,12 @@ else
   fail "retiered create-zudo-doc slow tests"
 fi
 
-# ── Step 26: Package tests ────────────────────────────
+# ── Step 27: Package tests ────────────────────────────
 # Runs all workspace package test suites (2,988 tests across 4 packages: search-worker 44,
 # doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275). The 5 retiered
 # create-zudo-doc tests run in the blocking Slow Unit Tests lane. Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
-# dist/ is already built by step 24 — no extra prep needed.
+# dist/ is already built by step 25 — no extra prep needed.
 step "Package tests + subpath resolution"
 # Single acquisition for both commands — see the note on the unit-test step.
 if (cd "$ROOT_DIR" && heavy bash -c 'pnpm test:packages && pnpm --filter @takazudo/zudo-doc test:plugin-resolution'); then
@@ -493,12 +502,12 @@ else
   fail "Package tests + subpath resolution"
 fi
 
-# ── Step 27: Package wind manifest check ──────────────────
+# ── Step 28: Package wind manifest check ──────────────────
 # Verifies that the generated dist/wind.json in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-wind-manifest.mjs
 # misses a new utility class before it reaches consumers (#1994).
-# Requires dist/wind.json — produced by the package build in step 24.
+# Requires dist/wind.json — produced by the package build in step 25.
 step "Package wind manifest check (check:package-wind-manifest)"
 if (cd "$ROOT_DIR" && pnpm check:package-wind-manifest); then
   pass "Package wind manifest check passed"
@@ -506,7 +515,7 @@ else
   fail "Package wind manifest check"
 fi
 
-# ── Step 28: Build ────────────────────────────────────
+# ── Step 29: Build ────────────────────────────────────
 # --no-strict-content-bridge overrides the zfb.config.ts strictContentBridge
 # gate (#3234) so this build still produces a dist/ for the next step's
 # content-fallback check to scan — the two guards can't run on the same build.
@@ -517,7 +526,7 @@ else
   fail "Build"
 fi
 
-# ── Step 29: Content-fallback check ───────────────────
+# ── Step 30: Content-fallback check ───────────────────
 #
 # zfb only *warns* when it declines to wire a page's compiled MDX through
 # the content bridge, then ships that page's whole body as a single
@@ -535,7 +544,7 @@ else
   fail "Content-fallback check"
 fi
 
-# ── Step 30: Link check ───────────────────────────────
+# ── Step 31: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -555,7 +564,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 31: Image check ─────────────────────────────
+# ── Step 32: Image check ─────────────────────────────
 step "Image check (check:images)"
 if (cd "$ROOT_DIR" && pnpm run check:images); then
   pass "Image check passed"
@@ -563,7 +572,7 @@ else
   fail "Image check"
 fi
 
-# ── Step 32: HTML validation ──────────────────────────
+# ── Step 33: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -575,7 +584,7 @@ else
   fi
 fi
 
-# ── Step 33: Automated preview smoke (blocking) ──────
+# ── Step 34: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -587,7 +596,7 @@ else
   fi
 fi
 
-# ── Step 34: Manual interactive smoke ────────────────
+# ── Step 35: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

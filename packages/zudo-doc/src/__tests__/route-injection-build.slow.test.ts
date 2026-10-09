@@ -49,9 +49,15 @@ import { tmpdir } from "node:os";
 // in this file, e.g. FIXTURE_SRC below) — not a Node ESM built-in.
 // ---------------------------------------------------------------------------
 
-const { sha256Html } = await import(
+const { sha256Html, normalizeHtml } = await import(
   resolve(__dirname, "../../../../scripts/parity-html-normalize.mjs")
 );
+
+// Fingerprints live outside the linked package tree: updating the reference
+// must never itself change a native linked-package build identity (#4470).
+const a2Reference = JSON.parse(readFileSync(
+  resolve(__dirname, "../../../../scripts/__tests__/fixtures/a2-route-reference.json"), "utf8",
+)) as Record<string, string>;
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -377,7 +383,26 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   it("setup: fixture builds successfully with empty pages/", { timeout: 180_000 }, () => {
     fixtureDir = setupFixture({ emptyPages: true });
     // Should not throw — failure message includes the build output.
-    runZfbBuild(fixtureDir);
+    const buildOutput = runZfbBuild(fixtureDir);
+    // Capture original bytes before teardown without altering the asserted HTML.
+    // The destination is external to the linked package to avoid source-digest feedback.
+    if (process.env.ZUDO_A2_CAPTURE_DIR) {
+      const captureDir = resolve(process.env.ZUDO_A2_CAPTURE_DIR);
+      mkdirSync(captureDir, { recursive: true });
+      const pages = ["404.html", "docs/getting-started/index.html", "docs/getting-started/coverage/index.html"];
+      const manifest = pages.map((page) => {
+        const html = readBuiltHtml(fixtureDir, page);
+        const name = page.replaceAll("/", "--");
+        writeFileSync(join(captureDir, name), html);
+        writeFileSync(join(captureDir, name + ".normalized.html"), normalizeHtml(html));
+        return { page, bytes: Buffer.byteLength(html), sha256Html: sha256Html(html) };
+      });
+      writeFileSync(join(captureDir, "build.log"), buildOutput);
+      writeFileSync(join(captureDir, "manifest.json"), JSON.stringify({
+        sourceHead: execSync("git rev-parse HEAD", { cwd: WORKSPACE_ROOT, encoding: "utf8" }).trim(),
+        pages: manifest,
+      }, null, 2) + "\n");
+    }
   });
 
   it("static: /404 HTML contains package-default 'Page Not Found' (not a stub)", () => {
@@ -1217,19 +1242,48 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // the fixture has no icon controls, so the only normalized HTML change
   // is the header-right gap returning from gap-x-hsp-xs to gap-x-hsp-md.
   // The resulting hashes match the pre-#4381 baselines recorded above.
+  // 2026-10-09 #4470 reconciliation: exact v2 337b9f110 reproduces all three
+  // previous hashes. The repaired 4.2.1 captures differ by native build/protocol/
+  // transport metadata and zr markers, calc spacing, omitted HTML-SVG xmlns,
+  // computed aria-current=false, inherited category-icon ink, native hash-link/
+  // admonition classes, an inert style trailing semicolon, and the measured
+  // duration-0 repairs (TOC anchors + tabs script). Element open/close events,
+  // prose, URLs, heading IDs and transported props are unchanged. Full per-page
+  // census and repair evidence: docs/findings/4430-zfb3-migration/v4.2.1-gates.md.
+  // A comment-only edit to THIS test changed every data-zfb-build identity and
+  // nothing else after existing asset normalization. An external-reference edit
+  // preserved every normalized byte. References therefore live outside the
+  // linked package, retaining all native metadata/comments in the fingerprint.
+  // This is a bounded A2 review, not final browser/release acceptance.
+  it.each(["404.html", "docs/getting-started/index.html", "docs/getting-started/coverage/index.html"])(
+    "native transport: %s retains coherent owned-runtime metadata",
+    (page) => {
+      const html = readBuiltHtml(fixtureDir, page);
+      const identities = [...html.matchAll(/data-zfb-build=([a-f0-9]{16})(?=[ >])/g)].map((match) => match[1]);
+      const islands = [...html.matchAll(/data-zfb-island=/g)].length;
+      expect(islands).toBeGreaterThan(0);
+      expect(identities).toHaveLength(islands);
+      expect(new Set(identities).size).toBe(1);
+      expect([...html.matchAll(/data-zfb-protocol=zudo-react\/1(?=[ >])/g)]).toHaveLength(islands);
+      expect([...html.matchAll(/data-zfb-transport=json\/1(?=[ >])/g)]).toHaveLength(islands);
+      expect(html).toContain("<!--zr:1:");
+      expect(html).toContain("<!--/zr:1:");
+    },
+  );
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"065642fa3f30c9675939bce40e15a1ca63e0e3194c17cf544a158a1d2aa72e25"`);
+    expect(sha256Html(html)).toBe(a2Reference["404.html"]);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"452bf4b1ef86ab6286810e6e0969aecc9d6a450392f4ba64a97b185393077fa6"`);
+    expect(sha256Html(html)).toBe(a2Reference["docs/getting-started/index.html"]);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"2b22f0512bd38d32efc09d5dcff884ea7ec2655b312964acbb47e787f74e979a"`);
+    expect(sha256Html(html)).toBe(a2Reference["docs/getting-started/coverage/index.html"]);
   });
 });
 
