@@ -1,0 +1,43 @@
+{
+  "runUrl": "https://github.com/zudolab/zudo-doc/actions/runs/37905380708",
+  "jobUrl": "https://github.com/zudolab/zudo-doc/actions/runs/37905380708/job/113737467970",
+  "readMethod": "GitHub connector fetch_workflow_job_logs, decoded job log; no artifact download or alternate URL used",
+  "jobConclusion": "failure",
+  "captureAndRequiredInventory": "passed",
+  "compare": "failed: 14 differences",
+  "screenshots": "Existence asserted by inventory in hosted job; advisory; images not downloaded or visually reviewed here",
+  "evidence": {
+    "baseline-head.txt": "337b9f110793dccb4759bddd5273eab38cd9d2f0",
+    "current-head.txt": "c374657e0eeee8a157a6d41f8b5dff937cefacdc",
+    "baseline-native.txt": "zfb 2.22.1\nembedded Tailwind CSS: 4.2.0\nembedded esbuild: 0.25.12",
+    "current-native.txt": "zfb 4.2.1\nembedded esbuild: 0.25.12",
+    "baseline-inputs.sha256": "3891484da51ed76cc6075c3203acac426f76aac613ee99cbf4ab6b72eecd3d06  pnpm-lock.yaml\n2b2e27b313cb00e7361ab10d95a8245ced353fca17623e493f399980d31f2047  scripts/parity-build.sh",
+    "current-inputs.sha256": "f218200512cf317217ca9ce22cca8626079f824bc7dfba7343f959afc43d4bed  pnpm-lock.yaml\n2b2e27b313cb00e7361ab10d95a8245ced353fca17623e493f399980d31f2047  scripts/parity-build.sh\nb3949f6674017e122c1f9d2ff17615325b3d40a6cc6e5162bd70434167df5f51  scripts/zfb3-parity/browser.mjs\n29b263d376a916496824060dae4e4a33815fb985bf3c5abe9335c25ccdd454c9  scripts/zfb3-parity/compare-browser.mjs",
+    "toolchain.txt": "v22.23.3\n10.30.3",
+    "playwright-version.txt": "Version 1.58.2",
+    "chromium-version.txt": "Google Chrome for Testing 145.0.7632.6"
+  },
+  "inventory": [
+    {
+      "variant": "baseline",
+      "stateCount": 65,
+      "uniqueStateCount": 65,
+      "expectedStateCount": 65,
+      "screenshotReferenceCount": 65,
+      "errorCount": 0
+    },
+    {
+      "variant": "current",
+      "stateCount": 65,
+      "uniqueStateCount": 65,
+      "expectedStateCount": 65,
+      "screenshotReferenceCount": 65,
+      "errorCount": 0
+    }
+  ],
+  "classification": {
+    "guidesNavigationHeight": 4,
+    "headingAnchorStyle": 10
+  },
+  "limits": "This is pre-repair head c374. Complete 65-state capture closes local Mermaid capture unavailability for this run; does not approve differences or imply all locked acceptance states are covered."
+}
