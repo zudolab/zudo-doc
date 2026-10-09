@@ -307,7 +307,9 @@ test("built article preserves list start and pre LF, then copies the authored co
   page,
 }) => {
   const builtHtml = readDistFile(MIGRATION_PARITY_DIST_PAGE);
-  expect(builtHtml).toMatch(/<ol\b(?=[^>]*\bstart="3")[^>]*>/);
+  expect(builtHtml).toMatch(
+    /<ol\b(?=[^>]*\sstart\s*=\s*(?:"3"|'3'|3)(?=[\s>]))[^>]*>/,
+  );
   const renderedPre = builtHtml.match(
     /<pre\b[^>]*data-migration-parity-lf[^>]*>([\s\S]*?)<\/pre>/,
   );
