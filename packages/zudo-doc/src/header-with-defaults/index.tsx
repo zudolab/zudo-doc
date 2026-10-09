@@ -127,7 +127,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
   const docsUrl = ctx.docsUrl;
   const navHref = ctx.navHref;
   const versionedDocsUrl = ctx.versionedDocsUrl;
-  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode } =
+  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, buildSidebarContext, getThemeDefaultMode } =
     deriveNavDataPrep(ctx);
   const buildGitHubRepoUrl = (): string | null =>
     buildGitHubRepoUrlBase((ctx.settings as { githubUrl?: string | false }).githubUrl);
@@ -157,9 +157,10 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     const themeDefaultMode = getThemeDefaultMode();
     const themeRespectSystem = (ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true;
     const buildDefaultSidebarNodes = () => buildSidebarNodes(lang, navSection, currentVersion);
+    const defaultSidebar = sidebarNodesProp === undefined ? buildSidebarContext(lang, navSection, currentVersion) : undefined;
     const sidebarNodes =
       sidebarNodesProp === undefined
-        ? buildDefaultSidebarNodes()
+        ? defaultSidebar!.nodes
         : typeof sidebarNodesProp === "function"
           ? sidebarNodesProp({
               lang,
@@ -179,6 +180,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         children: (
           <SidebarToggle
             nodes={sidebarNodes}
+            {...(defaultSidebar?.navigation ? { navigation: defaultSidebar.navigation } : {})}
             {...(currentSlug !== undefined ? { currentSlug } : {})}
             rootMenuItems={rootMenuItems}
             {...(backToMenuLabel !== undefined ? { backToMenuLabel } : {})}

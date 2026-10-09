@@ -106,7 +106,7 @@ import {
   remapVersionedHrefs,
   getThemeDefaultMode as getThemeDefaultModeBase,
 } from "../nav-data-prep/index.js";
-import { buildSidebarForSection } from "../sidebar-utils/index.js";
+import { buildSidebarNavigation } from "../sidebar-utils/index.js";
 // Relative, not a package subpath: `resolveDateFormats` is deliberately
 // internal (absent from `package.json` exports) — the resolved roles are the
 // public surface, the resolver is not.
@@ -312,16 +312,16 @@ export function deriveNavDataPrep(ctx: ChromeContext) {
 
   const sidebarsConfig = ctx.hostBindings.sidebarsConfig ?? {};
 
-  function buildSidebarNodes(
+  function buildSidebarContext(
     lang: string,
     navSection: string | undefined,
     currentVersion: string | undefined,
     emptyWhenUnsectioned = true,
   ) {
-    if (navSection === undefined && emptyWhenUnsectioned) return [];
+    if (navSection === undefined && emptyWhenUnsectioned) return { nodes: [], navigation: undefined };
     const { navDocs, categoryMeta } = ctx.loadNavSourceDocs(lang, currentVersion);
     const explicitPrefixes = ctx.getCategoryOrder().filter((cm) => cm !== "!");
-    const rawNodes = buildSidebarForSection(
+    const result = buildSidebarNavigation(
       navDocs,
       lang,
       navSection,
@@ -336,20 +336,25 @@ export function deriveNavDataPrep(ctx: ChromeContext) {
         ) as never[],
       explicitPrefixes,
     );
-    return normalizeIslandData(
-      currentVersion
-        ? remapVersionedHrefs(rawNodes, currentVersion, lang, (slug, v, l) =>
-            ctx.versionedDocsUrl(slug, v, l),
-          )
-        : rawNodes,
-    );
+    const remap = (nodes: typeof result.nodes) => currentVersion
+      ? remapVersionedHrefs(nodes, currentVersion, lang, (slug, v, l) => ctx.versionedDocsUrl(slug, v, l))
+      : nodes;
+    return normalizeIslandData({
+      nodes: remap(result.nodes),
+      navigation: { ...result.navigation, id: `${currentVersion ?? "current"}:${result.navigation.id}`, roots: remap(result.navigation.roots) },
+    });
+  }
+
+  function buildSidebarNodes(...args: Parameters<typeof buildSidebarContext>) {
+    const withoutIdentity = (nodes: import("../sidebar/types.js").SidebarNavNode[]): import("../sidebar/types.js").SidebarNavNode[] => nodes.map(({ occurrenceId: _id, children, ...node }) => ({ ...node, children: withoutIdentity(children) }));
+    return withoutIdentity(buildSidebarContext(...args).nodes);
   }
 
   function getThemeDefaultMode() {
     return getThemeDefaultModeBase(ctx.settings.colorMode);
   }
 
-  return { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode };
+  return { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, buildSidebarContext, getThemeDefaultMode };
 }
 
 // ---------------------------------------------------------------------------

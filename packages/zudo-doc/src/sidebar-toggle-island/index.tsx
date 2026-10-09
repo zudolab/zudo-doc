@@ -10,7 +10,7 @@ import { computed, getScope, signal, type Ref } from "@takazudo/zfb/zudo-react";
 import { AFTER_NAVIGATE_EVENT, ensureNestedIslandPropsRefresh } from "../transitions/index.js";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { ThemeToggleLabels } from "../theme-toggle/index.js";
-import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink } from "../sidebar/types.js";
+import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink, SidebarNavigationContext } from "../sidebar/types.js";
 import type { ResolvedDateFormats } from "../settings.js";
 
 // This island lives inside the persisted `<header>`. Install the shared
@@ -44,6 +44,7 @@ const HIDDEN_ICON_STYLE = "display:none";
 
 export interface SidebarToggleProps {
   nodes: SidebarNavNode[];
+  navigation?: SidebarNavigationContext;
   currentSlug?: string;
   rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
@@ -65,6 +66,7 @@ export interface SidebarToggleProps {
 
 export function SidebarToggle({
   nodes,
+  navigation,
   currentSlug,
   rootMenuItems,
   backToMenuLabel,
@@ -259,6 +261,7 @@ export function SidebarToggle({
         <div class="flex-1 overflow-y-auto">
           <SidebarTree
             nodes={nodes}
+            navigation={navigation}
             currentSlug={currentSlug}
             rootMenuItems={rootMenuItems}
             backToMenuLabel={backToMenuLabel}
