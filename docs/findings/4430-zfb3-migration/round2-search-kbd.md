@@ -48,5 +48,28 @@ the focused runtime test failed for both macOS and Windows because clearing afte
 reconnect could not restore the placeholder. The one-time snapshot fix preserves
 the original platform-populated HTML across reconnects. The focused generated-script
 and runtime tests and E2E spec typecheck are recorded with the follow-up commit.
-The strict browser run is delegated to #4475; no browser suite was run in this
-worktree.
+The worker did not run browsers; the manager ran the combined source through both
+the heavy and Playwright guards on 2026-10-09. Product source `dab099db`, final
+browser spec `066cc6b5`: **12/12 passed**, including both new platform cases and
+the existing search/dialog suites. Chromium 151 on Linux used explicit macOS and
+Windows navigator values. This verifies both platform branches, not native macOS
+hardware or Japanese IME behavior.
+
+The first browser run was **10 pass / 2 fail** because the new reconnect test
+assumed one result link while the actual query returns three. The corrected test
+preserves the original parent/sibling position and compares the complete results
+HTML before/after reconnect, then requires visibility after reopening. No product
+behavior assertion or console-error policy was removed. Earlier review also
+rejected changing the shipped text input into a search input to invent an
+Escape-clear behavior; the final test exercises native dialog close and retained
+query instead.
+
+The real fixture was rebuilt from the generated source (43 pages, guard PASS).
+The browser command was `pnpm exec playwright test --config
+/tmp/zudo4482-playwright.config.ts e2e/smoke-search-shortcut.spec.ts
+e2e/smoke-search-dialog-close.spec.ts e2e/smoke-search.spec.ts`, with
+`E2E_FIXTURES=smoke`, no retries, system Chromium and serial workers. The temporary
+config only selects the browser executable and output paths; it imports the
+repository fixture/server configuration. Raw failed/passing logs and reports plus
+review evidence are retained in `_temp-resource/4430-zfb3-migration/4482-search/`.
+Final combined #4475 verification remains required.

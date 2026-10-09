@@ -1,0 +1,592 @@
+{
+  "config": {
+    "configFile": "/tmp/zudo4482-playwright.config.ts",
+    "rootDir": "/workspace/zudo-doc/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/zudo4482-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "smoke",
+        "name": "smoke",
+        "testDir": "/workspace/zudo-doc/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "smoke*.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/tmp/zudo4482-browser-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "smoke-search-dialog-close.spec.ts",
+      "file": "smoke-search-dialog-close.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Search dialog closes on result click (#2148)",
+          "file": "smoke-search-dialog-close.spec.ts",
+          "line": 26,
+          "column": 6,
+          "specs": [
+            {
+              "title": "clicking a result closes the dialog AND navigates",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 941,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:33.217Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "108686f3f24245e37be7-d9834bc0eb5f445693d1",
+              "file": "smoke-search-dialog-close.spec.ts",
+              "line": 27,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "smoke-search-shortcut.spec.ts",
+      "file": "smoke-search-shortcut.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "macOS shortcut badge survives clear, reopen, navigation, and reconnection (#4482)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "smoke",
+              "projectName": "smoke",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7277,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('site-search').first().locator('[data-search-results]').locator('article a')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m3\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('site-search').first().locator('[data-search-results]').locator('article a')\u001b[22m\n\u001b[2m    9 × locator resolved to 3 elements\u001b[22m\n\u001b[2m      - unexpected value \"3\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('site-search').first().locator('[data-search-results]').locator('article a')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m3\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('site-search').first().locator('[data-search-results]').locator('article a')\u001b[22m\n\u001b[2m    9 × locator resolved to 3 elements\u001b[22m\n\u001b[2m      - unexpected value \"3\"\u001b[22m\n\n    at /workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts:102:48",
+                    "location": {
+                      "file": "/workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts",
+                      "column": 48,
+                      "line": 102
+                    },
+                    "snippet": "  100 |       document.body.append(element);\n  101 |     });\n> 102 |     await expect(results.locator(\"article a\")).toHaveCount(1);\n      |                                                ^\n  103 |     await page.keyboard.press(platform.openKey);\n  104 |     await expect(dialog).toBeVisible();\n  105 |     await expect(input).toHaveValue(\"Getting Started\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts",
+                        "column": 48,
+                        "line": 102
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('site-search').first().locator('[data-search-results]').locator('article a')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m3\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('site-search').first().locator('[data-search-results]').locator('article a')\u001b[22m\n\u001b[2m    9 × locator resolved to 3 elements\u001b[22m\n\u001b[2m      - unexpected value \"3\"\u001b[22m\n\n\n  100 |       document.body.append(element);\n  101 |     });\n> 102 |     await expect(results.locator(\"article a\")).toHaveCount(1);\n      |                                                ^\n  103 |     await page.keyboard.press(platform.openKey);\n  104 |     await expect(dialog).toBeVisible();\n  105 |     await expect(input).toHaveValue(\"Getting Started\");\n    at /workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts:102:48"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:46:34.441Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/tmp/zudo4482-browser-results/smoke-search-shortcut-macO-4bc61-tion-and-reconnection-4482--smoke/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/zudo4482-browser-results/smoke-search-shortcut-macO-4bc61-tion-and-reconnection-4482--smoke/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts",
+                    "column": 48,
+                    "line": 102
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "049bd2a017dfbbdd8d43-03de14d6a2074c842730",
+          "file": "smoke-search-shortcut.spec.ts",
+          "line": 23,
+          "column": 3
+        },
+        {
+          "title": "Windows shortcut badge survives clear, reopen, navigation, and reconnection (#4482)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "smoke",
+              "projectName": "smoke",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7390,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('site-search').first().locator('[data-search-results]').locator('article a')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m3\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('site-search').first().locator('[data-search-results]').locator('article a')\u001b[22m\n\u001b[2m    9 × locator resolved to 3 elements\u001b[22m\n\u001b[2m      - unexpected value \"3\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('site-search').first().locator('[data-search-results]').locator('article a')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m3\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('site-search').first().locator('[data-search-results]').locator('article a')\u001b[22m\n\u001b[2m    9 × locator resolved to 3 elements\u001b[22m\n\u001b[2m      - unexpected value \"3\"\u001b[22m\n\n    at /workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts:102:48",
+                    "location": {
+                      "file": "/workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts",
+                      "column": 48,
+                      "line": 102
+                    },
+                    "snippet": "  100 |       document.body.append(element);\n  101 |     });\n> 102 |     await expect(results.locator(\"article a\")).toHaveCount(1);\n      |                                                ^\n  103 |     await page.keyboard.press(platform.openKey);\n  104 |     await expect(dialog).toBeVisible();\n  105 |     await expect(input).toHaveValue(\"Getting Started\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts",
+                        "column": 48,
+                        "line": 102
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('site-search').first().locator('[data-search-results]').locator('article a')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m3\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('site-search').first().locator('[data-search-results]').locator('article a')\u001b[22m\n\u001b[2m    9 × locator resolved to 3 elements\u001b[22m\n\u001b[2m      - unexpected value \"3\"\u001b[22m\n\n\n  100 |       document.body.append(element);\n  101 |     });\n> 102 |     await expect(results.locator(\"article a\")).toHaveCount(1);\n      |                                                ^\n  103 |     await page.keyboard.press(platform.openKey);\n  104 |     await expect(dialog).toBeVisible();\n  105 |     await expect(input).toHaveValue(\"Getting Started\");\n    at /workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts:102:48"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:46:42.684Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/tmp/zudo4482-browser-results/smoke-search-shortcut-Wind-75af7-tion-and-reconnection-4482--smoke/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/zudo4482-browser-results/smoke-search-shortcut-Wind-75af7-tion-and-reconnection-4482--smoke/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/zudo-doc/e2e/smoke-search-shortcut.spec.ts",
+                    "column": 48,
+                    "line": 102
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "049bd2a017dfbbdd8d43-d31688e0bacf5643e2f3",
+          "file": "smoke-search-shortcut.spec.ts",
+          "line": 23,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "smoke-search.spec.ts",
+      "file": "smoke-search.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Search dialog",
+          "file": "smoke-search.spec.ts",
+          "line": 20,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Ctrl+K opens the search dialog",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 392,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:51.183Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-6162887cbadc0b23c2d3",
+              "file": "smoke-search.spec.ts",
+              "line": 21,
+              "column": 3
+            },
+            {
+              "title": "search input is focused when dialog opens",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 358,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:51.775Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-ed78b4398fa8e9f1859b",
+              "file": "smoke-search.spec.ts",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "typing a query shows results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 709,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:52.165Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-1e11fc944bd8548db4bd",
+              "file": "smoke-search.spec.ts",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "clicking a result navigates to that page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 879,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:52.889Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-5994f2c1a0bfd610f800",
+              "file": "smoke-search.spec.ts",
+              "line": 59,
+              "column": 3
+            },
+            {
+              "title": "Escape closes the dialog",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 407,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:53.786Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-682b74da79a329a390dd",
+              "file": "smoke-search.spec.ts",
+              "line": 85,
+              "column": 3
+            },
+            {
+              "title": "clicking backdrop closes the dialog",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 393,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:54.212Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-375aeb682133510b6755",
+              "file": "smoke-search.spec.ts",
+              "line": 97,
+              "column": 3
+            },
+            {
+              "title": "nonsense query shows 'No results found.'",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 698,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:54.619Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-a5ccef9230cf7c7fb109",
+              "file": "smoke-search.spec.ts",
+              "line": 111,
+              "column": 3
+            },
+            {
+              "title": "matched keywords are highlighted with mark elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 767,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:55.335Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-45de313f83983d308481",
+              "file": "smoke-search.spec.ts",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "search index load failure shows persistent 'Search unavailable' without a refetch loop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "smoke",
+                  "projectName": "smoke",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1116,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-09T09:46:56.113Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7ca57133e56e58c3c325-8487350ce51a32799061",
+              "file": "smoke-search.spec.ts",
+              "line": 185,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T09:46:28.432Z",
+    "duration": 28926.062,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}
