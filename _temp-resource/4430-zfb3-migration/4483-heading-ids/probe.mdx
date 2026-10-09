@@ -1,0 +1,61 @@
+---
+title: Heading reference and fence parity probe
+---
+
+## &gt;1000ms
+## &lt;2mm
+## &gt;1000ms
+### Child &copy; &NotEqualTilde;
+##### Deep &#65;
+###### Deeper &#x42;
+#### Sibling
+
+  ``` a circuit drawing ```
+
+## After inline span
+## Code `&lt;` and ordinary &lt;
+## Escaped \&gt; and \*literal\*
+## Once &amp;lt; and &amp;#65;
+## Unknown &notARealEntity; and incomplete &copy
+## Unicode 日本語 → café &#x1F680;
+## Numeric &#65; &#x42; &#9; &#10; &#13;
+## Invalid &#0; &#1; &#11; &#31; &#127; &#x80; &#159; &#xD800; &#x110000;
+## Valid &#160; &#xFFFD;
+
+````md
+## Code block target
+``` too short
+## Still code
+```` suffix
+## Still code after suffix
+~~~~
+## Still code after wrong character
+````` 	
+
+## After backtick fence
+
+   ~~~ info ` allowed
+## Tilde code target
+~~~ trailing text
+## Still tilde code
+~~~
+
+## After tilde fence
+
+~`~ mixed
+
+## After mixed run
+
+    ```
+    ## Indented code target
+    ```
+
+## After indented code
+
+## Repeat
+### Nested
+## Repeat
+### Nested
+##### Below toc
+###### Below deep
+#### Visible sibling

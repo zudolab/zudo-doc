@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { compile } from "@takazudo/zfb-md-wasm";
 import { renderHtml } from "@takazudo/zfb-md-wasm/render";
 import { extractAllHeadingIds } from "@takazudo/zudo-doc/extract-headings";
@@ -535,5 +536,42 @@ describe("slugify — exact port of zfb's Rust slugify", () => {
     // NOT a separator — it is kept (surrounded by dashes from the spaces). The
     // host port must match this exactly, or the TOC anchor would desync.
     expect(slugify("Mode 1 — Standalone")).toBe("mode-1-—-standalone");
+  });
+});
+
+
+describe("extractHeadings — published 4.2.1 native reference and fence oracle (#4483)", () => {
+  const source = readFileSync(new URL("../../../_temp-resource/4430-zfb3-migration/4483-heading-ids/probe.mdx", import.meta.url), "utf8")
+    .replace(/^---\n[\s\S]*?\n---\n/, "");
+  const oracle = JSON.parse(readFileSync(new URL("../../../_temp-resource/4430-zfb3-migration/4483-heading-ids/native-output.json", import.meta.url), "utf8")) as { version: string; ids: string[] };
+
+  it("matches every ordered native h2–h6 ID and keeps the TOC window", async () => {
+    const rendered = await renderHtml(source, {
+      filename: "probe.mdx",
+      pipeline: { features: { headingIds: { strategy: "hierarchical" } } },
+    });
+    expect(rendered.diagnostics).toEqual([]);
+    const nativeIds = [...(rendered.html ?? "").matchAll(/<h[2-6]\b[^>]*\bid="([^"]*)"/g)].map(match => match[1]);
+    expect(oracle.version).toBe("4.2.1");
+    expect(nativeIds).toEqual(oracle.ids);
+    expect(extractAllHeadingIds(source)).toEqual(nativeIds);
+    const toc = extractHeadings(source);
+    expect(toc.every(heading => heading.depth >= 2 && heading.depth <= 4 && nativeIds.includes(heading.slug))).toBe(true);
+    expect(toc.map(heading => heading.slug)).toEqual(nativeIds.filter(id => ![
+      "1000ms-1-child-©-≂̸-deep-a", "1000ms-1-child-©-≂̸-deep-a-deeper-b",
+      "repeat-1-nested-below-toc", "repeat-1-nested-below-toc-below-deep",
+    ].includes(id ?? "")));
+  });
+
+  it("preserves literal protected spans and decodes ordinary text once", () => {
+    expect(extractHeadings("## `&lt;` \\&gt; &amp;lt; &NotEqualTilde; &notARealEntity;")[0]?.text)
+      .toBe("&lt; &gt; &lt; ≂̸ &notARealEntity;");
+  });
+
+  it("does not invent genuine missing or code-block anchor targets", () => {
+    const ids = extractAllHeadingIds(source);
+    expect(ids).not.toContain("code-block-target");
+    expect(ids).not.toContain("indented-code-target");
+    expect(ids).not.toContain("genuinely-missing");
   });
 });
