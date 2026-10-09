@@ -695,11 +695,11 @@ jobs:
           # build and the pipeline still produces the expected pages — just
           # not the hash-movement signal every other entry provides.
           #
-          # The parity test file itself is listed (marked below) for a third,
-          # distinct reason: it is not an SSR-markup source and cannot move
-          # the hashes by changing fixture HTML, but a PR that EDITS the
-          # expected hashes re-runs the suite and proves the new baseline,
-          # instead of skipping the gate on the one PR where it matters most.
+          # The parity test and external fingerprint reference are listed
+          # so a PR that edits either re-runs the suite and proves the baseline.
+          # Linked-package test source also contributes to native build identity;
+          # external reference changes do not move that identity. Reference-only
+          # edits must never skip the gate that validates their new fingerprints.
           EMITTERS=(
             # -- CAN-MOVE-HASHES --
             "packages/zudo-doc/src/theme/theme-pack-provider.tsx"
@@ -732,6 +732,7 @@ jobs:
             "packages/zudo-doc/src/transitions/page-events.ts"
             # -- re-run trigger for hash edits, not an SSR-markup source; see note above --
             "packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts"
+            "scripts/__tests__/fixtures/a2-route-reference.json"
           )
 
           CHANGED_FILES="$(git diff --name-only "$BASE_SHA"...HEAD)"
@@ -801,7 +802,7 @@ jobs:
         # "setup: ...") that a YAML plain scalar parses as a nested mapping
         # key. Indentation-scoped block scalars have no such ambiguity.
         run: |
-          pnpm exec vitest run --config vitest.slow.config.ts --testNamePattern "A2 no-stub: injected routes render correct HTML.*(setup: fixture builds|parity:)"
+          pnpm exec vitest run --config vitest.slow.config.ts --testNamePattern "A2 no-stub: injected routes render correct HTML"
 
       - name: Re-baseline guidance
         # Scoped to the parity step's own outcome (not bare `if: failure()`,

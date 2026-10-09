@@ -96,3 +96,47 @@ it("keeps transport identity and structural comment mutations observable", () =>
     html.replace("content", "regression"),
   ]) expect(sha256Html(changed)).not.toBe(sha256Html(html));
 });
+
+// Exercise the real workflow detection script, so reference-only edits cannot
+// silently skip the one CI job that owns these fingerprints.
+describe("#4470 A2 workflow selection", () => {
+  const workflow = readFileSync(join(root, ".github/workflows/pr-checks.yml"), "utf8");
+  it("runs the actual emitter detector for an external-reference-only commit", () => {
+    const script = workflow.match(/          EMITTERS=\([\s\S]*?          echo "run_parity=true" >> "\$GITHUB_OUTPUT"/)?.[0];
+    expect(script).toBeDefined();
+    const dir = mkdtempSync(join(tmpdir(), "a2-ci-reference-trigger-"));
+    dirs.push(dir);
+    const git = (...args: string[]) => {
+      const run = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+      expect(run.status, run.stderr).toBe(0);
+      return run.stdout.trim();
+    };
+    git("init", "-q");
+    const reference = join(dir, "scripts/__tests__/fixtures/a2-route-reference.json");
+    mkdirSync(join(dir, "scripts/__tests__/fixtures"), { recursive: true });
+    writeFileSync(reference, '{}\n');
+    git("add", ".");
+    git("-c", "user.name=Gate Control", "-c", "user.email=gate@example.invalid", "commit", "-qm", "base");
+    const base = git("rev-parse", "HEAD");
+    writeFileSync(reference, '{"404.html":"changed-reference"}\n');
+    git("add", ".");
+    git("-c", "user.name=Gate Control", "-c", "user.email=gate@example.invalid", "commit", "-qm", "reference only");
+    const output = join(dir, "github-output");
+    const run = spawnSync("bash", ["-c", script!], {
+      cwd: dir, encoding: "utf8", env: { ...process.env, BASE_SHA: base, GITHUB_OUTPUT: output },
+    });
+    expect(run.status, run.stderr).toBe(0);
+    expect(git("diff", "--name-only", `${base}...HEAD`)).toBe("scripts/__tests__/fixtures/a2-route-reference.json");
+    expect(readFileSync(output, "utf8")).toBe("run_parity=true\n");
+  });
+  it("selects the whole A2 describe including semantic, native transport and hash checks", () => {
+    const step = workflow.match(/- name: Run A2 no-stub parity slow-suite subset[\s\S]*?(?=- name: Re-baseline guidance)/)?.[0];
+    const pattern = step?.match(/--testNamePattern "([^"]+)"/)?.[1];
+    expect(pattern).toBe("A2 no-stub: injected routes render correct HTML");
+    const matcher = new RegExp(pattern!);
+    for (const title of ["setup: fixture builds", "static: /404 HTML", "native transport: 404.html", "native transport: docs/getting-started/index.html", "native transport: docs/getting-started/coverage/index.html", "parity: /404.html"]) {
+      expect(matcher.test(`A2 no-stub: injected routes render correct HTML ${title}`)).toBe(true);
+    }
+    expect(matcher.test("A2 islands-on: unrelated describe")).toBe(false);
+  });
+});
