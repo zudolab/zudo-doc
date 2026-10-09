@@ -415,6 +415,9 @@ jobs:
       - name: Run design token lint
         run: pnpm lint:tokens
 
+      - name: Run native Wind error gate
+        run: pnpm exec zfb wind audit --project-root . --fail-on error
+
   # ---------------------------------------------------------------------------
   # Job 1: Type checking
   # ---------------------------------------------------------------------------
@@ -810,8 +813,9 @@ jobs:
           echo "::error::A2 no-stub parity suite failed."
           echo "If this is an intentional HTML/asset change (not a regression), re-baseline"
           echo "the expected sha256 hashes in"
-          echo "packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts,"
-          echo "following that file's dated re-baseline comment-block convention (search for"
+          echo "scripts/__tests__/fixtures/a2-route-reference.json,"
+          echo "with per-page causal evidence in the route-injection test dated log,"
+          echo "following the route-injection test dated re-baseline comment-block convention (search for"
           echo "'re-baseline' in the file for prior examples, e.g. a block like:"
           echo "  // 2026-08-18 re-baseline (zudolab/zudo-doc#NNNN, <why>): ..."
           echo "Add a NEW dated block with issue attribution in THIS PR when you update a hash —"

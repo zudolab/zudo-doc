@@ -43,6 +43,13 @@ write_css() {
 }
 
 case "$SCENARIO" in
+  steady-css)
+    if [[ "$URL" == */ ]]; then
+      printf '%s\n' '<link href="/assets/styles-current.css">'
+    else
+      write_css
+    fi
+    ;;
   recover-all-stages)
     case "$COUNT" in
       1) exit 22 ;;
@@ -82,7 +89,7 @@ type GateRun = {
   stdout: string;
 };
 
-function runGate(scenario: string, attempts = 11): GateRun {
+function runGate(scenario: string, attempts = 11, transform: (css: string) => string = (css) => css): GateRun {
   const dir = mkdtempSync(path.join(tmpdir(), "css-shape-gate-"));
   tempDirs.push(dir);
   const bin = path.join(dir, "bin");
@@ -103,7 +110,7 @@ function runGate(scenario: string, attempts = 11): GateRun {
   );
   writeFileSync(
     healthyCss,
-    `@media screen{a{color:red}}\n@media print{a{color:black}}\n@media (width > 1px){a{display:block}}\n${"x".repeat(50_000)}`,
+    transform(`@layer zw-reset{}@layer zw-tokens{:root{--color-bg:white}}.lg\\:block{}.xl\\:flex{}${"@media screen{a{color:red}}".repeat(87)}${"x".repeat(230_494)}`),
   );
 
   const result = spawnSync("bash", [gate], {
@@ -173,5 +180,34 @@ describe("CSS-shape smoke gate", () => {
     expect(result.sleeps).toEqual(["6", "6"]);
     expect(result.stdout).toContain("after 3 attempts");
     expect(result.stdout).toContain(diagnostic);
+  });
+});
+
+// Minified media occurrences and native output contracts are independent of fetch retry.
+describe("#4470 measured Wind output controls", () => {
+  it("accepts healthy minified output with all media occurrences on one line", () => {
+    const run = runGate("steady-css");
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain("87 @media blocks");
+  });
+  it("rejects the formerly sufficient 50KB scanner floor", () => {
+    const run = runGate("steady-css", 1, (css) => css.replace("x".repeat(230_494), "x".repeat(50_000)));
+    expect(run.status).toBe(1);
+    expect(run.stdout).toContain("below threshold 180000");
+  });
+  it("rejects missing responsive coverage despite sufficient bytes", () => {
+    const run = runGate("steady-css", 1, (css) => css.replace("@media screen{a{color:red}}".repeat(87), "@media screen{a{color:red}}".repeat(64)));
+    expect(run.status).toBe(1);
+    expect(run.stdout).toContain("below threshold 65");
+  });
+  it.each(["@layer zw-reset", "@layer zw-tokens", "--color-bg:", ".lg\\:block", ".xl\\:flex"])("rejects missing native contract %s", (term) => {
+    const run = runGate("steady-css", 1, (css) => css.replace(term, "removed-contract"));
+    expect(run.status).toBe(1);
+    expect(run.stdout).toContain("missing owned Wind contract");
+  });
+  it.each(["@theme {}", '@source inline("bg-red-500");', ".bg-red-500{background:red}"])("rejects retired or unsupported output %s", (term) => {
+    const run = runGate("steady-css", 1, (css) => css + term);
+    expect(run.status).toBe(1);
+    expect(run.stdout).toContain("retired Tailwind directives or unsupported palette utilities");
   });
 });

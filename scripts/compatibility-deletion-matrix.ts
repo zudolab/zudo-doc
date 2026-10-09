@@ -1,3 +1,5 @@
+import ts from "typescript";
+
 /**
  * Current-only compatibility deletion matrix (#2772).
  *
@@ -22,6 +24,8 @@ export type TextAbsenceProof = {
   kind: "text-absent";
   paths: readonly string[];
   terms: readonly string[];
+  /** Historical comments are not executable imports or CSS directives. */
+  ignoreComments?: boolean;
   /** Tests may name deleted contracts in negative assertions. */
   excludePathPatterns?: readonly string[];
 };
@@ -83,6 +87,49 @@ const negativeTestExclusions = [
 ];
 
 export const deletionMatrix: readonly DeletionMatrixRow[] = [
+  {
+    issue: 4470,
+    category: "export/subpath",
+    removed: "Tailwind safelist and reset-free theme exports",
+    proof: {
+      kind: "package-exports-absent",
+      packageJson: "packages/zudo-doc/package.json",
+      subpaths: ["./safelist.css", "./theme-no-reset.css"],
+    },
+  },
+  {
+    issue: 4470,
+    category: "generated string",
+    removed: "owned JSX hooks/runtime and Tailwind preflight imports",
+    proof: {
+      kind: "text-absent",
+      paths: ["src", "pages", "packages/zudo-doc/src", "packages/create-zudo-doc/templates"],
+      terms: ["@jsxImportSource preact", "preact/hooks", "tailwindcss/preflight"],
+      ignoreComments: true,
+      excludePathPatterns: [
+        ...negativeTestExclusions,
+        "^packages/zudo-doc/src/__tests__/asset-viewer-zfb-free\\.test\\.ts$",
+        "^packages/zudo-doc/src/__tests__/site-schema\\.test\\.ts$",
+        "^packages/zudo-doc/src/__tests__/no-inert-spacing-utilities\\.test\\.ts$",
+        // Documentation preserves the migration history; it is not shipped JSX/CSS.
+        "\\.mdx?$",
+      ],
+    },
+  },
+  {
+    issue: 4470,
+    category: "generated string",
+    removed: "Tailwind directives in shipped CSS sources",
+    proof: {
+      kind: "text-absent",
+      paths: ["packages/zudo-doc/src/theme.css", "packages/zudo-doc/src/content.css",
+        "packages/zudo-doc/src/page-loading.css", "packages/zudo-doc/src/features.css",
+        "packages/zudo-doc/src/compiled.entry.css", "packages/zudo-doc/src/theme-packs", "src/styles/global.css",
+        "packages/create-zudo-doc/templates/base/src/styles/global.css"],
+      terms: ["@theme", "@source", "tailwindcss/preflight"],
+      ignoreComments: true,
+    },
+  },
   {
     issue: 2760,
     category: "file",
@@ -637,3 +684,46 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
     reason: "Repository code no longer owns this format; mentions are historical while current persistence belongs to @takazudo/zdtp.",
   },
 ] as const;
+
+/** Remove only lexical comments, retaining JSX directives and quoted import text. */
+export function textForAbsenceProof(source: string, path: string, term: string, ignoreComments = false): string {
+  let content = source;
+  if (ignoreComments) {
+    // Lexical scanning preserves string literals (including comment-like text).
+    // @jsxImportSource is itself a comment directive, so always scan it raw.
+    const spans: Array<[number, number]> = [];
+    if (/\.[cm]?[jt]sx?$/.test(path)) {
+      // The parser handles template/regexp rescanning that a bare scanner cannot.
+      const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+      const visit = (node: ts.Node) => {
+        for (const comment of [
+          ...ts.getLeadingCommentRanges(source, node.getFullStart()) ?? [],
+          ...ts.getTrailingCommentRanges(source, node.end) ?? [],
+        ]) spans.push([comment.pos, comment.end]);
+        for (const child of node.getChildren(parsed)) visit(child);
+      };
+      visit(parsed);
+    } else {
+      // CSS has block comments only. Treat // in URLs as data, and preserve
+      // quoted strings/escapes so comment-shaped string contents cannot hide code.
+      let quote = "";
+      for (let i = 0; i < source.length; i += 1) {
+        const char = source[i];
+        if (quote) {
+          if (char === "\\") i += 1;
+          else if (char === quote) quote = "";
+        } else if (char === '"' || char === "'") quote = char;
+        else if (source.startsWith("/*", i)) {
+          const closing = source.indexOf("*/", i + 2);
+          const end = closing === -1 ? source.length : closing + 2;
+          spans.push([i, end]);
+          i = end - 1;
+        }
+      }
+    }
+    spans.sort((a, b) => a[0] - b[0]);
+    for (const [start, end] of spans.reverse()) content = content.slice(0, start) + " ".repeat(end - start) + content.slice(end);
+    if (term === "@jsxImportSource preact") content = source;
+  }
+  return content;
+}

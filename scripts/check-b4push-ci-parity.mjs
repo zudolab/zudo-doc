@@ -53,6 +53,12 @@ const ROOT = resolve(__dirname, "..");
 
 export const REQUIRED_CI_GUARDS = [
   {
+    ciNeedle: "pnpm exec zfb wind audit --project-root . --fail-on error",
+    b4pushScript: "exec",
+    b4pushCommand: "pnpm exec zfb wind audit --project-root . --fail-on error",
+    comment: "Native Wind error gate (#4470)",
+  },
+  {
     // Template drift: bash scripts/check-template-drift.sh in b4push; same in CI
     ciNeedle: "check-template-drift",
     b4pushScript: null, // raw bash invocation — not a pnpm script token
@@ -367,6 +373,12 @@ export function checkParity({
   }
 
   // ── Direction 3: manifest → b4push ───────────────────────────────────────
+  for (const guard of guards) {
+    if (guard.b4pushCommand && !stripShellCommentLines(b4pushSrc).includes(guard.b4pushCommand)) {
+      errors.push(`[manifest→b4push] Missing exact gate command: ${guard.b4pushCommand}`);
+    }
+  }
+
   // A manifest entry with a b4pushScript must still invoke that script
   // somewhere in run-b4push.sh. This is intentionally a whole-file scan:
   // required guards such as package wind manifest and plugin resolution run after

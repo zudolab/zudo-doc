@@ -24,18 +24,7 @@
     "right-{n}",
     "bottom-{n}",
     "left-{n}",
-    "z-{n}",
-    "bg-{color}-{shade}",
-    "text-{color}-{shade}",
-    "border-{color}-{shade}",
-    "ring-{color}-{shade}",
-    "outline-{color}-{shade}",
-    "divide-{color}-{shade}",
-    "from-{color}-{shade}",
-    "via-{color}-{shade}",
-    "to-{color}-{shade}",
-    "fill-{color}-{shade}",
-    "stroke-{color}-{shade}"
+    "z-{n}"
   ],
   "allowed": [
     "p-0",
