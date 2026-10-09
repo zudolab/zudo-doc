@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const EMBED_URL = "/browser-embed/";
 const HOME_URL = "/";
@@ -19,6 +19,11 @@ test("browser bundle renders md-wasm content through route context and real chro
   const sidebar = page.locator('aside[aria-label="Documentation sidebar"]');
   const pager = page.locator("nav[data-doc-pager]");
   const content = page.locator(".zd-content");
+  for (const component of ["SidebarToggle", "SidebarTree"]) {
+    const island = page.locator(`[data-zfb-island="${component}"]`);
+    await expect(island).toHaveCount(1);
+    await expect(island).toHaveAttribute("data-zfb-build", "browser-embed-v1");
+  }
   await expect(header).toHaveCSS("height", "56px");
   await expect(header).toHaveCSS("display", "flex");
   await expect(sidebar).toHaveCSS("background-color", "oklch(0.185 0.005 65)");

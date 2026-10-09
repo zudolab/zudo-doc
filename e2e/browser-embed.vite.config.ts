@@ -6,6 +6,7 @@ const repoRoot = import.meta.dirname.replace(/\/e2e$/, "");
 export default defineConfig({
   base: "/browser-embed/",
   publicDir: false,
+  esbuild: { keepNames: true },
   build: {
     emptyOutDir: false,
     outDir: resolve(repoRoot, "e2e/fixtures/smoke/public/browser-embed"),
