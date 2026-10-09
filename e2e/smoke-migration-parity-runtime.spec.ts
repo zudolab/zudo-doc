@@ -1,10 +1,10 @@
 import { test, expect } from "./fixtures";
 import { spaClick } from "./nav-helpers";
 import { waitForSidebarHydration } from "./sidebar-helpers";
+import { openMobileDrawer } from "./mobile-drawer-helpers";
 import {
   appearanceMenu,
   appearanceOption,
-  appearanceTrigger,
   openAppearanceMenu,
 } from "./theme-helpers";
 import { readDistFile } from "./smoke-dist-helper";
@@ -19,17 +19,20 @@ declare global {
   }
 }
 
-const GUIDES_PAGE_1 = "/docs/guides/sub-a/page-1";
-const GUIDES_PAGE_2 = "/docs/guides/sub-a/page-2";
+const GUIDES_PAGE_1 = "/docs/guides/page-1";
+const GUIDES_PAGE_2 = "/docs/guides/code-blocks-test";
 const PRESET_PAGE = "/docs/guides/preset-generator-test";
-const CODE_PAGE = "/docs/guides/code-blocks-test";
 const MIGRATION_PARITY_PAGE = "/docs/guides/migration-parity-test";
 const MIGRATION_PARITY_DIST_PAGE = "docs/guides/migration-parity-test/index.html";
 const EXPECTED_NATIVE_PRE = "\nfirst line\nsecond line";
+// The authored leading blank line is code content; the newline introducing
+// the closing Markdown fence is not. The frozen v2 code block also emits its
+// highlighted text without that terminal LF, and the copy script writes the
+// rendered <code>.textContent verbatim.
 const EXPECTED_MIGRATION_CODE =
-  "\nconst migrationParityFirst = 1;\nconst migrationParitySecond = 2;\n";
+  "\nconst migrationParityFirst = 1;\nconst migrationParitySecond = 2;";
 
-test("same-document navigation resolves its view transition and preserves mutated nested sidebar state", async ({
+test("same-document navigation resolves its view transition and preserves the changed sidebar filter", async ({
   page,
 }) => {
   const documentRequests: string[] = [];
@@ -44,11 +47,14 @@ test("same-document navigation resolves its view transition and preserves mutate
   await waitForSidebarHydration(page);
 
   const filter = page.locator('#desktop-sidebar input[placeholder^="Filter"]');
-  await filter.fill("Sub A");
-  await expect(filter).toHaveValue("Sub A");
-  await expect(
-    page.locator('#desktop-sidebar button[aria-label="Collapse Sub B"], #desktop-sidebar button[aria-label="Expand Sub B"]'),
-  ).toBeHidden();
+  await filter.fill("Code Blocks Test");
+  await expect(filter).toHaveValue("Code Blocks Test");
+  await expect(page.locator('#desktop-sidebar a[href="/docs/guides/code-blocks-test"]')).toBeVisible();
+  await expect(page.locator('#desktop-sidebar a[href="/docs/guides/page-1"]')).toBeHidden();
+  const guidesToggle = page.locator(
+    '#desktop-sidebar button[aria-label="Collapse Guides"], #desktop-sidebar button[aria-label="Expand Guides"]',
+  );
+  await expect(guidesToggle).toHaveAttribute("aria-label", "Collapse Guides");
 
   const start = await page.evaluate(() => {
     const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
@@ -90,7 +96,7 @@ test("same-document navigation resolves its view transition and preserves mutate
   });
 
   expect(await spaClick(page, GUIDES_PAGE_2)).toBe(true);
-  await expect(page).toHaveURL(/sub-a\/page-2/);
+  await expect(page).toHaveURL(/\/docs\/guides\/code-blocks-test\/?$/);
   await page.waitForFunction(
     () => window.__zudoRuntimeTransition?.status !== "pending",
     undefined,
@@ -117,11 +123,10 @@ test("same-document navigation resolves its view transition and preserves mutate
   expect(after.documentToken).toBe(start.token);
   expect(after.asideToken).toBe(start.token);
   expect(after.inputToken).toBe(start.token);
-  expect(after.filterValue).toBe("Sub A");
+  expect(after.filterValue).toBe("Code Blocks Test");
   expect(after.transition).toMatchObject({ calls: 1, status: "fulfilled" });
-  await expect(
-    page.locator('#desktop-sidebar button[aria-label="Collapse Sub B"], #desktop-sidebar button[aria-label="Expand Sub B"]'),
-  ).toBeHidden();
+  await expect(guidesToggle).toHaveAttribute("aria-label", "Collapse Guides");
+  await expect(page.locator('#desktop-sidebar a[href="/docs/guides/page-1"]')).toBeHidden();
 });
 
 test("appearance menu uses a focused manual popover positioned within a narrow viewport", async ({
@@ -130,7 +135,10 @@ test("appearance menu uses a focused manual popover positioned within a narrow v
   await page.setViewportSize({ width: 360, height: 560 });
   await page.goto("/", { waitUntil: "load" });
 
-  const trigger = appearanceTrigger(page);
+  await openMobileDrawer(page);
+  const trigger = page.locator(
+    '[data-zd-mobile-sidebar] [data-zd-theme-menu] > button[aria-haspopup="menu"]',
+  );
   await expect(trigger).toBeVisible();
   await openAppearanceMenu(page, trigger);
   const menu = appearanceMenu(page);
@@ -175,23 +183,38 @@ test("preset generator array checkboxes, reorder, and reset produce the selected
     .filter({ has: page.getByRole("heading", { name: "Header right items" }) });
   const rows = headerSection.locator(":scope > ul > li");
   const search = headerSection.getByRole("checkbox", { name: "Include Search" });
+  const expectedDefaultOrder = [
+    "Include Theme toggle",
+    "Include Search",
+    "Include Version switcher",
+    "Include Design token panel (trigger)",
+    "Include AI chat (trigger)",
+    "Include GitHub link",
+    "Include Language switcher",
+  ];
+  const readChoiceOrder = async () => Promise.all(
+    (await rows.all()).map((row) => row.getByRole("checkbox").getAttribute("aria-label")),
+  );
 
-  await expect(rows).toHaveCount(2);
-  await expect(rows.nth(0)).toContainText("Theme Toggle");
-  await expect(rows.nth(1)).toContainText("Search");
+  await expect(rows).toHaveCount(expectedDefaultOrder.length);
+  expect(await readChoiceOrder()).toEqual(expectedDefaultOrder);
+  await expect(rows.nth(0).getByRole("checkbox")).toBeChecked();
   await expect(search).toBeChecked();
 
   await headerSection.getByRole("button", { name: "Move Search up" }).click();
-  await expect(rows.nth(0)).toContainText("Search");
-  await expect(rows.nth(1)).toContainText("Theme Toggle");
+  expect(await readChoiceOrder()).toEqual([
+    "Include Search",
+    "Include Theme toggle",
+    ...expectedDefaultOrder.slice(2),
+  ]);
 
   await search.uncheck();
   await expect(search).not.toBeChecked();
   await headerSection.getByRole("button", { name: "Reset to default" }).click();
+  expect(await readChoiceOrder()).toEqual(expectedDefaultOrder);
+  await expect(rows.nth(0).getByRole("checkbox")).toBeChecked();
   await expect(search).toBeChecked();
-  await expect(rows).toHaveCount(2);
-  await expect(rows.nth(0)).toContainText("Theme Toggle");
-  await expect(rows.nth(1)).toContainText("Search");
+  await expect(rows).toHaveCount(expectedDefaultOrder.length);
 
   await page.getByRole("button", { name: "Generate Preset" }).click();
   const dialog = page.locator("dialog").filter({ hasText: "Generated Preset" });
@@ -241,7 +264,9 @@ test("AI chat ignores Enter during IME composition, then submits normally", asyn
     element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
   });
   await input.press("Enter");
-  await expect(dialog.getByText("IME submission completed")).toBeVisible();
+  await expect(
+    dialog.getByRole("log", { name: "Chat messages" }).getByText("IME submission completed", { exact: true }),
+  ).toBeVisible();
   expect(submissions).toBe(1);
 });
 
@@ -318,6 +343,8 @@ test("built article preserves list start and pre LF, then copies the authored co
   await page.goto(MIGRATION_PARITY_PAGE, { waitUntil: "load" });
   const list = page.locator("main ol[start=\"3\"]");
   await expect(list).toHaveCount(1);
+  await expect(list).toHaveAttribute("start", "3");
+  expect(await list.evaluate((element) => (element as HTMLOListElement).start)).toBe(3);
   await expect(list.locator("li")).toHaveText(["Third step", "Fourth step"]);
 
   const nativePre = page.locator("main pre[data-migration-parity-lf]");
