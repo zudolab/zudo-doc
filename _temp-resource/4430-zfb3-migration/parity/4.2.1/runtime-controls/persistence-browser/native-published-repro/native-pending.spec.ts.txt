@@ -1,0 +1,72 @@
+import { test, expect, type Page } from "@playwright/test";
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { (window as any).nativePending = { activations: 0, cleanups: 0 }; });
+});
+async function snapshot(page: Page) {
+  return page.evaluate(() => {
+    const marker = document.querySelector('[data-zfb-island-skip-ssr="Counter"]');
+    const box = marker!.getBoundingClientRect();
+    return { lifecycle: { ...(window as any).nativePending }, scrollY, viewportHeight: innerHeight,
+      bounds: { top: box.top, bottom: box.bottom, height: box.height },
+      attributes: Object.fromEntries([...marker!.attributes].map(a => [a.name, a.value])),
+      reservationCount: document.querySelectorAll("#reservation").length,
+      counterCount: document.querySelectorAll("#counter").length,
+      label: document.querySelector("#label")?.textContent ?? null };
+  });
+}
+async function makeVisible(page: Page) {
+  await page.evaluate(() => document.querySelector("#reservation")!.scrollIntoView({ block: "center" }));
+  await expect(page.locator("#label")).toHaveText("incoming");
+  await expect.poll(() => page.evaluate(() => (window as any).nativePending)).toEqual({ activations: 1, cleanups: 0 });
+}
+
+test("direct first-time visible island waits for explicit visibility", async ({ page }, testInfo) => {
+  await page.goto("/pending-b/");
+  const before = await snapshot(page);
+  await testInfo.attach("direct-before", { body: JSON.stringify(before, null, 2), contentType: "application/json" });
+  expect(before.bounds.top).toBeGreaterThan(before.viewportHeight);
+  expect(before.lifecycle).toEqual({ activations: 0, cleanups: 0 });
+  expect(before.reservationCount).toBe(1);
+  expect(before.counterCount).toBe(0);
+  await makeVisible(page);
+  await testInfo.attach("direct-after-scroll", { body: JSON.stringify(await snapshot(page), null, 2), contentType: "application/json" });
+});
+
+for (const variant of ["fresh", "pending"] as const) {
+  test(`${variant} changed-props navigation before activation keeps first mount deferred`, async ({ page }, testInfo) => {
+    const errors: string[] = [];
+    const failedResponses: {url: string; status: number}[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    page.on("console", message => { if (message.type() === "error") errors.push(`${message.text()} at ${JSON.stringify(message.location())}`); });
+    page.on("response", response => { if (response.status() >= 400) failedResponses.push({ url: response.url(), status: response.status() }); });
+    let documentRequests = 0;
+    page.on("request", request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentRequests++; });
+    await page.goto(`/${variant}-a/`);
+    const before = await snapshot(page);
+    await testInfo.attach("before-navigation", { body: JSON.stringify(before, null, 2), contentType: "application/json" });
+    expect(before.bounds.top).toBeGreaterThan(before.viewportHeight);
+    expect(before.lifecycle).toEqual({ activations: 0, cleanups: 0 });
+    const doc = await page.evaluateHandle(() => document);
+    const origin = await page.evaluate(() => performance.timeOrigin);
+    const baselineRequests = documentRequests;
+    await page.evaluate(() => { (window as any).nativeSwap = new Promise(resolve => document.addEventListener("zfb:after-swap", () => resolve(true), { once: true })); });
+    await page.locator(`nav a[href="/${variant}-b/"]`).click();
+    await page.evaluate(() => (window as any).nativeSwap);
+    await expect(page.locator("#route")).toHaveText(`${variant}-b`);
+    const after = await snapshot(page);
+    await testInfo.attach("after-navigation-before-assertion", { body: JSON.stringify({ after, documentRequests, errors, failedResponses }, null, 2), contentType: "application/json" });
+    expect(after.bounds.top).toBeGreaterThan(after.viewportHeight);
+    expect(after.scrollY).toBe(0);
+    expect(await doc.evaluate(node => node === document)).toBe(true);
+    expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
+    expect(documentRequests).toBe(baselineRequests);
+    expect(errors).toEqual([]);
+    expect(failedResponses).toEqual([]);
+    // FAILS on published4.2.1 only for the persisted-ancestor case.
+    expect(after.lifecycle).toEqual({ activations: 0, cleanups: 0 });
+    expect(after.reservationCount).toBe(1);
+    expect(after.counterCount).toBe(0);
+    await makeVisible(page);
+  });
+}

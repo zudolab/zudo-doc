@@ -1,0 +1,139 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@takazudo/zfb':
+        specifier: 4.2.1
+        version: 4.2.1
+      '@takazudo/zfb-runtime':
+        specifier: 4.2.1
+        version: 4.2.1(@takazudo/zfb@4.2.1)
+    devDependencies:
+      '@playwright/test':
+        specifier: 1.58.2
+        version: 1.58.2
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+packages:
+
+  '@playwright/test@1.58.2':
+    resolution: {integrity: sha512-akea+6bHYBBfA9uQqSYmlJXn61cTa+jbO87xVLCWbTqbWadRVmhxlXATaOjOgcBaWU4ePo0wB41KMFv3o35IXA==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  '@takazudo/zfb-darwin-arm64@4.2.1':
+    resolution: {integrity: sha512-EdSBpIuPYfHy8TWdvzxR8lWAQf8c7ErSy2Gt+w9U8gexRTBPFQ/vXHrye24asePM7p1tX66uhYN5HPqWxsCfhw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@takazudo/zfb-darwin-x64@4.2.1':
+    resolution: {integrity: sha512-xjAvhPyk88pX9BGy9NwmLDd/U1wdcoc39ZXGWGESBksAWqJt67DRTX1ZK0kzLIMJ4hzLGXCvrEwZ2VxSPK5uiQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@takazudo/zfb-linux-arm64-gnu@4.2.1':
+    resolution: {integrity: sha512-MJJS/wTtIJZVbJcI2TnUN64qNprFlA/oXeiEF3Zwlxn/OfUxxE9rRC3MNYJ1laKRHvfIYiM7C+KDukrYadOxZA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@takazudo/zfb-linux-x64-gnu@4.2.1':
+    resolution: {integrity: sha512-CuhrVWVxNKqRhGho8uEdy7nQMyoHCQa40FJvy1ux3TVwNtVPz7CLEqhlGM/5xEA8FvwYnPY4A0NsYXiOq66E5Q==}
+    cpu: [x64]
+    os: [linux]
+
+  '@takazudo/zfb-runtime@4.2.1':
+    resolution: {integrity: sha512-bSZH0Q0LARblAs8Fj81s8UXICkkSXZVcedhvtijfUuG5n4bCaPQgmod0d9zK12kVDhZbYi7eaEeZ9dV0jEhmUg==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+    peerDependencies:
+      '@takazudo/zfb': 4.2.1
+
+  '@takazudo/zfb-win32-x64-msvc@4.2.1':
+    resolution: {integrity: sha512-u/ONYJMIMXMbjFnWZo2Tg1t/54AYu+hX9f6B6KpAM+YDbCfIFIAwPE6CAbhdUug9CGu1AMBPQdL9M/HsdXSVvQ==}
+    cpu: [x64]
+    os: [win32]
+
+  '@takazudo/zfb@4.2.1':
+    resolution: {integrity: sha512-gIZ+WJBRm3VzufmAMH14CppmdxUi7ERe5wy2/+iD/0WIBV5BX4EkejLCAv6jlIYG07Qv9tQ/gGR26AbeGxcTQg==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+    hasBin: true
+
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
+  hono@4.13.13:
+    resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
+    engines: {node: '>=16.9.0'}
+
+  playwright-core@1.58.2:
+    resolution: {integrity: sha512-yZkEtftgwS8CsfYo7nm0KE8jsvm6i/PTgVtB8DL726wNf6H2IMsDuxCpJj59KDaxCtSnrWan2AeDqM7JBaultg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.58.2:
+    resolution: {integrity: sha512-vA30H8Nvkq/cPBnNw4Q8TWz1EJyqgpuinBcHET0YVJVFldr8JDNiU9LaWAE1KqSkRYazuaBhTpB5ZzShOezQ6A==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+snapshots:
+
+  '@playwright/test@1.58.2':
+    dependencies:
+      playwright: 1.58.2
+
+  '@takazudo/zfb-darwin-arm64@4.2.1':
+    optional: true
+
+  '@takazudo/zfb-darwin-x64@4.2.1':
+    optional: true
+
+  '@takazudo/zfb-linux-arm64-gnu@4.2.1':
+    optional: true
+
+  '@takazudo/zfb-linux-x64-gnu@4.2.1':
+    optional: true
+
+  '@takazudo/zfb-runtime@4.2.1(@takazudo/zfb@4.2.1)':
+    dependencies:
+      '@takazudo/zfb': 4.2.1
+      hono: 4.13.13
+
+  '@takazudo/zfb-win32-x64-msvc@4.2.1':
+    optional: true
+
+  '@takazudo/zfb@4.2.1':
+    optionalDependencies:
+      '@takazudo/zfb-darwin-arm64': 4.2.1
+      '@takazudo/zfb-darwin-x64': 4.2.1
+      '@takazudo/zfb-linux-arm64-gnu': 4.2.1
+      '@takazudo/zfb-linux-x64-gnu': 4.2.1
+      '@takazudo/zfb-win32-x64-msvc': 4.2.1
+
+  fsevents@2.3.2:
+    optional: true
+
+  hono@4.13.13: {}
+
+  playwright-core@1.58.2: {}
+
+  playwright@1.58.2:
+    dependencies:
+      playwright-core: 1.58.2
+    optionalDependencies:
+      fsevents: 2.3.2
+
+  typescript@5.9.3: {}

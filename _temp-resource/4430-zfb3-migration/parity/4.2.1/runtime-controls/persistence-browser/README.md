@@ -1,6 +1,7 @@
 # Real-browser nested-island persistence control
 
-Prepared for #4468; corrected manager browser run passes all four tests. This is a standalone authored zfb
+Prepared for #4468. The original four controls pass; the extended diagnostic
+suite records eight passes and one native pending-activation failure. This is a standalone authored zfb
 consumer, separate from the already passed package-injected dev route control.
 It uses installed published `@takazudo/zfb` and `@takazudo/zfb-runtime` 4.2.1,
 the manager checkout's built public `@takazudo/zudo-doc/transitions` export,
@@ -48,7 +49,7 @@ bash "$HOME/.codex/scripts/heavy-guard.sh" -- /tmp/zudo421-persistence-browser/r
 Port 44293 must be unused; Playwright refuses to reuse an existing server. The
 scratch zfb dev server renders actual authored pages, with no route or runtime
 stubs. It is stopped with SIGTERM by Playwright and the existing subreaper.
-Four tests run serially, without retries. Report and lifecycle attachments land
+Nine extended tests run serially, without retries. Report and lifecycle attachments land
 in `/tmp/zudo421-persistence-browser/report.json` and `test-results/`.
 
 Preparation checks passed: project TypeScript, spec TypeScript, shell syntax,
@@ -66,3 +67,20 @@ public/favicon.svg. This diagnosis is provisional until rerun: the spec now
 records console locations and every HTTP error URL/status, preserves lifecycle
 attachments before error assertions, and asserts no HTTP errors. No errors are
 ignored or allowlisted. The corrected manager run passes all four tests (6.9s), with heavy-guard PASS (8s). The original failed URL was not captured, so the favicon cause remains inferred from the successful real-asset correction; no URL-level proof is claimed for the first run. The corrected report records zero console/HTTP errors and attaches measured lifecycle/navigation values. See passed-run.log and passed-report.json.
+
+## Extended controls
+
+The extended six-test manager run records five passes, including a real changed
+component identity using authored CounterOtherIsland, and one pending-activation
+failure: initial zero activation passes, but one activation follows the hop.
+The strict zero-activation acceptance assertion is retained. Initial extended
+output/report are preserved separately. New diagnostics attach before/after
+geometry, scroll, public marker attrs, reservation, label, and lifecycle before
+the assertion, and compare direct pending-b, fresh nonpersisted navigation, and
+a native persisted route that does not import the zudo-doc policy helper. These
+are real published API routes; no browser scheduling/runtime stub is used.
+The diagnostic run records 8 passes/1 failure. Before/after geometry stays
+below viewport at scrollY=0 while the native persisted case activates. Direct
+and nonpersisted controls stay deferred. An isolated registry consumer repeats
+2 passes/1 failure; source/lock/report are in native-published-repro. No strict
+assertion was weakened and the upstream disposition remains open.
