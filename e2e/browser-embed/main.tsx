@@ -8,8 +8,10 @@ import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payl
 import { createRouteContext } from "@takazudo/zudo-doc/route-context";
 import { createChrome } from "@takazudo/zudo-doc/chrome";
 import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+import { MermaidEnlarge } from "@takazudo/zudo-doc/mermaid-enlarge";
 import { SidebarToggle } from "@takazudo/zudo-doc/sidebar-toggle-island";
 import { SidebarTree } from "@takazudo/zudo-doc/sidebar-tree-island";
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 
 const ISLAND_BUILD = "browser-embed-v1";
 
@@ -117,9 +119,10 @@ async function main() {
 
   const html = withIslandTestContext(
     {
-      // These are the two Island children in this feature-disabled document:
-      // the header's mobile drawer and the desktop documentation sidebar.
-      components: [SidebarToggle, SidebarTree],
+      // HeaderWithDefaults constructs the ThemeToggle Island before the
+      // color-mode gate filters it from output. MermaidEnlarge is the default
+      // skip-SSR body-end Island; SidebarToggle and SidebarTree are emitted.
+      components: [SidebarToggle, ThemeToggle, SidebarTree, MermaidEnlarge],
       build: ISLAND_BUILD,
     },
     () => renderToString(page),
