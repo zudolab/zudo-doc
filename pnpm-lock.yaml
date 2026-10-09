@@ -1163,6 +1163,11 @@ packages:
     cpu: [arm64]
     os: [darwin]
 
+  '@takazudo/zfb-darwin-x64@4.2.1':
+    resolution: {integrity: sha512-xjAvhPyk88pX9BGy9NwmLDd/U1wdcoc39ZXGWGESBksAWqJt67DRTX1ZK0kzLIMJ4hzLGXCvrEwZ2VxSPK5uiQ==}
+    cpu: [x64]
+    os: [darwin]
+
   '@takazudo/zfb-linux-arm64-gnu@4.2.1':
     resolution: {integrity: sha512-MJJS/wTtIJZVbJcI2TnUN64qNprFlA/oXeiEF3Zwlxn/OfUxxE9rRC3MNYJ1laKRHvfIYiM7C+KDukrYadOxZA==}
     cpu: [arm64]
@@ -3463,6 +3468,9 @@ snapshots:
   '@takazudo/zfb-darwin-arm64@4.2.1':
     optional: true
 
+  '@takazudo/zfb-darwin-x64@4.2.1':
+    optional: true
+
   '@takazudo/zfb-linux-arm64-gnu@4.2.1':
     optional: true
 
@@ -3488,6 +3496,7 @@ snapshots:
   '@takazudo/zfb@4.2.1':
     optionalDependencies:
       '@takazudo/zfb-darwin-arm64': 4.2.1
+      '@takazudo/zfb-darwin-x64': 4.2.1
       '@takazudo/zfb-linux-arm64-gnu': 4.2.1
       '@takazudo/zfb-linux-x64-gnu': 4.2.1
       '@takazudo/zfb-win32-x64-msvc': 4.2.1
