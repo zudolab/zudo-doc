@@ -335,7 +335,7 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
               on:click={handleSendClick}
               disabled={sendDisabled}
               aria-busy={busy}
-              class="flex h-[2rem] w-[2rem] shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-colors hover:bg-accent-hover disabled:opacity-50"
+              class="flex h-[2rem] w-[2rem] shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-colors duration-0 hover:bg-accent-hover disabled:opacity-50"
               aria-label="Send message"
             >
               <svg
