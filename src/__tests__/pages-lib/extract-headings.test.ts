@@ -541,9 +541,9 @@ describe("slugify — exact port of zfb's Rust slugify", () => {
 
 
 describe("extractHeadings — published 4.2.1 native reference and fence oracle (#4483)", () => {
-  const source = readFileSync(new URL("../../../_temp-resource/4430-zfb3-migration/4483-heading-ids/probe.mdx", import.meta.url), "utf8")
+  const source = readFileSync(new URL("./fixtures/heading-ids-4483/probe.mdx", import.meta.url), "utf8")
     .replace(/^---\n[\s\S]*?\n---\n/, "");
-  const oracle = JSON.parse(readFileSync(new URL("../../../_temp-resource/4430-zfb3-migration/4483-heading-ids/native-output.json", import.meta.url), "utf8")) as { version: string; ids: string[] };
+  const oracle = JSON.parse(readFileSync(new URL("./fixtures/heading-ids-4483/native-output.json", import.meta.url), "utf8")) as { version: string; ids: string[] };
 
   it("matches every ordered native h2–h6 ID and keeps the TOC window", async () => {
     const rendered = await renderHtml(source, {

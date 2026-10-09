@@ -1,0 +1,99 @@
+
+ RUN  v4.1.0 /workspace/zudo-doc/worktrees/4483-headings421
+
+ ❯ |unit| src/__tests__/pages-lib/extract-headings.test.ts (90 tests | 3 failed) 714ms
+     × matches every ordered native h2–h6 ID and keeps the TOC window 460ms
+     × preserves literal protected spans and decodes ordinary text once 2ms
+     × does not invent genuine missing or code-block anchor targets 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/__tests__/pages-lib/extract-headings.test.ts > extractHeadings — published 4.2.1 native reference and fence oracle (#4483) > matches every ordered native h2–h6 ID and keeps the TOC window
+AssertionError: expected [ 'gt-1000ms', 'lt-2mm', …(7) ] to deeply equal [ '1000ms', '2mm', '1000ms-1', …(24) ]
+
+- Expected
++ Received
+
+  [
+-   "1000ms",
+-   "2mm",
+-   "1000ms-1",
+-   "1000ms-1-child-©-≂̸",
+-   "1000ms-1-child-©-≂̸-deep-a",
+-   "1000ms-1-child-©-≂̸-deep-a-deeper-b",
+-   "1000ms-1-child-©-≂̸-sibling",
+-   "after-inline-span",
+-   "code-lt-and-ordinary",
+-   "escaped-gt-and-literal",
+-   "once-lt-and-65",
+-   "unknown-notarealentity-and-incomplete-copy",
+-   "unicode-日本語-→-café-🚀",
+-   "numeric-a-b",
+-   "invalid-�-�-�-�-�-�-�-�-�",
+-   "valid-�",
+-   "after-backtick-fence",
+-   "after-tilde-fence",
+-   "after-mixed-run",
+-   "after-indented-code",
+-   "repeat",
+-   "repeat-nested",
+-   "repeat-1",
+-   "repeat-1-nested",
+-   "repeat-1-nested-below-toc",
+-   "repeat-1-nested-below-toc-below-deep",
+-   "repeat-1-nested-visible-sibling",
++   "gt-1000ms",
++   "lt-2mm",
++   "gt-1000ms-1",
++   "gt-1000ms-1-child-copy-notequaltilde",
++   "gt-1000ms-1-child-copy-notequaltilde-deep-65",
++   "gt-1000ms-1-child-copy-notequaltilde-deep-65-deeper-x42",
++   "gt-1000ms-1-child-copy-notequaltilde-sibling",
++   "code-block-target",
++   "still-code-after-suffix",
+  ]
+
+ ❯ src/__tests__/pages-lib/extract-headings.test.ts:557:42
+    555|     expect(oracle.version).toBe("4.2.1");
+    556|     expect(nativeIds).toEqual(oracle.ids);
+    557|     expect(extractAllHeadingIds(source)).toEqual(nativeIds);
+       |                                          ^
+    558|     const toc = extractHeadings(source);
+    559|     expect(toc.every(heading => heading.depth >= 2 && heading.depth <=…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  |unit| src/__tests__/pages-lib/extract-headings.test.ts > extractHeadings — published 4.2.1 native reference and fence oracle (#4483) > preserves literal protected spans and decodes ordinary text once
+AssertionError: expected '&lt; &gt; &amp;lt; &NotEqualTilde; &n…' to be '&lt; &gt; &lt; ≂̸ &notARealEntity;' // Object.is equality
+
+Expected: "&lt; &gt; &lt; ≂̸ &notARealEntity;"
+Received: "&lt; &gt; &amp;lt; &NotEqualTilde; &notARealEntity;"
+
+ ❯ src/__tests__/pages-lib/extract-headings.test.ts:568:8
+    566|   it("preserves literal protected spans and decodes ordinary text once…
+    567|     expect(extractHeadings("## `&lt;` \\&gt; &amp;lt; &NotEqualTilde; …
+    568|       .toBe("&lt; &gt; &lt; ≂̸ &notARealEntity;");
+       |        ^
+    569|   });
+    570|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  |unit| src/__tests__/pages-lib/extract-headings.test.ts > extractHeadings — published 4.2.1 native reference and fence oracle (#4483) > does not invent genuine missing or code-block anchor targets
+AssertionError: expected [ 'gt-1000ms', 'lt-2mm', …(7) ] to not include 'code-block-target'
+ ❯ src/__tests__/pages-lib/extract-headings.test.ts:573:21
+    571|   it("does not invent genuine missing or code-block anchor targets", (…
+    572|     const ids = extractAllHeadingIds(source);
+    573|     expect(ids).not.toContain("code-block-target");
+       |                     ^
+    574|     expect(ids).not.toContain("indented-code-target");
+    575|     expect(ids).not.toContain("genuinely-missing");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 87 passed (90)
+   Start at  09:27:37
+   Duration  971ms (transform 111ms, setup 0ms, import 137ms, tests 714ms, environment 0ms)
+
