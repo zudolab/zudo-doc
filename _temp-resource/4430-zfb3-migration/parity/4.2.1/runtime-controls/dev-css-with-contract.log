@@ -1,0 +1,17 @@
+Using generated consumer CSS /workspace/zudo-doc/packages/create-zudo-doc/templates/base/src/styles/global.css (sha256=6642c2175abc0cab75ee3424bc582ea5f40ba84384756d5fcb33ca478784db4f)
+[2m[WebServer] [22m(node:385656) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22mzfb warn: ZB006 plugin-host:stderr: (node:385687) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22mzfb warn: ZB006 plugin-host:stderr: (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:385837) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:385837) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MOBILE_TOGGLE_DIAGNOSTICS {"display":"inline-block","visibility":"visible","opacity":"1","width":40,"height":52,"x":8,"y":1.5,"offsetParent":true,"disabled":false,"hiddenAncestor":false,"styleSheets":[{"href":null,"disabled":false},{"href":null,"disabled":false},{"href":null,"disabled":false},{"href":"http://127.0.0.1:44291/assets/styles.css","disabled":false}]}
+  ✓  1 ../../tmp/zudo421-request-runtime-probe/injected-dev-hydration.spec.ts:5:5 › no-stub injected dev hydrates desktop and mobile sidebar islands and swaps routes (779ms)
+
+  1 passed (4.9s)
+heavy-guard: verdict=PASS exit=0 secs=6 min_mem_mb=13295 reason=-
