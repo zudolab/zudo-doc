@@ -1,6 +1,7 @@
 import { computed, getScope, signal, type ReadonlySignal, type Ref } from "@takazudo/zfb/zudo-react";
 import type { SidebarNavNode, SidebarNavigationContext } from "../sidebar/types.js";
 import { broaderSidebarScope, sidebarScopeNodes, reconcileSidebarScope, indexSidebarOccurrences, SIDEBAR_FOREST_SCOPE } from "../sidebar-utils/index.js";
+import { getNoteTrayItems, groupItems } from "../note-tray-model/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 
 export interface ScopeControls {
@@ -35,6 +36,13 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
   const selectedNodes = computed(() => navigation ? sidebarScopeNodes(navigation, nodes, selected.value) : nodes);
   const broader = computed(() => navigation ? broaderSidebarScope(navigation, nodes, selected.value) : null);
   const occurrenceIndex = navigation ? indexSidebarOccurrences(navigation.roots) : new Map<string, SidebarNavNode>();
+  const trayGroups = [...occurrenceIndex].flatMap(([id, node]) => {
+    const grouping = node.noteTraySidebar;
+    if (node.shape !== "note-tray" || !grouping || grouping === "index") return [];
+    return groupItems(getNoteTrayItems(node), grouping, node.sortOrder ?? "asc")
+      .map((group) => ({ key: `${id}#${group.key}`, items: group.items }));
+  });
+  const groupKeys = new Set(trayGroups.map((group) => group.key));
   const hint = computed(() => broader.value === null ? labels.terminal : broader.value === SIDEBAR_FOREST_SCOPE ? labels.forest : occurrenceIndex.get(broader.value)?.label ?? labels.forest);
   const revealPath = (id?: string | null) => {
     if (!navigation) return;
@@ -43,6 +51,9 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
       if (node.slug !== activeSlug.value && key !== id) continue;
       let ancestor: string | null | undefined = key;
       while (ancestor) { next[ancestor] = true; ancestor = navigation.parents[ancestor]; }
+    }
+    for (const group of trayGroups) {
+      if (group.items.some((item) => item.slug === activeSlug.value)) next[group.key] = true;
     }
     expansion.value = next;
     reveal.value++;
@@ -58,7 +69,10 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     if (id === null) {
       // Restore the authored collapse defaults, then reveal the active path.
       // Explicit false values also reset rows retained by the keyed renderer.
-      expansion.value = Object.fromEntries([...occurrenceIndex].map(([key, node]) => [key, !node.collapsed]));
+      expansion.value = Object.fromEntries([
+        ...[...occurrenceIndex].map(([key, node]) => [key, !node.collapsed]),
+        ...trayGroups.map((group) => [group.key, group.items.some((item) => item.slug === activeSlug.value)]),
+      ]);
       revealPath();
     } else {
       revealPath(previous);
@@ -97,7 +111,7 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
           ? valid
           : reconcileSidebarScope(navigation, nodes, valid, activeSlug.value);
         query.value = typeof stored.query === "string" ? stored.query : "";
-        if (stored.expansion && typeof stored.expansion === "object") expansion.value = Object.fromEntries(Object.entries(stored.expansion).filter(([id, value]) => occurrenceIndex.has(id) && typeof value === "boolean")) as Record<string, boolean>;
+        if (stored.expansion && typeof stored.expansion === "object") expansion.value = Object.fromEntries(Object.entries(stored.expansion).filter(([id, value]) => (occurrenceIndex.has(id) || groupKeys.has(id)) && typeof value === "boolean")) as Record<string, boolean>;
         if (stored.page !== activeSlug.value) revealPath(selected.value);
       }
     } catch { /* Stale or unavailable storage uses the configured baseline. */ }

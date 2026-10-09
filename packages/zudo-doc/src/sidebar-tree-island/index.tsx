@@ -381,7 +381,7 @@ export function SidebarTree({
                   fallback={() => <NodeList nodes={filteredNodes} currentSlug={activeSlug} depth={0} forceOpen={computed(() => !!query.value)} scopeControls={scopeControls} />}>
                   {() => <Show when={computed(() => !!filteredNodes.value[0])}>{() => (
                     <TrayList tray={computed(() => filteredNodes.value[0]!)} itemCount={getNoteTrayItems(selectedNodes.value[0]!).length}
-                      currentSlug={activeSlug} forceOpen={computed(() => !!query.value)} locale={locale} dateFormats={dateFormats} />
+                      currentSlug={activeSlug} forceOpen={computed(() => !!query.value)} locale={locale} dateFormats={dateFormats} scopeControls={scopeControls} />
                   )}</Show>}
                 </Show>
               </div>
@@ -435,6 +435,7 @@ function TrayList({
   itemCount,
   currentSlug,
   forceOpen,
+  scopeControls,
   locale,
   dateFormats,
 }: {
@@ -471,6 +472,8 @@ function TrayList({
             {(group, index) => (
               <TrayGroupNode
                 traySlug={computed(() => tray.value.slug)}
+                trayOccurrence={computed(() => tray.value.occurrenceId ?? tray.value.slug)}
+                scopeControls={scopeControls}
                 group={group}
                 grouping={computed(
                   () => sidebarStyle.value as "year" | "month",
@@ -623,6 +626,8 @@ function noteTrayGroupStorageKey(traySlug: string, groupKey: string): string {
 
 function TrayGroupNode({
   traySlug,
+  trayOccurrence,
+  scopeControls,
   group,
   grouping,
   locale,
@@ -632,6 +637,7 @@ function TrayGroupNode({
   isLast,
 }: {
   traySlug: ReadonlySignal<string>;
+  trayOccurrence: ReadonlySignal<string>;
   group: ReadonlySignal<NoteTrayGroup<SidebarNavNode>>;
   grouping: ReadonlySignal<"year" | "month">;
   locale: string;
@@ -642,7 +648,8 @@ function TrayGroupNode({
   const containsCurrent = computed(() =>
     group.value.items.some((item) => item.slug === currentSlug.value),
   );
-  const open = signal(containsCurrent.value);
+  const occurrenceKey = computed(() => `${trayOccurrence.value}#${group.value.key}`);
+  const open = signal(scopeControls?.expansion.value[occurrenceKey.value] ?? containsCurrent.value);
   const storageKey = computed(() =>
     noteTrayGroupStorageKey(traySlug.value, group.value.key),
   );
@@ -652,13 +659,13 @@ function TrayGroupNode({
       : formatYearMonthLabel(group.value.key, locale, dateFormats?.yearMonth),
   );
   scope.onActivate(() => {
-    if (getOpenSet().has(storageKey.value)) open.value = true;
+    if (!scopeControls && getOpenSet().has(storageKey.value)) open.value = true;
   });
   scope.effect(() => {
     if (containsCurrent.value) open.value = true;
   });
   scope.effect(() => {
-    if (open.value) {
+    if (!scopeControls && open.value) {
       const stored = getOpenSet();
       if (!stored.has(storageKey.value)) {
         stored.add(storageKey.value);
@@ -668,11 +675,20 @@ function TrayGroupNode({
   });
   const toggle = () => {
     open.value = !open.value;
+    if (scopeControls) {
+      scopeControls.expansion.value = { ...scopeControls.expansion.value, [occurrenceKey.value]: open.value };
+      scopeControls.save();
+      return;
+    }
     const stored = getOpenSet();
     if (open.value) stored.add(storageKey.value);
     else stored.delete(storageKey.value);
     saveOpenSet(stored);
   };
+  scope.effect(() => {
+    const stored = scopeControls?.expansion.value[occurrenceKey.value];
+    if (stored !== undefined) open.value = stored;
+  });
   const expanded = computed(() => forceOpen.value || open.value);
   const items = computed(() => group.value.items);
   return (

@@ -333,3 +333,41 @@ it("opens the root-index active path even when its canonical slug is empty", asy
   expect(root.querySelector('button[aria-label="Collapse Root group"]')).not.toBeNull();
   expect(root.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe("/docs/");
 });
+
+it("preserves dated tray groups across ordinary scope changes but Restore resets inactive groups", async () => {
+  const tray: SidebarNavNode = {
+    slug: "notes", label: "Notes", position: 0, href: "/docs/notes", hasPage: true,
+    shape: "note-tray", noteTrayDated: true, noteTraySidebar: "year",
+    children: [
+      { slug: "notes/current", label: "Current note", position: 0, rank: 1, date: "2026-01-02", href: "/docs/notes/current", hasPage: true, children: [] },
+      { slug: "notes/older", label: "Older note", position: 1, rank: 2, date: "2025-01-02", href: "/docs/notes/older", hasPage: true, children: [] },
+    ],
+  };
+  const data = buildSidebarNavigation([], "en", "notes", undefined, {}, () => [tray, NODES[1]!], ["notes"]);
+  const root = await mount({ ...data, currentSlug: "notes/current" });
+  click(root.querySelector('button[aria-label="Expand 2025"]'));
+  await flushAll();
+  expect(root.querySelector('a[href="/docs/notes/older"]')).not.toBeNull();
+  click(root.querySelector('[data-sidebar-broaden]'));
+  await flushAll();
+  click(root.querySelector('button[aria-label="Show only this branch: Notes"]'));
+  await flushAll();
+  expect(root.querySelector('button[aria-label="Collapse 2025"]')).not.toBeNull();
+  view!.dispose();
+  view = undefined;
+  const remounted = await mount({ ...data, currentSlug: "notes/current" });
+  expect(remounted.querySelector('button[aria-label="Collapse 2025"]')).not.toBeNull();
+  click(remounted.querySelector('[data-sidebar-broaden]'));
+  await flushAll();
+  click(remounted.querySelector('[data-sidebar-restore]'));
+  await flushAll();
+  expect(remounted.querySelector('button[aria-label="Expand 2025"]')).not.toBeNull();
+  expect(remounted.querySelector('a[href="/docs/notes/older"]')).toBeNull();
+  expect(remounted.querySelector('button[aria-label="Collapse 2026"]')).not.toBeNull();
+  expect(remounted.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe("/docs/notes/current");
+  document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/notes/older";
+  document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+  await flushAll();
+  expect(remounted.querySelector('button[aria-label="Collapse 2025"]')).not.toBeNull();
+  expect(remounted.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe("/docs/notes/older");
+});
