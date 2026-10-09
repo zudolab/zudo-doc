@@ -65,7 +65,7 @@ function mountSearchWidget(platform: string): SearchWidgetFixture {
   host.innerHTML = `
       <button data-open-search type="button">Open search</button>
       <dialog data-search-dialog>
-        <input data-search-input type="search" />
+        <input data-search-input type="text" />
         <button data-close-search type="button">Close search</button>
         <span data-search-count></span>
         <span data-search-count-narrow></span>
@@ -174,19 +174,18 @@ describe("search widget shortcut placeholder lifecycle", () => {
         "/docs/alpha-guide",
       );
 
-      // Deleting the query restores the initial empty-state HTML snapshot.
+      // Reconnecting while results replace the placeholder must not recapture
+      // the results as the empty-query snapshot.
+      fixture.host.remove();
+      document.body.append(fixture.host);
+      expect(fixture.results.querySelector("article a")).not.toBeNull();
       await enterQuery(fixture, "");
+      expect(fixture.results.querySelector("[data-search-placeholder]")).not.toBeNull();
       expect(fixture.shortcut().textContent).toBe(shortcut);
 
-      // happy-dom does not implement the browser's native type=search Escape
-      // clear, so send the key and the input event the browser emits on clear.
+      // Deleting the query restores the initial empty-state HTML snapshot.
       await enterQuery(fixture, "alpha");
-      fixture.input.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-      );
-      fixture.input.value = "";
-      fixture.input.dispatchEvent(new Event("input", { bubbles: true }));
-      await vi.advanceTimersByTimeAsync(150);
+      await enterQuery(fixture, "");
       expect(fixture.shortcut().textContent).toBe(shortcut);
 
       // The after-navigation handler re-applies the active platform label.

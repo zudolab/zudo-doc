@@ -327,6 +327,7 @@ export function buildSearchWidgetScript() {
       // without re-querying the DOM (the placeholder node is replaced once
       // search results are rendered).
       this._placeholderHtml = "";
+      this._placeholderHtmlCaptured = false;
       // Held so we can remove the document-level after-navigate listener
       // in disconnectedCallback. zudolab/zudo-doc#1523 — under Strategy B
       // SPA navigation a non-persisted <site-search> element would leak
@@ -356,8 +357,13 @@ export function buildSearchWidgetScript() {
       if (kbdEl) kbdEl.textContent = this._shortcut;
 
       // Snapshot the placeholder after its platform shortcut is populated so
-      // every empty-query restore keeps the same label shown on first open.
-      this._placeholderHtml = this._results ? this._results.innerHTML : "";
+      // every empty-query restore keeps the same label shown on first open. Keep
+      // that first snapshot across SPA disconnect/reconnects, which can happen
+      // while the results container contains rendered results.
+      if (!this._placeholderHtmlCaptured && this._results) {
+        this._placeholderHtml = this._results.innerHTML;
+        this._placeholderHtmlCaptured = true;
+      }
 
       // Wire open/close handlers
       var self = this;

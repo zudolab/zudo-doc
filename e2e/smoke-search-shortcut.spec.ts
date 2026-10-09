@@ -40,6 +40,13 @@ for (const platform of PLATFORMS) {
 
     await page.goto(DOCS_PAGE, { waitUntil: "domcontentloaded" });
 
+    let mainFrameDocumentRequests = 0;
+    page.on("request", (request) => {
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+        mainFrameDocumentRequests += 1;
+      }
+    });
+
     const search = page.locator("site-search").first();
     const dialog = search.locator("[data-search-dialog]");
     const input = search.locator("[data-search-input]");
@@ -63,27 +70,45 @@ for (const platform of PLATFORMS) {
     await expect(placeholder).toBeVisible();
     await expect(shortcut).toHaveText(platform.shortcut);
 
-    // Exercise the native Escape-clear path on a search input. The widget's
-    // shipped input is text, so switch only this fixture input to type=search.
-    await input.evaluate((element) => {
-      (element as HTMLInputElement).type = "search";
-    });
+    // The shipped input is type=text: Escape closes the native dialog and
+    // preserves the query. Deleting it after reopening restores the placeholder.
     await input.fill("Getting Started");
     await expect(results.locator("article a").first()).toBeVisible({
       timeout: 10_000,
     });
     await input.press("Escape");
-    await expect(input).toHaveValue("");
+    await expect(dialog).not.toBeVisible();
+    await expect(input).toHaveValue("Getting Started");
+
+    await page.keyboard.press(platform.openKey);
+    await expect(dialog).toBeVisible();
+    await expect(input).toHaveValue("Getting Started");
+    await input.fill("");
     await expect(placeholder).toBeVisible();
     await expect(shortcut).toHaveText(platform.shortcut);
 
-    // Close and reopen, then follow a result through the real SPA navigation.
+    // Disconnect/reconnect while populated, then clear. The first placeholder
+    // snapshot must survive a reconnect whose results DOM contains an article.
+    await input.fill("Getting Started");
+    await expect(results.locator("article a").first()).toBeVisible({
+      timeout: 10_000,
+    });
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
+    await search.evaluate((element) => {
+      element.remove();
+      document.body.append(element);
+    });
+    await expect(results.locator("article a").first()).toBeVisible();
     await page.keyboard.press(platform.openKey);
     await expect(dialog).toBeVisible();
+    await expect(input).toHaveValue("Getting Started");
+    await input.fill("");
+    await expect(placeholder).toBeVisible();
     await expect(shortcut).toHaveText(platform.shortcut);
 
+    // Follow a result through the real SPA navigation without requesting a
+    // replacement main-frame document.
     await input.fill("Guides");
     const resultLink = results.locator("article a").first();
     await expect(resultLink).toBeVisible({ timeout: 10_000 });
@@ -96,8 +121,9 @@ for (const platform of PLATFORMS) {
     );
     await expect(dialog).not.toBeVisible();
     await expect(shortcut).toHaveText(platform.shortcut);
+    expect(mainFrameDocumentRequests).toBe(0);
 
-    // A same-node disconnect/reconnect must not duplicate the global shortcut
+    // A second same-node reconnect must not duplicate the global shortcut
     // listener or lose the platform label.
     const host = page.locator("site-search").first();
     await host.evaluate((element) => {

@@ -20,17 +20,19 @@ client-hints platform value was present, even though the fallback user-agent str
 | --- | --- | --- |
 | macOS (`userAgentData.platform = "macOS"`), first open | `⌘K` | `packages/zudo-doc/src/search-widget-script/__tests__/runtime.test.ts` |
 | macOS, type a matching query then delete it | Placeholder returns with `⌘K` | Pre-fix test failed with an empty badge; post-fix test passes |
-| macOS, clear a `type=search` input with Escape | Placeholder returns with `⌘K` | Unit input-event regression and browser case in `e2e/smoke-search-shortcut.spec.ts` |
-| Windows, first open and both clear paths | `Ctrl+K` survives each placeholder restore | Unit and browser cases |
+| macOS, shipped `type=text` input with Escape | Dialog closes and query remains; delete-clear restores placeholder with `⌘K` | Browser case in `e2e/smoke-search-shortcut.spec.ts` |
+| Windows, first open and delete-clear | `Ctrl+K` survives placeholder restore | Unit and browser cases |
 | Either platform, close/reopen and `zfb:after-swap` | Badge remains correct | Unit and browser cases |
-| Either platform, result activation, disconnect/reconnect | Dialog closes, link remains navigable, one keyboard listener remains | Unit behavior and strict browser case |
+| Either platform, disconnect/reconnect while results are populated, then clear | Original placeholder and platform badge return | Pre-fix runtime regression fails; post-fix unit and browser cases pass |
+| Either platform, result activation | Dialog closes, SPA navigation completes without a main-frame document request | Strict browser case and navigation-request assertion |
 | Loading, unavailable, and no-results states | Existing messages and retry behavior remain intact | Runtime unit compatibility test; existing smoke search coverage remains in place |
 
 `e2e/smoke-search-shortcut.spec.ts` is the strict browser case for #4475 to run.
-It covers the complete open → type → delete-clear → Escape-clear → close/reopen →
-result navigation → same-node reconnect path under both Mac and Windows platform
-strings. The regular smoke search specs continue to cover no-results, unavailable,
-and result navigation behavior.
+It covers the complete open → type → delete-clear → Escape-close-preserving-query →
+reopen → populated disconnect/reconnect → clear → SPA result navigation path under
+both Mac and Windows platform strings. It asserts that SPA result navigation does
+not issue a main-frame document request. The regular smoke search specs continue to
+cover no-results, unavailable, and result navigation behavior.
 
 ## Reproduction and verification
 
@@ -41,7 +43,10 @@ platform cases. The observed text was `""`; expected values were `"⌘K"` and
 compatibility test passed. This isolates the original failure to restoration of
 the pre-shortcut placeholder snapshot.
 
-After the fix, the focused generated-script and runtime tests passed: 2 test files,
-7 tests. The new E2E spec typechecks with `tsc --noEmit -p e2e/tsconfig.json`.
+The reconnect regression was added while the generator still recaptured results;
+the focused runtime test failed for both macOS and Windows because clearing after
+reconnect could not restore the placeholder. The one-time snapshot fix preserves
+the original platform-populated HTML across reconnects. The focused generated-script
+and runtime tests and E2E spec typecheck are recorded with the follow-up commit.
 The strict browser run is delegated to #4475; no browser suite was run in this
 worktree.
