@@ -30,7 +30,7 @@ test("scope controls retain the article/filter and restore the configured tree",
   assertNoConsoleErrors();
 });
 
-test("native same-branch navigation, refresh and Back keep a valid selected scope", async ({ page, assertNoConsoleErrors }) => {
+test("native same-branch navigation, refresh and Back/Forward keep a valid selected scope", async ({ page, assertNoConsoleErrors }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(PAGE);
   await waitForSidebarHydration(page);
@@ -46,6 +46,10 @@ test("native same-branch navigation, refresh and Back keep a valid selected scop
   await page.goBack();
   await waitForSidebarHydration(page);
   await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /sub-a\/page-1\/?$/);
+  await page.goForward();
+  await waitForSidebarHydration(page);
+  await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /sub-a\/page-2\/?$/);
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true })).toHaveCount(0);
   assertNoConsoleErrors();
 });
 
@@ -97,5 +101,138 @@ test("refresh preserves a branch focused away from the article", async ({ page, 
   await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub A", exact: true })).toHaveCount(0);
   await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`${PAGE}/?$`));
+  assertNoConsoleErrors();
+});
+
+const EDITORIAL_PAGE = "/docs/editorial/background";
+
+async function configuredRootLabels(sidebar: import("@playwright/test").Locator) {
+  return sidebar.locator("[data-sidebar-tree-root] > div").evaluateAll((roots) =>
+    roots.map((root) => root.querySelector("[data-sidebar-focus]")?.getAttribute("aria-label")),
+  );
+}
+
+test("serialized editorial parents broaden one level and Restore reinstates the authored multi-root forest", async ({ page, assertNoConsoleErrors }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(EDITORIAL_PAGE);
+  await waitForSidebarHydration(page);
+  const sidebar = desktopSidebar(page);
+  const expectedRoots = ["Show only this branch: Color recipes", "Show only this branch: Outline recipes"];
+  expect(await configuredRootLabels(sidebar)).toEqual(expectedRoots);
+  await expect(sidebar.getByRole("button", { name: "Expand Outline recipes", exact: true })).toBeVisible();
+  await sidebar.getByRole("button", { name: "Expand Outline recipes", exact: true }).click();
+  await expect(sidebar.getByRole("link", { name: "Outline color", exact: true })).toBeVisible();
+  await sidebar.locator("[data-sidebar-broaden]").click();
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(0);
+  await expect(sidebar.locator("[data-sidebar-scope-toolbar]")).toContainText("Utility reference");
+  await sidebar.locator("[data-sidebar-broaden]").click();
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+  await sidebar.locator("[data-sidebar-restore]").click();
+  expect(await configuredRootLabels(sidebar)).toEqual(expectedRoots);
+  await expect(sidebar.getByRole("button", { name: "Expand Outline recipes", exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("link", { name: "Outline color", exact: true })).toHaveCount(0);
+  await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/background\/?$/);
+  await expect(page).toHaveURL(new RegExp(`${EDITORIAL_PAGE}/?$`));
+  assertNoConsoleErrors();
+});
+
+test("keyboard scope actions preserve URL hash, article position and desktop TOC", async ({ page, assertNoConsoleErrors }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(`${EDITORIAL_PAGE}#paint-surface`);
+  await waitForSidebarHydration(page);
+  const sidebar = desktopSidebar(page);
+  const toc = page.locator("[data-zd-toc]");
+  await expect(toc).toBeVisible();
+  await expect(toc.locator('a[href="#paint-surface"]')).toHaveAttribute("aria-current", "true");
+  const tocLinks = await toc.locator("a").evaluateAll((links) => links.map((link) => ({ href: link.getAttribute("href"), text: link.textContent })));
+  const readingY = await page.evaluate(() => window.scrollY);
+  expect(readingY).toBeGreaterThan(0);
+  const url = page.url();
+  const article = await page.locator("h1").textContent();
+  const focus = sidebar.getByRole("button", { name: "Show only this branch: Color recipes", exact: true });
+  await focus.focus();
+  await expect(focus).toBeFocused();
+  await focus.press("Enter");
+  await expect(sidebar.locator("[data-sidebar-broaden]")).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+  await page.keyboard.press("Space");
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
+  await page.keyboard.press("Space");
+  await expect(sidebar.locator("[data-sidebar-broaden]")).toBeDisabled();
+  await expect(sidebar.locator("[data-sidebar-restore]")).toBeFocused();
+  await page.keyboard.press("Enter");
+  expect(page.url()).toBe(url);
+  expect(await page.locator("h1").textContent()).toBe(article);
+  expect(await page.evaluate(() => window.scrollY)).toBe(readingY);
+  expect(await toc.locator("a").evaluateAll((links) => links.map((link) => ({ href: link.getAttribute("href"), text: link.textContent })))).toEqual(tocLinks);
+  await expect(toc.locator('a[href="#paint-surface"]')).toHaveAttribute("aria-current", "true");
+  assertNoConsoleErrors();
+});
+
+test.describe("touch scope controls", () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test("touch focus, Broaden and Restore retain the mobile drawer and article", async ({ page, assertNoConsoleErrors }) => {
+    await page.goto(`${EDITORIAL_PAGE}#paint-surface`);
+    await openMobileDrawer(page);
+    const drawer = page.locator("[data-zd-mobile-sidebar]");
+    const url = page.url();
+    const readingY = await page.evaluate(() => window.scrollY);
+    await drawer.getByRole("button", { name: "Show only this branch: Color recipes", exact: true }).tap();
+    await expect(drawer.getByRole("button", { name: "Show only this branch: Outline recipes", exact: true })).toHaveCount(0);
+    await drawer.locator("[data-sidebar-broaden]").tap();
+    await expect(drawer.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+    await drawer.locator("[data-sidebar-restore]").tap();
+    await expect(page.getByRole("button", { name: "Close sidebar", exact: true })).toBeVisible();
+    await expect(drawer).not.toHaveAttribute("inert", "");
+    expect(await configuredRootLabels(drawer)).toEqual(["Show only this branch: Color recipes", "Show only this branch: Outline recipes"]);
+    expect(page.url()).toBe(url);
+    expect(await page.evaluate(() => window.scrollY)).toBe(readingY);
+    assertNoConsoleErrors();
+  });
+});
+
+test("native article links widen only to the nearest common editorial ancestor", async ({ page, assertNoConsoleErrors }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(EDITORIAL_PAGE);
+  await waitForSidebarHydration(page);
+  const sidebar = desktopSidebar(page);
+  await sidebar.getByRole("button", { name: "Show only this branch: Color recipes", exact: true }).click();
+  expect(await spaClickSelector(page, 'main a[href$="/editorial/outline/"], main a[href$="/editorial/outline"]')).toBe(true);
+  await waitForSidebarHydration(page);
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Motion recipes", exact: true })).toHaveCount(0);
+  await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/outline\/?$/);
+  expect(await spaClickSelector(page, 'main a[href$="/editorial/motion/"], main a[href$="/editorial/motion"]')).toBe(true);
+  await waitForSidebarHydration(page);
+  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
+  await expect(sidebar.locator("[data-sidebar-broaden]")).toBeEnabled();
+  await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/motion\/?$/);
+  assertNoConsoleErrors();
+});
+
+test("modified sidebar links open a native new tab without changing the selected page or tree", async ({ page, assertNoConsoleErrors }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(EDITORIAL_PAGE);
+  await waitForSidebarHydration(page);
+  const sidebar = desktopSidebar(page);
+  await sidebar.getByRole("button", { name: "Show only this branch: Color recipes", exact: true }).click();
+  const url = page.url();
+  const popupPromise = page.context().waitForEvent("page");
+  await sidebar.getByRole("link", { name: "Border color", exact: true }).click({ modifiers: ["ControlOrMeta"] });
+  const popup = await popupPromise;
+  try {
+    await expect(popup).toHaveURL(/\/docs\/editorial\/border\/?$/);
+    await expect(popup.locator("h1")).toHaveText("Border color");
+    expect(page.url()).toBe(url);
+    await expect(sidebar.getByRole("button", { name: "Show only this branch: Outline recipes", exact: true })).toHaveCount(0);
+    await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/background\/?$/);
+  } finally {
+    await popup.close();
+  }
   assertNoConsoleErrors();
 });
