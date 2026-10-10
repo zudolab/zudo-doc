@@ -13,7 +13,7 @@
  * in a `:root` rule after the imports. No consumer `@theme` is involved:
  *   --color-{bg,fg,muted,accent,surface,code-bg,code-fg,success,warning,
  *            matched-keyword-bg,matched-keyword-fg}
- *   --spacing-{hsp-sm,hsp-2xs,hsp-lg,hsp-md,hsp-xl,vsp-xs,vsp-2xs,vsp-md,vsp-lg,
+ *   --spacing-{hsp-sm,hsp-2xs,hsp-lg,hsp-md,hsp-xl,vsp-xs,vsp-2xs,vsp-sm,vsp-md,vsp-lg,
  *              icon-sm}
  *   --z-index-{local-1,local-2}
  *   --z-index-toolbar
@@ -1311,6 +1311,11 @@ html[data-asset-details-hidden]
 
 .zd-wrap-anywhere {
   overflow-wrap: anywhere;
+}
+
+/* Search rows own their padding; idle and status content need the same inset. */
+site-search [data-search-results] > :is([data-search-placeholder], p) {
+  padding-top: var(--spacing-vsp-sm);
 }
 
 .zd-search-excerpt-decoration {

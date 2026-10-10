@@ -2022,6 +2022,10 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
   overflow-wrap: anywhere;
 }
 
+site-search [data-search-results] > :is([data-search-placeholder], p) {
+  padding-top: var(--spacing-vsp-sm);
+}
+
 .zd-search-excerpt-decoration {
   text-decoration-color: var(--color-muted);
 }
