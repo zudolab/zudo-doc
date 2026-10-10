@@ -361,19 +361,27 @@ export function SidebarTree({
                 </div>
               </div>
               {navigation ? (
-                <div class="flex flex-wrap items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-2xs text-caption" data-sidebar-scope-toolbar>
-                  <button type="button" data-sidebar-broaden disabled={computed(() => broader.value === null)}
-                    on:click={() => { if (broader.value !== null) changeScope(broader.value); }}
-                    class="flex items-center gap-hsp-xs rounded border border-muted px-hsp-xs py-vsp-3xs text-fg hover:bg-surface focus-visible:bg-surface disabled:text-muted">
-                    <span aria-hidden="true">↑</span>{labels.broaden}
-                  </button>
-                  <span class="min-w-0 break-words text-muted">{hint}</span>
-                  <Show when={computed(() => selected.value !== null)}>{() => (
-                    <button type="button" data-sidebar-restore on:click={() => changeScope(null)}
-                      class="flex items-center gap-hsp-xs rounded border border-muted px-hsp-xs py-vsp-3xs text-fg hover:bg-surface focus-visible:bg-surface">
-                      <span aria-hidden="true">◎</span>{labels.restore}
+                <div class="border-t border-muted bg-surface px-hsp-md py-vsp-2xs text-caption" data-sidebar-scope-toolbar>
+                  <div class="flex items-center justify-between gap-hsp-xs" data-sidebar-scope-actions>
+                    <button type="button" data-sidebar-broaden disabled={computed(() => broader.value === null)}
+                      on:click={() => { if (broader.value !== null) changeScope(broader.value); }}
+                      style="min-height:26px"
+                      class="flex items-center gap-hsp-xs font-medium rounded text-fg hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:text-muted disabled:opacity-50">
+                      <span aria-hidden="true">↑</span>{labels.broaden}
                     </button>
-                  )}</Show>
+                    <Show when={computed(() => selected.value !== null)}>{() => (
+                      <button type="button" data-sidebar-restore on:click={() => changeScope(null)}
+                        title={labels.restore} aria-label={labels.restore}
+                        class="grid place-items-center w-icon-lg h-icon-lg shrink-0 rounded text-muted hover:text-fg focus-visible:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" />
+                          <circle cx="12" cy="12" r="6" />
+                          <circle cx="12" cy="12" r="2" />
+                        </svg>
+                      </button>
+                    )}</Show>
+                  </div>
+                  <div class="min-w-0 break-words text-micro text-muted" style="margin-top:3px" data-sidebar-scope-hint>{hint}</div>
                 </div>
               ) : null}
               <div data-sidebar-tree-root>
