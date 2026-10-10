@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Capture computed-style and screenshot evidence from a prebuilt dist. */
+/** Capture computed-style and screenshot evidence from a prebuilt dist, or from a deployed site with --url. */
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -8,6 +8,7 @@ import { chromium } from '@playwright/test';
 
 const args = process.argv.slice(2);
 function option(name, fallback) { const i = args.indexOf(name); return i < 0 ? fallback : args[i + 1]; }
+const remoteUrl = option('--url', null)?.replace(/\/$/, '') ?? null;
 const root = resolve(option('--dist', 'dist'));
 const output = resolve(option('--output', join(process.env.HOME ?? '', '.cache/zudo-doc-zfb3-parity/browser')));
 const repoRoot = resolve(new URL('../..', import.meta.url).pathname);
@@ -21,7 +22,7 @@ const selectors = {
 };
 const properties = ['display', 'position', 'width', 'height', 'margin', 'padding', 'color', 'backgroundColor', 'borderColor', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'gap', 'opacity', 'visibility'];
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.webp': 'image/webp' };
-const server = createServer((request, response) => {
+const server = remoteUrl ? null : createServer((request, response) => {
   let pathname;
   try { pathname = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname); } catch { response.writeHead(400).end(); return; }
   const path = resolve(root, '.' + pathname);
@@ -35,10 +36,10 @@ const server = createServer((request, response) => {
   response.setHeader('Content-Type', mime[extname(file)] ?? 'application/octet-stream');
   createReadStream(file).pipe(response);
 });
-await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
-const baseUrl = `http://127.0.0.1:${server.address().port}`;
+if (server) await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+const baseUrl = remoteUrl ?? `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
-const report = { source: root, routes: [], states: [] };
+const report = { source: remoteUrl ?? root, routes: [], states: [] };
 async function capture(page, route, viewport, scheme, state = 'default') {
   const styles = await page.evaluate(({ selectors, properties }) => {
     const result = {};
@@ -133,4 +134,4 @@ try {
   await packPage.close();
   await writeFile(join(output, 'browser-report.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(`Captured ${report.states.length} browser states in ${output}`);
-} finally { await browser.close(); await new Promise((ok) => server.close(ok)); }
+} finally { await browser.close(); if (server) await new Promise((ok) => server.close(ok)); }

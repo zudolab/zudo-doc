@@ -93,3 +93,13 @@ No walk shows duplicate roots or page errors. Every `◎` measures 28×38 px at 
 **Regression spec.** `e2e/sidebar-broader-tree.spec.ts` has the new test `twelve-level tree keeps branch focus clear of category labels at {1024,1280,390}px`. It asserts that no label text rect intersects any `◎`, that every `◎` stays inside the nav, and that Enter on level 12's `◎` focuses the branch without navigating. On the pre-fix build all three cases failed (level 6 at 1024, level 9 at 390). After the fix the whole spec file passes (15/15).
 
 Crops: `assets/closeout-visual/deep-focus-fixed-1024-l6.png`, `deep-focus-fixed-1280-l12.png` (label past the edge is the unchanged out-of-scope case) and `deep-focus-fixed-390-l9.png`. Raw JSON and screenshots are in cclogs under `zudo-doc/closeout-4507/`.
+
+## Direct production-vs-candidate comparison (closes #4501 row 3)
+
+`scripts/zfb3-parity/browser.mjs` gained an additive `--url` option, so the same capture can measure a deployed site. Both runs went through heavy-guard with real Chromium 145:
+
+- `node scripts/zfb3-parity/browser.mjs --url https://zudo-doc.takazudomodular.com --output <tmp>/production`: production (v2) captured 64 states. The first attempt failed with a transient `Page.captureScreenshot` protocol error on the first page; the single retry succeeded.
+- `node scripts/zfb3-parity/browser.mjs --url https://pr-4477-zudo-doc-preview.takazudo.workers.dev --output <tmp>/candidate`: the candidate preview, whose content equals final head `c2983d95c`, captured 64 states.
+- `node scripts/zfb3-parity/compare-browser.mjs --baseline production --current candidate` reported **47 differences: 27 `sidebarTree` and 20 `nav`**.
+
+The difference identities (route, viewport, scheme, state and selector) are **exactly the same 47** as hosted [Migration Hosted Parity 38044650322](https://github.com/zudolab/zudo-doc/actions/runs/38044650322), which compares the rebuilt exact `main@337b9f1` baseline: 0 appear only in production and 0 only in the hosted run. Production therefore measures identically to the exact-main baseline, and every production-vs-candidate difference is one of the classified intended 06R toolbar, wrapped-hint or new-Guides-content changes above. There are no other computed-style differences.
