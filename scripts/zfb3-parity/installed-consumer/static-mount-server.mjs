@@ -16,9 +16,10 @@ const TYPES = {
 };
 
 const resolveFile = (urlPath) => {
-  const rel = decodeURIComponent(urlPath.split("?")[0]);
+  let rel;
+  try { rel = decodeURIComponent(urlPath.split("?")[0]); } catch { return null; }
   const abs = path.join(root, rel);
-  if (!abs.startsWith(root)) return null;
+  if (abs !== root && !abs.startsWith(root + path.sep)) return null;
   const candidates = rel.endsWith("/") ? [path.join(abs, "index.html")] : [abs, path.join(abs, "index.html"), `${abs}.html`];
   return candidates.find((c) => existsSync(c) && statSync(c).isFile()) ?? null;
 };

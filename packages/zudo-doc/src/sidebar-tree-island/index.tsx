@@ -893,7 +893,7 @@ function CategoryNode({
             <button
               type="button"
               on:click={toggle}
-              class="flex flex-1 items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
+              class="flex flex-1 max-w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
               style={{ "padding-left": paddingLeft }}
               aria-expanded={computed(() =>
                 expanded.value ? "true" : "false",

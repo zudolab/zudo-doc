@@ -256,6 +256,8 @@ const T = 20_000;
       el.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
       el.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true, isComposing: true }));
     });
+    // Give an erroneous submit time to reach the intercepted route before asserting none happened.
+    await page.waitForTimeout(500);
     assert(submissions === 0, "composing Enter submitted");
     await input.evaluate((el) => el.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true })));
     await input.press("Enter");
@@ -266,6 +268,8 @@ const T = 20_000;
 }
 
 await browser.close();
+
+results.push({ name: "no console errors or page errors", pass: consoleErrors.length === 0, detail: consoleErrors.slice(0, 5).join(" || ") });
 
 const report = { base: BASE, chromium: version, results, consoleErrors };
 if (OUT) writeFileSync(OUT, JSON.stringify(report, null, 2));

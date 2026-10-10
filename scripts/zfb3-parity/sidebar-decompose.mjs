@@ -21,10 +21,11 @@ import { createServer } from 'node:http';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const [mode, ...args] = process.argv.slice(2);
 function option(name, fallback) { const i = args.indexOf(name); return i < 0 ? fallback : args[i + 1]; }
-const repoRoot = resolve(new URL('../..', import.meta.url).pathname);
+const repoRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const output = option('--output') && resolve(option('--output'));
 if (!mode || !output) throw new Error('usage: sidebar-decompose.mjs measure|scope|compare ... --output <dir|prefix>');
 if (output === repoRoot || output.startsWith(repoRoot + sep)) throw new Error('Output must be outside the repository');
@@ -330,7 +331,7 @@ async function scope(browser, baseUrl) {
           focusOverlapRows: m?.rows.filter((r) => r.overlapsFocus).map((r) => r.text), beyondNavRows: m?.rows.filter((r) => r.textBeyondNav > 0.5).map((r) => r.text),
           screenshot: await shot(page, `fixture-ladder-${width}-${String(i).padStart(2, '0')}`, page.locator(drawer ? '[data-zd-mobile-sidebar]' : '#desktop-sidebar')) });
         const broaden = page.locator(`${sel} [data-sidebar-broaden]`);
-        if (await broaden.isDisabled()) break;
+        if (!(await broaden.count()) || await broaden.isDisabled()) break;
         await act(page, sel, broaden, 'broaden ladder');
       }
       log.push({ name: `fixture-ladder-${width}`, ladder, drawerStillOpen: await page.locator('button[aria-label="Close sidebar"]').isVisible(), pageErrors: errors });

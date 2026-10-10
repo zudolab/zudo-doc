@@ -69,6 +69,8 @@ const cwdHolders = (dir) => readdirSync("/proc").filter((p) => /^\d+$/.test(p) &
 assert(await portFree(), `port ${PORT} busy before start`);
 const [cmd, cmdArgs] = serverCmd;
 const server = spawn(cmd, cmdArgs, { cwd: serverCwd, detached: true, stdio: ["ignore", "pipe", "pipe"] });
+// Any uncaught failure below would otherwise orphan the detached server group.
+process.once("exit", () => { try { process.kill(-server.pid, "SIGKILL"); } catch {} });
 let serverLog = "";
 server.stdout.on("data", (d) => { serverLog += d; });
 server.stderr.on("data", (d) => { serverLog += d; });

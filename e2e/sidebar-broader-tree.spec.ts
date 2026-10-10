@@ -73,9 +73,11 @@ for (const width of [320, 390, 1023]) {
   });
 }
 
+const DEEP_PAGE = `/docs/guides/deep/${Array.from({ length: 11 }, (_, i) => `level-${String(i + 2).padStart(2, "0")}`).join("/")}/page`;
+
 test("twelve-level 390px tree broadens one editorial parent at a time", async ({ page, assertNoConsoleErrors }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`/docs/guides/deep/${Array.from({ length: 11 }, (_, i) => `level-${String(i + 2).padStart(2, "0")}`).join("/")}/page`);
+  await page.goto(DEEP_PAGE);
   await openMobileDrawer(page);
   const drawer = page.locator("[data-zd-mobile-sidebar]");
   await drawer.getByRole("button", { name: "Show only this branch: Deep level 12 with a long wrapped editorial category label", exact: true }).click();
@@ -235,8 +237,6 @@ test("modified sidebar links open a native new tab without changing the selected
   }
   assertNoConsoleErrors();
 });
-
-const DEEP_PAGE = `/docs/guides/deep/${Array.from({ length: 11 }, (_, i) => `level-${String(i + 2).padStart(2, "0")}`).join("/")}/page`;
 
 /** Per `◎` control: whether its row's label text paints under it, and its box relative to the nav (#4507). */
 async function focusControlLayout(container: import("@playwright/test").Locator) {
