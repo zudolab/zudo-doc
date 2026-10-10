@@ -265,10 +265,10 @@ The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@
 
 ## Runtime dependencies and CSS
 
-The installed public `@takazudo/zdtp` 0.8.5 artifact declares `preact: ^10.29.1` as a peer. Install that peer when enabling the panel or bundling it for a custom mount; zudo-doc's own components use zudo-react and do not require Preact nodes. The panel owns its separate Preact subtree and Tailwind browser engine, which does not register site utilities.
+The installed public `@takazudo/zdtp` 0.8.6 artifact carries `preact: ^10.29.1` as its own dependency (through 0.8.5 it was a peer that the project had to install). Installing zdtp is enough when enabling the panel or bundling it for a custom mount; zudo-doc's own components use zudo-react and do not require Preact nodes. The panel owns its separate Preact subtree and Tailwind browser engine, which does not register site utilities.
 
 ```sh
-pnpm add @takazudo/zdtp@0.8.5 preact@^10.29.1
+pnpm add @takazudo/zdtp@0.8.6
 ```
 
 ```css

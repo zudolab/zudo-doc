@@ -109,8 +109,8 @@ const versions = {
   zdtpStoreDirs: zdtpCopies,
 };
 if (versions["@takazudo/zdtp (consumer root)"]) {
-  check("single zdtp copy on disk, 0.8.5, and it is the one zudo-doc's loader resolves",
-    zdtpCopies.length === 1 && versions["@takazudo/zdtp (consumer root)"] === "0.8.5" && zdtpFromZudoDoc === pkgDir(consumer, "@takazudo/zdtp"),
+  check("single zdtp copy on disk, 0.8.6, and it is the one zudo-doc's loader resolves",
+    zdtpCopies.length === 1 && versions["@takazudo/zdtp (consumer root)"] === "0.8.6" && zdtpFromZudoDoc === pkgDir(consumer, "@takazudo/zdtp"),
     `${zdtpCopies.join(", ")} -> ${zdtpFromZudoDoc && path.relative(consumer, zdtpFromZudoDoc)}`);
 } else {
   check("no zdtp installed (designTokenPanel off)", zdtpCopies.length === 0 && !zdtpFromZudoDoc, zdtpCopies.join(", ") || "none");
@@ -154,8 +154,8 @@ if (zdtpRef && existsSync(dist)) {
   }
   const matched = zdtpBundle.groups.filter((g) => g.foundInDist > 0);
   zdtpBundle.bundledGroup = matched.length === 1 ? matched[0].versions : matched.map((g) => g.versions);
-  check("built dist bundles exactly one zdtp copy, fingerprinted as 0.8.5's dist",
-    matched.length === 1 && matched[0].versions.includes("0.8.5") && matched[0].foundInDist > 0,
+  check("built dist bundles exactly one zdtp copy, fingerprinted as 0.8.6's dist",
+    matched.length === 1 && matched[0].versions.includes("0.8.6") && matched[0].foundInDist > 0,
     matched.map((g) => `${g.versions.join("=")}: ${g.foundInDist}/${g.uniqueLiterals} unique literals in ${g.chunks.join(", ")}`).join("; ") || "no version-unique literal found");
 }
 

@@ -150,7 +150,7 @@ Only finite JSON scalars, dense arrays and plain records cross an Island boundar
 
 ## zdtp and runtime limits
 
-The installed **zdtp 0.8.5** manifest requires **Preact ^10.29.1** and exports `./styles.css` (also `./styles`) to its own CSS. Install both when using the panel. zdtp owns its opaque Preact subtree and internal Tailwind browser dependency; this does not restore Preact or Tailwind as the host rendering engine. Keep lazy loading, persisted mode-scoped panel state and root CSS-variable updates.
+The installed **zdtp 0.8.6** manifest carries **Preact ^10.29.1** as its own dependency and exports `./styles.css` (also `./styles`) to its own CSS. Install zdtp when using the panel; a separate Preact install is no longer required (it was a peer through 0.8.5). zdtp owns its opaque Preact subtree and internal Tailwind browser dependency; this does not restore Preact or Tailwind as the host rendering engine. Keep lazy loading, persisted mode-scoped panel state and root CSS-variable updates.
 
 Use native ordered lists, leading-line-feed handling and unchanged-root persistence from the current engine. Unchanged island identity/props preserve live scope state; changed identity/props recreate it. The package's `zfb:before-swap` adapter updates only the detached incoming document, honors live `data-zd-props-preserve`, and removes incoming persistence for unsafe structure changes. Do not restore blanket remounts.
 

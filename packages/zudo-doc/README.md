@@ -121,10 +121,10 @@ and port host/ejected components to owned JSX/signals. zod remains required;
 `katex`, `diff`, `@takazudo/zfb-md-wasm`, history-server, zdtp and MCP SDK peers
 are feature-dependent. `mcp` and `llmsTxt` remain off by default.
 
-For the panel, the installed **zdtp 0.8.5** manifest requires **Preact ^10.29.1**
-and exports `./styles.css` (also `./styles`) to `dist/zdtp.css`. Its internal
+For the panel, the installed **zdtp 0.8.6** manifest carries **Preact ^10.29.1** as
+its own dependency (it was a peer through 0.8.5) and exports `./styles.css` (also `./styles`) to `dist/zdtp.css`. Its internal
 Tailwind browser dependency and Preact subtree are isolated from host JSX.
-Install the panel peers and import `@takazudo/zdtp/styles.css` when enabling it.
+Install `@takazudo/zdtp` and import `@takazudo/zdtp/styles.css` when enabling it.
 
 ## Styling — Wind and public CSS
 

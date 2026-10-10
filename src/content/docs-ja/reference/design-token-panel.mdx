@@ -265,10 +265,10 @@ Layout のうち 3 つは読み取り専用として表示されます: `spacing
 
 ## ランタイム依存とCSS
 
-インストールされた公開`@takazudo/zdtp` 0.8.5は、`preact: ^10.29.1`をpeerとして宣言しています。パネルを有効にする場合やカスタムマウント用にバンドルする場合はこのpeerもインストールします。zudo-doc自体のコンポーネントはzudo-reactを使い、Preactノードを必要としません。パネルは独立したPreactサブツリーとTailwind browser engineを所有し、サイトのユーティリティを登録しません。
+インストールされた公開`@takazudo/zdtp` 0.8.6は、`preact: ^10.29.1`を自身の依存として含みます（0.8.5まではプロジェクト側でインストールが必要なpeerでした）。パネルを有効にする場合やカスタムマウント用にバンドルする場合も、zdtpをインストールするだけで済みます。zudo-doc自体のコンポーネントはzudo-reactを使い、Preactノードを必要としません。パネルは独立したPreactサブツリーとTailwind browser engineを所有し、サイトのユーティリティを登録しません。
 
 ```sh
-pnpm add @takazudo/zdtp@0.8.5 preact@^10.29.1
+pnpm add @takazudo/zdtp@0.8.6
 ```
 
 ```css

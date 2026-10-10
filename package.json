@@ -119,7 +119,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.31.0",
-    "@takazudo/zdtp": "0.8.5",
+    "@takazudo/zdtp": "0.8.6",
     "@takazudo/zfb": "4.3.0",
     "@takazudo/zfb-adapter-cloudflare": "4.3.0",
     "@takazudo/zfb-md-wasm": "4.3.0",
@@ -127,7 +127,6 @@
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "katex": "^0.16.38",
-    "preact": "^10.29.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

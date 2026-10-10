@@ -46,3 +46,26 @@ Draft only; issue #4501 is not edited here. The disposition task posts the final
 | Durable PR evidence records exact final head, commands, outcomes and screenshots | Run URLs and head SHAs are recorded in the resume record and README; lasting-evidence relocation and screenshot artifacts (11661494023 expires 2026-10-17) are separate topics | Still pending: final-head record belongs to the confirm and disposition tasks |
 | External references (production URL, `esm.sh` Mermaid, Chromium CDN) unreachable from the cloud container | Container-specific; hosted CI reached the browser and Mermaid paths | Out of scope as a product gate (environment limitation), covered by the hosted rows above |
 | Published zfb #4097 persisted-child (stated as separate real blocker) | Strict published 4.3.0 consumer passes 3/3 (38030809260) | Satisfied (upstream resolved by 4.3.0) |
+
+## zdtp 0.8.6 selected (2026-10-10, user instruction)
+
+The user explicitly selected the new zdtp release before final acceptance. This supersedes the 0.8.5 default above. The 0.8.5 rows are kept as history.
+
+Verified against the published registry tarballs (`npm pack @takazudo/zdtp@0.8.5` and `@0.8.6`):
+
+- `dist/` is **byte-identical**. Only `package.json`, `README.md`, `CHANGELOG.md` and `PORTABLE-CONTRACT.md` differ.
+- The exports map is unchanged. The other dependencies (`culori`, `tailwind-merge`, `@tailwindcss/browser`) are unchanged.
+- **`preact: ^10.29.1` moved from `peerDependencies` to `dependencies`.** zdtp now owns its Preact, which closes the packaging concern tracked as Takazudo/zudo-design-token-panel#1002 for this consumer.
+
+Changes applied together:
+
+| Surface | Before | After |
+| --- | --- | --- |
+| Root showcase `@takazudo/zdtp` | `0.8.5` | `0.8.6` |
+| Root showcase `preact` dependency | `^10.29.1` (peer satisfaction) | removed; zdtp's own dependency, still pinned to one copy by the existing `pnpm.overrides.preact: 10.29.2` |
+| Generator `designTokenPanel` pin (`scaffold.ts`) | `0.8.5` + `preact ^10.29.1` | `0.8.6`, no `preact` |
+| `@takazudo/zudo-doc` peer range | `^0.5.2 \|\| ^0.6.0 \|\| ^0.7.0 \|\| ^0.8.0` | **unchanged**, because 0.8.6 is inside `^0.8.0` |
+| `packages/zudo-doc` importer (supported-floor coverage) | 0.8.0 | unchanged |
+| Lockfile | 0.8.0 + 0.8.5 (with preact peer) | 0.8.0 + 0.8.6 (preact 10.29.2 as zdtp dependency; single preact copy) |
+
+Local checks run on the change: `scaffold.test.ts` 290/290 PASS; `check:pin-parity`, `check:scaffold-pin-published`, `check:template-drift` and `check:fixture-settings-drift` all exit 0. The renewed installed-consumer panel evidence is recorded in `2026-10-10-closeout-installed-consumer.md`.

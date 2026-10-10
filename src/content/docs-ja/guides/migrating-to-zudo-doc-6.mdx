@@ -150,7 +150,7 @@ Island boundary を越えられるのは有限の JSON scalar、dense array、pl
 
 ## zdtp と runtime の制約
 
-インストール済みの **zdtp 0.8.5** manifest は **Preact ^10.29.1** を要求し、自身の CSS を `./styles.css`（`./styles` も）から export します。パネルを使う場合は両方をインストールしてください。zdtp が opaque な Preact subtree と内部の Tailwind browser 依存を所有します。host の描画エンジンを Preact/Tailwind に戻すものではありません。lazy load、mode ごとのパネル永続状態、root の CSS 変数更新を維持します。
+インストール済みの **zdtp 0.8.6** manifest は **Preact ^10.29.1** を自身の依存として含み、自身の CSS を `./styles.css`（`./styles` も）から export します。パネルを使う場合は zdtp をインストールしてください。Preact を別途インストールする必要はなくなりました（0.8.5 までは peer でした）。zdtp が opaque な Preact subtree と内部の Tailwind browser 依存を所有します。host の描画エンジンを Preact/Tailwind に戻すものではありません。lazy load、mode ごとのパネル永続状態、root の CSS 変数更新を維持します。
 
 現在のエンジンにあるネイティブの順序付きリスト、先頭改行の処理、変更のない root の永続化を使います。island の identity/props が同じなら live scope の状態を維持し、変更されたら再生成します。パッケージの `zfb:before-swap` adapter は切り離された incoming document だけを更新し、live 側の `data-zd-props-preserve` を尊重し、安全でない構造変更には incoming の persistence を取り除きます。一律 remount は復活させないでください。
 

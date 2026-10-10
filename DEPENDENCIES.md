@@ -86,7 +86,7 @@ Manual interactive smoke was skipped; browser E2E is outside this local suite.
 The source migration now pins the published zfb family to 4.2.1 and peers to
 ^4.2.1; the coordinated zudo-doc/create-zudo-doc 6.0.0 is not released. The
 September audit above is historical evidence, not a new dependency/build run.
-Core JSX uses zudo-react. Installed zdtp 0.8.5 requires Preact ^10.29.1 and owns
-its internal Tailwind browser dependency; those remain intentional panel-only
+Core JSX uses zudo-react. Installed zdtp 0.8.6 carries Preact ^10.29.1 as its own
+dependency (a peer through 0.8.5) and owns its internal Tailwind browser dependency; those remain intentional panel-only
 engine mentions. Native Wind uses package defaults plus the public wind.json
 manifest, and no host Tailwind compiler dependency is required.

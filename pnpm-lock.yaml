@@ -28,8 +28,8 @@ importers:
         specifier: 1.31.0
         version: 1.31.0(zod@4.3.6)
       '@takazudo/zdtp':
-        specifier: 0.8.5
-        version: 0.8.5(preact@10.29.2)
+        specifier: 0.8.6
+        version: 0.8.6
       '@takazudo/zfb':
         specifier: 4.3.0
         version: 4.3.0
@@ -51,9 +51,6 @@ importers:
       katex:
         specifier: ^0.16.38
         version: 0.16.38
-      preact:
-        specifier: 10.29.2
-        version: 10.29.2
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -1146,12 +1143,10 @@ packages:
     peerDependencies:
       preact: 10.29.2
 
-  '@takazudo/zdtp@0.8.5':
-    resolution: {integrity: sha512-0TEFF+xf4gKTiwYIWmki7bad4L7m608e1ZnIVtcoy3NlO4jWhKuABm4AM0T6VzSlotvmdRDHb8nbe2BrfI8g/Q==}
+  '@takazudo/zdtp@0.8.6':
+    resolution: {integrity: sha512-powstLG6d4tkEroYbT6iAJk1Da4xAYS8+enW/bcn6IupkzQQf3agAtXrlJ8XVoWs43puOsCR5/hgpMDFKP3d3g==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
-    peerDependencies:
-      preact: 10.29.2
 
   '@takazudo/zfb-adapter-cloudflare@4.3.0':
     resolution: {integrity: sha512-AuPnwZVW0te9oIdNbtKwu+CndxvQoZyj4PeDxmEUF1+PNDD++EzMeTdWIWCR98PGFchB2+CXZdm6dch8gQ0fbQ==}
@@ -3460,7 +3455,7 @@ snapshots:
       preact: 10.29.2
       tailwind-merge: 3.6.0
 
-  '@takazudo/zdtp@0.8.5(preact@10.29.2)':
+  '@takazudo/zdtp@0.8.6':
     dependencies:
       '@tailwindcss/browser': 4.3.2
       culori: 4.0.2
