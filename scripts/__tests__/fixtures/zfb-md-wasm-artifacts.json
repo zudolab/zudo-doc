@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "name": "@takazudo/zfb-md-wasm",
+  "version": "4.3.1",
+  "artifacts": [
+    {
+      "entry": ".",
+      "path": "dist/wasm/zfb_md_wasm_bg.wasm",
+      "bytes": 3390113,
+      "sha256": "80cb151e47926ef553ade40b1e6f4b466b6f1b14a73ea8144610c42f9948159c"
+    },
+    {
+      "entry": "./highlight",
+      "path": "dist/wasm-highlight/zfb_md_wasm_highlight_bg.wasm",
+      "bytes": 1537593,
+      "sha256": "47b7619a5e860896cebbbec3ef7969b7590b0fc32d4ead86b5e6c899d4feaf0e"
+    },
+    {
+      "entry": "./render",
+      "path": "dist/wasm-render/zfb_md_wasm_render_bg.wasm",
+      "bytes": 2197301,
+      "sha256": "78ccf16f881fbc81339ae328f1e7dcc18928a984449467a09f5514ae4116e467"
+    },
+    {
+      "entry": "./parse",
+      "path": "dist/wasm-parse/zfb_md_wasm_parse_bg.wasm",
+      "bytes": 700375,
+      "sha256": "6a08f4d8883dad9cf985639401dfa1639b6fd1b56cc3503cedaf1777227b92e7"
+    }
+  ]
+}

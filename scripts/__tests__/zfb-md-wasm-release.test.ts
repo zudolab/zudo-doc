@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
@@ -64,6 +65,20 @@ const expectedHighlights = [
 ] as const;
 
 describe("@takazudo/zfb-md-wasm release contract", () => {
+  it("matches all four published WASM bytes to the reviewed release manifest", () => {
+    const expected = JSON.parse(readFileSync(
+      resolve(import.meta.dirname, "fixtures/zfb-md-wasm-artifacts.json"), "utf8",
+    )) as { version: string; artifacts: { path: string; bytes: number; sha256: string }[] };
+    const shipped = JSON.parse(readFileSync(resolve(packageRoot, "dist/shipped-artifacts.json"), "utf8"));
+    expect(expected.version).toBe(rootPin);
+    expect(shipped).toEqual(expected);
+    expect(expected.artifacts).toHaveLength(4);
+    for (const artifact of expected.artifacts) {
+      const bytes = readFileSync(resolve(packageRoot, artifact.path));
+      expect(bytes.length).toBe(artifact.bytes);
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(artifact.sha256);
+    }
+  });
   it.each(expectedHighlights)(
     "emits semantic class-only $language markup",
     async ({ language, code, roles, html: expectedHtml }) => {
