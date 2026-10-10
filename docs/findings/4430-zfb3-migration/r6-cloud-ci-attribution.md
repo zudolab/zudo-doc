@@ -81,8 +81,9 @@ completed at 2026-10-10 16:48:03 UTC.
 
 Original-head Migration Hosted Parity:
 [38068761949](https://github.com/zudolab/zudo-doc/actions/runs/38068761949).
-Full zudo-doc slow lane passed 130 assertions and failed the same three A2 hashes;
-its later packed lane did not run because the slow step failed.
+The complete zudo-doc slow suite (including its packed fixtures) passed 130 tests
+and failed the same three A2 hashes. This workflow has no separate later packed
+step.
 The create-zudo-doc full slow lane and published 4.3.0 consumer passed.
 Both browser variants captured all 65 unique states and screenshots with zero
 capture errors. The historical comparison reports 47 height differences, all
