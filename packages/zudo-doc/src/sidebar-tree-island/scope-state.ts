@@ -1,6 +1,6 @@
 import { computed, getScope, signal, type ReadonlySignal, type Ref } from "@takazudo/zfb/zudo-react";
 import type { SidebarNavNode, SidebarNavigationContext } from "../sidebar/types.js";
-import { broaderSidebarScope, sidebarScopeNodes, reconcileSidebarScope, indexSidebarOccurrences, SIDEBAR_FOREST_SCOPE } from "../sidebar-utils/index.js";
+import { broaderSidebarScope, sidebarScopeNodes, reconcileSidebarScope, indexSidebarOccurrences, sidebarInitialExpansion, sidebarBaselineOpen, SIDEBAR_FOREST_SCOPE } from "../sidebar-utils/index.js";
 import { getNoteTrayItems, groupItems } from "../note-tray-model/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 
@@ -10,6 +10,8 @@ export interface ScopeControls {
   expansion: { value: Record<string, boolean> };
   reveal: ReadonlySignal<number>;
   save: () => void;
+  defaultOpen: (node: SidebarNavNode) => boolean;
+  defaultGroupOpen: (items: SidebarNavNode[]) => boolean;
 }
 
 /** One controller shared by the real desktop tree and mobile drawer. SSR always
@@ -29,9 +31,9 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
   const stateKey = "zd-sidebar-scope";
   const syncEvent = "zd:sidebar-scope";
   const labels = locale === "ja" ? {
-    broaden: "ツリーを広げる", restore: "現在のページのツリーに戻す", focus: "この枝だけを表示", forest: "設定されたツリー", terminal: "表示できる最上位のツリーです",
+    broaden: "ツリーを広げる", restore: "現在のページのツリーに戻す", focus: "この枝だけを表示",
   } : {
-    broaden: "Broaden tree", restore: "Restore current page’s local tree", focus: "Show only this branch", forest: "Configured tree", terminal: "Highest available tree",
+    broaden: "Broaden tree", restore: "Restore current page’s local tree", focus: "Show only this branch",
   };
   const selectedNodes = computed(() => navigation ? sidebarScopeNodes(navigation, nodes, selected.value) : nodes);
   const broader = computed(() => navigation ? broaderSidebarScope(navigation, nodes, selected.value) : null);
@@ -43,7 +45,15 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
       .map((group) => ({ key: `${id}#${group.key}`, items: group.items }));
   });
   const groupKeys = new Set(trayGroups.map((group) => group.key));
-  const hint = computed(() => broader.value === null ? labels.terminal : broader.value === SIDEBAR_FOREST_SCOPE ? labels.forest : occurrenceIndex.get(broader.value)?.label ?? labels.forest);
+  const defaultOpen = (node: SidebarNavNode) => sidebarBaselineOpen(node, navigation ? sidebarInitialExpansion(navigation, activeSlug.value) : undefined, activeSlug.value);
+  const defaultGroupOpen = (items: SidebarNavNode[]) => items.some((item) => item.slug === activeSlug.value) || (!!navigation && sidebarInitialExpansion(navigation, activeSlug.value) === "expanded");
+  const canRestore = computed(() => {
+    if (JSON.stringify(selectedNodes.value) !== JSON.stringify(nodes)) return true;
+    for (const [id, node] of occurrenceIndex) {
+      if (node.children.length && (expansion.value[id] ?? defaultOpen(node)) !== defaultOpen(node)) return true;
+    }
+    return trayGroups.some((group) => (expansion.value[group.key] ?? defaultGroupOpen(group.items)) !== defaultGroupOpen(group.items));
+  });
   const revealPath = (id?: string | null) => {
     if (!navigation) return;
     const next = { ...expansion.value };
@@ -68,11 +78,7 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     selected.value = navigation && JSON.stringify(sidebarScopeNodes(navigation, nodes, id)) === JSON.stringify(nodes) ? null : id;
     if (id === null) {
       // Restore the authored collapse defaults, then reveal the active path.
-      // Explicit false values also reset rows retained by the keyed renderer.
-      expansion.value = Object.fromEntries([
-        ...[...occurrenceIndex].map(([key, node]) => [key, !node.collapsed]),
-        ...trayGroups.map((group) => [group.key, group.items.some((item) => item.slug === activeSlug.value)]),
-      ]);
+      expansion.value = {};
       revealPath();
     } else {
       revealPath(previous);
@@ -83,20 +89,30 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     // scrolls the document and would move the article being read.
     queueMicrotask(() => {
       const nav = navRef.current;
-      const target = id === null ? nav?.querySelector('[aria-current="page"]') : nav;
+      const controls = [...(nav?.querySelectorAll<HTMLButtonElement>("[data-sidebar-focus]") ?? [])];
+      const activeBranch = controls.reverse().find((button) => {
+        const node = occurrenceIndex.get(button.dataset.sidebarFocusScope ?? "");
+        const contains = (n: SidebarNavNode): boolean => n.slug === activeSlug.value || n.children.some(contains);
+        return node && contains(node);
+      });
+      const rootLink = id && id !== SIDEBAR_FOREST_SCOPE && broader.value !== null ? nav?.querySelector<HTMLAnchorElement>("[data-sidebar-tree-root] a") : null;
+      const currentLink = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+      const control = (id === null ? currentLink : rootLink) ?? nav?.querySelector<HTMLButtonElement>("[data-sidebar-broaden]") ?? activeBranch ?? currentLink ?? nav?.querySelector<HTMLElement>('[data-sidebar-focus], [data-sidebar-tree-root] a, input');
+      const target = control;
       let viewport = nav?.parentElement;
       while (viewport && viewport !== document.body && viewport.scrollHeight <= viewport.clientHeight) viewport = viewport.parentElement;
       if (target && viewport && viewport !== document.body) {
-        const delta = target.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
-        viewport.scrollTop += delta;
+        const row = target.getBoundingClientRect();
+        const bounds = viewport.getBoundingClientRect();
+        if (row.top < bounds.top) viewport.scrollTop += row.top - bounds.top - 8;
+        else if (row.bottom > bounds.bottom) viewport.scrollTop += row.bottom - bounds.bottom + 8;
       }
-      const control = nav?.querySelector<HTMLButtonElement>("[data-sidebar-broaden]:not([disabled]), [data-sidebar-restore]");
-      (control ?? nav)?.focus({ preventScroll: true });
+      control?.focus({ preventScroll: true });
     });
   };
   const scopeControls: ScopeControls | undefined = navigation ? {
     focus: (node) => { if (node.occurrenceId) changeScope(node.occurrenceId); },
-    focusLabel: labels.focus, expansion, reveal,
+    focusLabel: labels.focus, expansion, reveal, defaultOpen, defaultGroupOpen,
     save,
   } : undefined;
   getScope().onActivate(() => {
@@ -134,5 +150,5 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     document.addEventListener(AFTER_NAVIGATE_EVENT, navigate);
     return () => { document.removeEventListener(syncEvent, sync); document.removeEventListener(AFTER_NAVIGATE_EVENT, navigate); };
   });
-  return { selected, selectedNodes, broader, labels, hint, changeScope, save, navRef, scopeControls };
+  return { selected, selectedNodes, broader, labels, canRestore, changeScope, save, navRef, scopeControls };
 }

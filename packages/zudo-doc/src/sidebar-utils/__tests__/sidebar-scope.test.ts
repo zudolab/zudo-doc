@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSidebarForSection, buildSidebarNavigation, broaderSidebarScope, indexSidebarOccurrences, reconcileSidebarScope, sidebarScopeNodes, SIDEBAR_FOREST_SCOPE, type SidebarsConfig, type SidebarNavNode } from "../index.js";
+import { buildSidebarForSection, buildSidebarNavigation, broaderSidebarScope, sidebarInitialExpansion, sidebarBaselineOpen, indexSidebarOccurrences, reconcileSidebarScope, sidebarScopeNodes, SIDEBAR_FOREST_SCOPE, type SidebarsConfig, type SidebarNavNode } from "../index.js";
 
 const leaf = (slug: string, children: SidebarNavNode[] = []): SidebarNavNode => ({ slug, label: slug, href: `/docs/${slug}`, position: 0, hasPage: true, children });
 const tree = [leaf("utility", [leaf("utility/background"), leaf("utility/border")]), leaf("other", [leaf("other/page")])];
@@ -115,4 +115,28 @@ it("stops at a sole canonical root but retains the additional-root forest step",
   const multiple = build();
   expect(broaderSidebarScope(multiple.navigation, multiple.nodes, multiple.nodes[0]!.occurrenceId!)).toBe(SIDEBAR_FOREST_SCOPE);
   expect(sidebarScopeNodes(multiple.navigation, multiple.nodes, SIDEBAR_FOREST_SCOPE)).toHaveLength(2);
+});
+
+
+describe("author disclosure baseline", () => {
+  it("inherits the nearest index and permits a leaf override without changing initialPath", () => {
+    const docs = [
+      { slug: "index", data: { sidebar_initial_expansion: "expanded" } },
+      { slug: "utility/index", data: { sidebar_initial_expansion: "collapsed" } },
+      { slug: "utility/border", data: { sidebar_initial_expansion: "expanded" } },
+    ];
+    const data = buildSidebarNavigation(docs, "en", "utility", undefined, {}, () => tree, ["utility"]);
+    expect(sidebarInitialExpansion(data.navigation, "utility/background")).toBe("collapsed");
+    expect(sidebarInitialExpansion(data.navigation, "utility/border")).toBe("expanded");
+    expect(sidebarInitialExpansion(data.navigation, "other/page")).toBe("expanded");
+    expect(data.nodes.map((node) => node.slug)).toEqual(["utility"]);
+    expect(sidebarInitialExpansion(build().navigation, "utility/background")).toBeUndefined();
+  });
+  it("honors explicit exceptions and reveals active ancestors", () => {
+    expect(sidebarBaselineOpen(tree[1]!, undefined, "utility/background")).toBe(true);
+    expect(sidebarBaselineOpen(tree[1]!, "collapsed", "utility/background")).toBe(false);
+    expect(sidebarBaselineOpen({ ...tree[1]!, collapsed: false }, "collapsed", "utility/background")).toBe(true);
+    expect(sidebarBaselineOpen({ ...tree[1]!, collapsed: true }, "expanded", "utility/background")).toBe(false);
+    expect(sidebarBaselineOpen({ ...tree[0]!, collapsed: true }, "collapsed", "utility/background")).toBe(true);
+  });
 });

@@ -121,3 +121,12 @@ describe("buildDocsSchema", () => {
   // every documented field via "accepts every documented optional field
   // with a representative value".
 });
+
+
+it("validates the optional author disclosure mode", () => {
+  const schema = buildDocsSchema();
+  for (const sidebar_initial_expansion of ["collapsed", "expanded"]) {
+    expect(schema.safeParse({ title: "Hello", sidebar_initial_expansion }).success).toBe(true);
+  }
+  expect(schema.safeParse({ title: "Hello", sidebar_initial_expansion: "closed" }).success).toBe(false);
+});

@@ -87,6 +87,7 @@ export interface DocPageFrontmatter {
   standalone?: boolean;
   sidebar_position?: number;
   sidebar_label?: string;
+  sidebar_initial_expansion?: "collapsed" | "expanded";
   category_no_page?: boolean;
   category_sort_order?: "asc" | "desc";
   category_shape?: "note-tray";

@@ -300,6 +300,7 @@ function toNavNode(node: SidebarNode): NavNode {
     hasPage: node.hasPage,
     children: node.children.map(toNavNode),
     sortOrder: node.sortOrder ?? "asc",
+    collapsed: node.collapsed,
     shape: node.shape,
     noteTrayDated: node.noteTrayDated,
     noteTraySidebar: node.noteTraySidebar,

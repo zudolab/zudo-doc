@@ -69,6 +69,7 @@ export function buildDocsSchema(opts?: BuildDocsSchemaOptions) {
       category: z.string().optional(),
       sidebar_position: z.number().optional(),
       sidebar_label: z.string().optional(),
+      sidebar_initial_expansion: z.enum(["collapsed", "expanded"]).optional(),
       tags: buildTagsSchema(opts),
       search_exclude: z.boolean().optional(),
       pagination_next: z.string().nullable().optional(),

@@ -60,7 +60,19 @@ Without an `index.mdx`, the category heading is a toggle-only control — clicki
 
 ## Default Open/Closed
 
-Categories automatically open when the current page is inside them. All other categories are collapsed by default.
+Categories containing the current page always open. When `sidebar_initial_expansion` is omitted, ordinary categories retain the existing expanded default; explicitly configured TypeScript `collapsed` values remain exceptions.
+
+Set `sidebar_initial_expansion: collapsed` or `expanded` on a category's `index.mdx` to supply an inherited baseline. The nearest category index applies, and a field on the current page overrides it. This controls disclosure, while `initialPath` continues to control the initial sidebar scope.
+
+```mdx
+---
+title: Guides
+sidebar_position: 1
+sidebar_initial_expansion: collapsed
+---
+```
+
+Manual disclosure choices survive soft navigation and history navigation; the destination's ancestors open so its page remains visible. Restore resets disclosure and scope to the current page's author baseline. Restore appears only when those effective values differ. At the highest scope the entire toolbar disappears, while each category's branch-focus control remains available.
 
 ## Sidebar Label
 

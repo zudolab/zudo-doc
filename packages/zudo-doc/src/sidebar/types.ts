@@ -86,6 +86,8 @@ export interface SidebarNavigationContext {
   /** Locale/version/document-context identity including the topology revision. */
   id: string;
   roots: SidebarNavNode[];
+  /** Explicit page/index author defaults; resolved against the current destination. */
+  initialExpansion?: Record<string, "collapsed" | "expanded">;
   parents: Record<string, string | null>;
   /** Explicit enclosing occurrence for a local forest spanning emitted children. */
   localParentId?: string;

@@ -189,6 +189,7 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
       ...(href !== undefined ? { href } : {}),
       hasPage,
       ...(hasSortOrder ? { sortOrder } : {}),
+      ...(meta?.collapsed !== undefined ? { collapsed: meta.collapsed } : {}),
       ...(doc?.data.category_shape !== undefined
         ? { shape: doc.data.category_shape }
         : {}),

@@ -274,7 +274,7 @@ export function SidebarTree({
   const scope = getScope();
   const activeSlug = useActiveSlug(navigation?.roots ?? nodes, currentSlug, currentPath);
   const query = signal("");
-  const { selected, selectedNodes, broader, labels, hint, changeScope, save, navRef, scopeControls } = useSidebarScope({
+  const { selected, selectedNodes, broader, labels, canRestore, changeScope, save, navRef, scopeControls } = useSidebarScope({
     nodes, navigation, activeSlug, query,
     locale: localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en",
   });
@@ -346,7 +346,7 @@ export function SidebarTree({
                   {backToMenuLabel ?? "Back to main menu"}
                 </button>
               ) : null}
-              <div class="px-hsp-sm py-vsp-xs">
+              <div class="px-hsp-sm py-vsp-xs border-b border-muted" data-sidebar-filter-region>
                 <div class="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
                   <Search class="h-[14px] w-[14px] text-muted shrink-0" />
                   <input
@@ -356,23 +356,25 @@ export function SidebarTree({
                     placeholder={filterPlaceholder}
                     modelValue={query}
                     on:input={(event: Event) => { query.value = (event.target as HTMLInputElement).value; save(); }}
-                    class="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
+                    class="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent" style="outline-offset:-4px"
                   />
                 </div>
               </div>
               {navigation ? (
-                <div class="border-t border-muted bg-surface px-hsp-md py-vsp-2xs text-caption" data-sidebar-scope-toolbar>
+                <Show when={computed(() => broader.value !== null)}>{() => (
+                <div class="border-b border-muted px-hsp-md py-vsp-2xs text-small" data-sidebar-scope-toolbar>
                   <div class="flex items-center justify-between gap-hsp-xs" data-sidebar-scope-actions>
                     <button type="button" data-sidebar-broaden disabled={computed(() => broader.value === null)}
                       on:click={() => { if (broader.value !== null) changeScope(broader.value); }}
-                      style="min-height:26px"
-                      class="flex items-center gap-hsp-xs font-medium rounded text-fg hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:text-muted disabled:opacity-50">
+                      style="min-height:40px"
+                      class="flex items-center gap-hsp-sm px-hsp-xs font-medium rounded text-fg hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:text-muted disabled:opacity-50">
                       <span aria-hidden="true">↑</span>{labels.broaden}
                     </button>
-                    <Show when={computed(() => selected.value !== null)}>{() => (
+                    <Show when={canRestore}>{() => (
                       <button type="button" data-sidebar-restore on:click={() => changeScope(null)}
                         title={labels.restore} aria-label={labels.restore}
-                        class="grid place-items-center w-icon-lg h-icon-lg shrink-0 rounded text-muted hover:text-fg focus-visible:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        style="width:40px;height:40px"
+                        class="grid place-items-center shrink-0 rounded text-muted hover:text-fg focus-visible:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                           <circle cx="12" cy="12" r="10" />
                           <circle cx="12" cy="12" r="6" />
@@ -381,8 +383,8 @@ export function SidebarTree({
                       </button>
                     )}</Show>
                   </div>
-                  <div class="min-w-0 break-words text-micro text-muted" style="margin-top:3px" data-sidebar-scope-hint>{hint}</div>
                 </div>
+                )}</Show>
               ) : null}
               <div data-sidebar-tree-root>
                 <Show when={computed(() => selectedNodes.value.length === 1 && selectedNodes.value[0]?.shape === "note-tray")}
@@ -657,7 +659,7 @@ function TrayGroupNode({
     group.value.items.some((item) => item.slug === currentSlug.value),
   );
   const occurrenceKey = computed(() => `${trayOccurrence.value}#${group.value.key}`);
-  const open = signal(scopeControls?.expansion.value[occurrenceKey.value] ?? containsCurrent.value);
+  const open = signal(scopeControls?.expansion.value[occurrenceKey.value] ?? (scopeControls?.defaultGroupOpen(group.value.items) ?? containsCurrent.value));
   const storageKey = computed(() =>
     noteTrayGroupStorageKey(traySlug.value, group.value.key),
   );
@@ -695,7 +697,7 @@ function TrayGroupNode({
   };
   scope.effect(() => {
     const stored = scopeControls?.expansion.value[occurrenceKey.value];
-    if (stored !== undefined) open.value = stored;
+    if (scopeControls) open.value = stored ?? scopeControls.defaultGroupOpen(group.value.items);
   });
   const expanded = computed(() => forceOpen.value || open.value);
   const items = computed(() => group.value.items);
@@ -825,7 +827,7 @@ function CategoryNode({
   );
   const active = computed(() => node.value.slug === currentSlug.value);
   const occurrenceKey = () => node.value.occurrenceId ?? node.value.slug;
-  const open = signal(scopeControls?.expansion.value[occurrenceKey()] ?? (containsCurrent.value || !node.value.collapsed));
+  const open = signal(scopeControls?.expansion.value[occurrenceKey()] ?? (scopeControls?.defaultOpen(node.value) ?? (containsCurrent.value || !node.value.collapsed)));
   scope.onActivate(() => {
     if (!scopeControls && getOpenSet().has(node.value.slug)) open.value = true;
   });
@@ -858,11 +860,11 @@ function CategoryNode({
   };
   scope.effect(() => {
     const stored = scopeControls?.expansion.value[occurrenceKey()];
-    if (stored !== undefined) open.value = stored;
+    if (scopeControls) open.value = stored ?? scopeControls.defaultOpen(node.value);
   });
   const expanded = computed(() => forceOpen.value || open.value);
   const focusButton = scopeControls ? (
-    <button type="button" data-sidebar-focus
+    <button type="button" data-sidebar-focus data-sidebar-focus-scope={computed(() => node.value.occurrenceId ?? "")}
       on:click={() => scopeControls.focus(node.value)}
       aria-label={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
       title={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
@@ -875,7 +877,7 @@ function CategoryNode({
     <div
       class={computed(
         () =>
-          `${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast.value ? "relative" : ""}`,
+          `${depth === 0 ? "border-t border-muted first:border-t-0" : ""} ${depth >= 1 && !isLast.value ? "relative" : ""}`,
       )}
     >
       <Show
@@ -1003,7 +1005,7 @@ function LeafNode({ node, currentSlug, depth, isLast }: RowProps) {
       {() => (
         <div
           class={computed(() =>
-            isRoot ? "border-t border-muted" : isLast.value ? "pb-vsp-md" : "",
+            isRoot ? "border-t border-muted first:border-t-0" : isLast.value ? "pb-vsp-md" : "",
           )}
         >
           <div class="relative">

@@ -51,3 +51,20 @@ export function reconcileSidebarScope(context: SidebarNavigationContext, baselin
   }
   return null;
 }
+
+/** Leaf override, nearest index default, then legacy undefined behavior. */
+export function sidebarInitialExpansion(context: SidebarNavigationContext, slug = ""): "collapsed" | "expanded" | undefined {
+  let candidate = slug;
+  while (true) {
+    const value = context.initialExpansion?.[candidate];
+    if (value) return value;
+    if (!candidate) return undefined;
+    const slash = candidate.lastIndexOf("/");
+    candidate = slash < 0 ? "" : candidate.slice(0, slash);
+  }
+}
+
+export function sidebarBaselineOpen(node: SidebarNavNode, mode: "collapsed" | "expanded" | undefined, currentSlug?: string): boolean {
+  const contains = (n: SidebarNavNode): boolean => currentSlug !== undefined && (n.slug === currentSlug || n.children.some(contains));
+  return contains(node) || (node.collapsed !== undefined ? !node.collapsed : mode !== "collapsed");
+}
