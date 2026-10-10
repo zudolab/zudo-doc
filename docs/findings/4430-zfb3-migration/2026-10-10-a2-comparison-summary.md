@@ -24,3 +24,15 @@ The reference fixture `scripts/__tests__/fixtures/a2-route-reference.json` is up
 - `docs/getting-started/coverage/index.html`: `15124e65…edd95`
 
 The normalizer and the assertions are unchanged. The historical byte diagnostic still keeps its reviewed inequality.
+
+## Refresh after zdtp 0.8.6 at `fe4e83d9d`
+
+The required A2 gate ([PR Checks 38043993981](https://github.com/zudolab/zudo-doc/actions/runs/38043993981)) and the full slow suite ([38043990580](https://github.com/zudolab/zudo-doc/actions/runs/38043990580), the same three cases, 130/133) failed again after the zdtp 0.8.6 dependency change. A character-level diff of the hosted current normalized HTML (`61d52377b` versus `fe4e83d9d`) shows **only** the native build ID changing on every island, from `ece0807ccd1f2c64` to `5644bd5782d74551`. Nothing else changed: no markup, props or content. The lockfile change feeds the native build fingerprint, and zdtp 0.8.6's `dist/` is byte-identical to 0.8.5.
+
+Updated reference values, which equal the sha256 of the hosted current normalized HTML:
+
+- `404.html`: `a03f277b…7ebac92`
+- `docs/getting-started/index.html`: `b3c1bb4b…f15399b2c`
+- `docs/getting-started/coverage/index.html`: `8ac65e3c…7e4379357`
+
+The normalizer and the assertions are unchanged.
