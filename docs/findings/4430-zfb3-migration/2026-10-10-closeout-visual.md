@@ -68,3 +68,28 @@ Current values: `fixture-deep-1024` reports 7 overlapping rows, `fixture-deep-12
 ## Tooling added
 
 `scripts/zfb3-parity/sidebar-decompose.mjs` has three modes. `measure` records toolbar box, hint row, filter→tree offset, per-row heights and wrapped-line counts, tree area, footer, scroll extents, `◎` overlap and text past the nav edge. `compare` attributes Δ to toolbar, rows, wrapping and residual. `scope` runs the 06R walks and invariants. Output must be outside the repository.
+
+## #4507 fix: `◎` no longer covers deep category labels; 60 parity states unchanged
+
+**Source:** `95e1d5048` on `zfb3-closeout/4507-visual-fix` (base `6e92e70da`). All builds and browser runs went through `heavy-guard.sh` and passed.
+
+**Change.** In `CategoryNode` the non-linked row button lost `min-w-0`, so it keeps its min-content width (indent + chevron + longest word). The row is now `flex-wrap`, and `◎` carries `ml-auto`. When the label and `◎` fit on one line nothing changes. When they do not, `◎` drops to its own line at the row's right edge instead of painting over the label. Indentation, connectors, label wrapping, the accessible name, the 28×38 px target and scope behaviour are unchanged. The linked row already kept its link at min-content (no `min-w-0`), so it never overlapped and was left as is.
+
+**Fixture re-measurement** (`sidebar-decompose.mjs scope --dist e2e/fixtures/sidebar/dist --fixture sidebar`, per-step row counts):
+
+| Walk | `focusOverlapRows` before | after | `beyondNavRows` before = after |
+| --- | --- | --- | --- |
+| `fixture-deep-1024` | 7,7,6,7 (levels 6–12) | 0,0,0,0 | 4,4,3,4 (levels 9–12) |
+| `fixture-deep-1280` | 5,5,4,5 (levels 8–12) | 0,0,0,0 | 4,4,3,4 (levels 9–12) |
+| `fixture-deep-390-drawer` | 4,4,3,4 (levels 9–12) | 0,0,0,0 | 2,2,1,2 (levels 11–12) |
+| `fixture-ladder-1024` | 0 → 7 | 0 at every step | 0 → 4 |
+| `fixture-ladder-390` | 0 → 4 | 0 at every step | 0 → 2 |
+| `fixture-editorial-1280` | 0 | 0 | 0 |
+
+No walk shows duplicate roots or page errors. Every `◎` measures 28×38 px at 1024, 1280 and 390. The out-of-scope text past the nav edge covers the same rows before and after: the label keeps its min-content width at the same `padLeft()` offset, so the overflow amount does not change.
+
+**Parity states.** A guarded local `pnpm build` of the showcase, `measure` over the 60 states and `compare` against #4505's current-side measurement give Δ 0 in all 60 states. The toolbar stays at 46/73 px, residual is 0, and no showcase row overlaps `◎` or crosses the nav edge.
+
+**Regression spec.** `e2e/sidebar-broader-tree.spec.ts` has the new test `twelve-level tree keeps branch focus clear of category labels at {1024,1280,390}px`. It asserts that no label text rect intersects any `◎`, that every `◎` stays inside the nav, and that Enter on level 12's `◎` focuses the branch without navigating. On the pre-fix build all three cases failed (level 6 at 1024, level 9 at 390). After the fix the whole spec file passes (15/15).
+
+Crops: `assets/closeout-visual/deep-focus-fixed-1024-l6.png`, `deep-focus-fixed-1280-l12.png` (label past the edge is the unchanged out-of-scope case) and `deep-focus-fixed-390-l9.png`. Raw JSON and screenshots are in cclogs under `zudo-doc/closeout-4507/`.
