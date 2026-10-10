@@ -858,7 +858,7 @@ function CategoryNode({
       on:click={() => scopeControls.focus(node.value)}
       aria-label={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
       title={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
-      class={computed(() => `shrink-0 rounded px-hsp-xs py-vsp-2xs ${active.value ? "text-bg hover:bg-bg/10 focus-visible:bg-bg/10" : "text-muted hover:bg-surface hover:text-fg focus-visible:bg-surface focus-visible:text-fg"}`)}>
+      class={computed(() => `ml-auto shrink-0 rounded px-hsp-xs py-vsp-2xs ${active.value ? "text-bg hover:bg-bg/10 focus-visible:bg-bg/10" : "text-muted hover:bg-surface hover:text-fg focus-visible:bg-surface focus-visible:text-fg"}`)}>
       <span aria-hidden="true">◎</span>
     </button>
   ) : null;
@@ -889,11 +889,11 @@ function CategoryNode({
         <Show
           when={computed(() => !!node.value.href)}
           fallback={() => (
-            <div class="flex items-center">
+            <div class="flex flex-wrap items-center">
             <button
               type="button"
               on:click={toggle}
-              class="flex flex-1 min-w-0 items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
+              class="flex flex-1 items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
               style={{ "padding-left": paddingLeft }}
               aria-expanded={computed(() =>
                 expanded.value ? "true" : "false",
