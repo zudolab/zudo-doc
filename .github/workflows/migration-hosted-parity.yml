@@ -174,12 +174,13 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      CONSUMER_ROOT: ${{ runner.temp }}/native-published-4097
-      EVIDENCE_ROOT: ${{ runner.temp }}/native-published-4097-evidence
     steps:
-      - name: Mark ephemeral container workspace safe for git
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Initialize ephemeral consumer paths and git safety
+        run: |
+          set -euo pipefail
+          printf 'CONSUMER_ROOT=%s/native-published-4097\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'EVIDENCE_ROOT=%s/native-published-4097-evidence\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           ref: ${{ github.sha }}
