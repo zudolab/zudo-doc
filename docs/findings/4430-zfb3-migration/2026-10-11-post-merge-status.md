@@ -16,7 +16,7 @@ This is the current-status record for the zfb 4 migration (#4430) after PR #4477
   - Two historical comparison diagnostics stay **failed with explicitly accepted differences**: `Migration baseline/current browser measurement` and `Complete A2 baseline/current byte differences`. They are not passes, and bytes and pixels are not claimed identical. The causes are attributed in the owner checkpoint and in [R6 cloud CI attribution](r6-cloud-ci-attribution.md).
 - [Production Deploy 38074440930](https://github.com/zudolab/zudo-doc/actions/runs/38074440930) on the merge SHA succeeded. All five jobs succeeded: Build Doc History, Build Site, Deploy to Cloudflare Workers, HTML validate and Deploy Notification. This is a workflow result. No new manual live-site or browser acceptance was run after the merge.
 
-## Repository pins and observed npm versions (2026-10-11 JST)
+## Pins match npm `latest`: zfb family 4.3.0, zdtp 0.8.6, release packages 5.28.2 (2026-10-11 JST)
 
 | Item | Repository | npm `latest` observed |
 | --- | --- | --- |
@@ -52,7 +52,7 @@ None of these becomes a PASS through this record.
 - Observation limits: this read shows the configured settings at that time. It does not show how #4477's merge satisfied or bypassed the stale context. Do not infer a bypass, or a blocked merge, from `enforce_admins=false`.
 - Follow-up for the next PR or release owner: before attempting a merge, inspect the effective protection. Reconcile the stale required context only through an explicitly authorized settings action. Do not rename the passing CI job to match. This does not block independent documentation work.
 
-## Ordered next-release handoff
+## Next release waits on a newer published zfb, then a separately authorized 6.0.0
 
 These are recorded next actions. They do not authorize anyone to carry them out. Each step names when it can run.
 
@@ -74,11 +74,11 @@ These are recorded next actions. They do not authorize anyone to carry them out.
    - Use `B4PUSH_SKIP_PIN_PUBLISHED=1` only for the unpublished lockstep-pin window.
    - Run the publication checks and the installed-consumer checks.
    - Re-read the runbook when executing; this outline does not replace its staged bootstrap.
-   - Deleting `_temp-resource/4430-zfb3-migration/` is part of #4512's gated completion and is not done. The lasting evidence was already relocated by #4508.
-5. **Finish the bookkeeping at the matching delivery boundary.** Reconcile the implemented migration children one by one. Close their parents only when each parent's own remaining scope is complete. #4501 explicitly closes through #4512. Do not bulk-close protected trackers.
+   - Deleting `_temp-resource/4430-zfb3-migration/` is owned by #4476 and runs only inside #4512's gated completion; it is not done. The lasting evidence was already relocated by #4508.
+5. **Finish the bookkeeping at the matching delivery boundary.** Report the published versions and validation results on [ZFB #3328](https://github.com/Takazudo/zudo-front-builder/issues/3328) and add the "Dogfood results" section to the #4430 body, as #4512 requires. Reconcile the implemented migration children one by one. Close their parents only when each parent's own remaining scope is complete. #4501 explicitly closes through #4512. Do not bulk-close protected trackers.
 6. **Downstream adoption follows actual publication.** [ZFB #3329](https://github.com/Takazudo/zudo-front-builder/issues/3329) owns the docs-host migration, and [ZFB #4099](https://github.com/Takazudo/zudo-front-builder/issues/4099) owns the later 06R host adoption. Both keep their published-compatible-release prerequisites.
 
-## Existing issue owners (no new hierarchy)
+## Existing issues keep their owners; no new hierarchy
 
 | Issues | Disposition |
 | --- | --- |
