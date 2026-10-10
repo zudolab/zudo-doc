@@ -1,0 +1,44 @@
+[
+  {
+    "file": "docs--getting-started--coverage--index.html.normalized.html",
+    "oldHash": "a8929fa3058782012a6a92bbfd8aab84a131f6b818dbd476bc2dc7ea0d24b9dc",
+    "newHash": "814b1e6c488e782571457908d05f03d9b16ed864a0da8a180bdce161c541256b",
+    "oldBuildIds": [
+      "d1558350bc4d59a9"
+    ],
+    "newBuildIds": [
+      "7a3c4ecac4f7f7f3"
+    ],
+    "oldOccurrences": 4,
+    "newOccurrences": 4,
+    "equalExceptBuildId": true
+  },
+  {
+    "file": "docs--getting-started--index.html.normalized.html",
+    "oldHash": "e76f6a551241d80c7fbb8cb28de3c956092858774e30f978c39bdd03ff371517",
+    "newHash": "d9ae8bc21b0bc08795082e7021a6a5d176cd943617c4042fb6c875972b33ad49",
+    "oldBuildIds": [
+      "d1558350bc4d59a9"
+    ],
+    "newBuildIds": [
+      "7a3c4ecac4f7f7f3"
+    ],
+    "oldOccurrences": 2,
+    "newOccurrences": 2,
+    "equalExceptBuildId": true
+  },
+  {
+    "file": "404.html.normalized.html",
+    "oldHash": "8e34e00cb290eab0c94b48e0bdd0500d0b6837461394e0a6b22c28f6ff7d36ae",
+    "newHash": "b086b1fdfb1300dc8060ba814cb3929fc861d6e7c3af69df6e3bee55181c5fdd",
+    "oldBuildIds": [
+      "d1558350bc4d59a9"
+    ],
+    "newBuildIds": [
+      "7a3c4ecac4f7f7f3"
+    ],
+    "oldOccurrences": 1,
+    "newOccurrences": 1,
+    "equalExceptBuildId": true
+  }
+]

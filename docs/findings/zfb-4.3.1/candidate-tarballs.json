@@ -1,0 +1,20 @@
+[
+  {
+    "file": "create-zudo-doc-5.28.2.tgz",
+    "bytes": 150428,
+    "sha256": "b4153f108f3061a1b8cf2e3fe7925f237c7bed06565eab629558a69f3dcdad4a",
+    "sha512": "1882e4a067c2372f529f852a595617dfaf5f3ac7309c34e0664bf0ade47e67cf2d57367c54926f490c2e5fbff404a284e6c1f93ad9050f4a835d799aa616cd86"
+  },
+  {
+    "file": "takazudo-zudo-doc-history-server-5.28.2.tgz",
+    "bytes": 14114,
+    "sha256": "23a7ba872fcda70c4addedc118c626b63606b2a00573a3cef9e298c27b273893",
+    "sha512": "1b16abe970783438a13489a6d13ebb4c82f49723c370685a1d0d7ffba0111973b79aff830b618763f474fd9277014d51c368c6cdf596ffb2dc1c62c00a260e1b"
+  },
+  {
+    "file": "takazudo-zudo-doc-5.28.2.tgz",
+    "bytes": 3943282,
+    "sha256": "0ddf034c7840ff43ec666eb6d269a1ff0a1a39da4bc268c958b472b33f614209",
+    "sha512": "43017d600b04109cace2078fe4fdeca452d21e393906ff9ec8a0c1b1692533fb4be98acae78de817a833b3416c1f51c4f722c946f53242a5eaca79dade73c456"
+  }
+]
