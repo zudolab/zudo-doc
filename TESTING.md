@@ -670,7 +670,7 @@ built-output contracts retain that separate responsibility.
 
 ## Migration source resolution and verification tiers (#4438, #4470)
 
-Use exact zfb family 4.2.1 and pnpm 10.30.3. On a cold migration worktree install
+Use exact zfb family 4.3.0 and pnpm 10.30.3. On a cold migration worktree install
 with `corepack pnpm@10.30.3 install --frozen-lockfile --ignore-scripts`. Source-only
 focused units use `ZFB3_SOURCE_RESOLVE=1 corepack pnpm@10.30.3 exec vitest run
 --project scripts <spec>` or the package test command. The port helper interface is

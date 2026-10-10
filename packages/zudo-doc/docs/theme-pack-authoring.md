@@ -153,7 +153,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-switcher-card]` | The switcher's open card (present only while open) | Card background/border/shadow |
 | `[data-switcher-launcher]` | The switcher's round launcher button | Launcher button styling |
 
-**Runtime verification.** `aside[data-zd-mobile-sidebar]` and `div[data-zd-mobile-toc]` are owned island hooks. The old Preact/zfb dev-server attribute-stripping issue (#2898) is historical evidence, not proof that the current 4.2.1 runtime has the same behavior. Verify mobile hooks after native hydration in both dev and the production build; do not infer current computed-style parity from SSR alone.
+**Runtime verification.** `aside[data-zd-mobile-sidebar]` and `div[data-zd-mobile-toc]` are owned island hooks. The old Preact/zfb dev-server attribute-stripping issue (#2898) is historical evidence, not proof that the current 4.3.0 runtime has the same behavior. Verify mobile hooks after native hydration in both dev and the production build; do not infer current computed-style parity from SSR alone.
 
 ### Chrome font tokens — optional per-surface hooks
 

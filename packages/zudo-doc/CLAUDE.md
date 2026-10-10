@@ -295,7 +295,7 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 ## Shipped CSS artifacts and Wind manifest
 
-The current migration target is published zfb family **4.2.1**, peers **^4.2.1**.
+The current migration target is published zfb family **4.3.0**, peers **^4.3.0**.
 The coordinated zudo-doc/create-zudo-doc **6.0.0 is not released**. Source package
 versions still read 5.28.2. Upstream zfb #4097 remains an open browser/navigation
 gate; do not infer release readiness from these architecture instructions.

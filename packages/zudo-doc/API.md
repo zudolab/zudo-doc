@@ -436,7 +436,7 @@ is a `ReadonlySignal<boolean>` used only within the dialog's component tree.
 `FrontmatterCellRenderer` is available from `./metainfo` and the root type
 barrel; `ThemePackDialogComponent` is available from the root type barrel.
 `EnlargeDialogProps` retains its name, uses `class`, and its `style` type is
-`typeof ENLARGE_DIALOG_STYLE`. On the current 4.2.1 target the exported constant
+`typeof ENLARGE_DIALOG_STYLE`. On the current 4.3.0 target the exported constant
 is the literal object `{ position: "fixed", inset: 0, margin: "auto" }`; the old
 3.x plan to change it to a string was superseded by native style support.
 

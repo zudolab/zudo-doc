@@ -108,7 +108,7 @@ If your project renders **semi-trusted or user-submitted** HTML in a preview, ov
 ## Planned 6.0 migration and peers
 
 The coordinated zudo-doc/create-zudo-doc **6.0.0 has not been published**. This
-source tree targets the published **zfb 4.2.1** family (peer floor **^4.2.1**);
+source tree targets the published **zfb 4.3.0** family (peer floor **^4.3.0**);
 package versions still read 5.28.2 pending release coordination. The open
 [upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097)
 browser/navigation gate is not declared passed here. See the

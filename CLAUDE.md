@@ -18,7 +18,7 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 
 ## Commands
 
-Current migration target: published zfb family 4.2.1, peers ^4.2.1. Coordinated
+Current migration target: published zfb family 4.3.0, peers ^4.3.0. Coordinated
 zudo-doc/create-zudo-doc 6.0.0 remains unreleased; upstream #4097 is still open.
 Use the pinned pnpm 10.30.3 (Corepack) for this workspace. Native Wind audit is
 `pnpm exec zfb wind audit --project-root . --fail-on error`; manifest/emitted CSS

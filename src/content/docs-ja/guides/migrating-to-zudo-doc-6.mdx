@@ -6,13 +6,13 @@ description: 予定されている zudo-react・Wind のメジャーリリース
 
 ## リリース状況
 
-このガイドは、5.x から移行する予定の **zudo-doc 6.0.0** を説明します。協調して公開するメジャーリリースは **まだ未公開** で、リポジトリのパッケージバージョンは 5.28.2 のままです。現在のエンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.2.1** ファミリーで、パッケージの peer 下限は **^4.2.1** です。過去の 3.0/3.1 を移行先としてインストールしたり、このページを公開告知として扱ったりしないでください。
+このガイドは、5.x から移行する予定の **zudo-doc 6.0.0** を説明します。協調して公開するメジャーリリースは **まだ未公開** で、リポジトリのパッケージバージョンは 5.28.2 のままです。現在のエンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.3.0** ファミリーで、パッケージの peer 下限は **^4.3.0** です。過去の 3.0/3.1 を移行先としてインストールしたり、このページを公開告知として扱ったりしないでください。
 
-上流の [#4097 ブラウザー・ナビゲーションゲート](https://github.com/Takazudo/zudo-front-builder/issues/4097) は未解決です。公開前に、パックしたパッケージの利用側、ドキュメントの描画、ブラウザーでの同等性を検証する必要があります。上流 issue のクローズや型検査の成功だけでは公開準備完了を意味しません。
+公開済みの 4.3.0 runtime には [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) の修正が含まれますが、その公開パッケージで利用側の厳密なブラウザー・ナビゲーション検証を終えるまでゲートは未完了です。公開前に、パックしたパッケージの利用側、ドキュメントの描画、ブラウザーでの同等性を検証する必要があります。上流 issue のクローズや型検査の成功だけでは公開準備完了を意味しません。
 
 ## 依存関係と TypeScript
 
-協調メジャーリリースの公開後、zudo-doc と create-zudo-doc を一緒に更新します。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.2.1 に揃えてください。コアの描画には Preact は不要です。
+協調メジャーリリースの公開後、zudo-doc と create-zudo-doc を一緒に更新します。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.3.0 に揃えてください。コアの描画には Preact は不要です。
 
 次のようにパッケージのベース設定を継承します。ベースが `jsx: "react-jsx"` と `jsxImportSource: "@takazudo/zfb/zudo-react"` を所有します。`react`、`react-dom`、`react/jsx-runtime` から Preact への互換パスを削除し、React/Preact の型 import も変更します。必要なプロジェクト固有のエイリアスだけを残し、プロジェクト側の `baseUrl` で基準を指定してください。config と仮想モジュールの宣言を読み込むベースのトップレベル `files` を上書きしないでください。
 
@@ -81,7 +81,7 @@ Wind は独自に定義されたユーティリティ言語で、Tailwind の互
 
 `ThemeToggle` の `defaultMode`、`respectPrefersColorScheme`、`labels`、`pendingUntilHydrated` は維持します。ほかのドメイン props 名も維持してください。`class` への変更は intrinsic と互換の API が対象で、独自の `className` props を一律に変更するものではありません（たとえば `SidebarTree` は独自の `className` を維持します）。
 
-`ENLARGE_DIALOG_STYLE` は `./island-types` から引き続き export されます。実際の 4.2.1 対象では固定の style object `{ position: "fixed", inset: 0, margin: "auto" }` で、`EnlargeDialogProps.style` は `typeof ENLARGE_DIALOG_STYLE` です。以前の 3.x 計画にあった文字列化は、ネイティブの style 対応によって不要になりました。対応する CSS property 名を使い、ゼロ以外の長さには単位を明示してください。完全な CSS 宣言の文字列も使用できます。
+`ENLARGE_DIALOG_STYLE` は `./island-types` から引き続き export されます。実際の 4.3.0 対象では固定の style object `{ position: "fixed", inset: 0, margin: "auto" }` で、`EnlargeDialogProps.style` は `typeof ENLARGE_DIALOG_STYLE` です。以前の 3.x 計画にあった文字列化は、ネイティブの style 対応によって不要になりました。対応する CSS property 名を使い、ゼロ以外の長さには単位を明示してください。完全な CSS 宣言の文字列も使用できます。
 
 ## eject した component と host component
 
@@ -154,7 +154,7 @@ Island boundary を越えられるのは有限の JSON scalar、dense array、pl
 
 現在のエンジンにあるネイティブの順序付きリスト、先頭改行の処理、変更のない root の永続化を使います。island の identity/props が同じなら live scope の状態を維持し、変更されたら再生成します。パッケージの `zfb:before-swap` adapter は切り離された incoming document だけを更新し、live 側の `data-zd-props-preserve` を尊重し、安全でない構造変更には incoming の persistence を取り除きます。一律 remount は復活させないでください。
 
-parser の規則も owned JSX の契約です。table/select は正しい構造を維持し、`tbody` を明示し、table の構造レベルに `Show`/`For`/component region を直接置きません。`rawHtml` は信頼できる文字列を受け取り、children と同時に使えません。サニタイズは行いません。raw HTML に island wrapper や runtime protocol marker を入れないでください。script/style の payload は closing-tag guard を付けた静的な raw text が必要です。ネイティブ対応は 3.x の調査時点から変化しているので、古い iframe/head/style shim をコピーせず、公開済み 4.2.1 の型宣言と契約を確認してください。
+parser の規則も owned JSX の契約です。table/select は正しい構造を維持し、`tbody` を明示し、table の構造レベルに `Show`/`For`/component region を直接置きません。`rawHtml` は信頼できる文字列を受け取り、children と同時に使えません。サニタイズは行いません。raw HTML に island wrapper や runtime protocol marker を入れないでください。script/style の payload は closing-tag guard を付けた静的な raw text が必要です。ネイティブ対応は 3.x の調査時点から変化しているので、古い iframe/head/style shim をコピーせず、公開済み 4.3.0 の型宣言と契約を確認してください。
 
 現在の制約は [上流 #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097)、[固定 target の composition #4004](https://github.com/Takazudo/zudo-front-builder/issues/4004)、[Wind coverage #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371) で追跡します。過去の issue は背景情報であり、現在の公開ゲートが通過した証拠ではありません。
 

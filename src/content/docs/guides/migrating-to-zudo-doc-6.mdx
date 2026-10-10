@@ -6,13 +6,13 @@ description: Prepare a 5.x consumer for the planned zudo-react and Wind major re
 
 ## Release status
 
-This guide describes the planned **zudo-doc 6.0.0** migration from 5.x. The coordinated major release is **not published yet**; the repository package version still reads 5.28.2. The current engine target is the published, aligned **zfb 4.2.1** family, with package peer floor **^4.2.1**. Do not install historical 3.0/3.1 targets or treat this guide as a release announcement.
+This guide describes the planned **zudo-doc 6.0.0** migration from 5.x. The coordinated major release is **not published yet**; the repository package version still reads 5.28.2. The current engine target is the published, aligned **zfb 4.3.0** family, with package peer floor **^4.3.0**. Do not install historical 3.0/3.1 targets or treat this guide as a release announcement.
 
-The upstream [#4097 browser/navigation gate](https://github.com/Takazudo/zudo-front-builder/issues/4097) remains open. Packed consumers, rendered docs and browser parity must pass before release; a closed upstream issue or a successful typecheck alone does not establish readiness.
+The published 4.3.0 runtime includes the fix for [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097); the strict consumer browser/navigation gate remains open until verified against that published release. Packed consumers, rendered docs and browser parity must pass before release; a closed upstream issue or a successful typecheck alone does not establish readiness.
 
 ## Dependencies and TypeScript
 
-After the coordinated major becomes available, upgrade zudo-doc and create-zudo-doc together. Align every installed engine package (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm`, and the Cloudflare adapter when used) to 4.2.1. Core rendering no longer requires Preact.
+After the coordinated major becomes available, upgrade zudo-doc and create-zudo-doc together. Align every installed engine package (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm`, and the Cloudflare adapter when used) to 4.3.0. Core rendering no longer requires Preact.
 
 Extend the package base below. It owns `jsx: "react-jsx"` and `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove `react`, `react-dom`, and `react/jsx-runtime` → Preact compatibility paths and replace type imports from React/Preact. Retain project aliases only when needed; a project-local `baseUrl` anchors them. Do not replace the base's top-level `files`, which loads the config and virtual-module declarations.
 
@@ -81,7 +81,7 @@ Run `pnpm exec zfb wind audit --project-root . --fail-on error`. The error exit 
 
 `ThemeToggle` retains `defaultMode`, `respectPrefersColorScheme`, `labels`, and `pendingUntilHydrated`. Keep other domain prop names: the `class` change is for intrinsic-compatible APIs, not a blanket rename of custom `className` props (for example, `SidebarTree` retains its custom `className`).
 
-`ENLARGE_DIALOG_STYLE` remains exported from `./island-types`. On the actual 4.2.1 target it is the literal style object `{ position: "fixed", inset: 0, margin: "auto" }`, and `EnlargeDialogProps.style` is `typeof ENLARGE_DIALOG_STYLE`. The earlier 3.x plan for a string is superseded by native style support. Use supported CSS property names and explicit units for nonzero lengths; strings remain valid for complete CSS declarations.
+`ENLARGE_DIALOG_STYLE` remains exported from `./island-types`. On the actual 4.3.0 target it is the literal style object `{ position: "fixed", inset: 0, margin: "auto" }`, and `EnlargeDialogProps.style` is `typeof ENLARGE_DIALOG_STYLE`. The earlier 3.x plan for a string is superseded by native style support. Use supported CSS property names and explicit units for nonzero lengths; strings remain valid for complete CSS declarations.
 
 ## Ejected and host components
 
@@ -154,7 +154,7 @@ The installed **zdtp 0.8.5** manifest requires **Preact ^10.29.1** and exports `
 
 Use native ordered lists, leading-line-feed handling and unchanged-root persistence from the current engine. Unchanged island identity/props preserve live scope state; changed identity/props recreate it. The package's `zfb:before-swap` adapter updates only the detached incoming document, honors live `data-zd-props-preserve`, and removes incoming persistence for unsafe structure changes. Do not restore blanket remounts.
 
-Parser rules are part of the owned JSX contract. Keep legal table/select structure; use explicit `tbody` and do not place `Show`/`For`/component regions directly at table structural levels. `rawHtml` accepts trusted strings and is mutually exclusive with children; it does not sanitize. Do not insert island wrappers or runtime protocol markers through raw HTML. Script/style payloads require static raw text with closing-tag guards. Native support has evolved since the 3.x spike: consult the published 4.2.1 declarations/contract rather than copying old iframe/head/style shims.
+Parser rules are part of the owned JSX contract. Keep legal table/select structure; use explicit `tbody` and do not place `Show`/`For`/component regions directly at table structural levels. `rawHtml` accepts trusted strings and is mutually exclusive with children; it does not sanitize. Do not insert island wrappers or runtime protocol markers through raw HTML. Script/style payloads require static raw text with closing-tag guards. Native support has evolved since the 3.x spike: consult the published 4.3.0 declarations/contract rather than copying old iframe/head/style shims.
 
 Track current limitations through [upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097), [fixed-target composition #4004](https://github.com/Takazudo/zudo-front-builder/issues/4004), and [Wind coverage #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371). Earlier issues are historical context, not evidence that current release gates passed.
 
