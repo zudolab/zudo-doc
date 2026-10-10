@@ -3,7 +3,7 @@
 Source under review: `79f60b78e916ead96c8e351df057636588762025`.
 Prior passing reference: `5736e0d8` (restored 06R toolbar).
 This reconciliation changes only E2E expectations and the external A2 reference.
-It changes no product source, generated CSS, assertion, or HTML normalizer.
+It changes no product source, generated CSS, A2 assertion, or HTML normalizer.
 
 ## All three A2 differences are attributed
 
