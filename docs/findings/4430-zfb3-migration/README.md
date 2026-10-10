@@ -1,10 +1,44 @@
 # zudo-doc 6 / zfb 4 migration matrix
 
-## Active target — zfb 4.3.0 (2026-10-10)
+## Closeout verdict — PENDING: one human acceptance item (macOS IME/manual) (2026-10-10)
+
+**Release verdict: PENDING — one human acceptance item (macOS IME/manual).** Every other required gate is verified on the final candidate `d4185fb9e4f8555d6edaadb419be49ff694cd3ad` (`base/zfb3-migration`, PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477), still draft). `main` is unchanged at `337b9f110793dccb4759bddd5273eab38cd9d2f0`, and the base is not missing any `main` commit. Full record: [closeout final gates](2026-10-10-closeout-final-gates.md). Checklist: [release readiness](release-readiness.md).
+
+- **Versions:** `@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm` and `zfb-adapter-cloudflare` are exactly 4.3.0, with peers `^4.3.0`. `@takazudo/zdtp` is 0.8.6, selected by the user and also the npm `latest`. Its `dist/` is byte-identical to 0.8.5, and `preact` is now zdtp's own dependency. The explicit host and generator `preact` dependencies were removed. The zudo-doc zdtp peer range and the package importer's 0.8.0 floor coverage are unchanged ([dependencies](2026-10-10-closeout-dependencies.md)).
+- **PR Checks** [38044654348](https://github.com/zudolab/zudo-doc/actions/runs/38044654348): 28/28 success, with the same job identities as reference run 38030812860.
+- **Migration Hosted Parity** [38044650322](https://github.com/zudolab/zudo-doc/actions/runs/38044650322): all four required jobs succeed. The two diagnostic jobs fail as designed, and both differences are accepted:
+  - The A2 byte diagnostic shows the reviewed build-ID and islands-filename inequality.
+  - The browser measurement shows 47 `nav`/`sidebarTree` height differences, all classified intended in [visual](2026-10-10-closeout-visual.md).
+- **Visual:** the 47 differences are 27 `sidebarTree` and 20 `nav`. They break down as a 46 px toolbar ×38, a 73 px wrapped hint ×5, and the 160 px Guides toolbar plus 3 new pages ×4, with 0 px residual. The deep-nesting ◎ overlap is fixed (#4507), and the 60 parity states show Δ0.
+- **Installed consumer:** the run was renewed on zdtp 0.8.6 (`e6fbe4814`). Barebone passed 12/12. All-feature passed 19/19, including the full Design Token Panel lifecycle. There is a single zdtp copy and a single preact copy, the generated `package.json` has no `preact` key, and teardown was proven. With the #4513 fix (`aaf3e307f`), the non-root mount control passes 8/8 ([installed consumer](2026-10-10-closeout-installed-consumer.md)).
+- **Review and local:**
+  - `/code-review` medium reported 9 findings: 7 were fixed in `61d52377b` and 2 dispositioned.
+  - Guarded b4push passed 33/35. `e2e/` type checking failed only on stale gitignored fixtures; a clean checkout gives exit 0. Manual smoke was skipped because there was no TTY.
+  - The A2 references were refreshed in `bfd7b2373` and `d4185fb9e`, with the normalizer and assertions unchanged.
+- **Preview machine smoke** at `d4185fb9e`: 13/13 PASS with 0 console errors. The AI-chat composition line is synthetic.
+
+### Remaining required item
+
+- **macOS Japanese IME and manual smoke (human, PENDING):** real IME composition in search and the AI chat, the AI chat conversion-Enter rule, and the combined visual smoke. Follow the procedure in [closeout manual](2026-10-10-closeout-manual.md). Takazudo/zudo-front-builder#3330 is the upstream gate. A missing human check stays pending; it is never counted as passed.
+
+### Resume conditions
+
+1. A human tester runs the closeout manual on macOS and records the tester, macOS version, IME/input source, browser and version, and candidate SHA, with a PASS for A1–A3 and B1–B10 posted on PR #4477.
+2. Only then does #4512's gated completion run, in this order:
+   - Delete `_temp-resource/4430-zfb3-migration/` in one commit.
+   - Get green PR Checks and Migration Hosted Parity on that exact final head.
+   - Regular-merge PR #4477 to `main`.
+   - Run the RELEASE.md coordinated 6.0.0 release in the order history-server → zudo-doc → create-zudo-doc. Set the history-server peer floor and `approvedBaseline` to `^6.0.0`, and run b4push with `B4PUSH_SKIP_PIN_PUBLISHED=1` for the unpublished lockstep-pin window.
+
+Not gates: #4485 (real ChatGPT account) stays open and out of scope. Twelve-level fixture labels at levels 9–12 run past the sidebar edge because of pre-existing native indentation. That is a design call for the user, not a 06R regression. Cleanup, the merge and the 6.0.0 release are gated and not done.
+
+## History — zfb 4.3.0 pre-closeout lead (2026-10-10, superseded)
+
+The text below led this file before the closeout gates ran. It is kept as history.
 
 All four published family packages are pinned to exactly **4.3.0** (zfb, runtime, md-wasm, Cloudflare adapter), with peers **^4.3.0**. npm `latest` and the native CLI (`zfb 4.3.0`, embedded esbuild 0.25.12) were rechecked on 2026-10-10. The resume record is [2026-10-10 zfb 4.3.0 resume](2026-10-10-zfb-4.3.0-resume.md); the exact dependency tuple (including the zdtp resolution per consumer) is in [closeout dependencies](2026-10-10-closeout-dependencies.md).
 
-**Release verdict: BLOCKED (pending the closeout gates).** [Readiness checklist](release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. Former upstream blockers are resolved: #4059, #4060 and #4109 are closed, and the strict published #4097 consumer passes 3/3 on the published 4.3.0 packages (hosted run [38030809260](https://github.com/zudolab/zudo-doc/actions/runs/38030809260), head `fd0764f`). The same head passed PR Checks [38030812860](https://github.com/zudolab/zudo-doc/actions/runs/38030812860) 28/28 (475 E2E), generator slow 24/24, package slow/packed 133/133 and built bookmarks (30 targets / 12 routes). The required A2 gate passes; the historical byte diagnostic deliberately keeps its inequality (seven native build IDs plus the islands filename), which is reviewed and not a product failure.
+**Release verdict (then): BLOCKED (pending the closeout gates).** [Readiness checklist](release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. Former upstream blockers are resolved: #4059, #4060 and #4109 are closed, and the strict published #4097 consumer passes 3/3 on the published 4.3.0 packages (hosted run [38030809260](https://github.com/zudolab/zudo-doc/actions/runs/38030809260), head `fd0764f`). The same head passed PR Checks [38030812860](https://github.com/zudolab/zudo-doc/actions/runs/38030812860) 28/28 (475 E2E), generator slow 24/24, package slow/packed 133/133 and built bookmarks (30 targets / 12 routes). The required A2 gate passes; the historical byte diagnostic deliberately keeps its inequality (seven native build IDs plus the islands filename), which is reviewed and not a product failure.
 
 Remaining gates (all still unverified, tracked under #4475 / #4476 / #4501):
 
