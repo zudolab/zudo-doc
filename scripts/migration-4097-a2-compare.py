@@ -3,6 +3,7 @@ import difflib
 import hashlib
 from html.parser import HTMLParser
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -44,6 +45,32 @@ class Inventory(HTMLParser):
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def changed_spans(before, after):
+    # Token boundaries retain every original character. Comparing exact tokens
+    # avoids quadratic character matching on repeated HTML without hiding bytes.
+    pattern = r"<[^>]*>|[^<]+|<"
+    tokens = [re.findall(pattern, text) for text in (before, after)]
+    for text, parts in zip((before, after), tokens):
+        assert "".join(parts) == text
+    offsets = []
+    for parts in tokens:
+        positions = [0]
+        for part in parts:
+            positions.append(positions[-1] + len(part))
+        offsets.append(positions)
+    spans = []
+    for operation, old_start, old_end, new_start, new_end in difflib.SequenceMatcher(
+            None, tokens[0], tokens[1], autojunk=False).get_opcodes():
+        if operation == "equal":
+            continue
+        start, end = offsets[0][old_start], offsets[0][old_end]
+        incoming_start, incoming_end = offsets[1][new_start], offsets[1][new_end]
+        spans.append({"operation": operation, "beforeStart": start, "beforeEnd": end,
+                      "afterStart": incoming_start, "afterEnd": incoming_end,
+                      "before": before[start:end], "after": after[incoming_start:incoming_end]})
+    return spans
 
 
 def main():
@@ -101,12 +128,27 @@ def main():
                   "baselineRawSha256": digest(raw[0]), "currentRawSha256": digest(raw[1]),
                   "baselineNormalizedSha256": digest(normalized[0]), "currentNormalizedSha256": digest(normalized[1]),
                   "changedMetadata": changed_metadata,
+                  "rawChangedSpans": changed_spans(html[0], html[1]),
+                  "normalizedChangedSpans": changed_spans(normalized[0].decode("utf-8"), normalized[1].decode("utf-8")),
+                  "spanOffsetUnit": "Unicode code points",
                   "baselineMetadata": inventories[0], "currentMetadata": inventories[1]}
         reports.append(report)
-        print(json.dumps({key: report[key] for key in ("page", "rawEqual", "normalizedEqual", "changedMetadata", "baselineNormalizedSha256", "currentNormalizedSha256")}))
     report = {"baselineHead": manifests[0]["sourceHead"], "currentHead": current_head,
               "status": "FAIL_DIFFERENCES_REQUIRE_REVIEW" if differs else "PASS_EXACT_HTML_PARITY", "pages": reports}
     (output / "comparison.json").write_text(json.dumps(report, indent=2) + "\n")
+    maximum_log_bytes = 200_000
+    log_reports = [json.dumps({"logEvidenceStatus": "COMPLETE", "baselineHead": report["baselineHead"],
+                               "currentHead": current_head, "status": report["status"],
+                               "pageEvidence": page_report}, separators=(",", ":")) for page_report in reports]
+    required_log_bytes = sum(len(item.encode("utf-8")) + 1 for item in log_reports)
+    if required_log_bytes > maximum_log_bytes:
+        print(json.dumps({"logEvidenceStatus": "INCOMPLETE_BOUND_EXCEEDED",
+                          "maximumLogBytes": maximum_log_bytes, "requiredLogBytes": required_log_bytes,
+                          "baselineHead": manifests[0]["sourceHead"], "currentHead": current_head,
+                          "fullEvidenceArtifact": "comparison.json", "status": "FAIL_INCOMPLETE_LOG_EVIDENCE"}))
+        return 1
+    for log_report in log_reports:
+        print(log_report)
     return 1 if differs else 0
 
 
