@@ -2,6 +2,8 @@
 
 Evidence file for sub-issue #4510 (epic #4502, owner #4475). This is the central confirm record: base reconcile, independent review and exact final-head checks. It records every failed, skipped, unavailable or accepted-difference result; nothing here is a release PASS.
 
+> **Status pointer (2026-10-11):** PR #4477 has merged and its production deployment succeeded. The owner waived the macOS IME gate for that merge. The PENDING wording below is the pre-merge record and is kept as written. Current status: human ATOK A1/A2 PASS on their original SHAs; A3 PARTIAL/UNVERIFIED; Apple built-in Japanese IME NOT RUN / OWNER WAIVED; A5 NOT RUN. None is a PASS. See [post-merge status](2026-10-11-post-merge-status.md).
+
 ## Final candidate head `d4185fb9e` passes every required hosted check
 
 - Candidate: `d4185fb9e4f8555d6edaadb419be49ff694cd3ad` on `base/zfb3-migration` (PR #4477 head).
