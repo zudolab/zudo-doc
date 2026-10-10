@@ -655,7 +655,7 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
       "^e2e/",
       "^src/content/docs(-ja)?/(components/code-blocks|markdown-features/syntax-highlighting)\\.mdx$",
     ],
-    reason: "Shiki remains the current client-side highlighter for HtmlPreview only; document fences use zfb class-mode markup.",
+    reason: "Shiki is no longer used anywhere: HtmlPreview lazily imports the public @takazudo/zfb-md-wasm/highlight subpath and document fences use zfb class-mode markup, both emitting pre.hi-root / hi-* classes. The .shiki marker survives only as a negative/historical guard (features-css.test.ts asserts it is absent) and in tests and e2e that check for its absence.",
   },
   {
     marker: "zudo-doc-tweak-state-v2",
