@@ -59,6 +59,10 @@ jobs:
           set -euo pipefail
           bash scripts/parity-build.sh 2>&1 | tee "$RUNNER_TEMP/migration-parity/current-build.log"
           git diff --stat > "$RUNNER_TEMP/migration-parity/current-post-build-diff.txt"
+      - name: Verify all 30 historical bookmarks on 12 built public routes
+        run: |
+          set -euo pipefail
+          python3 scripts/migration-anchor-census.py dist 2>&1 | tee "$RUNNER_TEMP/migration-parity/heading-anchor-census.json"
       - name: Baseline exact checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
