@@ -125,3 +125,17 @@ An independent check after all runs found nothing listening on 4391–4393 (`ss 
 | Extra: `llms.txt` / agent-export links resolve under the base | **FAIL**: `/nested/docs/agent/v1/manifest.json` and the page links → 404 |
 
 The failure is a real product defect. `emitAgentCorpus` always writes `outDir/<base>/agent/v1` and ignores `copyPublicWithBase: false`, so after relocation the export is served at `/nested/docs/nested/docs/agent/v1/`. Filed as #4513 (`agent-found`). It is not fixed here because this topic is verification only.
+
+## Fix for #4513
+
+Source SHA `db8e8495d` (branch `zfb3-closeout/4513-agent-export-base`). `emitAgentCorpus` now takes `copyPublicWithBase`; the `agent-export` plugin passes `ctx.config.copyPublicWithBase`. When it is `false`, `agent/v1` is written to `<outDir>/agent/v1` (unprefixed, like the search index and llms.txt). Unset or `true` keeps `<outDir>/<base>/agent/v1`, and root base is unchanged. Advertised URLs keep the `<base>agent/v1/` form, so they resolve after whole-output relocation. The dev middleware already serves at the base route and needed no change.
+
+| Step | Command | Result |
+| --- | --- | --- |
+| Unit | `pnpm exec vitest run src/plugins/internal/agent-export` (in `packages/zudo-doc`) | 12 passed (root, non-root unset/true, non-root false) |
+| Rebuild + pack | `pnpm build:workspace`, `pnpm --filter create-zudo-doc build`, `pnpm pack` x3 | `compiled.css` unchanged |
+| Non-root build | `node build-mount-control.mjs <consumer> /nested/docs/ <docroot>` | `dist-mount/agent/v1/manifest.json` (before: `dist-mount/nested/docs/agent/v1`) |
+| Non-root browser | `node run.mjs mount <docroot> /nested/docs/ allfeat <json> --port 4393` | before: exit 1 (#4513); after: 8/8 PASS, `llms.txt / agent-export page links` 11 links, manifest 200 |
+| Root sanity | `pnpm build` + `run.mjs preview` | `dist/agent/v1/manifest.json` present; 13 PASS |
+
+Harness notes. All runs went through `heavy-guard.sh --wait 540 --`. When the served docroot path appears literally in the guard's argv, the teardown leak scan counts the guard's watcher subshells and fails; passing the paths through `sh -c '... "$S/..."'` avoids it. The root sanity run showed 6 DTP failures because the consumer generated for this check did not get the design-token-panel feature (the feature flags did not take effect here and `agentExport` was added to `zfb.config.ts` by hand); those are unrelated to the agent export.

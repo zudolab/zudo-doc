@@ -42,6 +42,8 @@ The current build writes this versioned layout under your configured base:
 <base>/agent/v1/pages/<page-key>.md
 ```
 
+With a non-root `base`, the files are written under `dist/<base>/agent/v1/`. If you set `copyPublicWithBase: false` because your deploy relocates the whole `dist/` tree under `base`, the export is written to `dist/agent/v1/` instead, so that relocation serves it at `<base>/agent/v1/` and the URLs in `llms.txt` and the manifest still resolve.
+
 `manifest.json` identifies the site, locales, content fingerprint, documents, retrieval items, human page URLs, and artifact URLs. `search-index.json` contains the complete normalized item text for retrieval, independently of the browser search index. Each item file has `id`, `title`, `text`, `url`, and `metadata`; the metadata identifies its locale, parent page, fingerprint, and one-based part number/count. A page's `.md` file contains its complete normalized body. Long pages become multiple fetchable items, each within the response budget, without silently clipping the page. Item IDs are generated keys, not source paths.
 
 The fingerprint marks a coherent build; it is not revision history. A current changelog page is ordinary published content. The export excludes `draft`, `unlisted`, `search_exclude`, and non-routed `category_no_page` pages. Only physical locale documents are exported; locale fallback does not create duplicate pages. Build-time normalization retains meaningful prose, headings, links, images, tables, admonition bodies, and code. If dynamic MDX cannot be represented, the output marks it as unsupported rather than executing it at request time. Relative links resolve against the original page, so readers should use the human URL for citations.
