@@ -1,6 +1,6 @@
 # Port the showcase host and browser embedding harness
 
-Owner: [#4466](https://github.com/zudolab/zudo-doc/issues/4466). Status: **port implemented; focused checks verified**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4466](https://github.com/zudolab/zudo-doc/issues/4466). Status: **port implemented; focused checks verified**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 This ledger reflects the locked zfb 3.1.0 spec from #4480 and the base after #4464/#4465. It covers all pages source except pages/lib/_preset-generator.tsx, the host chrome/frontmatter bindings, owned utility tests, and the browser embed harness. The excluded preset-generator shim remains with #4455.
 

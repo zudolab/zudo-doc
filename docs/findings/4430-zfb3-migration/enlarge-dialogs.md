@@ -1,6 +1,6 @@
 # Port the ImageEnlarge and MermaidEnlarge islands
 
-Owner: [#4450](https://github.com/zudolab/zudo-doc/issues/4450). Status: **verified source port; browser parity pending #4468/#4475**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4450](https://github.com/zudolab/zudo-doc/issues/4450). Status: **verified source port; browser parity pending #4468/#4475**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This topic changes only its two islands, their three owned tests, and this matrix.
 
@@ -26,7 +26,7 @@ The Mermaid injector also assigns a static literal SVG icon to the generated but
 
 ## Utility/token and authored CSS review
 
-No utility or stylesheet was changed. The planning inventory at `_temp-resource/4430-zfb3-migration/explore/artifacts/css-wind/explain.tsv` (explicitly measured against zfb 3.0.0 in `explore/css-wind.md`) records these source candidates in this topic and its shared dialog class constants as **resolved utility** at planning time: `relative`, `block`, `max-h-[85vh]`, `max-w-[85vw]`, `object-contain`, `mx-auto`, `max-h-[90vh]`, `max-w-[90vw]`, `overflow-hidden`, `border`, `border-muted`, `bg-surface`, `p-0`, `backdrop:z-modal-backdrop`, `z-modal`, `h-[90vh]`, and `w-[90vw]`. The `zd-*` names are component selectors in `packages/zudo-doc/src/features.css` (image enlarge around lines 669–779; Mermaid enlarge around 805–933), not assumed utilities. This worktree cannot rerun the host `zfb wind explain` against the locked zfb 3.1.0 config: loading `zfb.config.ts` fails because its package import resolves the intentionally absent `dist/config.js`, while the package-root explain invocation has no host token configuration. #4467/#4440 own the integration config and manifest recheck. Browser computed-style parity is deferred to #4468/#4475.
+No utility or stylesheet was changed. The planning inventory (temporary `_temp-resource/4430-zfb3-migration/explore/artifacts/css-wind/explain.tsv`, raw dump not preserved) (explicitly measured against zfb 3.0.0 in `explore/css-wind.md`) records these source candidates in this topic and its shared dialog class constants as **resolved utility** at planning time: `relative`, `block`, `max-h-[85vh]`, `max-w-[85vw]`, `object-contain`, `mx-auto`, `max-h-[90vh]`, `max-w-[90vw]`, `overflow-hidden`, `border`, `border-muted`, `bg-surface`, `p-0`, `backdrop:z-modal-backdrop`, `z-modal`, `h-[90vh]`, and `w-[90vw]`. The `zd-*` names are component selectors in `packages/zudo-doc/src/features.css` (image enlarge around lines 669–779; Mermaid enlarge around 805–933), not assumed utilities. This worktree cannot rerun the host `zfb wind explain` against the locked zfb 3.1.0 config: loading `zfb.config.ts` fails because its package import resolves the intentionally absent `dist/config.js`, while the package-root explain invocation has no host token configuration. #4467/#4440 own the integration config and manifest recheck. Browser computed-style parity is deferred to #4468/#4475.
 
 ## Tests and completion evidence
 

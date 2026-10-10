@@ -1,12 +1,12 @@
 # Port the header and footer (incl. their persist wrappers), breadcrumb, version/language switchers, search widget and auto-logo
 
-Owner: [#4459](https://github.com/zudolab/zudo-doc/issues/4459). Status: **source port complete; browser parity is assigned to #4468/#4475**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4459](https://github.com/zudolab/zudo-doc/issues/4459). Status: **source port complete; browser parity is assigned to #4468/#4475**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable. The #4435 CSS prep and #4441/#4442 prerequisites are already on the base.
 
 ## Round-2 locked spec (3.1.0)
 
-Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Source port complete; real-browser evidence remains assigned to the verification topics. This overrides the named round-1 deviations.
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](round2-3.1.0.md). Source port complete; real-browser evidence remains assigned to the verification topics. This overrides the named round-1 deviations.
 
 Void inherited #4442 unconditional remount/post-teardown metadata semantics. Existing header/footer persist keys use native unchanged-root preservation and the round-2 host preserve-props/incoming-structure policy. Consecutive SSR render assertions cover unchanged persist keys and changed nav props; live SPA state, callback ordering, focus and scroll remain browser gates. Keep strict prop construction as permanent practice and the unresolved #3376 contract check. Preserve search/nav script drift and trust checks; the still-open #3359 attr gap is not resolved by #3362.
 

@@ -1,0 +1,15 @@
+/* zfb's zudo-wind preset owns the reset and generated utility layer. Declare
+   the package layers first so authored flow styles keep their cascade order. */
+@layer zw-reset, zd-flow;
+
+/* The zdtp stylesheet is inserted after theme.css only when the feature is
+   selected (see features/design-token-panel.ts). It carries zdtp's own bytes. */
+@import "@takazudo/zudo-doc/theme.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
+
+/* Override design-token custom properties from the package theme here. */
+:root {
+  /* e.g. --color-accent: oklch(0.6 0.2 250); */
+}

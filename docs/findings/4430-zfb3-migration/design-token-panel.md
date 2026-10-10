@@ -1,6 +1,6 @@
 # Port the DesignTokenPanel bootstrap islands and hostpanel fixture
 
-Owner: [#4456](https://github.com/zudolab/zudo-doc/issues/4456). Status: **implemented; owned source and unit checks verified**. Browser parity remains with [#4468/#4475](README.md#required-parity-states-and-release-gates). [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4456](https://github.com/zudolab/zudo-doc/issues/4456). Status: **implemented; owned source and unit checks verified**. Browser parity remains with [#4468/#4475](README.md#required-parity-states-and-release-gates). [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 ## File and symbol map
 

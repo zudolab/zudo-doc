@@ -9,12 +9,12 @@ Character references decode exactly once in ordinary masked heading text before 
 On 2026-10-09, the public `@takazudo/zfb-md-wasm/render` API reported version **4.2.1**, matching the selected published engine pin. Command, run before changing the helper:
 
 ```sh
-PATH=/tmp/zudo-tools/node_modules/.bin:$PATH node _temp-resource/4430-zfb3-migration/4483-heading-ids/native-probe.mjs
+PATH=/tmp/zudo-tools/node_modules/.bin:$PATH node docs/findings/4430-zfb3-migration/4483-heading-ids/native-probe.mjs
 ```
 
 The permanent test fixture `src/__tests__/pages-lib/fixtures/heading-ids-4483/probe.mdx` holds named/multi-codepoint, numeric/invalid controls, unknown/incomplete, Unicode, escaped references/punctuation, inline code/spans, real fences and invalid closers, mixed runs, indented code, duplicates, nesting and h5/h6. The adjacent permanent `native-output.json` records the complete ordered **27 native IDs** and raw rendered HTML. This is native renderer evidence, not helper-generated expectations.
 
-The pre-fix regression run returned **3 failures / 87 passes**: the helper returned only nine IDs, including `gt-1000ms`, `lt-2mm`, and the false `code-block-target`. Its full mismatch is preserved in `_temp-resource/4430-zfb3-migration/4483-heading-ids/prefail.log`. After the fix the same focused suite passed **90/90**, comparing all ordered IDs against a fresh native render and the recorded native oracle.
+The pre-fix regression run returned **3 failures / 87 passes**: the helper returned only nine IDs, including `gt-1000ms`, `lt-2mm`, and the false `code-block-target`. Its full mismatch was captured in the temporary `_temp-resource/4430-zfb3-migration/4483-heading-ids/prefail.log` (not preserved; see `2026-10-10-probe-summaries.md`). After the fix the same focused suite passed **90/90**, comparing all ordered IDs against a fresh native render and the recorded native oracle.
 
 ```sh
 PATH=/tmp/zudo-tools/node_modules/.bin:$PATH ZFB3_SOURCE_RESOLVE=1 pnpm exec vitest run src/__tests__/pages-lib/extract-headings.test.ts
@@ -31,7 +31,7 @@ The no-stub scratch site's frozen install and native build passed: **four pages 
 
 A subsequent cheap verifier run also asserted installed manifest names/4.2.1 engine versions and resolved real paths for `@takazudo/zudo-doc`, `@takazudo/zfb`, `@takazudo/zfb-md-wasm`, and `@takazudo/zfb-runtime`. Every path is inside `/tmp/zudo4483-native-probe/project/node_modules/.pnpm/`; none uses the workspace. The candidate manifest declares a local tarball, not a workspace dependency. `packed-provenance-verify.log` records those paths and the repeated passing assertions.
 
-Raw evidence under `_temp-resource/4430-zfb3-migration/4483-heading-ids/`: `manager-build-pack.log` (workspace/prepack/guard), `packed-install.log` (initial resolution), `packed-build-verify.log` (frozen install/build/strict proof/guard), and `packed-provenance-verify.log` (installed paths plus complete proof). These are actual runs, not planned commands.
+Raw evidence (temporary `_temp-resource/4430-zfb3-migration/4483-heading-ids/`, not preserved after #4476; the reproduction scripts now live in `docs/findings/4430-zfb3-migration/4483-heading-ids/`): `manager-build-pack.log` (workspace/prepack/guard), `packed-install.log` (initial resolution), `packed-build-verify.log` (frozen install/build/strict proof/guard), and `packed-provenance-verify.log` (installed paths plus complete proof). These are actual runs, not planned commands.
 
 Manager commands used this environment:
 
@@ -60,10 +60,10 @@ The archived `project-template/` retains the tested manifest, lockfile, config, 
 From the repository root, with the environment above:
 
 ```sh
-node _temp-resource/4430-zfb3-migration/4483-heading-ids/setup-packed-probe.mjs /path/to/candidate.tgz /tmp/heading-4483-reproduction
+node docs/findings/4430-zfb3-migration/4483-heading-ids/setup-packed-probe.mjs /path/to/candidate.tgz /tmp/heading-4483-reproduction
 pnpm --dir /tmp/heading-4483-reproduction/project install --frozen-lockfile
 bash "$HOME/.codex/scripts/heavy-guard.sh" -- pnpm --dir /tmp/heading-4483-reproduction/project build
-node _temp-resource/4430-zfb3-migration/4483-heading-ids/verify-built-packed.mjs /tmp/heading-4483-reproduction
+node docs/findings/4430-zfb3-migration/4483-heading-ids/verify-built-packed.mjs /tmp/heading-4483-reproduction
 ```
 
 The verifier accepts the assembled scratch root, reads its copied canonical oracle, asserts real installed package provenance, and repeats complete ordered built/packed parity, both TOC views and positive/negative strict checking. Assembly and syntax checks passed without another heavy build; the manager's original build evidence above remains the build proof.

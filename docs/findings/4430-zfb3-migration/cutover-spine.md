@@ -1,12 +1,12 @@
 # Cutover spine A: bump the zfb family to the latest 3.x, flip the TypeScript JSX source, make preact zdtp-only, and stop emitting framework/tailwind
 
-Owner: [#4436](https://github.com/zudolab/zudo-doc/issues/4436). Status: **implemented; integration and visual parity remain pending**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4436](https://github.com/zudolab/zudo-doc/issues/4436). Status: **implemented; integration and visual parity remain pending**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
 ## Round-2 locked spec (3.1.0)
 
-Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). The cutover spine implements this pin/config contract; browser and style parity remain downstream. This overrides the named round-1 deviations.
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](round2-3.1.0.md). The cutover spine implements this pin/config contract; browser and style parity remain downstream. This overrides the named round-1 deviations.
 
 Void the round-1 exact `3.0.0`/`^3.0.0` pin instructions. Pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm` and `@takazudo/zfb-adapter-cloudflare` exactly to `3.1.0` wherever owned (root, package dev dependencies, scaffold and fixture pins); peer floors are `^3.1.0`. Registry freshness was rechecked on 2026-10-02; all four packages remain at `3.1.0`. Pin parity, scaffold freshness and the actual binary version are recorded below. Keep the owned JSX/config wind passthrough and zdtp-only Preact contract. No pnpm patch is selected. Cutover stays behind verified #4435 and this #4480 lock.
 

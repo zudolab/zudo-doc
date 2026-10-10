@@ -4,7 +4,7 @@
 
 All four published family packages are pinned to exactly **4.3.0** (zfb, runtime, md-wasm, Cloudflare adapter), with peers **^4.3.0**. npm `latest` and the native CLI (`zfb 4.3.0`, embedded esbuild 0.25.12) were rechecked on 2026-10-10. The resume record is [2026-10-10 zfb 4.3.0 resume](2026-10-10-zfb-4.3.0-resume.md); the exact dependency tuple (including the zdtp resolution per consumer) is in [closeout dependencies](2026-10-10-closeout-dependencies.md).
 
-**Release verdict: BLOCKED (pending the closeout gates).** [Readiness checklist](../../../_temp-resource/4430-zfb3-migration/release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. Former upstream blockers are resolved: #4059, #4060 and #4109 are closed, and the strict published #4097 consumer passes 3/3 on the published 4.3.0 packages (hosted run [38030809260](https://github.com/zudolab/zudo-doc/actions/runs/38030809260), head `fd0764f`). The same head passed PR Checks [38030812860](https://github.com/zudolab/zudo-doc/actions/runs/38030812860) 28/28 (475 E2E), generator slow 24/24, package slow/packed 133/133 and built bookmarks (30 targets / 12 routes). The required A2 gate passes; the historical byte diagnostic deliberately keeps its inequality (seven native build IDs plus the islands filename), which is reviewed and not a product failure.
+**Release verdict: BLOCKED (pending the closeout gates).** [Readiness checklist](release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. Former upstream blockers are resolved: #4059, #4060 and #4109 are closed, and the strict published #4097 consumer passes 3/3 on the published 4.3.0 packages (hosted run [38030809260](https://github.com/zudolab/zudo-doc/actions/runs/38030809260), head `fd0764f`). The same head passed PR Checks [38030812860](https://github.com/zudolab/zudo-doc/actions/runs/38030812860) 28/28 (475 E2E), generator slow 24/24, package slow/packed 133/133 and built bookmarks (30 targets / 12 routes). The required A2 gate passes; the historical byte diagnostic deliberately keeps its inequality (seven native build IDs plus the islands filename), which is reviewed and not a product failure.
 
 Remaining gates (all still unverified, tracked under #4475 / #4476 / #4501):
 
@@ -12,6 +12,7 @@ Remaining gates (all still unverified, tracked under #4475 / #4476 / #4501):
 - Installed three-package acceptance: packed history-server, zudo-doc and create-zudo-doc, scaffolded outside the workspace (barebone and all-feature), with real browser hydration and interaction.
 - macOS Japanese IME and other manual/platform checks (Takazudo/zudo-front-builder#3330); cannot run on the Linux host.
 - #4476 cleanup of `_temp-resource/4430-zfb3-migration/` (only after full acceptance PASS), including relocating lasting fixtures.
+- Relocated evidence (#4508, copy-only): see [closeout evidence](2026-10-10-closeout-evidence.md), [A2 summary](2026-10-10-a2-comparison-summary.md) and [probe summaries](2026-10-10-probe-summaries.md); `release-readiness.md` here is canonical.
 - Final-head gates: exact-head required checks, review and the #4501 deferred-verification rows.
 
 zdtp stays at 0.8.5 for this closeout; any upgrade is handled elsewhere.
@@ -22,11 +23,11 @@ The text below led this file before 4.3.0 was published. It is preserved as a hi
 
 All four published family packages are pinned to **4.2.0**, peers **^4.2.0**. npm and the native binary are verified. [Current 4.2 integration findings](v4.2-integration.md) supersede the historical [4.1 round](v4.1-integration.md).
 
-**Release verdict: BLOCKED.** [Readiness checklist](../../../_temp-resource/4430-zfb3-migration/release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. The accepted upstream #4004 composition migration is implemented and the full site builds (793 pages). Packed identity/token-resolution (#4059/#4060 upstream), standalone browser composition (#4077 upstream), A2 and browser/static parity gates still need resolution/verification; keep #4467/#4475 open and temporary resources intact.
+**Release verdict: BLOCKED.** [Readiness checklist](release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. The accepted upstream #4004 composition migration is implemented and the full site builds (793 pages). Packed identity/token-resolution (#4059/#4060 upstream), standalone browser composition (#4077 upstream), A2 and browser/static parity gates still need resolution/verification; keep #4467/#4475 open and temporary resources intact.
 
 Decision owners: round 1 [#4434](https://github.com/zudolab/zudo-doc/issues/4434), round 2 [#4480](https://github.com/zudolab/zudo-doc/issues/4480); epic [#4430](https://github.com/zudolab/zudo-doc/issues/4430). This permanent gap table implements upstream [#3328](https://github.com/Takazudo/zudo-front-builder/issues/3328). It survives deletion of temporary planning resources. All implementation and route verdicts start **pending**; #4476 copies measured parity verdicts and final released versions here.
 
-Baseline: zudo-doc 5.28.2, `main@337b9f110`, zfb 2.22.1. Round-2 target: all four zfb family packages exactly **3.1.0**, package peer floor **`^3.1.0`**; npm latest rechecked 2026-10-01 (`pnpm view @takazudo/zfb version` → `3.1.0`). Normative `v3.1.0` tag commit: `baac44eac12d300d68fd8742c585567ea24e6aa9`. Prerequisite source inventory: `4026c213d0115bbf533319a2969b615e3758805c`. [Binding conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md) and [upstream status census](upstream-status.md). Before #4476 deletes temporary resources, copy the final conventions and necessary proof summaries into this directory and update these links.
+Baseline: zudo-doc 5.28.2, `main@337b9f110`, zfb 2.22.1. Round-2 target: all four zfb family packages exactly **3.1.0**, package peer floor **`^3.1.0`**; npm latest rechecked 2026-10-01 (`pnpm view @takazudo/zfb version` → `3.1.0`). Normative `v3.1.0` tag commit: `baac44eac12d300d68fd8742c585567ea24e6aa9`. Prerequisite source inventory: `4026c213d0115bbf533319a2969b615e3758805c`. [Binding conventions](conventions.md) and [upstream status census](upstream-status.md). Before #4476 deletes temporary resources, copy the final conventions and necessary proof summaries into this directory and update these links.
 
 ## Column meanings and completion rule
 
@@ -130,7 +131,7 @@ For every applicable family capture default + nondefault locale, configured vers
 
 ## Remaining shims and contract gates
 
-The authoritative round-2 release list follows [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md), merged at `64b6f3bf30fc37a33e9834e18274565955731403`. #4475 starts **BLOCKED** on these unresolved families; this decision does not certify implementation or browser parity.
+The authoritative round-2 release list follows [#4479 packed evidence](round2-3.1.0.md), merged at `64b6f3bf30fc37a33e9834e18274565955731403`. #4475 starts **BLOCKED** on these unresolved families; this decision does not certify implementation or browser parity.
 
 | Remaining family | Owner / exact surviving workaround or contract check | Release removal/resolution gate |
 | --- | --- | --- |

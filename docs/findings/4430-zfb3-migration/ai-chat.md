@@ -1,6 +1,6 @@
 # Port the AiChatModal island (and add the missing IME guard)
 
-Owner: [#4451](https://github.com/zudolab/zudo-doc/issues/4451). Status: **ported; focused checks complete**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4451](https://github.com/zudolab/zudo-doc/issues/4451). Status: **ported; focused checks complete**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Target: zfb 3.1.0 under the #4434/#4480 lock. The issue's locked spec is recorded in [issue-locks.md](issue-locks.md).
 

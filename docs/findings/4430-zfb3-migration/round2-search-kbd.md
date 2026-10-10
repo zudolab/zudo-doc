@@ -71,5 +71,5 @@ e2e/smoke-search-dialog-close.spec.ts e2e/smoke-search.spec.ts`, with
 `E2E_FIXTURES=smoke`, no retries, system Chromium and serial workers. The temporary
 config only selects the browser executable and output paths; it imports the
 repository fixture/server configuration. Raw failed/passing logs and reports plus
-review evidence are retained in `_temp-resource/4430-zfb3-migration/4482-search/`.
+review evidence are summarized in `docs/findings/4430-zfb3-migration/2026-10-10-probe-summaries.md` (raw logs were in the temporary `_temp-resource/4430-zfb3-migration/4482-search/`, not preserved).
 Final combined #4475 verification remains required.

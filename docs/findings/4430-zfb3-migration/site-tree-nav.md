@@ -1,6 +1,6 @@
 # Port the SiteTreeNav island to zudo-react
 
-Owner: [#4445](https://github.com/zudolab/zudo-doc/issues/4445). Status: **implementation verified; browser parity pending #4468/#4475**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4445](https://github.com/zudolab/zudo-doc/issues/4445). Status: **implementation verified; browser parity pending #4468/#4475**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. The locked #4445 spec targets zfb 3.1.0 and supersedes the original issue's 3.0.0 wording.
 

@@ -1,12 +1,12 @@
 # Port the head and document shell (head, doclayout incl. its persist wrapper, theme providers, prepaint scripts, page loading, sidebar resizer)
 
-Owner: [#4458](https://github.com/zudolab/zudo-doc/issues/4458). Status: **ported; source and targeted SSR checks pass**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4458](https://github.com/zudolab/zudo-doc/issues/4458). Status: **ported; source and targeted SSR checks pass**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, and `deps-docs.md`. The file/symbol inventory was checked against the merged prerequisites and final topic base `3b2ba3ada96691b50378bc9d05d9cbd42ba3c7f9` (#4443). This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
 ## Round-2 locked spec (3.1.0)
 
-Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Implemented and source-checked; browser lifecycle proof remains assigned to the navigation/browser verification owners. This overrides the named round-1 deviations.
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](round2-3.1.0.md). Implemented and source-checked; browser lifecycle proof remains assigned to the navigation/browser verification owners. This overrides the named round-1 deviations.
 
 Void applying #4442's round-1 post-teardown metadata rewrite/unconditional remount to aside#desktop-sidebar. Use its round-2 native lifecycle and incoming-document policy; retain unchanged SidebarTree handle/state, refresh changed props safely, and preserve actual nonzero scroll. Test callback ordering and request the browser proof. Keep existing ancestor persistence and avoid fabricated root wrappers.
 

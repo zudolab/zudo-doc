@@ -1,6 +1,6 @@
 # Persisted chrome transition helpers
 
-Owner: [#4442](https://github.com/zudolab/zudo-doc/issues/4442). Status: **source port complete; browser verification pending**. Binding spec: [round-2 persisted chrome convention](../../../_temp-resource/4430-zfb3-migration/conventions.md#persisted-chrome-and-router-events), [#4480](https://github.com/zudolab/zudo-doc/issues/4480), and [#4479 packed probe](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md) Z04.
+Owner: [#4442](https://github.com/zudolab/zudo-doc/issues/4442). Status: **source port complete; browser verification pending**. Binding spec: [round-2 persisted chrome convention](conventions.md#persisted-chrome-and-router-events), [#4480](https://github.com/zudolab/zudo-doc/issues/4480), and [#4479 packed probe](round2-3.1.0.md) Z04.
 
 ## Migration matrix
 

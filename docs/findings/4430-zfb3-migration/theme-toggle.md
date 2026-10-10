@@ -1,6 +1,6 @@
 # ThemeToggle appearance menu port
 
-Owner: [#4446](https://github.com/zudolab/zudo-doc/issues/4446). Status: ported on zfb 3.1.0; browser parity and release gate pending. Binding decision: [conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md), #4446 locked spec, zudo-react R-JSX/R-SCOPE/R-PROPS, zudo-wind W-CATALOG.
+Owner: [#4446](https://github.com/zudolab/zudo-doc/issues/4446). Status: ported on zfb 3.1.0; browser parity and release gate pending. Binding decision: [conventions](conventions.md), #4446 locked spec, zudo-react R-JSX/R-SCOPE/R-PROPS, zudo-wind W-CATALOG.
 
 ## Gap table
 
