@@ -164,3 +164,76 @@ jobs:
           path: ${{ runner.temp }}/migration-parity/
           retention-days: 7
           if-no-files-found: error
+  native-published-4097:
+    name: Published 4.3.0 strict pending activation consumer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+    defaults:
+      run:
+        shell: bash
+    env:
+      CONSUMER_ROOT: ${{ runner.temp }}/native-published-4097
+      EVIDENCE_ROOT: ${{ runner.temp }}/native-published-4097-evidence
+    steps:
+      - name: Mark ephemeral container workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-node-pnpm
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+      - name: Preserve exact source and prepare unchanged consumer
+        env:
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT"
+          test "$(git rev-parse HEAD)" = "$CURRENT_SHA"
+          git rev-parse HEAD > "$EVIDENCE_ROOT/source-head.txt"
+          node --version > "$EVIDENCE_ROOT/toolchain.txt"
+          pnpm --version >> "$EVIDENCE_ROOT/toolchain.txt"
+          test "$(pnpm --version)" = 10.30.3
+          node scripts/migration-4097.mjs prepare "$CONSUMER_ROOT"
+          cp "$CONSUMER_ROOT/inputs.json" "$CONSUMER_ROOT/package.json" "$CONSUMER_ROOT/pnpm-lock.yaml" "$EVIDENCE_ROOT/"
+      - name: Frozen isolated public registry install
+        run: |
+          set -euo pipefail
+          cd "$CONSUMER_ROOT"
+          pnpm install --frozen-lockfile --ignore-scripts --ignore-workspace --registry=https://registry.npmjs.org 2>&1 | tee "$EVIDENCE_ROOT/install.log"
+          pnpm list --depth Infinity --json > "$EVIDENCE_ROOT/dependencies.json"
+          node "$GITHUB_WORKSPACE/scripts/migration-4097.mjs" verify-install "$CONSUMER_ROOT" 2>&1 | tee "$EVIDENCE_ROOT/installed.log"
+          cp "$CONSUMER_ROOT/installed.json" "$EVIDENCE_ROOT/"
+          pnpm exec playwright --version >> "$EVIDENCE_ROOT/toolchain.txt"
+          node --input-type=module >> "$EVIDENCE_ROOT/toolchain.txt" <<'NODE'
+          import { chromium } from '@playwright/test';
+          import { execFileSync } from 'node:child_process';
+          console.log(execFileSync(chromium.executablePath(), ['--version'], { encoding: 'utf8' }).trim());
+          NODE
+      - name: Check consumer and unchanged browser spec types
+        run: |
+          set -euo pipefail
+          cd "$CONSUMER_ROOT"
+          pnpm exec tsc --noEmit -p tsconfig.json 2>&1 | tee "$EVIDENCE_ROOT/project-typecheck.log"
+          pnpm exec tsc -p tsconfig.spec.json 2>&1 | tee "$EVIDENCE_ROOT/spec-typecheck.log"
+      - name: Run all three unchanged strict cases with zero retries
+        run: |
+          set -euo pipefail
+          cd "$CONSUMER_ROOT"
+          pnpm exec playwright test --config playwright.config.mjs 2>&1 | tee "$EVIDENCE_ROOT/browser.log"
+          node "$GITHUB_WORKSPACE/scripts/migration-4097.mjs" verify-report "$CONSUMER_ROOT" 2>&1 | tee "$EVIDENCE_ROOT/acceptance.log"
+      - name: Upload explicit consumer evidence including failures
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: native-published-4097-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/native-published-4097-evidence/
+            ${{ runner.temp }}/native-published-4097/report.json
+            ${{ runner.temp }}/native-published-4097/test-results/
+          retention-days: 7
+          if-no-files-found: error
