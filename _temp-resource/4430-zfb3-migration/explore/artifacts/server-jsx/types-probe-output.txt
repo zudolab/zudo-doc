@@ -1,0 +1,13 @@
+(4,25): error TS2322: Type '{ property: string; content: string; }' is not assignable to type 'HtmlProps<HTMLElement>'.
+  Property 'property' does not exist on type 'HtmlProps<HTMLElement>'.
+(5,33): error TS2353: Object literal may only specify known properties, and 'mask' does not exist in type 'Readonly<Partial<Record<CssProperty, string | number | null | undefined>>> | ReadonlySignal<s
+(7,24): error TS2322: Type '{ xmlns: string; viewBox: string; }' is not assignable to type 'SvgProps'.
+  Property 'xmlns' does not exist on type 'SvgProps'.
+(8,23): error TS2322: Type '{ children: Child; start: number; }' is not assignable to type 'HtmlProps<HTMLElement>'.
+  Property 'start' does not exist on type 'HtmlProps<HTMLElement>'.
+(9,24): error TS2322: Type '{ className: string; }' is not assignable to type 'HtmlProps<HTMLElement>'.
+  Property 'className' does not exist on type 'HtmlProps<HTMLElement>'.
+(12,33): error TS2353: Object literal may only specify known properties, and 'cursor' does not exist in type 'Readonly<Partial<Record<CssProperty, string | number | null | undefined>>> | ReadonlySigna
+(13,34): error TS2353: Object literal may only specify known properties, and 'inset' does not exist in type 'Readonly<Partial<Record<CssProperty, string | number | null | undefined>>> | ReadonlySignal
+(17,39): error TS2322: Type '{ rel: string; as: string; href: string; }' is not assignable to type 'HtmlProps<HTMLElement>'.
+  Property 'as' does not exist on type 'HtmlProps<HTMLElement>'.

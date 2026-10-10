@@ -1,14 +1,12 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 type Props = JSX.IntrinsicElements["strong"];
 
-export function ContentStrong({ children, className, ...rest }: Props) {
+export function ContentStrong({ children, class: klass, ...rest }: Props) {
   return (
     <strong
-      className={`font-bold text-fg${className ? ` ${className}` : ""}`}
+      class={`font-bold text-fg${klass ? ` ${klass}` : ""}`}
       {...rest}
     >
       {children}

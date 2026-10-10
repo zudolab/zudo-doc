@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // footer-with-defaults — factory for the locale-aware Footer wrapper
 // (epic #2344, S5).
 //
@@ -9,7 +8,7 @@
 // as arguments so the logic lives in the package while the host stub keeps
 // the singleton imports.
 
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { Footer } from "../footer/index.js";
 import type { FooterLinkColumn, FooterTagColumn } from "../footer/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -69,7 +68,7 @@ export interface FooterWithDefaultsSettings {
  */
 export function createFooterWithDefaults<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
-): (props: { lang?: string }) => VNode {
+): (props: { lang?: string }) => Child {
   assertChromeContext(ctx, "createFooterWithDefaults");
   const settings = ctx.settings as unknown as FooterWithDefaultsSettings;
   const defaultLocale = ctx.defaultLocale;
@@ -116,7 +115,7 @@ export function createFooterWithDefaults<S extends Settings = Settings>(
     lang = defaultLocale,
   }: {
     lang?: string;
-  }): VNode {
+  }): Child {
     const footer = settings.footer;
 
     const persistKey = `footer-${lang}`;

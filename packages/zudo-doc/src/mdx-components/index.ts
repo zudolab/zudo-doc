@@ -34,9 +34,8 @@
 //     like Avatar/Button/Card). Spread LAST so the host always wins.
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-import { toChildArray } from "preact";
-import type { ComponentChildren, VNode } from "preact";
+import { h, flattenChildren } from "@takazudo/zfb/zudo-react";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import type { Settings } from "../settings.js";
 import type { AssetManifest } from "../route-context-payload/types.js";
 import { defaultComponents } from "../content/index.js";
@@ -145,7 +144,7 @@ function makeContentImg(base: string) {
     if (finalTitle !== undefined) {
       mergedProps.title = finalTitle;
     }
-    return { type: "img", props: mergedProps, key: null, constructor: undefined };
+    return h("img", mergedProps);
   };
 }
 
@@ -156,60 +155,19 @@ function makeContentImg(base: string) {
  * `rehype-image-enlarge.ts` makeEnlargeButton()). Must match exactly so the
  * existing `.zd-enlarge-btn` CSS and the image-enlarge island keep working.
  *
- * Attribute spellings follow HTML/Preact conventions: `focusable` stays the
- * string "false" (preact-render-to-string drops boolean false); `aria-hidden`
- * is the HTML attribute name.
+ * Only `aria-hidden` is required for this decorative SVG. The redundant
+ * `focusable` attribute is omitted under zudo-react.
  */
-const ENLARGE_SVG = {
-  type: "svg",
-  props: {
-    viewBox: "0 0 38.99 38.99",
-    fill: "currentColor",
-    focusable: "false",
-    "aria-hidden": "true",
-    children: [
-      {
-        type: "polygon",
-        props: {
-          points:
-            "16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74",
-        },
-        key: null,
-        constructor: undefined,
-      },
-      {
-        type: "polygon",
-        props: {
-          points:
-            "25.24 16.2 35.52 5.92 35.52 11.2 38.99 11.2 38.99 3.47 38.99 0 35.52 0 27.79 0 27.79 3.47 33.07 3.47 22.79 13.74 25.24 16.2",
-        },
-        key: null,
-        constructor: undefined,
-      },
-      {
-        type: "polygon",
-        props: {
-          points:
-            "22.79 25.24 33.07 35.52 27.79 35.52 27.79 38.99 35.52 38.99 38.99 38.99 38.99 35.52 38.99 27.79 35.52 27.79 35.52 33.07 25.24 22.79 22.79 25.24",
-        },
-        key: null,
-        constructor: undefined,
-      },
-      {
-        type: "polygon",
-        props: {
-          points:
-            "13.74 22.79 3.47 33.07 3.47 27.79 0 27.79 0 35.52 0 38.99 3.47 38.99 11.2 38.99 11.2 35.52 5.92 35.52 16.2 25.24 13.74 22.79",
-        },
-        key: null,
-        constructor: undefined,
-      },
-    ],
-  },
-  key: null,
-  constructor: undefined,
-};
-
+const ENLARGE_SVG = h("svg", {
+  viewBox: "0 0 38.99 38.99",
+  fill: "currentColor",
+  "aria-hidden": "true",
+},
+  h("polygon", { points: "16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74" }),
+  h("polygon", { points: "25.24 16.2 35.52 5.92 35.52 11.2 38.99 11.2 38.99 3.47 38.99 0 35.52 0 27.79 0 27.79 3.47 33.07 3.47 22.79 13.74 25.24 16.2" }),
+  h("polygon", { points: "22.79 25.24 33.07 35.52 27.79 35.52 27.79 38.99 35.52 38.99 38.99 38.99 38.99 35.52 38.99 27.79 35.52 27.79 35.52 33.07 25.24 22.79 22.79 25.24" }),
+  h("polygon", { points: "13.74 22.79 3.47 33.07 3.47 27.79 0 27.79 0 35.52 0 38.99 3.47 38.99 11.2 38.99 11.2 35.52 5.92 35.52 16.2 25.24 13.74 22.79" }),
+);
 /**
  * Build the enlarge-aware MDX paragraph override.
  *
@@ -228,8 +186,7 @@ const ENLARGE_SVG = {
  * or not enlargement is enabled. `zd-enlargeable` and its button remain gated
  * by the existing enlargement eligibility rule.
  *
- * The `title="no-enlarge"` opt-out is read from the un-rendered VNode (Preact's
- * h() is lazy — child.type is still the ContentImg function, not yet called).
+ * The `title="no-enlarge"` opt-out is read from the un-rendered description (h() is lazy — child.type is still the ContentImg function, not yet called).
  * ContentImg strips the sentinel from the rendered img DOM.
  *
  * Non-image and non-manifest/non-enlargeable paragraphs delegate to
@@ -248,12 +205,12 @@ function makeEnlargeableParagraph(
   },
 ) {
   return function EnlargeableParagraph(props: {
-    children?: ComponentChildren;
+    children?: Child;
     [key: string]: unknown;
   }): unknown {
     const { children } = props;
     // Collect children and drop whitespace-only text nodes.
-    const kids = toChildArray(children).filter((child) => {
+    const kids = flattenChildren(children).filter((child) => {
       if (typeof child === "string" || typeof child === "number") {
         return String(child).trim() !== "";
       }
@@ -268,7 +225,7 @@ function makeEnlargeableParagraph(
         "type" in kid &&
         "props" in kid
       ) {
-        const vnode = kid as VNode<Record<string, unknown>>;
+        const vnode = kid as Description;
         if (vnode.type === ContentImg || vnode.type === "img") {
           const imgProps = (vnode.props ?? {}) as Record<string, unknown>;
           const decoded =
@@ -285,18 +242,10 @@ function makeEnlargeableParagraph(
             : undefined;
           const canEnlarge = imageEnlarge && imgProps.title !== "no-enlarge";
           if (canEnlarge || imageEntry) {
-            const enlargeBtn = {
-              type: "button",
-              props: {
-                type: "button",
-                class: "zd-enlarge-btn",
-                hidden: true,
-                "aria-label": "Enlarge image",
-                children: ENLARGE_SVG,
-              },
-              key: null,
-              constructor: undefined,
-            };
+            const enlargeBtn = h("button", {
+              type: "button", class: "zd-enlarge-btn", hidden: true,
+              "aria-label": "Enlarge image",
+            }, ENLARGE_SVG);
             const captionText =
               typeof imgProps.alt === "string" ? imgProps.alt.trim() : "";
             const dimensions =
@@ -304,68 +253,28 @@ function makeEnlargeableParagraph(
                 ? ` · ${imageEntry.width} × ${imageEntry.height}`
                 : "";
             const figcaption = imageEntry
-              ? {
-                  type: "figcaption",
-                  props: {
-                    class:
-                      "mt-vsp-2xs flex flex-wrap items-baseline justify-center gap-x-hsp-xs text-caption text-muted",
-                    children: [
-                      captionText
-                        ? {
-                            type: "span",
-                            props: { children: captionText },
-                            key: null,
-                            constructor: undefined,
-                          }
-                        : null,
-                      captionText
-                        ? {
-                            type: "span",
-                            props: { "aria-hidden": "true", children: "|" },
-                            key: null,
-                            constructor: undefined,
-                          }
-                        : null,
-                      {
-                        type: "a",
-                        props: {
-                          class:
-                            "text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline",
-                          href: assetViewerHref({
-                            base: assetOptions.base,
-                            routePrefix: assetOptions.routePrefix,
-                            path: imageEntry.path,
-                            locale: assetOptions.isDefaultLocaleOnlyPath?.(
-                              `/${assetOptions.routePrefix}/${imageEntry.path}`,
-                            )
-                              ? undefined
-                              : assetOptions.locale,
-                          }),
-                          children: `⤢ Open asset page${dimensions}`,
-                        },
-                        key: null,
-                        constructor: undefined,
-                      },
-                    ],
-                  },
-                  key: null,
-                  constructor: undefined,
-                }
+              ? h("figcaption", {
+                  class: "mt-vsp-2xs flex flex-wrap items-baseline justify-center gap-x-hsp-xs text-caption text-muted",
+                },
+                  captionText ? h("span", null, captionText) : null,
+                  captionText ? h("span", { "aria-hidden": "true" }, "|") : null,
+                  h("a", {
+                    class: "text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline",
+                    href: assetViewerHref({
+                      base: assetOptions.base,
+                      routePrefix: assetOptions.routePrefix,
+                      path: imageEntry.path,
+                      locale: assetOptions.isDefaultLocaleOnlyPath?.(
+                        `/${assetOptions.routePrefix}/${imageEntry.path}`,
+                      ) ? undefined : assetOptions.locale,
+                    }),
+                  }, `⤢ Open asset page${dimensions}`),
+                )
               : null;
-            return {
-              type: "figure",
-              props: {
-                class: [
-                  canEnlarge ? "zd-enlargeable" : null,
-                  imageEntry ? "p-hsp-lg" : null,
-                ]
-                  .filter((className): className is string => className !== null)
-                  .join(" "),
-                children: [vnode, canEnlarge ? enlargeBtn : null, figcaption],
-              },
-              key: null,
-              constructor: undefined,
-            };
+            return h("figure", {
+              class: [canEnlarge ? "zd-enlargeable" : null, imageEntry ? "p-hsp-lg" : null]
+                .filter((name): name is string => name !== null).join(" "),
+            }, vnode, canEnlarge ? enlargeBtn : null, figcaption);
           }
         }
       }
@@ -449,8 +358,8 @@ export function createMdxComponents(
     // figures also receive the p-hsp-lg inset. Must come AFTER ...defaultComponents
     // to override ContentParagraph.
     p: EnlargeableParagraph,
-    // Admonitions — real typed Preact components emitting the
-    // `.admonition` / `data-admonition` structure the design-system CSS
+    // Admonitions — server-rendered components emitting the
+    // `data-admonition` / variant-class structure the design-system CSS
     // targets. `:::note` directives emit <Note>; `<Note title="…">` JSX is
     // also authored directly. github-alerts [!IMPORTANT]/[!CAUTION] map to
     // Important/Caution — omitting those two 500s their SSR render.

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // The showcase's real host-bound chrome slots — the sanctioned
 // `chromeBindingsModule` seam (ADR "Host-callables channel — chromeBindingsModule",
 // packages/zudo-doc/docs/adr/route-injection-seam.md; #2501). Wired via
@@ -19,7 +18,7 @@
 // route context / `createChrome` call itself now lives at each consumer, per
 // the locked self-contained-stub shape — #2653 decision wave).
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
 import { settings } from "@/config/settings";
@@ -40,7 +39,7 @@ import { SearchWidget } from "../pages/lib/_search-widget";
 import { BodyEndIslands as BodyEndIslandsSeam } from "../pages/lib/_body-end-islands";
 import { DetailsWrapper } from "../pages/lib/_details";
 import { PresetGeneratorFallback } from "../pages/lib/_preset-generator";
-import { DocHistory } from "@takazudo/zudo-doc/doc-history";
+import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area";
 // SSR author + date metadata — `#doc-history-meta` is the build-time manifest
 // alias (esbuild-inlined, no fs). Static import is load-bearing for the island
 // scanner chain noted below.
@@ -102,14 +101,14 @@ function loadTagsForLocale(lang: string) {
 // hostBindings.mdxExtras; the package factory merges them over its defaults.
 // ---------------------------------------------------------------------------
 
-/** MDX-tag stub: renders nothing (Preact null-vnode path). */
+/** MDX-tag stub: renders nothing as a zudo-react null child. */
 const MdxStub = (_props: unknown) => null;
 
 /** SSR pass-through for `<Island when=…>` — renders children, ignores `when`. */
 function IslandWrapper(props: {
   when?: "load" | "idle" | "visible" | "media";
-  children?: ComponentChildren;
-}): ComponentChildren {
+  children?: Child;
+}): Child {
   return props.children ?? null;
 }
 

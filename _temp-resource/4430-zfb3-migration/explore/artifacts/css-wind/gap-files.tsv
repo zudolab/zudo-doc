@@ -1,0 +1,30 @@
+py-[calc(var(--spacing-vsp-xs)+0.15rem)]	pkg/sidebar-tree-island/index.tsx×1, pkg/site-tree-nav-island/index.tsx×1
+[&_a]:underline	pkg/footer/footer.tsx×2
+[&_a:hover]:text-accent	pkg/footer/footer.tsx×2
+[&_a:focus-visible]:text-accent	pkg/footer/footer.tsx×2
+ring-2	pkg/theme-pack-dialog/theme-pack-card.tsx×1
+ring-accent	pkg/theme-pack-dialog/theme-pack-card.tsx×1
+h-[calc(100vh-3.5rem)]	pkg/doclayout/doc-layout.tsx×1, pkg/sidebar-toggle-island/index.tsx×1, pkg/toc/toc.tsx×1
+leading-none	pkg/nav-indexing/note-tray-index-parts/index-list.tsx×2, pkg/nav-indexing/note-tray-index-parts/timeline.tsx×1
+wrap-anywhere	pkg/home-page/index.tsx×1
+decoration-muted	pkg/search-widget-script/generated-script.ts×1
+shadow-md	pkg/find-in-page/find-bar.tsx×1
+max-w-sm	pkg/theme-pack-dialog/index.tsx×1
+rounded-md	pkg/theme-pack-dialog/theme-pack-card.tsx×1
+py-hsp-3xs	pkg/theme-pack-dialog/theme-pack-card.tsx×1
+2xl:w-[24px]	pkg/site-tree-nav-island/index.tsx×2
+ease-in-out	pkg/asset-page/components.tsx×1, pkg/desktop-sidebar-toggle-island/index.tsx×1, pkg/desktop-toc-toggle-island/index.tsx×1
+animate-spin	pkg/doc-history/index.tsx×1
+animate-pulse	pkg/theme-pack-dialog/index.tsx×1
+[&_li]:mb-0	pkg/nav-indexing/note-tray-index-parts/index-list.tsx×1, pkg/nav-indexing/note-tray-index-parts/timeline.tsx×1
+[&::-webkit-details-marker]:hidden	pkg/nav-indexing/docs-sitemap.tsx×1, pkg/nav-indexing/site-tree-nav-demo.tsx×1
+[&_nav]:mb-0	pkg/breadcrumb/breadcrumb.tsx×1
+[&_a]:pointer-events-auto	pkg/nav-indexing/note-tray-index-parts/card-list.tsx×1
+w-[calc(100vw-2rem)]	pkg/theme-pack-dialog/index.tsx×1
+max-w-[calc(100vw-2rem)]	pkg/theme-pack-switcher/index.tsx×1
+max-w-[calc(100vw-var(--spacing-hsp-xl))]	pkg/i18n-version/language-switcher.tsx×1
+min-h-[calc(100vh-3.5rem)]	pkg/doclayout/doc-layout.tsx×1
+h-[calc(100%-3rem)]	pkg/doc-history/index.tsx×1
+ml-[calc(var(--spacing-hsp-xl)+1px)]	pkg/nav-indexing/note-tray-index-parts/card-list.tsx×1
+mr-[calc(var(--spacing-hsp-xl)+1px)]	pkg/nav-indexing/note-tray-index-parts/card-list.tsx×1
+shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)]	pkg/html-preview-wrapper/preview-base.tsx×1

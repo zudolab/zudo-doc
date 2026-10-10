@@ -1,3 +1,4 @@
+import { Island } from "@takazudo/zfb";
 // routes/_chrome — thin chrome shim for the package-owned route entrypoints
 // (epic Package-First Finale #2356, A1 #2361).
 //
@@ -12,7 +13,7 @@
 
 import { routeCtx } from "./_context.js";
 import { createChrome } from "../chrome/index.js";
-import { DocHistory } from "../doc-history/index.js";
+import { DocHistoryBoundary as DocHistory } from "../doc-history-area/index.js";
 import type { DocNavNode } from "../site-schema/types.js";
 // Imported via the BARE published subpath rather than a relative
 // `../chrome-bindings.js`. This file is copied into consumer projects by the
@@ -74,9 +75,13 @@ import { ConfiguredDesignTokenPanelBootstrap } from "./_design-token-panel-boots
 // It is spread BEFORE `...chromeBindings` (unlike `DocHistory`, which is spread
 // after): a host's own `DesignTokenPanelBootstrap` slot value must still win,
 // exactly as it did when the derive-level default was the only package wiring.
+function ConfiguredDesignTokenPanelBoundary() {
+  return <><Island when="load"><ConfiguredDesignTokenPanelBootstrap /></Island></>;
+}
+
 const chrome = createChrome(routeCtx, {
   ...defineChromeBindings({
-    DesignTokenPanelBootstrap: ConfiguredDesignTokenPanelBootstrap,
+    DesignTokenPanelBootstrap: ConfiguredDesignTokenPanelBoundary,
   }),
   ...chromeBindings,
   ...defineChromeBindings({ DocHistory }),

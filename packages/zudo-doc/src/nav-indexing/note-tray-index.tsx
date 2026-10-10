@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { CardList } from "./note-tray-index-parts/card-list.js";
 import { IndexList } from "./note-tray-index-parts/index-list.js";
 import { Timeline } from "./note-tray-index-parts/timeline.js";

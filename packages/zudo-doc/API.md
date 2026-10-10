@@ -10,15 +10,15 @@ named exports and `./plugins/*` entrypoints listed below.
 
 Several parts of this surface are already protected by existing tooling — do NOT add duplicate guards:
 
-- **`@theme` design tokens** — `pnpm check:token-lint` (`design-token-lint`) is the authoritative guard.
-- **Z-index tokens** — `pnpm check:z-index` (`gen-z-index --check`) is the authoritative guard.
+- **Wind tokens and authored CSS variables** — `pnpm lint:tokens`, `pnpm check:package-wind-manifest`, and `pnpm exec zfb wind audit --project-root . --fail-on error` cover different parts of the contract. Audit success alone does not prove emitted-rule coverage.
+- **Z-index tokens** — package `theme.css` carries defaults; `./z-index-defaults` and token snapshots guard the registry. Consumers override specific `--z-index-*` variables in `:root`.
 - **`doclayout` slot anchors** — parity between `packages/zudo-doc/src/doclayout/anchors.ts` and the scaffolded doc-layout is enforced by `pnpm check:template-drift`.
 
 New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapshot.test.ts` and `packages/zudo-doc/src/__tests__/ejectable-snapshot.test.ts`) cover the previously-unguarded surfaces: the `package.json#exports` keyset, the `PresetSettings`/`Settings` field set, and the ejectable-component list.
 
 ---
 
-## 1. Subpath Exports (176 total)
+## 1. Subpath Exports (179 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -26,12 +26,12 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 
 | Subpath | Description |
 |---|---|
-| `.` | Root re-exports barrel |
+| `.` | Type-only root barrel for shared public contracts; runtime imports use the topic subpaths below |
 | `./config` | `zudoDoc(userConfig?)` — the single-entry config API. Merges user fields over documented defaults for every settings field, auto-supplies the Wave-3 package defaults, and returns a complete `ZfbConfig`. Also exports `ZudoDocConfig` (the JSDoc-documented user-facing settings reference) + `DEFAULT_SETTINGS`. THE documented config API (epic #2651, Wave 4 #2657) — `zudoDocPreset()` remains the internal fragment builder it calls |
 | `./preset` | `zudoDocPreset()` — zfb config preset factory (internal fragment builder; `./config` is the documented API) |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
 | `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
-| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; exports exact props for every component slot, including `HeaderSlotProps`, `FooterSlotProps`, `SidebarSlotProps`, `TocSlotProps`, `BreadcrumbSlotProps`, and `DocPagerSlotProps`; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
+| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; component callbacks use zfb `Component<P>` and renderable slot values use `Child`; exports exact props for every component slot, including `HeaderSlotProps`, `FooterSlotProps`, `SidebarSlotProps`, `TocSlotProps`, `BreadcrumbSlotProps`, and `DocPagerSlotProps`; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
@@ -65,11 +65,20 @@ behaviour byte-for-byte.
 | `loadTagsForLocale` | `() => []` |
 | `tagVocabulary` | `[]` |
 | `BodyEndIslands` | The package-island subset derived from `settings` |
-| `DocHistory` | A no-op stub rendering an empty fragment |
-| `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; replace this slot only when replacing the island implementation. |
+| `DocHistory` | A no-op server boundary; use public `DocHistoryBoundary` from `./doc-history-area` for a real fixed-target history mount. It extracts server-only `ssrFallback` before client JSON transport. |
+| `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; an implementation override is a fixed-target server boundary that owns its static Island mount and accepts no required props. |
 | `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
 | `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. Rendered INLINE at the end of the links row, `/`-separated (#3012). |
+
+`BodyEndIslandsDeps.ThemePackSwitcher` also accepts a fixed-target server boundary.
+Boundaries statically import their client targets and return a Fragment; functions,
+signals and fallback descriptions remain on the server. Normalize finite JSON
+props before constructing the client description, using identical data for SSR and
+serialization. Existing image/mermaid fallback exports remain public through
+ordinary facades. Browser-safe defaults live in internal `settings-defaults.ts`
+and are re-exported by `./config`; `./settings` is types-only, and the config eval
+graph is not a browser import recipe.
 
 Host islands rendered through `headerRightComponents` can preserve session-scoped props across navigation that retains the same persisted root by placing `data-zd-props-preserve` on the live island or an ancestor inside that root. The live side governs this opt-out. Putting the attribute on the persisted root preserves every nested island; preserved islands receive neither a `data-props` write nor a remount flag.
 
@@ -361,7 +370,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./render-markdown` | Safe markdown→HTML renderer |
 | `./slug` | Canonical slug utilities |
 | `./smart-break` | Smart line break utilities |
-| `./use-modal-dialog` | Shared modal dialog hook |
+| `./use-modal-dialog` | `modalDialog(scope, options)` setup helper plus `ModalDialogOptions` and `ModalDialogResult` types |
 | `./island-types` | Shared island prop types |
 | `./robots` | Robots.txt generation utilities |
 | `./tags-audit` | Tag audit utilities |
@@ -393,11 +402,77 @@ project's `ZudoDocConfig` override over each default before threading it into
 | Subpath | Description |
 |---|---|
 | `./theme.css` | Default theme tokens and project-agnostic base rules |
-| `./theme-no-reset.css` | `theme.css` variant without the namespace-wide `--color-*: initial` guardrail; use when import order cannot be controlled |
 | `./content.css` | `.zd-content` typography stylesheet (single source of truth) |
-| `./safelist.css` | Generated Tailwind safelist for component classes |
+| `./wind.json` | Generated strict wind candidate manifest for package classes |
 | `./page-loading.css` | Page-loading overlay stylesheet |
 | `./features.css` | Feature CSS (code blocks, dual-theme, KaTeX, etc.) |
+| `./compiled.css` | Browser-ready compiled package stylesheet |
+
+### 6.0 consumer-facing type contract
+
+The package uses the JSX and component types exported by zfb. These imports are
+the supported public dialect for slots, component callbacks and intrinsic
+element props:
+
+```ts
+import type { Child, Component, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+
+type ButtonProps = JSX.IntrinsicElements["button"];
+type CustomRenderer = Component<{ label: string }>;
+```
+
+Use `Child` for component returns and render slots, `Description` when a value
+specifically represents a zfb element description, and `Component<P>` for
+component callbacks. Header right component registrations use
+`Component<HeaderRightComponentProps>`. `BreadcrumbSlotProps.rightSlot` accepts
+`Child`. The root `@takazudo/zudo-doc` export is type-only; import runtime
+values from their topic subpaths.
+
+`FrontmatterCellRenderer` remains the public domain name for a
+`Component<FrontmatterCellRendererProps>`. `ThemePackDialogComponent` remains
+the public domain name for `Component<ThemePackDialogProps>`; its `open` prop
+is a `ReadonlySignal<boolean>` used only within the dialog's component tree.
+`FrontmatterCellRenderer` is available from `./metainfo` and the root type
+barrel; `ThemePackDialogComponent` is available from the root type barrel.
+`EnlargeDialogProps` retains its name, uses `class`, and its `style` type is
+`typeof ENLARGE_DIALOG_STYLE`. On the current 4.3.0 target the exported constant
+is the literal object `{ position: "fixed", inset: 0, margin: "auto" }`; the old
+3.x plan to change it to a string was superseded by native style support.
+
+The modal helper keeps its existing subpath and exports this setup-only API:
+
+```ts
+import type { Listener, ReadonlySignal, Ref, Scope } from "@takazudo/zfb/zudo-react";
+
+interface ModalDialogOptions {
+  isOpen: ReadonlySignal<boolean>;
+  onClose: () => void;
+  navigateEvent?: string;
+  backdropClickClose?: boolean;
+  manageFocus?: boolean;
+  restoreFocusOnly?: boolean;
+  returnFocusRef?: Ref<HTMLElement>;
+}
+
+interface ModalDialogResult {
+  dialogRef: Ref<HTMLDialogElement>;
+  handleBackdropClick: Listener<Event>;
+}
+
+declare function modalDialog(scope: Scope, options: ModalDialogOptions): ModalDialogResult;
+```
+
+Import the helper and its types from the existing subpath:
+
+```ts
+import { modalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
+import type { ModalDialogOptions, ModalDialogResult } from "@takazudo/zudo-doc/use-modal-dialog";
+```
+
+The former `useModalDialog` name is removed. `ThemeToggle` keeps its existing
+props; no Preact `VNode`/`ReactNode` types or React/Preact compatibility path
+aliases are part of the 6.0 type surface.
 
 ---
 
@@ -441,6 +516,8 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `tagGovernance` | `TagGovernanceMode` | Tag vocabulary enforcement: `"off"`, `"warn"`, or `"strict"` |
 | `tagVocabulary` | `boolean` | Enable tag vocabulary |
 | `llmsTxt` | `boolean` | Enable llms.txt generation |
+| `agentExport?` | `boolean` | Generate the package-owned static agent documentation feed; defaults to `false` |
+| `mcp?` | `boolean` | Enable the stateless read-only MCP endpoint; requires `agentExport: true` and defaults to `false` |
 | `math` | `boolean` | Enable KaTeX math rendering. Requires the optional peer `katex`; without it the build still succeeds, but rendering a `<MathBlock>` throws |
 | `cjkFriendly` | `boolean` | Enable CJK-friendly typography |
 | `onBrokenMarkdownLinks` | `"warn" \| "error" \| "ignore"` | Severity for broken markdown links and site-absolute raw `<img src>` references: `warn` reports, `error` fails the build, and `ignore` skips checking. `srcset` is not checked. |
@@ -492,12 +569,20 @@ Current limitations: `description` affects only the home page hero. `llms.txt` s
 
 ---
 
-## 3. `@theme` Design Tokens
+## 3. Wind Tokens and CSS Custom Properties
 
-The package's `theme.css` defines the default aliases. Consumers may override
-them in their own `@theme` block after importing the package stylesheet.
+The package's `theme.css` defines the default CSS variables in `:root`.
+`zudoDoc()` supplies `wind.tokens` mapping utility names to those variables and
+registers `@takazudo/zudo-doc/wind.json`. Override variable values in `:root`
+after the package imports, or deep-merge utility mappings through
+`zudoDoc({ wind: { tokens: { colors: { accent: "var(--brand-accent)" } } } })`.
+Reset is selected in `wind.reset`; `wind: false` disables generation. Remove
+Tailwind directives and the retired `safelist.css`/`theme-no-reset.css` imports.
+The retained public CSS exports are `theme.css`, `content.css`,
+`page-loading.css`, `features.css`, and `compiled.css`.
 
-**Authoritative drift guard:** `pnpm check:token-lint` (`design-token-lint`).
+**Guards:** `pnpm lint:tokens`, `pnpm check:package-wind-manifest`, native Wind
+audit, emitted-rule tests and computed-style/browser evidence.
 
 ### Color Tokens
 

@@ -1,0 +1,1453 @@
+{
+  "404": {
+    "summary": {
+      "v2": {
+        "rawBytes": 56780,
+        "normalizedBytes": 56786,
+        "sha256Html": "065642fa3f30c9675939bce40e15a1ca63e0e3194c17cf544a158a1d2aa72e25",
+        "normalizedPath": "/tmp/zudo421-parity/a2/v2/404.normalized.html"
+      },
+      "current": {
+        "rawBytes": 57014,
+        "normalizedBytes": 57020,
+        "sha256Html": "731a4c7ac934ff0826ec27f456ea69a08c917c968576c37ca0b2aa189ff5d199",
+        "normalizedPath": "/tmp/zudo421-parity/a2/current/404.normalized.html"
+      },
+      "sameNormalizedHtml": false
+    },
+    "changedSpans": [
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[],\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-island=SidebarToggle>",
+        "new": "<div data-props='{\"nodes\":[],\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=0945adee48f50953 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1><!--zr:1:0:c--><!--zr:1:1:f-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 style=display:none xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 style=display:none>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<aside class=\"fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full\" data-zd-mobile-sidebar=true inert>",
+        "new": "<aside class=\"fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full\" data-zd-mobile-sidebar=true inert>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:2:c--><!--zr:1:3:s:0--><!--zr:1:4:s:1-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:5:l--><!--/zr:1:5--><!--zr:1:6:c--><!--/zr:1:6-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:4--><!--/zr:1:3--><!--/zr:1:2-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:1--><!--/zr:1:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<div class=\"flex min-h-[calc(100vh-3.5rem)] justify-center\">",
+        "new": "<div class=\"flex min-h-[calc(100vh_-_3.5rem)] justify-center\">"
+      }
+    ],
+    "historical4ddChangedSpans": [
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[],\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=272cc741fb77c1d9 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>",
+        "new": "<div data-props='{\"nodes\":[],\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=0945adee48f50953 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>"
+      }
+    ],
+    "semanticEventSequenceUnchanged": true,
+    "attributeChanges": [
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-build",
+        "old": null,
+        "new": "0945adee48f50953",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-protocol",
+        "old": null,
+        "new": "zudo-react/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-transport",
+        "old": null,
+        "new": "json/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 21,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 23,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 26,
+        "tag": "aside",
+        "attribute": "class",
+        "old": "fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full",
+        "new": "fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full",
+        "classification": "wind arbitrary-value whitespace encoding"
+      },
+      {
+        "elementIndex": 38,
+        "tag": "div",
+        "attribute": "class",
+        "old": "flex min-h-[calc(100vh-3.5rem)] justify-center",
+        "new": "flex min-h-[calc(100vh_-_3.5rem)] justify-center",
+        "classification": "wind arbitrary-value whitespace encoding"
+      }
+    ],
+    "historicalDifferenceOnlyBuildId": true,
+    "buildIds": {
+      "historical": [
+        "272cc741fb77c1d9"
+      ],
+      "current": [
+        "0945adee48f50953"
+      ]
+    },
+    "comments": {
+      "before": 0,
+      "after": 14,
+      "addedKinds": {
+        "zr": 7,
+        "/zr": 7
+      }
+    }
+  },
+  "getting-started": {
+    "summary": {
+      "v2": {
+        "rawBytes": 64837,
+        "normalizedBytes": 64843,
+        "sha256Html": "452bf4b1ef86ab6286810e6e0969aecc9d6a450392f4ba64a97b185393077fa6",
+        "normalizedPath": "/tmp/zudo421-parity/a2/v2/getting-started.normalized.html"
+      },
+      "current": {
+        "rawBytes": 66273,
+        "normalizedBytes": 66279,
+        "sha256Html": "c93b91275893d6729e2accac240cb7c63b418f1c80c6793760ee4d27b204007a",
+        "normalizedPath": "/tmp/zudo421-parity/a2/current/getting-started.normalized.html"
+      },
+      "sameNormalizedHtml": false
+    },
+    "changedSpans": [
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-island=SidebarToggle>",
+        "new": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=0945adee48f50953 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1><!--zr:1:0:c--><!--zr:1:1:f-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 style=display:none xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 style=display:none>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<aside class=\"fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full\" data-zd-mobile-sidebar=true inert>",
+        "new": "<aside class=\"fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full\" data-zd-mobile-sidebar=true inert>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:2:c--><!--zr:1:3:s:0--><!--zr:1:4:s:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:5:c--><svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:5-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:6:c--><svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:6-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:7:c--><!--zr:1:8:l--><!--/zr:1:8--><!--/zr:1:7--><!--zr:1:9:c--><!--/zr:1:9-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:4--><!--/zr:1:3--><!--/zr:1:2-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:1--><!--/zr:1:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<aside aria-label=\"Documentation sidebar\" class=\"hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl\" data-zfb-transition-persist=sidebar-en-default id=desktop-sidebar><div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-island=SidebarTree>",
+        "new": "<aside aria-label=\"Documentation sidebar\" class=\"hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh_-_3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl\" data-zfb-transition-persist=sidebar-en-default id=desktop-sidebar><div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=SidebarTree data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1><!--zr:1:0:c--><!--zr:1:1:s:0--><!--zr:1:2:s:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:3:c--><svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:3-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:4:c--><svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:4-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:5:c--><!--zr:1:6:l--><!--zr:1:7:i:s67657474696e672d73746172746564--><!--zr:1:8:s:1--><!--zr:1:9:c-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:10:s:0--><!--/zr:1:10-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:11:c--><!--zr:1:12:s:1--><!--zr:1:13:c--><!--/zr:1:13--><!--/zr:1:12--><!--/zr:1:11--><!--zr:1:14:s:1-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"shrink-0 w-[14px] text-bg\" viewbox=\"0 0 103.395 107.049\" aria-hidden=true fill=currentColor xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:15:c--><svg class=\"shrink-0 w-[14px]\" viewbox=\"0 0 103.395 107.049\" aria-hidden=true fill=currentColor>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:15-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:16:h-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:16-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 rotate-90 text-bg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:17:c--><!--zr:1:18:l--><!--zr:1:19:i:s682d5b302e36323572656d5d20772d5b302e36323572656d5d20736872696e6b2d30207472616e736974696f6e2d7472616e73666f726d206475726174696f6e2d31353020726f746174652d393020746578742d6267--><!--zr:1:20:c--><svg class=\"h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 rotate-90 text-bg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:20--><!--/zr:1:19--><!--/zr:1:18--><!--/zr:1:17-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:14-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:21:s:1-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:22:c--><!--zr:1:23:l--><!--zr:1:24:i:s67657474696e672d737461727465642f636f766572616765--><!--zr:1:25:s:0--><!--zr:1:26:c--><!--zr:1:27:s:1-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:28:c--><!--zr:1:29:s:1--><!--zr:1:30:c--><!--zr:1:31:f-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<a class=\"block py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words text-muted hover:text-accent hover:underline focus:underline focus:text-accent\" style=\"padding-left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + 1.25rem + 5px);\" href=/docs/getting-started/coverage/>",
+        "new": "<!--/zr:1:31--><!--/zr:1:30--><!--/zr:1:29--><!--/zr:1:28--><a class=\"block py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words text-muted hover:text-accent hover:underline focus:underline focus:text-accent\" style=\"padding-left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + 1.25rem + 5px);\" aria-current=false href=/docs/getting-started/coverage/>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:32:h-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:32-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:27--><!--/zr:1:26--><!--/zr:1:25--><!--/zr:1:24--><!--/zr:1:23--><!--/zr:1:22-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:21-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:9--><!--/zr:1:8--><!--/zr:1:7--><!--/zr:1:6--><!--/zr:1:5--><!--zr:1:33:c--><!--/zr:1:33-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:2--><!--/zr:1:1--><!--/zr:1:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<div class=\"flex min-h-[calc(100vh-3.5rem)] justify-center\">",
+        "new": "<div class=\"flex min-h-[calc(100vh_-_3.5rem)] justify-center\">"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[1.575rem] w-[1.575rem] shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-[1.575rem] w-[1.575rem] shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-xs w-icon-xs text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-xs w-icon-xs text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[1.125rem] w-[1.125rem]\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-[1.125rem] w-[1.125rem]\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      }
+    ],
+    "historical4ddChangedSpans": [
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=272cc741fb77c1d9 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>",
+        "new": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=0945adee48f50953 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-build=272cc741fb77c1d9 data-zfb-island=SidebarTree data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>",
+        "new": "<div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=SidebarTree data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>"
+      }
+    ],
+    "semanticEventSequenceUnchanged": true,
+    "attributeChanges": [
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-build",
+        "old": null,
+        "new": "0945adee48f50953",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-protocol",
+        "old": null,
+        "new": "zudo-react/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-transport",
+        "old": null,
+        "new": "json/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 21,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 23,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 26,
+        "tag": "aside",
+        "attribute": "class",
+        "old": "fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full",
+        "new": "fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full",
+        "classification": "wind arbitrary-value whitespace encoding"
+      },
+      {
+        "elementIndex": 30,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 34,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 44,
+        "tag": "aside",
+        "attribute": "class",
+        "old": "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl",
+        "new": "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh_-_3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl",
+        "classification": "wind arbitrary-value whitespace encoding"
+      },
+      {
+        "elementIndex": 45,
+        "tag": "div",
+        "attribute": "data-zfb-build",
+        "old": null,
+        "new": "0945adee48f50953",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 45,
+        "tag": "div",
+        "attribute": "data-zfb-protocol",
+        "old": null,
+        "new": "zudo-react/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 45,
+        "tag": "div",
+        "attribute": "data-zfb-transport",
+        "old": null,
+        "new": "json/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 48,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 52,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 60,
+        "tag": "svg",
+        "attribute": "class",
+        "old": "shrink-0 w-[14px] text-bg",
+        "new": "shrink-0 w-[14px]",
+        "classification": "active category icon inherits currentColor; sidebar-tree-island/index.tsx"
+      },
+      {
+        "elementIndex": 60,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 64,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 71,
+        "tag": "a",
+        "attribute": "aria-current",
+        "old": null,
+        "new": "false",
+        "classification": "authored inactive non-current semantics; sidebar-tree-island/index.tsx"
+      },
+      {
+        "elementIndex": 74,
+        "tag": "div",
+        "attribute": "class",
+        "old": "flex min-h-[calc(100vh-3.5rem)] justify-center",
+        "new": "flex min-h-[calc(100vh_-_3.5rem)] justify-center",
+        "classification": "wind arbitrary-value whitespace encoding"
+      },
+      {
+        "elementIndex": 81,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 84,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 108,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      }
+    ],
+    "historicalDifferenceOnlyBuildId": true,
+    "buildIds": {
+      "historical": [
+        "272cc741fb77c1d9"
+      ],
+      "current": [
+        "0945adee48f50953"
+      ]
+    },
+    "comments": {
+      "before": 0,
+      "after": 88,
+      "addedKinds": {
+        "zr": 44,
+        "/zr": 44
+      }
+    }
+  },
+  "coverage": {
+    "summary": {
+      "v2": {
+        "rawBytes": 75238,
+        "normalizedBytes": 75244,
+        "sha256Html": "2b22f0512bd38d32efc09d5dcff884ea7ec2655b312964acbb47e787f74e979a",
+        "normalizedPath": "/tmp/zudo421-parity/a2/v2/coverage.normalized.html"
+      },
+      "current": {
+        "rawBytes": 77583,
+        "normalizedBytes": 77589,
+        "sha256Html": "91524df4bd2f251a56cca7e425095f59069d2d34367f930bc2899999390fc603",
+        "normalizedPath": "/tmp/zudo421-parity/a2/current/coverage.normalized.html"
+      },
+      "sameNormalizedHtml": false
+    },
+    "changedSpans": [
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-island=SidebarToggle>",
+        "new": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=0945adee48f50953 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1><!--zr:1:0:c--><!--zr:1:1:f-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 style=display:none xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 style=display:none>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-lg w-icon-lg\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<aside class=\"fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full\" data-zd-mobile-sidebar=true inert>",
+        "new": "<aside class=\"fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full\" data-zd-mobile-sidebar=true inert>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:2:c--><!--zr:1:3:s:0--><!--zr:1:4:s:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:5:c--><svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:5-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:6:c--><svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:6-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:7:c--><!--zr:1:8:l--><!--/zr:1:8--><!--/zr:1:7--><!--zr:1:9:c--><!--/zr:1:9-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:4--><!--/zr:1:3--><!--/zr:1:2-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:1--><!--/zr:1:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<aside aria-label=\"Documentation sidebar\" class=\"hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl\" data-zfb-transition-persist=sidebar-en-default id=desktop-sidebar><div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-island=SidebarTree>",
+        "new": "<aside aria-label=\"Documentation sidebar\" class=\"hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh_-_3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl\" data-zfb-transition-persist=sidebar-en-default id=desktop-sidebar><div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=SidebarTree data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1><!--zr:1:0:c--><!--zr:1:1:s:0--><!--zr:1:2:s:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:3:c--><svg class=\"h-icon-sm w-icon-sm shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:3-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:4:c--><svg class=\"h-[14px] w-[14px] text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:4-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:5:c--><!--zr:1:6:l--><!--zr:1:7:i:s67657474696e672d73746172746564--><!--zr:1:8:s:1--><!--zr:1:9:c-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:10:s:0--><!--/zr:1:10-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:11:c--><!--zr:1:12:s:1--><!--zr:1:13:c--><!--/zr:1:13--><!--/zr:1:12--><!--/zr:1:11--><!--zr:1:14:s:1-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<a class=\"flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words text-fg hover:text-accent focus:text-accent\" style=\"padding-left:calc(clamp(0.4rem, 0.8vw, 1.3rem) + 0.15rem);\" href=/docs/getting-started/>",
+        "new": "<a class=\"flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words text-fg hover:text-accent focus:text-accent\" style=\"padding-left:calc(clamp(0.4rem, 0.8vw, 1.3rem) + 0.15rem);\" aria-current=false href=/docs/getting-started/>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"shrink-0 w-[14px] \" viewbox=\"0 0 103.395 107.049\" aria-hidden=true fill=currentColor xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:15:c--><svg class=\"shrink-0 w-[14px]\" viewbox=\"0 0 103.395 107.049\" aria-hidden=true fill=currentColor>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:15-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:16:h-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:16-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 rotate-90 text-muted\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<!--zr:1:17:c--><!--zr:1:18:l--><!--zr:1:19:i:s682d5b302e36323572656d5d20772d5b302e36323572656d5d20736872696e6b2d30207472616e736974696f6e2d7472616e73666f726d206475726174696f6e2d31353020726f746174652d393020746578742d6d75746564--><!--zr:1:20:c--><svg class=\"h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 rotate-90 text-muted\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:20--><!--/zr:1:19--><!--/zr:1:18--><!--/zr:1:17-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:14-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:21:s:1-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:22:c--><!--zr:1:23:l--><!--zr:1:24:i:s67657474696e672d737461727465642f636f766572616765--><!--zr:1:25:s:0--><!--zr:1:26:c--><!--zr:1:27:s:1-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:28:c--><!--zr:1:29:s:1--><!--zr:1:30:c--><!--zr:1:31:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:31--><!--/zr:1:30--><!--/zr:1:29--><!--/zr:1:28-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:32:h-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:32-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:27--><!--/zr:1:26--><!--/zr:1:25--><!--/zr:1:24--><!--/zr:1:23--><!--/zr:1:22-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:21-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:9--><!--/zr:1:8--><!--/zr:1:7--><!--/zr:1:6--><!--/zr:1:5--><!--zr:1:33:c--><!--/zr:1:33-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:2--><!--/zr:1:1--><!--/zr:1:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<div class=\"flex min-h-[calc(100vh-3.5rem)] justify-center\">",
+        "new": "<div class=\"flex min-h-[calc(100vh_-_3.5rem)] justify-center\">"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[1.575rem] w-[1.575rem] shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-[1.575rem] w-[1.575rem] shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-xs w-icon-xs text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-xs w-icon-xs text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-xs w-icon-xs text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-xs w-icon-xs text-muted shrink-0\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-island=MobileToc>",
+        "new": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=MobileToc data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1><!--zr:1:0:c-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-icon-sm w-icon-sm text-muted transition-transform duration-150\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-icon-sm w-icon-sm text-muted transition-transform duration-150\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:1:c--><!--zr:1:2:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:2--><!--/zr:1:1-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:3:c--><!--zr:1:4:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:4--><!--/zr:1:3-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:5:c--><!--zr:1:6:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:6--><!--/zr:1:5-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:7:c--><!--zr:1:8:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:8--><!--/zr:1:7-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:9:c--><!--zr:1:10:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:10--><!--/zr:1:9-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:11:c--><!--zr:1:12:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:12--><!--/zr:1:11-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:13:c--><!--zr:1:14:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:14--><!--/zr:1:13-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:15:c--><!--zr:1:16:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:16--><!--/zr:1:15-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:17:c--><!--zr:1:18:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:18--><!--/zr:1:17-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:0-->"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Overview\" class=\"text-accent underline hover:text-accent-hover\" href=#overview>",
+        "new": "<a aria-label=\"Direct link to Overview\" class=hash-link href=#overview>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Details\" class=\"text-accent underline hover:text-accent-hover\" href=#overview-details>",
+        "new": "<a aria-label=\"Direct link to Details\" class=hash-link href=#overview-details>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Overview\" class=\"text-accent underline hover:text-accent-hover\" href=#overview-details-overview>",
+        "new": "<a aria-label=\"Direct link to Overview\" class=hash-link href=#overview-details-overview>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Configuration\" class=\"text-accent underline hover:text-accent-hover\" href=#overview-configuration>",
+        "new": "<a aria-label=\"Direct link to Configuration\" class=hash-link href=#overview-configuration>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Details\" class=\"text-accent underline hover:text-accent-hover\" href=#details>",
+        "new": "<a aria-label=\"Direct link to Details\" class=hash-link href=#details>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Overview\" class=\"text-accent underline hover:text-accent-hover\" href=#details-overview>",
+        "new": "<a aria-label=\"Direct link to Overview\" class=hash-link href=#details-overview>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Task List\" class=\"text-accent underline hover:text-accent-hover\" href=#task-list>",
+        "new": "<a aria-label=\"Direct link to Task List\" class=hash-link href=#task-list>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Footnote\" class=\"text-accent underline hover:text-accent-hover\" href=#footnote>",
+        "new": "<a aria-label=\"Direct link to Footnote\" class=hash-link href=#footnote>"
+      },
+      {
+        "operation": "replace",
+        "old": "<a aria-label=\"Direct link to Directives\" class=\"text-accent underline hover:text-accent-hover\" href=#directives>",
+        "new": "<a aria-label=\"Direct link to Directives\" class=hash-link href=#directives>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div class=\"admonition admonition-note\" data-admonition=note>",
+        "new": "<div class=admonition-note data-admonition=note>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div aria-level=2 class=sr-only id=footnote-label role=heading style=position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0;>",
+        "new": "<div aria-level=2 class=sr-only id=footnote-label role=heading style=position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0>"
+      },
+      {
+        "operation": "replace",
+        "old": "<svg class=\"h-[1.125rem] w-[1.125rem]\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2 xmlns=http://www.w3.org/2000/svg>",
+        "new": "<svg class=\"h-[1.125rem] w-[1.125rem]\" viewbox=\"0 0 24 24\" aria-hidden=true fill=none stroke=currentColor stroke-width=2>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-island=Toc><nav aria-label=\"Table of contents\" class=\"hidden xl:flex flex-col w-[280px] shrink-0 sticky top-[3.5rem] self-start z-sidebar pt-vsp-xl lg:pt-vsp-2xl h-[calc(100vh-3.5rem)]\" data-zd-toc=true>",
+        "new": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=Toc data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1><!--zr:1:0:c--><nav aria-label=\"Table of contents\" class=\"hidden xl:flex flex-col w-[280px] shrink-0 sticky top-[3.5rem] self-start z-sidebar pt-vsp-xl lg:pt-vsp-2xl h-[calc(100vh_-_3.5rem)]\" data-zd-toc=true>"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:1:c--><!--zr:1:2:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:2--><!--/zr:1:1-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:3:c--><!--zr:1:4:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:4--><!--/zr:1:3-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:5:c--><!--zr:1:6:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:6--><!--/zr:1:5-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:7:c--><!--zr:1:8:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:8--><!--/zr:1:7-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:9:c--><!--zr:1:10:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:10--><!--/zr:1:9-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:11:c--><!--zr:1:12:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:12--><!--/zr:1:11-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:13:c--><!--zr:1:14:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:14--><!--/zr:1:13-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:15:c--><!--zr:1:16:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:16--><!--/zr:1:15-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--zr:1:17:c--><!--zr:1:18:f-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:18--><!--/zr:1:17-->"
+      },
+      {
+        "operation": "insert",
+        "old": "",
+        "new": "<!--/zr:1:0-->"
+      }
+    ],
+    "historical4ddChangedSpans": [
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=272cc741fb77c1d9 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>",
+        "new": "<div data-props='{\"nodes\":[],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"backToMenuLabel\":\"Back to main menu\",\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=visible data-zfb-build=0945adee48f50953 data-zfb-island=SidebarToggle data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-build=272cc741fb77c1d9 data-zfb-island=SidebarTree data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>",
+        "new": "<div data-props='{\"nodes\":[{\"slug\":\"getting-started\",\"label\":\"Getting Started\",\"description\":\"A minimal doc for the route-injection build proof\",\"position\":999,\"href\":\"/docs/getting-started/\",\"hasPage\":true,\"children\":[{\"slug\":\"getting-started/coverage\",\"label\":\"Coverage\",\"description\":\"Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes\",\"position\":999,\"href\":\"/docs/getting-started/coverage/\",\"hasPage\":true,\"children\":[],\"sortOrder\":\"asc\",\"rank\":1}],\"sortOrder\":\"asc\",\"rank\":1}],\"currentSlug\":\"getting-started/coverage\",\"rootMenuItems\":[],\"locale\":\"en\",\"themeLabels\":{\"appearance\":\"Appearance\",\"light\":\"Light\",\"dark\":\"Dark\",\"system\":\"System\",\"systemHelper\":\"Follows device \u00b7 currently {mode}\"},\"themeRespectSystem\":false,\"dateFormats\":{\"full\":\"locale\",\"monthDay\":\"locale\",\"year\":\"locale\",\"yearMonth\":\"locale\",\"numericMonthDay\":\"locale\"}}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=SidebarTree data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-build=272cc741fb77c1d9 data-zfb-island=MobileToc data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>",
+        "new": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=MobileToc data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>"
+      },
+      {
+        "operation": "replace",
+        "old": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-build=272cc741fb77c1d9 data-zfb-island=Toc data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>",
+        "new": "<div data-props='{\"headings\":[{\"depth\":2,\"slug\":\"overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-details\",\"text\":\"Details\"},{\"depth\":4,\"slug\":\"overview-details-overview\",\"text\":\"Overview\"},{\"depth\":3,\"slug\":\"overview-configuration\",\"text\":\"Configuration\"},{\"depth\":2,\"slug\":\"details\",\"text\":\"Details\"},{\"depth\":3,\"slug\":\"details-overview\",\"text\":\"Overview\"},{\"depth\":2,\"slug\":\"task-list\",\"text\":\"Task List\"},{\"depth\":2,\"slug\":\"footnote\",\"text\":\"Footnote\"},{\"depth\":2,\"slug\":\"directives\",\"text\":\"Directives\"}],\"title\":\"On this page\"}' data-when=load data-zfb-build=0945adee48f50953 data-zfb-island=Toc data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1>"
+      }
+    ],
+    "semanticEventSequenceUnchanged": true,
+    "attributeChanges": [
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-build",
+        "old": null,
+        "new": "0945adee48f50953",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-protocol",
+        "old": null,
+        "new": "zudo-react/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 19,
+        "tag": "div",
+        "attribute": "data-zfb-transport",
+        "old": null,
+        "new": "json/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 21,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 23,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 26,
+        "tag": "aside",
+        "attribute": "class",
+        "old": "fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full",
+        "new": "fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col border-r border-muted bg-bg transition-transform duration-200 lg:hidden -translate-x-full",
+        "classification": "wind arbitrary-value whitespace encoding"
+      },
+      {
+        "elementIndex": 30,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 34,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 44,
+        "tag": "aside",
+        "attribute": "class",
+        "old": "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl",
+        "new": "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh_-_3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl",
+        "classification": "wind arbitrary-value whitespace encoding"
+      },
+      {
+        "elementIndex": 45,
+        "tag": "div",
+        "attribute": "data-zfb-build",
+        "old": null,
+        "new": "0945adee48f50953",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 45,
+        "tag": "div",
+        "attribute": "data-zfb-protocol",
+        "old": null,
+        "new": "zudo-react/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 45,
+        "tag": "div",
+        "attribute": "data-zfb-transport",
+        "old": null,
+        "new": "json/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 48,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 52,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 58,
+        "tag": "a",
+        "attribute": "aria-current",
+        "old": null,
+        "new": "false",
+        "classification": "authored inactive non-current semantics; sidebar-tree-island/index.tsx"
+      },
+      {
+        "elementIndex": 60,
+        "tag": "svg",
+        "attribute": "class",
+        "old": "shrink-0 w-[14px] ",
+        "new": "shrink-0 w-[14px]",
+        "classification": "class whitespace serialization"
+      },
+      {
+        "elementIndex": 60,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 64,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 74,
+        "tag": "div",
+        "attribute": "class",
+        "old": "flex min-h-[calc(100vh-3.5rem)] justify-center",
+        "new": "flex min-h-[calc(100vh_-_3.5rem)] justify-center",
+        "classification": "wind arbitrary-value whitespace encoding"
+      },
+      {
+        "elementIndex": 81,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 84,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 88,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 91,
+        "tag": "div",
+        "attribute": "data-zfb-build",
+        "old": null,
+        "new": "0945adee48f50953",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 91,
+        "tag": "div",
+        "attribute": "data-zfb-protocol",
+        "old": null,
+        "new": "zudo-react/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 91,
+        "tag": "div",
+        "attribute": "data-zfb-transport",
+        "old": null,
+        "new": "json/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 95,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 126,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 129,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 132,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 135,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 138,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 141,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 144,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 153,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 158,
+        "tag": "a",
+        "attribute": "class",
+        "old": "text-accent underline hover:text-accent-hover",
+        "new": "hash-link",
+        "classification": "measured presentation regression; content.css hash-link rules"
+      },
+      {
+        "elementIndex": 160,
+        "tag": "div",
+        "attribute": "class",
+        "old": "admonition admonition-note",
+        "new": "admonition-note",
+        "classification": "redundant base class removed; data-admonition styling retained"
+      },
+      {
+        "elementIndex": 168,
+        "tag": "div",
+        "attribute": "style",
+        "old": "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0;",
+        "new": "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0",
+        "classification": "equivalent trailing-semicolon serialization; native footnote renderer"
+      },
+      {
+        "elementIndex": 176,
+        "tag": "svg",
+        "attribute": "xmlns",
+        "old": "http://www.w3.org/2000/svg",
+        "new": null,
+        "classification": "HTML SVG namespace serialization"
+      },
+      {
+        "elementIndex": 182,
+        "tag": "div",
+        "attribute": "data-zfb-build",
+        "old": null,
+        "new": "0945adee48f50953",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 182,
+        "tag": "div",
+        "attribute": "data-zfb-protocol",
+        "old": null,
+        "new": "zudo-react/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 182,
+        "tag": "div",
+        "attribute": "data-zfb-transport",
+        "old": null,
+        "new": "json/1",
+        "classification": "required owned-runtime transport metadata"
+      },
+      {
+        "elementIndex": 183,
+        "tag": "nav",
+        "attribute": "class",
+        "old": "hidden xl:flex flex-col w-[280px] shrink-0 sticky top-[3.5rem] self-start z-sidebar pt-vsp-xl lg:pt-vsp-2xl h-[calc(100vh-3.5rem)]",
+        "new": "hidden xl:flex flex-col w-[280px] shrink-0 sticky top-[3.5rem] self-start z-sidebar pt-vsp-xl lg:pt-vsp-2xl h-[calc(100vh_-_3.5rem)]",
+        "classification": "wind arbitrary-value whitespace encoding"
+      }
+    ],
+    "historicalDifferenceOnlyBuildId": true,
+    "buildIds": {
+      "historical": [
+        "272cc741fb77c1d9"
+      ],
+      "current": [
+        "0945adee48f50953"
+      ]
+    },
+    "comments": {
+      "before": 0,
+      "after": 164,
+      "addedKinds": {
+        "zr": 82,
+        "/zr": 82
+      }
+    }
+  }
+}

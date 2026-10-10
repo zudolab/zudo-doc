@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export interface DocMetainfoProps {
   /**
@@ -35,10 +33,9 @@ export interface DocMetainfoProps {
 export const DEFAULT_CREATED_LABEL = "Created";
 export const DEFAULT_UPDATED_LABEL = "Updated";
 
-function ClockIcon(): VNode {
+function ClockIcon(): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-icon-xs w-icon-xs"
       fill="none"
       viewBox="0 0 24 24"
@@ -55,10 +52,9 @@ function ClockIcon(): VNode {
   );
 }
 
-function RefreshIcon(): VNode {
+function RefreshIcon(): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-icon-xs w-icon-xs"
       fill="none"
       viewBox="0 0 24 24"
@@ -75,10 +71,9 @@ function RefreshIcon(): VNode {
   );
 }
 
-function UserIcon(): VNode {
+function UserIcon(): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-icon-xs w-icon-xs"
       fill="none"
       viewBox="0 0 24 24"
@@ -107,7 +102,7 @@ function UserIcon(): VNode {
  * Returns `null` when no displayable field is provided, mirroring the
  * original `hasInfo && (...)` guard.
  */
-export function DocMetainfo(props: DocMetainfoProps): VNode | null {
+export function DocMetainfo(props: DocMetainfoProps): Child {
   const {
     createdAt,
     updatedAt,

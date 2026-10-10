@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createInlineVersionSwitcher (epic #2344, S8).
  *
@@ -18,8 +17,15 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
+import { isDescription } from "@takazudo/zfb/zudo-react";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { createInlineVersionSwitcher } from "../index.js";
 import type { InlineVersionSwitcherDeps } from "../index.js";
+
+function asDescription(value: Child | undefined): Description {
+  if (!isDescription(value)) throw new Error("Expected a version-switcher description");
+  return value;
+}
 
 function makeDeps(overrides: Partial<InlineVersionSwitcherDeps> = {}): InlineVersionSwitcherDeps {
   return {
@@ -113,7 +119,7 @@ describe("createInlineVersionSwitcher — #3215 unavailableVersions wiring", () 
     );
     const result = buildInlineVersionSwitcher("latest-only-page", "en");
     expect(getUnavailableVersions).toHaveBeenCalledWith("latest-only-page", "en");
-    expect(result?.props.unavailableVersions).toEqual(new Set(["v1"]));
+    expect(asDescription(result).props.unavailableVersions).toEqual(new Set(["v1"]));
   });
 
   it("passes unavailableVersions through as undefined when there is no availability data", () => {
@@ -122,7 +128,7 @@ describe("createInlineVersionSwitcher — #3215 unavailableVersions wiring", () 
       makeDeps({ getUnavailableVersions }),
     );
     const result = buildInlineVersionSwitcher("getting-started", "en");
-    expect(result?.props.unavailableVersions).toBeUndefined();
+    expect(asDescription(result).props.unavailableVersions).toBeUndefined();
   });
 });
 
@@ -147,8 +153,8 @@ describe("createInlineVersionSwitcher — back-compat: getUnavailableVersions om
   it("still renders the switcher, with unavailableVersions undefined (the pre-#3215 rendering) and no throw", () => {
     const result = createInlineVersionSwitcher(preEpicDeps)("getting-started", "en");
     expect(result).toBeDefined();
-    expect(result?.props.unavailableVersions).toBeUndefined();
-    expect(result?.props.versionUrls).toEqual({ v1: "/en/v/v1/docs/getting-started" });
+    expect(asDescription(result).props.unavailableVersions).toBeUndefined();
+    expect(asDescription(result).props.versionUrls).toEqual({ v1: "/en/v/v1/docs/getting-started" });
   });
 
   it("emits no warning — omitting it reproduces prior behavior rather than degrading it", () => {

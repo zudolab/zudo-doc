@@ -60,8 +60,8 @@ describe("bugfix #1793 / #2029 — sidebar restore script imported from dist", (
     expect(factory).toContain(
       'import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "../sidebar-resizer/index.js"',
     );
-    // The script must still be emitted (dangerouslySetInnerHTML), not just imported.
-    expect(factory).toContain("SIDEBAR_RESIZER_RESTORE_SCRIPT }} />");
+    // The script must still be emitted as trusted static rawHtml, not just imported.
+    expect(factory).toContain("rawHtml={SIDEBAR_RESIZER_RESTORE_SCRIPT} />");
   });
 
   it("generated _head-with-defaults.tsx is absent (chrome collapsed into _chrome.ts, #2420)", async () => {

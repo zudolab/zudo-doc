@@ -1,4 +1,5 @@
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import { h } from "@takazudo/zfb/zudo-react";
 import type { HeadProps } from "./types.js";
 
 /**
@@ -24,21 +25,21 @@ export function OgTags(props: {
   const ogDescription = props.ogDescription ?? props.description;
   return (
     <>
-      <meta property="og:title" content={ogTitle} />
+      {h("meta", { property: "og:title", content: ogTitle })}
       {ogDescription !== undefined && (
-        <meta property="og:description" content={ogDescription} />
+        h("meta", { property: "og:description", content: ogDescription })
       )}
       {props.ogType !== undefined && (
-        <meta property="og:type" content={props.ogType} />
+        h("meta", { property: "og:type", content: props.ogType })
       )}
       {props.ogUrl !== undefined && (
-        <meta property="og:url" content={props.ogUrl} />
+        h("meta", { property: "og:url", content: props.ogUrl })
       )}
       {props.ogImage !== undefined && (
-        <meta property="og:image" content={props.ogImage} />
+        h("meta", { property: "og:image", content: props.ogImage })
       )}
       {props.ogSiteName !== undefined && (
-        <meta property="og:site_name" content={props.ogSiteName} />
+        h("meta", { property: "og:site_name", content: props.ogSiteName })
       )}
     </>
   );

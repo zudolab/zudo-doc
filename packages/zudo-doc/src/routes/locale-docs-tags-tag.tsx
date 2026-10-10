@@ -1,10 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /[locale]/docs/tags/[tag] — package-owned
 // equivalent of pages/[locale]/docs/tags/[tag].tsx (A1 #2361). One route per
 // (non-default locale, tag) pair.
 
-import type { JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { TagInfo } from "../tag-pages/index.js";
 import { settings } from "./_context.js";
 import { collectTagMapForLocale, TagDetailPageView } from "./_chrome.js";
@@ -34,6 +33,6 @@ interface PageProps {
   tagInfo: TagInfo;
 }
 
-export default function LocaleDocTagPage({ params, tagInfo }: PageProps): JSX.Element {
+export default function LocaleDocTagPage({ params, tagInfo }: PageProps): Child {
   return <TagDetailPageView locale={params.locale} tag={params.tag} tagInfo={tagInfo} />;
 }

@@ -1,9 +1,7 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import { h } from "preact";
-import type { ComponentType } from "preact";
-import render from "preact-render-to-string";
+import { h } from "@takazudo/zfb/zudo-react";
+import type { Component } from "@takazudo/zfb/zudo-react";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { describe, expect, it } from "vitest";
 import type { AssetManifest } from "../../route-context-payload/types.js";
 import { createMdxComponents } from "../index.js";
@@ -55,9 +53,9 @@ function renderImageParagraph(
   imageEnlarge = true,
 ) {
   const components = makeComponents(assetManifest, imageEnlarge);
-  const Img = components.img as ComponentType<Record<string, unknown>>;
-  const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
-  return render(Paragraph({ children: h(Img, props) }) as never);
+  const Img = components.img as Component<Record<string, unknown>>;
+  const Paragraph = components.p as Component<Record<string, unknown>>;
+  return render(h(Paragraph, null, h(Img, props)));
 }
 
 describe("manifest image captions", () => {
@@ -87,7 +85,7 @@ describe("manifest image captions", () => {
 
   it("preserves the active locale in the image-caption viewer link", () => {
     const components = makeComponents(manifest, true, "ja");
-    const Img = components.img as ComponentType<Record<string, unknown>>;
+    const Img = components.img as Component<Record<string, unknown>>;
     const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
     const html = render(Paragraph({
       children: h(Img, { src: "/media/images/diagram.png", alt: "Diagram" }),
@@ -115,7 +113,7 @@ describe("manifest image captions", () => {
         NoteTrayIndex: nav,
       },
     });
-    const Img = components.img as ComponentType<Record<string, unknown>>;
+    const Img = components.img as Component<Record<string, unknown>>;
     const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
     const html = render(Paragraph({
       children: h(Img, { src: "/media/images/diagram.png", alt: "Diagram" }),
@@ -187,5 +185,39 @@ describe("manifest image captions", () => {
     });
     expect(html).toContain('class="zd-enlargeable"');
     expect(html).not.toContain("p-hsp-lg");
+  });
+});
+
+describe("MDX component map SSR fixture", () => {
+  it("composes resumed and default lists, task inputs, and a table", () => {
+    const components = makeComponents(null);
+    const Ol = components.ol as Component<Record<string, unknown>>;
+    const Ul = components.ul as Component<Record<string, unknown>>;
+    const Table = components.table as Component<Record<string, unknown>>;
+    const html = render(h("article", null,
+      h(Ol, { start: 3, class: "chapter" }, h("li", null, "Third")),
+      h(Ol, {}, h("li", null, "First")),
+      h(Ul, {}, h("li", null, h("input", { type: "checkbox", checked: true, disabled: true }), " Done")),
+      h(Table, {}, h("tbody", null, h("tr", null, h("td", null, "Cell")))),
+    ));
+    expect(html).toContain('<ol start="3" class="chapter"');
+    expect(html).toContain('<ol style=');
+    expect(html).toContain('<input type="checkbox" checked disabled>');
+    expect(html).toContain('<tbody><tr><td>Cell</td></tr></tbody>');
+    expect(html).not.toContain('rawHtml');
+  });
+
+  it("renders a code-group MDX fence with native pre text and tab buttons", () => {
+    const components = makeComponents(null);
+    const CodeGroup = components.CodeGroup as Component<Record<string, unknown>>;
+    const html = render(h(CodeGroup, { tabs: ["TS", "JS"], name: "lang" },
+      h("pre", { "data-lang": "ts" }, "\nconst x = 1;"),
+      h("pre", { "data-lang": "js" }, "\nconst x = 2;"),
+    ));
+    expect(html).toContain('data-tabs');
+    expect(html).toContain('data-group-id="lang"');
+    expect(html).toContain('data-tab-btn="TS-0"');
+    expect(html).toContain('data-tab-btn="JS-1"');
+    expect(html).toContain('<pre data-lang="ts">\n\nconst x = 1;</pre>');
   });
 });

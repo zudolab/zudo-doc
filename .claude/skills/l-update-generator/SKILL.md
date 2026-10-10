@@ -12,7 +12,7 @@ Detect and fix drift between the main zudo-doc project and the `create-zudo-doc`
 The generator emits the **locked ~12-file minimal manifest** — one config
 file (`zfb.config.ts`, `zudoDoc({ ...only fields the user chose })`) plus
 markdown content plus a handful of unavoidable root files. Everything else
-(layout, chrome, islands, default `@theme` tokens, even the doc ROUTES
+(layout, chrome, islands, default `:root` tokens, even the doc ROUTES
 themselves via `packageOwnedRoutes`) ships from `@takazudo/zudo-doc` in
 `node_modules`. There is no more copy-then-strip and no more `@slot:`
 injection anchors:
@@ -77,7 +77,7 @@ The field census now lives in ONE place — the package, not this repo's own
 
 - **Census (source of truth)**: `packages/zudo-doc/src/config.ts` —
   `ZudoDocConfig` (the documented field surface, every field carries a
-  `@default` JSDoc) and `DEFAULT_SETTINGS` (the actual default values).
+  `@default` JSDoc) and browser-safe `settings-defaults.ts` (the actual `DEFAULT_SETTINGS`, re-exported by `config.ts`).
 - **Generator**: `packages/create-zudo-doc/src/zfb-config-gen.ts` —
   `DEFAULT_MIRROR` (a hand-kept local copy of `DEFAULT_SETTINGS`, only for
   fields the generator can ever set — it can't `import` the package, see the
@@ -105,7 +105,7 @@ Compare dependencies:
 - **Main**: `package.json` — root dependencies
 - **Generator**: `packages/create-zudo-doc/src/scaffold.ts` `generatePackageJson()` — generated deps
 
-Check for packages used in base template files and feature files that are not included in the generated package.json. Remember: `zod`, `preact`, `preact-render-to-string`, `diff`, and `@takazudo/zdtp` are unconditional base deps now (each has a header comment explaining the "optional peer that's actually required at build time" trap — see `generatePackageJson()`).
+Check for packages used in base template files and feature files that are not included in the generated package.json. Read `generatePackageJson()` for the actual dependency branches: zfb family pins stay aligned; zod is required; zdtp and its Preact peer are feature-selected. `diff` and `katex` remain optional runtime peers. No `preact-render-to-string` or React compatibility dependency is needed for owned JSX.
 
 ### 1c. zfb config / preset drift
 
@@ -183,7 +183,7 @@ Present a clear drift report:
 
 For each drift item found:
 
-1. **Config-field drift** → Update `zfb-config-gen.ts`'s `DEFAULT_MIRROR` + `buildDesiredConfig()` + `FIELD_ORDER`. If the field doesn't exist yet on `ZudoDocConfig`, add it there first (with a `@default` JSDoc — enforced by `config-jsdoc.test.ts`) and to `DEFAULT_SETTINGS`.
+1. **Config-field drift** → Update `zfb-config-gen.ts`'s `DEFAULT_MIRROR` + `buildDesiredConfig()` + `FIELD_ORDER`. If the field doesn't exist yet on `ZudoDocConfig`, add it there first (with a `@default` JSDoc — enforced by `config-jsdoc.test.ts`) and to `settings-defaults.ts`'s `DEFAULT_SETTINGS`.
 2. **Dependency drift** → Update `scaffold.ts` `generatePackageJson()` to add/remove deps
 3. **Preset drift** → Update `packages/zudo-doc/src/preset.ts`'s `zudoDocPreset()` to wire the plugin/collection from the settings field
 4. **Feature composition drift** → Create/update feature module in `src/features/`, register it in `src/features/index.ts`, add template files only if there's a genuine gap (check whether `@takazudo/zudo-doc` already ships the behavior first)
@@ -199,7 +199,7 @@ After fixes:
 
 | File | Role |
 |------|------|
-| `packages/zudo-doc/src/config.ts` | Canonical field census — `ZudoDocConfig` (documented, `@default`-tagged) + `DEFAULT_SETTINGS`. Source of truth for every generated project's field surface. |
+| `packages/zudo-doc/src/config.ts` | Canonical field census — `ZudoDocConfig` (documented, `@default`-tagged); browser-safe `settings-defaults.ts` owns `DEFAULT_SETTINGS`. Source of truth for every generated project's field surface. |
 | `src/config/settings.ts` | This repo's own showcase settings (informal cross-check only — see Step 1a) |
 | `zfb.config.ts` | Main project zfb config — `zudoDoc({ ...settings, chromeBindingsModule: "./src/chrome-bindings" })` |
 | `packages/create-zudo-doc/src/zfb-config-gen.ts` | The SINGLE config generator — emits `defineConfig(zudoDoc({...}))`, diff-from-defaults against `DEFAULT_MIRROR` (a local, hand-kept copy of `DEFAULT_SETTINGS`) |

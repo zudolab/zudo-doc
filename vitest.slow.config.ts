@@ -1,34 +1,17 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
+import { zfb3SourceAliases } from "./vitest.config";
 
-/**
- * PR-gated slow root-unit lane. These specs exercise shell scripts and CLIs
- * in child processes, so they are excluded from the default root unit lane
- * but remain blocking coverage in CI and `pnpm b4push`.
- */
+/** PR-gated subprocess suite. */
 export default defineConfig({
+  esbuild: { jsx: "automatic", jsxImportSource: "@takazudo/zfb/zudo-react" },
   resolve: {
-    alias: {
-      "@/": resolve(__dirname, "src") + "/",
-      // Keep the root test aliases in the dedicated config as well: the tags
-      // audit suite imports the project config and package theme graph.
-      "react/jsx-runtime": "preact/jsx-runtime",
-      "react/jsx-dev-runtime": "preact/jsx-runtime",
-      "react-dom/test-utils": "preact/test-utils",
-      "react-dom": "preact/compat",
-      react: "preact/compat",
-    },
+    alias: [{ find: "@/", replacement: resolve(__dirname, "src") + "/" }, ...zfb3SourceAliases()],
   },
   test: {
     name: "slow-unit",
     include: ["scripts/__tests__/**/*.slow.test.ts"],
-    // Keep subprocess-heavy files sequential on constrained CI runners.
     fileParallelism: false,
     testTimeout: 60_000,
-    server: {
-      deps: {
-        inline: [/@takazudo\/zfb/],
-      },
-    },
   },
 });

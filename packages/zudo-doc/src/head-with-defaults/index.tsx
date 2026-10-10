@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // head-with-defaults — factory for the og:title / og:description / color-scheme
 // head injection (epic #2344, S5).
 //
@@ -11,7 +10,8 @@
 //
 // Pure SSR — no client-only imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import { h } from "@takazudo/zfb/zudo-react";
 import { OgTags, TwitterCard } from "../head/index.js";
 import type { HeadProps } from "../head/types.js";
 import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "../sidebar-resizer/index.js";
@@ -37,6 +37,8 @@ export interface HeadWithDefaultsProps {
    * `<link rel="canonical" href="...">`.
    */
   canonical?: string;
+  /** Page-specific alternate links, such as an exported Markdown version. */
+  alternateLinks?: HeadProps["alternateLinks"];
 }
 
 /** Settings subset read by {@link createHeadWithDefaults}. Retained for the
@@ -52,12 +54,27 @@ export interface HeadWithDefaultsSettings {
     twitterCreator?: string;
   };
   siteName: string;
+  /** Emit agent-discovery links only when the opt-in static export is enabled. */
+  agentExport?: boolean;
+  /** Existing llms.txt output setting; retained independently from agent export. */
+  llmsTxt?: boolean;
   colorMode?: ColorSchemeProviderColorMode | null | false;
   sidebarResizer?: boolean;
   /** Configured theme-pack slug (ADR `docs/adr/theme-packs.md`, #2822). */
   themePack?: string;
   /** Favicon link set — see {@link resolveFaviconLinks} for the emission table. */
   favicon?: string | FaviconConfig | false;
+}
+
+/** Keep the configured media inside the same bounded inline handler accepted
+ * by the former head serializer. Native head rendering escapes HTML attributes,
+ * but it does not validate JavaScript inserted into an event attribute. */
+function mediaSwapHandler(media: string | undefined): string {
+  const handler = `this.media='${media ?? "all"}'`;
+  if (!/^this\.media='[a-z\d\s(),:.%+\-/*<>=]*'$/i.test(handler)) {
+    throw new TypeError("Async stylesheet media cannot form a safe onload handler");
+  }
+  return handler;
 }
 
 // ── favicon emission (#3460) ────────────────────────────────────────────────
@@ -238,6 +255,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
     title,
     description,
     canonical,
+    alternateLinks,
   }: HeadWithDefaultsProps): JSX.Element {
     const { metaTags } = settings;
 
@@ -280,9 +298,9 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
             the companion tags don't dangle when og:image itself was suppressed. */}
         {ogImageUrl !== undefined && (
           <>
-            <meta property="og:image:width" content="1200" />
-            <meta property="og:image:height" content="630" />
-            <meta property="og:image:alt" content={composeMetaTitle(title)} />
+            {h("meta", { property: "og:image:width", content: "1200" })}
+            {h("meta", { property: "og:image:height", content: "630" })}
+            {h("meta", { property: "og:image:alt", content: composeMetaTitle(title) })}
           </>
         )}
         {metaTags.twitterCard !== false && metaTags.twitterCard !== undefined && (
@@ -315,7 +333,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
             restore script, which is likewise hoisted into <head> (emitted
             from doc-page-shell's head slot via createSidebarVisibilityPrepaint,
             zudolab/zudo-doc#2571). */}
-        {settings.sidebarResizer && <script dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }} />}
+        {settings.sidebarResizer && <script rawHtml={SIDEBAR_RESIZER_RESTORE_SCRIPT} />}
         {/* favicon set — see resolveFaviconLinks() for the settings.favicon
             emission table. Omitting the setting keeps the historical four
             links, byte-identical, withBase()-prefixed. */}
@@ -323,6 +341,18 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
           <link key={i} {...attrs} />
         ))}
         {canonical !== undefined && <link rel="canonical" href={canonical} />}
+        {alternateLinks?.map((alternate, i) => (
+          <link
+            key={`page-alternate:${i}`}
+            rel={alternate.rel}
+            href={alternate.href}
+            {...(alternate.type ? { type: alternate.type } : {})}
+            {...(alternate.title ? { title: alternate.title } : {})}
+          />
+        ))}
+        {settings.agentExport && settings.llmsTxt && (
+          <link rel="alternate" href={withBase("/llms.txt")} type="text/plain" />
+        )}
         {/* Site-wide <head> extras from settings.head (SiteHeadConfig).
             The entire block is gated on ctx.settings.head being present so that
             the DEFAULT path (no settings.head) emits NOTHING — keeping the
@@ -338,27 +368,23 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                 {...(p.crossorigin ? { crossorigin: p.crossorigin } : {})}
               />
             ))}
-            {ctx.settings.head.preload?.map((p, i) => (
-              <link
-                key={i}
-                rel="preload"
-                as={p.as}
-                href={p.href}
-                {...(p.type ? { type: p.type } : {})}
-                {...(p.crossorigin ? { crossorigin: p.crossorigin } : {})}
-              />
-            ))}
+            {ctx.settings.head.preload?.map((p, i) =>
+              h("link", {
+                key: i,
+                rel: "preload",
+                as: p.as,
+                href: p.href,
+                ...(p.type ? { type: p.type } : {}),
+                ...(p.crossorigin ? { crossorigin: p.crossorigin } : {}),
+              }),
+            )}
             {ctx.settings.head.stylesheets?.map((s, i) =>
               s.async ? (
                 // Non-render-blocking async stylesheet:
                 //   <link rel="stylesheet" href media="print" onload="this.media='all'">
                 //   <noscript><link rel="stylesheet" href></noscript>
                 //
-                // SSR note: preact-render-to-string emits string-valued on* props as
-                // literal HTML attributes (only function-valued event handlers are
-                // stripped). We use `as any` to bypass Preact's JSX types, which
-                // expect a function for onload. The new unit test pins the exact
-                // emitted string to guard this contract.
+                // Preserve the bounded media swap before native JSX rendering.
                 <>
                   <link
                     key={`${i}-link`}
@@ -366,16 +392,16 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                     href={s.href}
                     {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
                     media="print"
-                    // Swap to the configured media (default "all") once loaded.
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    {...({ onload: `this.media='${s.media ?? "all"}'` } as any)}
+                    onload={mediaSwapHandler(s.media)}
                   />
-                  <noscript
-                    key={`${i}-noscript`}
-                    dangerouslySetInnerHTML={{
-                      __html: `<link rel="stylesheet" href="${s.href.replace(/"/g, "&quot;")}"${s.media ? ` media="${s.media}"` : ""}${s.crossorigin ? ` crossorigin="${s.crossorigin}"` : ""}>`,
-                    }}
-                  />
+                  <noscript key={`${i}-noscript`}>
+                    <link
+                      rel="stylesheet"
+                      href={s.href}
+                      {...(s.media ? { media: s.media } : {})}
+                      {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
+                    />
+                  </noscript>
                 </>
               ) : (
                 <link
@@ -396,14 +422,14 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                 {...(a.title ? { title: a.title } : {})}
               />
             ))}
-            {ctx.settings.head.meta?.map((m, i) => (
-              <meta
-                key={i}
-                {...(m.name ? { name: m.name } : {})}
-                {...(m.property ? { property: m.property } : {})}
-                content={m.content}
-              />
-            ))}
+            {ctx.settings.head.meta?.map((m, i) =>
+              h("meta", {
+                key: i,
+                ...(m.name ? { name: m.name } : {}),
+                ...(m.property ? { property: m.property } : {}),
+                content: m.content,
+              }),
+            )}
           </>
         )}
       </>

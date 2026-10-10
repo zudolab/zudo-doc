@@ -1,25 +1,39 @@
 "use client";
 
-/** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-// Use preact hook entrypoints directly — the "react" → "preact/compat" alias
-// lets us consume React-typed components in this Preact app.
-import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
-import { memo } from "preact/compat";
-import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink } from "../sidebar/types.js";
+import {
+  computed,
+  For,
+  getScope,
+  Show,
+  signal,
+  type ReadonlySignal,
+  type Ref,
+} from "@takazudo/zfb/zudo-react";
+import type {
+  SidebarNavNode,
+  SidebarNavigationContext,
+  SidebarRootMenuItem,
+  SidebarLocaleLink,
+} from "../sidebar/types.js";
 import type { ResolvedDateFormats } from "../settings.js";
-import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "../tree-nav-shared/index.js";
+import {
+  INDENT,
+  BASE_PAD,
+  connectorLeft,
+  ConnectorLines,
+  CategoryLinkIcon,
+} from "../tree-nav-shared/index.js";
 import { ChevronRight, ChevronLeft, Search } from "../icons/index.js";
-// BARE ThemeToggle — renders inside the SidebarToggle island, so it must
-// NOT bring its own island wrapper.
 import { ThemeToggle, type ThemeToggleLabels } from "../theme-toggle/index.js";
 import { smartBreakToHtml } from "../smart-break/index.js";
-// After zudolab/zudo-doc#1335 the host components also pull lifecycle event
-// names from the v2 transitions module rather than hard-coding literals.
-import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "../transitions/index.js";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { useSidebarScope, type ScopeControls } from "./scope-state.js";
 import { filterTree } from "../sidebar-filter/index.js";
 import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
-import { CURRENT_PATH_DATASET_KEY, readCurrentPath } from "../current-path/index.js";
+import {
+  CURRENT_PATH_DATASET_KEY,
+  readCurrentPath,
+} from "../current-path/index.js";
 import { ensureSidebarScrollPreserve } from "./sidebar-scroll-preserve.js";
 import {
   formatYearLabel,
@@ -31,25 +45,31 @@ import {
 } from "../note-tray-model/index.js";
 import { formatMonthDay } from "../format-date/index.js";
 
-// The persisted aside can transiently tear down and re-mount its SidebarTree
-// effect during a body swap. Keep navigation snapshot ownership at browser
-// module/document lifetime so that island lifecycle cannot discard it between
-// before-preparation and after-swap. SSR evaluation is a safe no-op.
-ensureSidebarScrollPreserve();
-
-function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
-  return (
-    <ChevronRight
-      className={`h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} ${className ?? ""}`}
-    />
-  );
-}
-
 const STORAGE_KEY = "zd-sidebar-open";
 const GROUPED_TRAY_ITEM_DEPTH = 3;
 
+function ToggleChevron({
+  isExpanded,
+  className,
+}: {
+  isExpanded: ReadonlySignal<boolean>;
+  className?: ReadonlySignal<string> | string;
+}) {
+  return (
+    <For
+      each={computed(() => [
+        `h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 ${isExpanded.value ? "rotate-90" : ""} ${typeof className === "string" ? className : (className?.value ?? "")}`,
+      ])}
+      by={(value) => value}
+    >
+      {(value) => <ChevronRight class={value.value} />}
+    </For>
+  );
+}
+
 function padLeft(depth: number, forCategory: boolean): string {
-  if (depth === 0) return `calc(${BASE_PAD} + ${forCategory ? "0.15rem" : "0rem"})`;
+  if (depth === 0)
+    return `calc(${BASE_PAD} + ${forCategory ? "0.15rem" : "0rem"})`;
   return `calc(${depth} * ${INDENT} + 1.25rem + 5px)`;
 }
 
@@ -58,349 +78,450 @@ function getOpenSet(): Set<string> {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return new Set();
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? new Set(parsed.filter((v): v is string => typeof v === "string")) : new Set();
+    return Array.isArray(parsed)
+      ? new Set(
+          parsed.filter((value): value is string => typeof value === "string"),
+        )
+      : new Set();
   } catch {
     return new Set();
   }
 }
 
-function saveOpenSet(set: Set<string>) {
+function saveOpenSet(set: Set<string>): void {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
   } catch {
-    // ignore
+    /* Storage can be unavailable. */
   }
 }
 
-/**
- * Derive the active slug from an explicit current-route input. Resolution
- * order is owned by {@link readCurrentPath}: the `pathname` argument, then the
- * `data-zd-current-path` override, then `window.location.pathname`. Used as a
- * hydration-time fallback when the parent island does not forward
- * `currentSlug` through its prop boundary, and at every View Transition to
- * keep the highlight in sync.
- *
- * Returns `undefined` both when no pathname is resolvable AND when the
- * resolved pathname matches no route (e.g. the literal "srcdoc") — callers
- * must treat `undefined` as "no update," preserving whatever active slug is
- * already set rather than clearing it.
- */
-function deriveActiveSlug(nodes: SidebarNavNode[], pathname?: string): string | undefined {
-  // An empty-string `pathname` must fall through to the live sources instead
-  // of silently disabling derivation — SidebarWithDefaults defaults its own
-  // currentPath to "", so "" is the natural absent shape.
+function deriveActiveSlug(
+  nodes: SidebarNavNode[],
+  pathname?: string,
+): string | undefined {
   const resolved = readCurrentPath(CURRENT_PATH_DATASET_KEY, pathname);
-  if (!resolved) return undefined;
-  return findActiveSlug(nodes, normalizePath(resolved));
+  return resolved ? findActiveSlug(nodes, normalizePath(resolved)) : undefined;
 }
 
-/**
- * Track the current active slug, updating on View Transition navigations.
- *
- * The initial-state initialiser prefers the SSR-supplied `initial` prop, but
- * falls back to `deriveActiveSlug` (explicit `currentPath` input, then the
- * override/location fallbacks) when the prop is missing.
- */
-function useActiveSlug(nodes: SidebarNavNode[], initial?: string, currentPath?: string): string | undefined {
-  const [slug, setSlug] = useState<string | undefined>(() =>
-    initial !== undefined ? initial : deriveActiveSlug(nodes, currentPath),
-  );
-
-  useEffect(() => {
+function useActiveSlug(
+  nodes: SidebarNavNode[],
+  initial?: string,
+  currentPath?: string,
+) {
+  const slug = signal<string | undefined>(initial);
+  getScope().onActivate(() => {
     const update = (pathname?: string) => {
       const found = deriveActiveSlug(nodes, pathname);
-      if (found !== undefined) setSlug(found);
+      if (found !== undefined) slug.value = found;
     };
-    // The static `currentPath` prop is an SSR-serialized value for the page the
-    // island first hydrated on — valid at hydration time only. Post-navigation
-    // updates must re-read the LIVE sources (dataset override, then
-    // location.pathname); recomputing from the frozen prop would pin the
-    // highlight to the first-loaded page across client-router navigations.
-    const onNavigate = () => update();
     update(currentPath);
+    const onNavigate = () => update();
     document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
     return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
-  }, [nodes, currentPath]);
-
+  });
   return slug;
 }
 
-function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
-  const [expanded, setExpanded] = useState(false);
-  const hasChildren = item.children && item.children.length > 0;
-
+function RootMenuItemEntry({
+  item,
+}: {
+  item: ReadonlySignal<SidebarRootMenuItem>;
+}) {
+  const expanded = signal(false);
+  const hasChildren = computed(() => !!item.value.children?.length);
   return (
-    <div className="border-t border-muted">
-      <div className="flex items-center">
+    <div class="border-t border-muted">
+      <div class="flex items-center">
         <a
-          href={item.href}
-          className="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline break-words"
+          href={computed(() => item.value.href ?? "")}
+          class="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline break-words"
         >
-          <CategoryLinkIcon className="w-[14px]" />
-          <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(item.label) }} />
+          <CategoryLinkIcon class="w-[14px]" />
+          <span rawHtml={computed(() => smartBreakToHtml(item.value.label))} />
         </a>
-        {hasChildren && (
-          <button
-            type="button"
-            onClick={() => setExpanded((prev) => !prev)}
-            className="flex items-center justify-center px-hsp-sm py-vsp-xs text-muted hover:text-fg"
-            aria-expanded={expanded}
-            aria-label={expanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
-          >
-            <ToggleChevron isExpanded={expanded} className="text-muted" />
-          </button>
-        )}
-      </div>
-      {hasChildren && expanded && (
-        <div className="pb-vsp-xs">
-          {item.children!.map((child) => (
-            <a
-              key={child.href}
-              href={child.href}
-              className="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline break-words"
+        <Show when={hasChildren}>
+          {() => (
+            <button
+              type="button"
+              on:click={() => {
+                expanded.value = !expanded.value;
+              }}
+              class="flex items-center justify-center px-hsp-sm py-vsp-xs text-muted hover:text-fg"
+              aria-expanded={computed(() =>
+                expanded.value ? "true" : "false",
+              )}
+              aria-label={computed(
+                () =>
+                  `${expanded.value ? "Collapse" : "Expand"} ${item.value.label}`,
+              )}
             >
-              <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(child.label) }} />
-            </a>
-          ))}
-        </div>
-      )}
+              <ToggleChevron isExpanded={expanded} className="text-muted" />
+            </button>
+          )}
+        </Show>
+      </div>
+      <Show when={computed(() => hasChildren.value && expanded.value)}>
+        {() => (
+          <div class="pb-vsp-xs">
+            <For
+              each={computed(() => item.value.children ?? [])}
+              by={(child) => child.href}
+            >
+              {(child) => (
+                <a
+                  href={computed(() => child.value.href)}
+                  class="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline break-words"
+                >
+                  <span
+                    rawHtml={computed(() =>
+                      smartBreakToHtml(child.value.label),
+                    )}
+                  />
+                </a>
+              )}
+            </For>
+          </div>
+        )}
+      </Show>
     </div>
   );
 }
 
 export interface SidebarTreeProps {
   nodes: SidebarNavNode[];
+  navigation?: SidebarNavigationContext;
   currentSlug?: string;
-  /**
-   * Explicit current-route override, checked before the
-   * `data-zd-current-path` dataset override and `window.location.pathname`
-   * when deriving the active slug on hydration and at every View Transition.
-   * See `deriveActiveSlug` (zudolab/zudo-doc#3398).
-   */
+  /** Route override used on activation before dataset and location. */
   currentPath?: string;
   rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
-  /** Display locale; falls back to the active locale link, then English. */
   locale?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
   themeLabels?: ThemeToggleLabels;
   themeRespectSystem?: boolean;
-  /**
-   * Per-role date patterns already resolved for this page's locale, serialized
-   * into the island's `data-props` by the SSR wrappers (`sidebar-with-defaults`
-   * for the desktop sidebar, `header-with-defaults` -> `SidebarToggle` for the
-   * mobile drawer). Optional and absent-safe: omitted means every role behaves
-   * as `"locale"` — today's `Intl` output (#4075).
-   *
-   * The patterns are resolved against the real page locale at SSR,
-   * so they stay correct on a single-locale site where `localeLinks` is empty.
-   */
   dateFormats?: ResolvedDateFormats;
 }
 
-function SidebarFooter({ links, themeDefaultMode, themeLabels, themeRespectSystem }: { links?: SidebarLocaleLink[]; themeDefaultMode?: "light" | "dark"; themeLabels?: ThemeToggleLabels; themeRespectSystem?: boolean }) {
+function SidebarFooter({
+  links,
+  themeDefaultMode,
+  themeLabels,
+  themeRespectSystem,
+}: {
+  links?: SidebarLocaleLink[];
+  themeDefaultMode?: "light" | "dark";
+  themeLabels?: ThemeToggleLabels;
+  themeRespectSystem?: boolean;
+}) {
   if (!links && !themeDefaultMode) return null;
   return (
-    // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
-    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
-      {themeDefaultMode && (
-        <ThemeToggle defaultMode={themeDefaultMode} labels={themeLabels} respectPrefersColorScheme={themeRespectSystem} pendingUntilHydrated={true} />
-      )}
-      {links && links.map((link, i) => (
-        <span key={link.href} className="flex items-center gap-hsp-xs">
-          {i > 0 && <span className="text-muted">/</span>}
-          {link.active ? (
-            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
-          ) : (
-            <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
-              {link.label}
-            </a>
-          )}
-        </span>
-      ))}
+    <div class="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
+      {themeDefaultMode ? (
+        <ThemeToggle
+          defaultMode={themeDefaultMode}
+          labels={themeLabels}
+          respectPrefersColorScheme={themeRespectSystem}
+          pendingUntilHydrated={true}
+        />
+      ) : null}
+      <For each={computed(() => links ?? [])} by={(link) => link.href}>
+        {(link, index) => (
+          <span class="flex items-center gap-hsp-xs">
+            <Show when={computed(() => index.value > 0)}>
+              {() => <span class="text-muted">/</span>}
+            </Show>
+            <Show
+              when={computed(() => link.value.active)}
+              fallback={() => (
+                <a
+                  href={computed(() => link.value.href)}
+                  lang={computed(() => link.value.code)}
+                  class="text-muted hover:text-fg"
+                >
+                  {computed(() => link.value.label)}
+                </a>
+              )}
+            >
+              {() => (
+                <span aria-current="true" class="font-medium text-fg">
+                  {computed(() => link.value.label)}
+                </span>
+              )}
+            </Show>
+          </span>
+        )}
+      </For>
     </div>
   );
 }
 
-export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, locale: localeProp, localeLinks, themeDefaultMode, themeLabels, themeRespectSystem, dateFormats }: SidebarTreeProps) {
-  const activeSlug = useActiveSlug(nodes, currentSlug, currentPath);
-  const [query, setQuery] = useState("");
-  const [showingRootMenu, setShowingRootMenu] = useState(false);
-  const filterRef = useRef<HTMLInputElement>(null);
-  const [filterPlaceholder, setFilterPlaceholder] = useState("Filter...");
-
-  // Detect OS to show appropriate keyboard shortcut in placeholder
-  useEffect(() => {
-    const platform = (navigator as { userAgentData?: { platform: string } }).userAgentData?.platform ?? navigator.platform;
-    const isMac = /mac/i.test(platform);
-    setFilterPlaceholder(isMac ? "Filter... (⌘ + /)" : "Filter... (Ctrl + /)");
-  }, []);
-
-  // Global shortcut: Cmd+/ (Mac) or Ctrl+/ to focus the filter input
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.isComposing) return;
-      if (e.key === "/" && (e.metaKey || e.ctrlKey)) {
-        const el = filterRef.current;
-        if (!el || el.offsetParent === null) return; // skip if hidden
-        e.preventDefault();
-        el.focus();
-        el.select();
-      }
-    }
+export function SidebarTree({
+  nodes,
+  navigation,
+  currentSlug,
+  currentPath,
+  rootMenuItems,
+  backToMenuLabel,
+  locale: localeProp,
+  localeLinks,
+  themeDefaultMode,
+  themeLabels,
+  themeRespectSystem,
+  dateFormats,
+}: SidebarTreeProps) {
+  const scope = getScope();
+  const activeSlug = useActiveSlug(navigation?.roots ?? nodes, currentSlug, currentPath);
+  const query = signal("");
+  const { selected, selectedNodes, broader, labels, canRestore, changeScope, save, navRef, scopeControls } = useSidebarScope({
+    nodes, navigation, activeSlug, query,
+    locale: localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en",
+  });
+  const showingRootMenu = signal(false);
+  const filterRef: Ref<HTMLInputElement> = { current: null };
+  const filterPlaceholder = signal("Filter...");
+  scope.onActivate(() => {
+    ensureSidebarScrollPreserve();
+    const platform =
+      (navigator as Navigator & { userAgentData?: { platform: string } })
+        .userAgentData?.platform ?? navigator.platform;
+    filterPlaceholder.value = /mac/i.test(platform)
+      ? "Filter... (⌘ + /)"
+      : "Filter... (Ctrl + /)";
+    const handleKeyDown = (event: Event) => {
+      const keyEvent = event as KeyboardEvent;
+      if (
+        keyEvent.isComposing ||
+        keyEvent.key !== "/" ||
+        !(keyEvent.metaKey || keyEvent.ctrlKey)
+      )
+        return;
+      const input = filterRef.current;
+      if (!input || input.offsetParent === null) return;
+      event.preventDefault();
+      input.focus();
+      input.select();
+    };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const filteredNodes = useMemo(
-    () => (query ? filterTree(nodes, query) : nodes),
-    [nodes, query],
+  });
+  const filteredNodes = computed(() =>
+    query.value ? filterTree(selectedNodes.value, query.value) : selectedNodes.value,
   );
-
-  const footer = useMemo(
-    () => (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} themeLabels={themeLabels} themeRespectSystem={themeRespectSystem} /> : null,
-    [localeLinks, themeDefaultMode, themeLabels, themeRespectSystem],
+  const locale =
+    localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en";
+  const footer = (
+    <SidebarFooter
+      links={localeLinks}
+      themeDefaultMode={themeDefaultMode}
+      themeLabels={themeLabels}
+      themeRespectSystem={themeRespectSystem}
+    />
   );
-
-  const noteTrayRoot = nodes.length === 1 && nodes[0]?.shape === "note-tray" ? nodes[0] : undefined;
-  const filteredNoteTrayRoot = noteTrayRoot
-    ? filteredNodes.find((node) => node.slug === noteTrayRoot.slug)
-    : undefined;
-  const locale = localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en";
-
-  // Root menu view: show headerNav items as a simple list (Docusaurus-style)
-  if (showingRootMenu && rootMenuItems) {
-    return (
-      <nav>
-        <button
-          type="button"
-          onClick={() => setShowingRootMenu(false)}
-          className="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
-        >
-          <ChevronRight className="h-icon-sm w-icon-sm shrink-0" />
-          {backToMenuLabel ?? "Back to main menu"}
-        </button>
-        {rootMenuItems.map((item) => (
-          <RootMenuItemEntry key={item.href} item={item} />
-        ))}
-        {footer}
-      </nav>
-    );
-  }
-
-  // Top page: show only header nav links, no doc tree or filter.
-  if (activeSlug === undefined && rootMenuItems) {
-    return (
-      <nav>
-        {rootMenuItems.map((item) => (
-          <RootMenuItemEntry key={item.href} item={item} />
-        ))}
-        {footer}
-      </nav>
-    );
-  }
-
+  const menu = (
+    <For each={computed(() => rootMenuItems ?? [])} by={(item) => item.href}>
+      {(item) => <RootMenuItemEntry item={item} />}
+    </For>
+  );
   return (
-    <nav>
-      {rootMenuItems && (
-        <button
-          type="button"
-          onClick={() => setShowingRootMenu(true)}
-          className="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
+    <Show
+      when={computed(() => showingRootMenu.value && !!rootMenuItems)}
+      fallback={() => (
+        <Show
+          when={computed(
+            () => activeSlug.value === undefined && !!rootMenuItems,
+          )}
+          fallback={() => (
+            <nav ref={navRef} tabindex={-1}>
+              {rootMenuItems ? (
+                <button
+                  type="button"
+                  on:click={() => {
+                    showingRootMenu.value = true;
+                  }}
+                  class="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
+                >
+                  <ChevronLeft class="h-icon-sm w-icon-sm shrink-0" />
+                  {backToMenuLabel ?? "Back to main menu"}
+                </button>
+              ) : null}
+              <div class="px-hsp-sm py-vsp-xs border-b border-muted" data-sidebar-filter-region>
+                <div class="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
+                  <Search class="h-[14px] w-[14px] text-muted shrink-0" />
+                  <input
+                    ref={filterRef}
+                    type="text"
+                    aria-label="Filter navigation"
+                    placeholder={filterPlaceholder}
+                    modelValue={query}
+                    on:input={(event: Event) => { query.value = (event.target as HTMLInputElement).value; save(); }}
+                    class="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent" style="outline-offset:-4px"
+                  />
+                </div>
+              </div>
+              {navigation ? (
+                <Show when={computed(() => broader.value !== null)}>{() => (
+                <div class="border-b border-muted px-hsp-md py-vsp-2xs text-small" data-sidebar-scope-toolbar>
+                  <div class="flex items-center justify-between gap-hsp-xs" data-sidebar-scope-actions>
+                    <button type="button" data-sidebar-broaden disabled={computed(() => broader.value === null)}
+                      on:click={() => { if (broader.value !== null) changeScope(broader.value); }}
+                      style="min-height:40px"
+                      class="flex items-center gap-hsp-sm px-hsp-xs font-medium rounded text-fg hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:text-muted disabled:opacity-50">
+                      <span aria-hidden="true">↑</span>{labels.broaden}
+                    </button>
+                    <Show when={canRestore}>{() => (
+                      <button type="button" data-sidebar-restore on:click={() => changeScope(null)}
+                        title={labels.restore} aria-label={labels.restore}
+                        style="width:40px;height:40px"
+                        class="grid place-items-center shrink-0 rounded text-muted hover:text-fg focus-visible:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" />
+                          <circle cx="12" cy="12" r="6" />
+                          <circle cx="12" cy="12" r="2" />
+                        </svg>
+                      </button>
+                    )}</Show>
+                  </div>
+                </div>
+                )}</Show>
+              ) : null}
+              <div data-sidebar-tree-root>
+                <Show when={computed(() => selectedNodes.value.length === 1 && selectedNodes.value[0]?.shape === "note-tray")}
+                  fallback={() => <NodeList nodes={filteredNodes} currentSlug={activeSlug} depth={0} forceOpen={computed(() => !!query.value)} scopeControls={scopeControls} />}>
+                  {() => <Show when={computed(() => !!filteredNodes.value[0])}>{() => (
+                    <TrayList tray={computed(() => filteredNodes.value[0]!)} itemCount={getNoteTrayItems(selectedNodes.value[0]!).length}
+                      currentSlug={activeSlug} forceOpen={computed(() => !!query.value)} locale={locale} dateFormats={dateFormats} scopeControls={scopeControls} />
+                  )}</Show>}
+                </Show>
+              </div>
+              {footer}
+            </nav>
+          )}
         >
-          <ChevronLeft className="h-icon-sm w-icon-sm shrink-0" />
-          {backToMenuLabel ?? "Back to main menu"}
-        </button>
+          {() => (
+            <nav>
+              {menu}
+              {footer}
+            </nav>
+          )}
+        </Show>
       )}
-      <div className="px-hsp-sm py-vsp-xs">
-        <div className="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
-          <Search className="h-[14px] w-[14px] text-muted shrink-0" />
-          <input
-            ref={filterRef}
-            type="text"
-            aria-label="Filter navigation"
-            placeholder={filterPlaceholder}
-            value={query}
-            onInput={(e) => setQuery(e.currentTarget.value)}
-            className="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
-          />
-        </div>
-      </div>
-      {noteTrayRoot ? (
-        filteredNoteTrayRoot && (
-          <TrayList
-            tray={filteredNoteTrayRoot}
-            itemCount={getNoteTrayItems(noteTrayRoot).length}
-            currentSlug={activeSlug}
-            forceOpen={!!query}
-            locale={locale}
-            dateFormats={dateFormats}
-          />
-        )
-      ) : (
-        <NodeList
-          nodes={filteredNodes}
-          currentSlug={activeSlug}
-          depth={0}
-          forceOpen={!!query}
-        />
+    >
+      {() => (
+        <nav>
+          <button
+            type="button"
+            on:click={() => {
+              showingRootMenu.value = false;
+            }}
+            class="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
+          >
+            <ChevronRight class="h-icon-sm w-icon-sm shrink-0" />
+            {backToMenuLabel ?? "Back to main menu"}
+          </button>
+          {menu}
+          {footer}
+        </nav>
       )}
-      {footer}
-    </nav>
+    </Show>
   );
 }
 SidebarTree.displayName = "SidebarTree";
+
+interface ActiveProps {
+  scopeControls?: ScopeControls;
+  currentSlug: ReadonlySignal<string | undefined>;
+  forceOpen: ReadonlySignal<boolean>;
+}
+interface RowProps extends ActiveProps {
+  node: ReadonlySignal<SidebarNavNode>;
+  depth: number;
+  isLast: ReadonlySignal<boolean>;
+}
 
 function TrayList({
   tray,
   itemCount,
   currentSlug,
   forceOpen,
+  scopeControls,
   locale,
   dateFormats,
 }: {
-  tray: SidebarNavNode;
+  tray: ReadonlySignal<SidebarNavNode>;
   itemCount: number;
-  currentSlug?: string;
-  forceOpen: boolean;
   locale: string;
   dateFormats?: ResolvedDateFormats;
-}) {
-  const items = getNoteTrayItems(tray);
-  const sidebarStyle = tray.noteTraySidebar ?? "index";
+} & ActiveProps) {
+  const items = computed(() => getNoteTrayItems(tray.value));
+  const sidebarStyle = computed(() => tray.value.noteTraySidebar ?? "index");
   const width = rankWidth(itemCount);
-
   return (
     <>
-      <LeafNode node={tray} currentSlug={currentSlug} depth={0} isLast={items.length === 0} />
-      {sidebarStyle === "index" ? (
-        items.map((item, index) => (
-          <TrayItem
-            key={item.slug}
-            item={item}
-            currentSlug={currentSlug}
-            rankDigits={width}
-            isLast={index === items.length - 1}
-            locale={locale}
-            dateFormats={dateFormats}
-          />
-        ))
-      ) : (
-        groupItems(items, sidebarStyle, tray.sortOrder ?? "asc").map((group, index, groups) => (
-          <TrayGroupNode
-            key={group.key}
-            traySlug={tray.slug}
-            group={group}
-            grouping={sidebarStyle}
-            locale={locale}
-            dateFormats={dateFormats}
-            currentSlug={currentSlug}
-            forceOpen={forceOpen}
-            isLast={index === groups.length - 1}
-          />
-        ))
-      )}
+      <LeafNode
+        node={tray}
+        currentSlug={currentSlug}
+        depth={0}
+        isLast={computed(() => items.value.length === 0)}
+        forceOpen={forceOpen}
+      />
+      <Show
+        when={computed(() => sidebarStyle.value === "index")}
+        fallback={() => (
+          <For
+            each={computed(() =>
+              groupItems(
+                items.value,
+                sidebarStyle.value as "year" | "month",
+                tray.value.sortOrder ?? "asc",
+              ),
+            )}
+            by={(group) => group.key}
+          >
+            {(group, index) => (
+              <TrayGroupNode
+                traySlug={computed(() => tray.value.slug)}
+                trayOccurrence={computed(() => tray.value.occurrenceId ?? tray.value.slug)}
+                scopeControls={scopeControls}
+                group={group}
+                grouping={computed(
+                  () => sidebarStyle.value as "year" | "month",
+                )}
+                locale={locale}
+                dateFormats={dateFormats}
+                currentSlug={currentSlug}
+                forceOpen={forceOpen}
+                isLast={computed(
+                  () =>
+                    index.value ===
+                    groupItems(
+                      items.value,
+                      sidebarStyle.value as "year" | "month",
+                      tray.value.sortOrder ?? "asc",
+                    ).length -
+                      1,
+                )}
+              />
+            )}
+          </For>
+        )}
+      >
+        {() => (
+          <For each={items} by={(item) => item.slug}>
+            {(item, index) => (
+              <TrayItem
+                item={item}
+                currentSlug={currentSlug}
+                rankDigits={width}
+                isLast={computed(() => index.value === items.value.length - 1)}
+                locale={locale}
+                dateFormats={dateFormats}
+              />
+            )}
+          </For>
+        )}
+      </Show>
     </>
   );
 }
@@ -415,53 +536,97 @@ function TrayItem({
   locale,
   dateFormats,
 }: {
-  item: SidebarNavNode;
-  currentSlug?: string;
+  item: ReadonlySignal<SidebarNavNode>;
+  currentSlug: ReadonlySignal<string | undefined>;
   rankDigits?: number;
-  isLast: boolean;
+  isLast: ReadonlySignal<boolean>;
   showDate?: boolean;
   depth?: number;
   locale?: string;
   dateFormats?: ResolvedDateFormats;
 }) {
-  if (!item.href) return null;
-  const isActive = item.slug === currentSlug;
-  const labelHtml = smartBreakToHtml(item.label);
-  // formatMonthDay is (iso, pattern, locale) — pattern SECOND, unlike every
-  // other format-date entry point; a locale in slot 2 is read as a pattern.
-  const shortDate = item.date
-    ? formatMonthDay(item.date, dateFormats?.numericMonthDay, locale)
-    : undefined;
-
+  const active = computed(() => item.value.slug === currentSlug.value);
+  const shortDate = computed(() =>
+    item.value.date
+      ? formatMonthDay(item.value.date, dateFormats?.numericMonthDay, locale)
+      : undefined,
+  );
   return (
-    <div className={isLast ? "pb-vsp-md" : ""}>
-      <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} topPad="var(--spacing-vsp-2xs)" />
-        <a
-          href={item.href}
-          aria-current={isActive ? "page" : undefined}
-          data-nav-active={isActive ? "" : undefined}
-          className={`flex items-start gap-hsp-xs py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words ${
-            isActive
-              ? "bg-fg font-medium text-bg"
-              : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"
-          }`}
-          style={{ paddingLeft: padLeft(depth, false) }}
-        >
-          {rankDigits !== undefined && (
-            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
-              {item.rank === undefined ? "" : String(item.rank).padStart(rankDigits, "0")}
-            </span>
-          )}
-          <span className="min-w-0 flex-1" dangerouslySetInnerHTML={{ __html: labelHtml }} />
-          {showDate && shortDate && (
-            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
-              {shortDate}
-            </span>
-          )}
-        </a>
-      </div>
-    </div>
+    <Show when={computed(() => !!item.value.href)}>
+      {() => (
+        <div class={computed(() => (isLast.value ? "pb-vsp-md" : ""))}>
+          <div class="relative">
+            <ConnectorLinesLive
+              depth={depth}
+              isLast={isLast}
+              topPad="var(--spacing-vsp-2xs)"
+            />
+            <a
+              href={computed(() => item.value.href ?? "")}
+              aria-current={computed(() => (active.value ? "page" : "false"))}
+              data-nav-active={computed(() => (active.value ? "" : null))}
+              class={computed(
+                () =>
+                  `flex items-start gap-hsp-xs py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words ${active.value ? "bg-fg font-medium text-bg" : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"}`,
+              )}
+              style={{ "padding-left": padLeft(depth, false) }}
+            >
+              {rankDigits !== undefined ? (
+                <span
+                  class={computed(
+                    () =>
+                      `shrink-0 tabular-nums${active.value ? "" : " text-muted"}`,
+                  )}
+                >
+                  {computed(() =>
+                    item.value.rank === undefined
+                      ? ""
+                      : String(item.value.rank).padStart(rankDigits, "0"),
+                  )}
+                </span>
+              ) : null}
+              <span
+                class="min-w-0 flex-1"
+                rawHtml={computed(() => smartBreakToHtml(item.value.label))}
+              />
+              <Show when={computed(() => showDate && !!shortDate.value)}>
+                {() => (
+                  <span
+                    class={computed(
+                      () =>
+                        `shrink-0 tabular-nums${active.value ? "" : " text-muted"}`,
+                    )}
+                  >
+                    {shortDate}
+                  </span>
+                )}
+              </Show>
+            </a>
+          </div>
+        </div>
+      )}
+    </Show>
+  );
+}
+
+function ConnectorLinesLive({
+  depth,
+  isLast,
+  topPad,
+}: {
+  depth: number;
+  isLast: ReadonlySignal<boolean>;
+  topPad: string;
+}) {
+  return (
+    <Show
+      when={isLast}
+      fallback={() => (
+        <ConnectorLines depth={depth} isLast={false} topPad={topPad} />
+      )}
+    >
+      {() => <ConnectorLines depth={depth} isLast={true} topPad={topPad} />}
+    </Show>
   );
 }
 
@@ -471,6 +636,8 @@ function noteTrayGroupStorageKey(traySlug: string, groupKey: string): string {
 
 function TrayGroupNode({
   traySlug,
+  trayOccurrence,
+  scopeControls,
   group,
   grouping,
   locale,
@@ -479,350 +646,395 @@ function TrayGroupNode({
   forceOpen,
   isLast,
 }: {
-  traySlug: string;
-  group: NoteTrayGroup<SidebarNavNode>;
-  grouping: "year" | "month";
+  traySlug: ReadonlySignal<string>;
+  trayOccurrence: ReadonlySignal<string>;
+  group: ReadonlySignal<NoteTrayGroup<SidebarNavNode>>;
+  grouping: ReadonlySignal<"year" | "month">;
   locale: string;
   dateFormats?: ResolvedDateFormats;
-  currentSlug?: string;
-  forceOpen: boolean;
-  isLast: boolean;
-}) {
-  const containsCurrent = group.items.some((item) => item.slug === currentSlug);
-  const [open, setOpen] = useState(containsCurrent);
-  const storageKey = noteTrayGroupStorageKey(traySlug, group.key);
-  const label =
-    grouping === "year"
-      ? formatYearLabel(group.key, locale, dateFormats?.year)
-      : formatYearMonthLabel(group.key, locale, dateFormats?.yearMonth);
-
-  useEffect(() => {
-    const stored = getOpenSet();
-    if (stored.has(storageKey) && !open) setOpen(true);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (containsCurrent && !open) {
-      setOpen(true);
+  isLast: ReadonlySignal<boolean>;
+} & ActiveProps) {
+  const scope = getScope();
+  const containsCurrent = computed(() =>
+    group.value.items.some((item) => item.slug === currentSlug.value),
+  );
+  const occurrenceKey = computed(() => `${trayOccurrence.value}#${group.value.key}`);
+  const open = signal(scopeControls?.expansion.value[occurrenceKey.value] ?? (scopeControls?.defaultGroupOpen(group.value.items) ?? containsCurrent.value));
+  const storageKey = computed(() =>
+    noteTrayGroupStorageKey(traySlug.value, group.value.key),
+  );
+  const label = computed(() =>
+    grouping.value === "year"
+      ? formatYearLabel(group.value.key, locale, dateFormats?.year)
+      : formatYearMonthLabel(group.value.key, locale, dateFormats?.yearMonth),
+  );
+  scope.onActivate(() => {
+    if (!scopeControls && getOpenSet().has(storageKey.value)) open.value = true;
+  });
+  scope.effect(() => {
+    if (containsCurrent.value) open.value = true;
+  });
+  scope.effect(() => {
+    if (!scopeControls && open.value) {
       const stored = getOpenSet();
-      stored.add(storageKey);
-      saveOpenSet(stored);
-    }
-  }, [containsCurrent]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (open) {
-      const stored = getOpenSet();
-      if (!stored.has(storageKey)) {
-        stored.add(storageKey);
+      if (!stored.has(storageKey.value)) {
+        stored.add(storageKey.value);
         saveOpenSet(stored);
       }
     }
-  }, [open, storageKey]);
-
-  const toggle = useCallback(() => {
-    setOpen((previous) => {
-      const next = !previous;
-      const stored = getOpenSet();
-      if (next) stored.add(storageKey);
-      else stored.delete(storageKey);
-      saveOpenSet(stored);
-      return next;
-    });
-  }, [storageKey]);
-
-  const isExpanded = forceOpen || open;
-
+  });
+  const toggle = () => {
+    open.value = !open.value;
+    if (scopeControls) {
+      scopeControls.expansion.value = { ...scopeControls.expansion.value, [occurrenceKey.value]: open.value };
+      scopeControls.save();
+      return;
+    }
+    const stored = getOpenSet();
+    if (open.value) stored.add(storageKey.value);
+    else stored.delete(storageKey.value);
+    saveOpenSet(stored);
+  };
+  scope.effect(() => {
+    const stored = scopeControls?.expansion.value[occurrenceKey.value];
+    if (scopeControls) open.value = stored ?? scopeControls.defaultGroupOpen(group.value.items);
+  });
+  const expanded = computed(() => forceOpen.value || open.value);
+  const items = computed(() => group.value.items);
   return (
-    <div className={!isLast && isExpanded ? "relative" : ""}>
-      {!isLast && isExpanded && (
-        <div
-          className="absolute border-l border-solid border-muted z-local-1"
-          style={{ left: connectorLeft(1), top: 0, bottom: 0 }}
-        />
+    <div
+      class={computed(() =>
+        !isLast.value && expanded.value ? "relative" : "",
       )}
-      <div className="relative">
-        <ConnectorLines depth={1} isLast={isLast} topPad="var(--spacing-vsp-xs)" />
+    >
+      <Show when={computed(() => !isLast.value && expanded.value)}>
+        {() => (
+          <div
+            class="absolute border-l border-solid border-muted z-local-1"
+            style={{ left: connectorLeft(1), top: "0px", bottom: "0px" }}
+          />
+        )}
+      </Show>
+      <div class="relative">
+        <ConnectorLinesLive
+          depth={1}
+          isLast={isLast}
+          topPad="var(--spacing-vsp-xs)"
+        />
         <button
           type="button"
-          onClick={toggle}
-          className="flex w-full items-center gap-hsp-md py-vsp-xs text-left text-small font-semibold text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
-          style={{ paddingLeft: padLeft(1, true) }}
-          aria-expanded={isExpanded}
-          aria-label={isExpanded ? `Collapse ${label}` : `Expand ${label}`}
+          on:click={toggle}
+          class="flex w-full items-center gap-hsp-md py-vsp-xs text-left text-small font-semibold text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
+          style={{ "padding-left": padLeft(1, true) }}
+          aria-expanded={computed(() => (expanded.value ? "true" : "false"))}
+          aria-label={computed(
+            () => `${expanded.value ? "Collapse" : "Expand"} ${label.value}`,
+          )}
           data-zd-sidebar-open-key={storageKey}
         >
-          <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
-            <ToggleChevron isExpanded={isExpanded} className="text-muted" />
+          <span class="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+            <ToggleChevron isExpanded={expanded} className="text-muted" />
           </span>
           <span>{label}</span>
         </button>
       </div>
-      {isExpanded && (
-        <div>
-          {group.items.map((item, index) => (
-            <TrayItem
-              key={item.slug}
-              item={item}
-              currentSlug={currentSlug}
-              isLast={index === group.items.length - 1}
-              showDate
-              locale={locale}
-              dateFormats={dateFormats}
-              // Leave one visual indentation step between the group branch
-              // and its dated child branch so the hierarchy reads clearly.
-              depth={GROUPED_TRAY_ITEM_DEPTH}
-            />
-          ))}
-        </div>
-      )}
+      <Show when={expanded}>
+        {() => (
+          <div>
+            <For each={items} by={(item) => item.slug}>
+              {(item, index) => (
+                <TrayItem
+                  item={item}
+                  currentSlug={currentSlug}
+                  isLast={computed(
+                    () => index.value === items.value.length - 1,
+                  )}
+                  showDate
+                  locale={locale}
+                  dateFormats={dateFormats}
+                  depth={GROUPED_TRAY_ITEM_DEPTH}
+                />
+              )}
+            </For>
+          </div>
+        )}
+      </Show>
     </div>
   );
 }
 
-// NodeList is memo-wrapped so that when only the filter query changes but
-// a subtree's nodes/currentSlug/depth/forceOpen are unchanged, Preact can
-// skip re-rendering the whole subtree.
-const NodeList = memo(function NodeList({
+function NodeList({
   nodes,
   currentSlug,
   depth,
   forceOpen,
-}: {
-  nodes: SidebarNavNode[];
-  currentSlug?: string;
-  depth: number;
-  forceOpen: boolean;
-}) {
+  scopeControls,
+}: { nodes: ReadonlySignal<SidebarNavNode[]>; depth: number } & ActiveProps) {
   return (
-    <>
-      {nodes.map((node, index) => {
-        const isLast = index === nodes.length - 1;
-        return node.children.length > 0 ? (
-          <CategoryNode
-            key={node.slug}
-            node={node}
-            currentSlug={currentSlug}
-            depth={depth}
-            isLast={isLast}
-            forceOpen={forceOpen}
-          />
-        ) : (
-          <LeafNode
-            key={node.slug}
-            node={node}
-            currentSlug={currentSlug}
-            depth={depth}
-            isLast={isLast}
-          />
+    <For each={nodes} by={(node) => node.occurrenceId ?? node.slug}>
+      {(node, index) => {
+        const isLast = computed(() => index.value === nodes.value.length - 1);
+        return (
+          <Show
+            when={computed(() => node.value.children.length > 0)}
+            fallback={() => (
+              <LeafNode
+                node={node}
+                currentSlug={currentSlug}
+                depth={depth}
+                isLast={isLast}
+                forceOpen={forceOpen}
+                scopeControls={scopeControls}
+              />
+            )}
+          >
+            {() => (
+              <CategoryNode
+                node={node}
+                currentSlug={currentSlug}
+                depth={depth}
+                isLast={isLast}
+                forceOpen={forceOpen}
+                scopeControls={scopeControls}
+              />
+            )}
+          </Show>
         );
-      })}
-    </>
+      }}
+    </For>
   );
-});
-
-/** Check if currentSlug is anywhere in this node's subtree */
-function subtreeContainsSlug(node: SidebarNavNode, slug?: string): boolean {
-  if (!slug) return false;
-  if (node.slug === slug) return true;
-  return node.children.some((child) => subtreeContainsSlug(child, slug));
 }
 
-// CategoryNode is memo-wrapped so unchanged category nodes are skipped during
-// filter-query re-renders.
-const CategoryNode = memo(function CategoryNode({
+function subtreeContainsSlug(node: SidebarNavNode, slug?: string): boolean {
+  return (
+    slug !== undefined &&
+    (node.slug === slug ||
+      node.children.some((child) => subtreeContainsSlug(child, slug)))
+  );
+}
+
+function CategoryNode({
   node,
   currentSlug,
   depth,
   isLast,
   forceOpen,
-}: {
-  node: SidebarNavNode;
-  currentSlug?: string;
-  depth: number;
-  isLast: boolean;
-  forceOpen: boolean;
-}) {
-  const containsCurrent = useMemo(
-    () => subtreeContainsSlug(node, currentSlug),
-    [node, currentSlug],
+  scopeControls,
+}: RowProps) {
+  const scope = getScope();
+  const containsCurrent = computed(() =>
+    subtreeContainsSlug(node.value, currentSlug.value),
   );
-  const isActive = node.slug === currentSlug;
-  const labelHtml = useMemo(() => smartBreakToHtml(node.label), [node.label]);
-
-  const [open, setOpen] = useState(containsCurrent ? true : !node.collapsed);
-
-  useEffect(() => {
-    const stored = getOpenSet();
-    if (stored.has(node.slug) && !open) {
-      setOpen(true);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (subtreeContainsSlug(node, currentSlug) && !open) {
-      setOpen(true);
+  const active = computed(() => node.value.slug === currentSlug.value);
+  const occurrenceKey = () => node.value.occurrenceId ?? node.value.slug;
+  const open = signal(scopeControls?.expansion.value[occurrenceKey()] ?? (scopeControls?.defaultOpen(node.value) ?? (containsCurrent.value || !node.value.collapsed)));
+  scope.onActivate(() => {
+    if (!scopeControls && getOpenSet().has(node.value.slug)) open.value = true;
+  });
+  scope.effect(() => {
+    const slug = currentSlug.value;
+    const revision = scopeControls?.reveal.value;
+    if (slug !== undefined && subtreeContainsSlug(node.value, slug)) open.value = true;
+    void revision;
+  });
+  scope.effect(() => {
+    if (!scopeControls && open.value) {
       const stored = getOpenSet();
-      stored.add(node.slug);
-      saveOpenSet(stored);
-    }
-  }, [currentSlug]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (open) {
-      const stored = getOpenSet();
-      if (!stored.has(node.slug)) {
-        stored.add(node.slug);
+      if (!stored.has(node.value.slug)) {
+        stored.add(node.value.slug);
         saveOpenSet(stored);
       }
     }
-  }, [open, node.slug]);
-
-  const toggle = useCallback(() => {
-    setOpen((prev) => {
-      const next = !prev;
-      const stored = getOpenSet();
-      if (next) {
-        stored.add(node.slug);
-      } else {
-        stored.delete(node.slug);
-      }
-      saveOpenSet(stored);
-      return next;
-    });
-  }, [node.slug]);
-
-  const isExpanded = forceOpen || open;
+  });
+  const toggle = () => {
+    open.value = !open.value;
+    if (scopeControls) {
+      scopeControls.expansion.value = { ...scopeControls.expansion.value, [occurrenceKey()]: open.value };
+      scopeControls.save();
+      return;
+    }
+    const stored = getOpenSet();
+    if (open.value) stored.add(node.value.slug);
+    else stored.delete(node.value.slug);
+    saveOpenSet(stored);
+  };
+  scope.effect(() => {
+    const stored = scopeControls?.expansion.value[occurrenceKey()];
+    if (scopeControls) open.value = stored ?? scopeControls.defaultOpen(node.value);
+  });
+  const expanded = computed(() => forceOpen.value || open.value);
+  const focusButton = scopeControls ? (
+    <button type="button" data-sidebar-focus data-sidebar-focus-scope={computed(() => node.value.occurrenceId ?? "")}
+      on:click={() => scopeControls.focus(node.value)}
+      aria-label={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
+      title={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
+      class={computed(() => `ml-auto shrink-0 rounded px-hsp-xs py-vsp-2xs ${active.value ? "text-bg hover:bg-bg/10 focus-visible:bg-bg/10" : "text-muted hover:bg-surface hover:text-fg focus-visible:bg-surface focus-visible:text-fg"}`)}>
+      <span aria-hidden="true">◎</span>
+    </button>
+  ) : null;
   const paddingLeft = padLeft(depth, true);
-
   return (
-    <div className={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
-      {depth >= 1 && !isLast && isExpanded && (
-        <div
-          className="absolute border-l border-solid border-muted z-local-1"
-          style={{
-            left: connectorLeft(depth),
-            top: 0,
-            bottom: 0,
-          }}
-        />
+    <div
+      class={computed(
+        () =>
+          `${depth === 0 ? "border-t border-muted first:border-t-0" : ""} ${depth >= 1 && !isLast.value ? "relative" : ""}`,
       )}
-      <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} topPad="calc(0.15rem + var(--spacing-vsp-xs))" />
-        {node.href ? (
+    >
+      <Show
+        when={computed(() => depth >= 1 && !isLast.value && expanded.value)}
+      >
+        {() => (
           <div
-            className={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
-          >
-            <a
-              href={node.href}
-              aria-current={isActive ? "page" : undefined}
-              className={`flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg hover:text-accent focus:text-accent"}`}
-              style={{ paddingLeft }}
-            >
-              {depth === 0 && (
-                <span className="flex h-[1lh] items-center">
-                  <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
-                </span>
-              )}
-              <span dangerouslySetInnerHTML={{ __html: labelHtml }} />
-            </a>
+            class="absolute border-l border-solid border-muted z-local-1"
+            style={{ left: connectorLeft(depth), top: "0px", bottom: "0px" }}
+          />
+        )}
+      </Show>
+      <div class="relative">
+        <ConnectorLinesLive
+          depth={depth}
+          isLast={isLast}
+          topPad="calc(0.15rem + var(--spacing-vsp-xs))"
+        />
+        <Show
+          when={computed(() => !!node.value.href)}
+          fallback={() => (
+            <div class="flex flex-wrap items-center">
             <button
               type="button"
-              onClick={toggle}
-              className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
-              aria-expanded={isExpanded}
-              aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
+              on:click={toggle}
+              class="flex flex-1 max-w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
+              style={{ "padding-left": paddingLeft }}
+              aria-expanded={computed(() =>
+                expanded.value ? "true" : "false",
+              )}
+              aria-label={computed(
+                () =>
+                  `${expanded.value ? "Collapse" : "Expand"} ${node.value.label}`,
+              )}
             >
-              <ToggleChevron isExpanded={isExpanded} className={isActive ? "text-bg" : "text-muted"} />
+              <span class="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+                <ToggleChevron isExpanded={expanded} className="text-muted" />
+              </span>
+              <span
+                rawHtml={computed(() => smartBreakToHtml(node.value.label))}
+              />
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={toggle}
-            className={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words`}
-            style={{ paddingLeft }}
-            aria-expanded={isExpanded}
-            aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
-          >
-            <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
-              <ToggleChevron isExpanded={isExpanded} className="text-muted" />
-            </span>
-            <span dangerouslySetInnerHTML={{ __html: labelHtml }} />
-          </button>
-        )}
+            {focusButton}
+            </div>
+          )}
+        >
+          {() => (
+            <div
+              class={computed(
+                () =>
+                  `flex w-full items-center text-small font-semibold pt-[0.15rem] ${active.value ? "bg-fg text-bg" : "text-fg"}`,
+              )}
+            >
+              <a
+                href={computed(() => node.value.href ?? "")}
+                aria-current={computed(() => (active.value ? "page" : "false"))}
+                class={computed(
+                  () =>
+                    `flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${active.value ? "text-bg" : "text-fg hover:text-accent focus:text-accent"}`,
+                )}
+                style={{ "padding-left": paddingLeft }}
+              >
+                {depth === 0 ? (
+                  <span class="flex h-[1lh] items-center">
+                    <CategoryLinkIcon class="w-[14px]" />
+                  </span>
+                ) : null}
+                <span
+                  rawHtml={computed(() => smartBreakToHtml(node.value.label))}
+                />
+              </a>
+              {focusButton}
+              <button
+                type="button"
+                on:click={toggle}
+                class={computed(
+                  () =>
+                    `aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${active.value ? "border-bg/30" : "border-muted"}`,
+                )}
+                aria-expanded={computed(() =>
+                  expanded.value ? "true" : "false",
+                )}
+                aria-label={computed(
+                  () =>
+                    `${expanded.value ? "Collapse" : "Expand"} ${node.value.label}`,
+                )}
+              >
+                <ToggleChevron
+                  isExpanded={expanded}
+                  className={computed(() =>
+                    active.value ? "text-bg" : "text-muted",
+                  )}
+                />
+              </button>
+            </div>
+          )}
+        </Show>
       </div>
-      {isExpanded && (
-        <div>
-          <NodeList
-            nodes={node.children}
-            currentSlug={currentSlug}
-            depth={depth + 1}
-            forceOpen={forceOpen}
-          />
-        </div>
-      )}
+      <Show when={expanded}>
+        {() => (
+          <div>
+            <NodeList
+              nodes={computed(() => node.value.children)}
+              currentSlug={currentSlug}
+              depth={depth + 1}
+              forceOpen={forceOpen}
+              scopeControls={scopeControls}
+            />
+          </div>
+        )}
+      </Show>
     </div>
   );
-});
+}
 
-// LeafNode is memo-wrapped and labelHtml is memoised so pure leaf rows are
-// skipped entirely during filter-query re-renders when their props are stable.
-const LeafNode = memo(function LeafNode({
-  node,
-  currentSlug,
-  depth,
-  isLast,
-}: {
-  node: SidebarNavNode;
-  currentSlug?: string;
-  depth: number;
-  isLast: boolean;
-}) {
-  const labelHtml = useMemo(() => smartBreakToHtml(node.label), [node.label]);
-  if (!node.href) return null;
-  const isActive = node.slug === currentSlug;
+function LeafNode({ node, currentSlug, depth, isLast }: RowProps) {
+  const active = computed(() => node.value.slug === currentSlug.value);
   const isRoot = depth === 0;
   const paddingLeft = padLeft(depth, isRoot);
-
-  const outerClass = isRoot
-    ? "border-t border-muted"
-    : !isRoot && isLast
-      ? "pb-vsp-md"
-      : "";
-
   const topPad = isRoot
     ? "calc(var(--spacing-vsp-xs) + 0.15rem)"
     : "var(--spacing-vsp-2xs)";
-
   return (
-    <div className={outerClass}>
-      <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} topPad={topPad} />
-        <a
-          href={node.href}
-          aria-current={isActive ? "page" : undefined}
-          data-nav-active={!isRoot && isActive ? "" : undefined}
-          className={isRoot
-            ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-xs lg:pr-hsp-sm text-small font-semibold break-words ${
-                isActive ? "bg-fg text-bg" : "text-fg hover:text-accent hover:underline focus:underline focus:text-accent"
-              }`
-            : `block py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words ${
-                isActive
-                  ? "bg-fg font-medium text-bg"
-                  : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"
-              }`
-          }
-          style={{ paddingLeft }}
-        >
-          {isRoot && (
-            <span className="flex h-[1lh] items-center">
-              <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
-            </span>
+    <Show when={computed(() => !!node.value.href)}>
+      {() => (
+        <div
+          class={computed(() =>
+            isRoot ? "border-t border-muted first:border-t-0" : isLast.value ? "pb-vsp-md" : "",
           )}
-          <span dangerouslySetInnerHTML={{ __html: labelHtml }} />
-        </a>
-      </div>
-    </div>
+        >
+          <div class="relative">
+            <ConnectorLinesLive depth={depth} isLast={isLast} topPad={topPad} />
+            <a
+              href={computed(() => node.value.href ?? "")}
+              aria-current={computed(() => (active.value ? "page" : "false"))}
+              data-nav-active={computed(() =>
+                !isRoot && active.value ? "" : null,
+              )}
+              class={computed(() =>
+                isRoot
+                  ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)_+_0.15rem)] pr-hsp-xs lg:pr-hsp-sm text-small font-semibold break-words ${active.value ? "bg-fg text-bg" : "text-fg hover:text-accent hover:underline focus:underline focus:text-accent"}`
+                  : `block py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words ${active.value ? "bg-fg font-medium text-bg" : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"}`,
+              )}
+              style={{ "padding-left": paddingLeft }}
+            >
+              {isRoot ? (
+                <span class="flex h-[1lh] items-center">
+                  <CategoryLinkIcon class="w-[14px]" />
+                </span>
+              ) : null}
+              <span
+                rawHtml={computed(() => smartBreakToHtml(node.value.label))}
+              />
+            </a>
+          </div>
+        </div>
+      )}
+    </Show>
   );
-});
+}

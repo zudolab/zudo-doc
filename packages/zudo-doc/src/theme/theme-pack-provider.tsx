@@ -133,7 +133,7 @@
 // `theme-pack-sync.ts`'s `applyThemePack` validates slugs against and builds
 // pack URLs from.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   AFTER_NAVIGATE_EVENT,
   BEFORE_SWAP_EVENT,
@@ -325,8 +325,8 @@ export default function ThemePackProvider({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: THEME_PACK_LATCH_CSS }} />
-      <script dangerouslySetInnerHTML={{ __html: bootstrap }} />
+      <style rawHtml={THEME_PACK_LATCH_CSS} />
+      <script rawHtml={bootstrap} />
       {noscriptHref !== null && (
         <noscript>
           <link rel="stylesheet" href={noscriptHref} />

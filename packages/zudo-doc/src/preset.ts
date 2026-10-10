@@ -4,10 +4,10 @@
  * `zudoDocPreset()` returns the zfb config fragment that every zudo-doc
  * project previously hand-wrote in its `zfb.config.ts` (collections loop,
  * markdown.features, class-mode codeHighlight, resolveMarkdownLinks,
- * stripMdExt, trailingSlash, minifyHtml, and the integration plugins array). The host
- * config spreads this fragment into `defineConfig` and supplies only the
- * project-specific shell fields it still owns (`framework`, `port`,
- * `tailwind`, `bundle`, `base`, `adapter`).
+ * stripMdExt, trailingSlash, minifyHtml, integration plugins, and the
+ * package-owned wind preset). The host config spreads this fragment into
+ * `defineConfig` and supplies project-specific shell fields (`port`, `bundle`,
+ * `base`, `adapter`, and an optional top-level `wind` override).
  *
  * ──────────────────────────────────────────────────────────────────────────
  * NODE-BUILTIN-FREE EVAL GRAPH (non-negotiable — guarded by a unit test)
@@ -29,11 +29,13 @@
  *     specifier and dispatches lifecycle hooks against it; importing the
  *     plugin modules here would pull their `node:fs` / `node:path` graph into
  *     the config eval.
- *   - The only runtime dependency is `zod` (for `z.toJSONSchema`), which
- *     bundles cleanly under `--platform=neutral` (verified: zero `node:*`).
+ *   - Runtime dependencies are `zod` (for `z.toJSONSchema`) and zfb's
+ *     `definePreset` helper (for the package-owned wind fragment). Both bundle
+ *     cleanly under `--platform=neutral` (verified: zero `node:*`).
  */
 
 import { z } from "zod";
+import type { DirectiveSpec, ZfbConfig } from "@takazudo/zfb/config";
 import type { ColorScheme } from "./color-scheme-utils.js";
 import type {
   AssetViewerIndexingConfig,
@@ -46,12 +48,11 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
+  assertAgentDocsConsistent,
   resolvesBundleZdtp,
   warnAmbiguousDropdownCategoryMatch,
 } from "./config-assertions/index.js";
-// Type-only — erased by esbuild before the node-builtin-free eval-graph
-// bundle runs (mirrors config.ts's `@takazudo/zfb/config` type-only import).
-import type { DirectiveSpec } from "@takazudo/zfb/config";
+import { zudoDocWindPreset } from "./wind/index.js";
 
 // ---------------------------------------------------------------------------
 // Input contract — structurally typed so the preset is portable to every
@@ -145,6 +146,10 @@ export interface PresetSettings {
   transclude?: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
   llmsTxt?: boolean;
+  /** Generate the package-owned static agent documentation feed. */
+  agentExport?: boolean;
+  /** Enable the stateless read-only MCP endpoint; requires `agentExport: true`. */
+  mcp?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
   /** Metadata fields shown in the doc metadata area. */
   docMetainfoFields?: Array<"created" | "updated" | "author">;
@@ -342,6 +347,11 @@ export interface PresetMarkdown {
   gfm: { taskListItem: boolean; footnoteDefinition: boolean };
 }
 
+/** MCP-only bundler options required for SDK CommonJS dependency resolution. */
+export interface PresetBundle {
+  mainFields: string[];
+}
+
 export interface PresetCodeHighlight {
   mode: "class";
   defaultStylesheet: true;
@@ -349,8 +359,11 @@ export interface PresetCodeHighlight {
 
 /** The config fragment returned by {@link zudoDocPreset}. */
 export interface ZudoDocPresetResult {
+  presets: Partial<ZfbConfig>[];
   collections: PresetCollection[];
   plugins: PresetPlugin[];
+  /** Present only when MCP is enabled. */
+  bundle?: PresetBundle;
   markdown: PresetMarkdown;
   codeHighlight: PresetCodeHighlight;
   resolveMarkdownLinks: PresetResolveMarkdownLinks;
@@ -370,9 +383,7 @@ export interface ZudoDocPresetResult {
  *
  * ```ts
  * export default defineConfig({
- *   framework: "preact",
  *   port: 4321,
- *   tailwind: { enabled: true },
  *   bundle: { exclude: [...] },
  *   base: settings.base,
  *   adapter: "@takazudo/zfb-adapter-cloudflare",
@@ -414,6 +425,10 @@ export function zudoDocPreset({
   // built below.
   assertValidSearchMaxBodyLength(settings.searchMaxBodyLength);
 
+  // The directly-callable preset must enforce the MCP/export combination and
+  // runtime value guards too; callers can bypass `zudoDoc()` entirely.
+  assertAgentDocsConsistent(settings);
+
   // This diagnostic belongs only to the directly-callable preset. `zudoDoc()`
   // delegates here, so a second call site would emit duplicate warnings.
   warnAmbiguousDropdownCategoryMatch(settings.headerNav);
@@ -424,8 +439,12 @@ export function zudoDocPreset({
   const docsSchemaJson = z.toJSONSchema(buildDocsSchema()) as Record<string, unknown>;
 
   return {
+    presets: [zudoDocWindPreset],
     collections: buildCollections(settings, docsSchemaJson),
     plugins: buildPlugins(settings, { translations, tagVocabulary, colorSchemes }),
+    ...(settings.mcp === true
+      ? { bundle: { mainFields: ["module", "main"] } }
+      : {}),
     markdown: {
       features: buildMarkdownFeatures(settings, directiveVocabulary),
       ...(settings.cjkFriendly !== undefined ? { cjkFriendly: settings.cjkFriendly } : {}),
@@ -672,7 +691,7 @@ function buildPlugins(
     // the route catalog from `settings.locales` / `settings.versions`. Listed
     // FIRST so an injected route is registered before the other plugins'
     // preBuild work runs (ordering is cosmetic — injection happens in `setup`).
-    ...(effectivePackageOwnedRoutes || assetViewer || homeIntro
+    ...(effectivePackageOwnedRoutes || assetViewer || homeIntro || settings.mcp === true
       ? [
           {
             name: "@takazudo/zudo-doc/plugins/routes",
@@ -783,12 +802,28 @@ function buildPlugins(
               siteDescription: settings.siteDescription,
               base: settings.base,
               siteUrl: settings.siteUrl,
+              defaultLocale: settings.defaultLocale ?? "en",
+              agentExport: settings.agentExport === true,
+              mcp: settings.mcp === true,
               defaultLocaleDir: settings.docsDir,
               locales: localeArray,
               assetScan,
             },
           },
         ]
+      : []),
+    ...(settings.agentExport
+      ? [{
+          name: "@takazudo/zudo-doc/plugins/agent-export",
+          options: {
+            siteName: settings.siteName,
+            siteUrl: settings.siteUrl,
+            base: settings.base,
+            defaultLocale: settings.defaultLocale ?? "en",
+            defaultLocaleDir: settings.docsDir,
+            locales: localeArray,
+          },
+        }]
       : []),
     ...(Array.isArray(settings.changelogs) && settings.changelogs.length > 0
       ? [

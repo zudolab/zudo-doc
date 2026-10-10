@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // search-widget — SSR-friendly search trigger + dialog widget (epic #2344, S5).
 //
 // The host's `pages/lib/_search-widget.tsx` previously imported `withBase`
@@ -9,7 +8,7 @@
 //
 // Pure SSR — no islands, no client-only imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { SEARCH_WIDGET_SCRIPT } from "../search-widget-script/index.js";
 
 export interface SearchWidgetProps {
@@ -61,7 +60,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
 
   return (
     <>
-      {/* @ts-expect-error site-search is a custom element not in JSX intrinsics */}
       <site-search
         data-base={base}
         data-result-count-template={resultCountTemplate}
@@ -73,11 +71,10 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
         <button
           data-open-search
           type="button"
-          class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+          class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors duration-0 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
           aria-label={searchLabel}
         >
           <svg
-            xmlns="http://www.w3.org/2000/svg"
             width="22"
             height="22"
             viewBox="0 0 24 24"
@@ -115,7 +112,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
             <div class="flex items-center gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm">
               {/* Small search icon inside the input area */}
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
@@ -136,7 +132,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
                 placeholder={placeholderText}
                 class="w-full bg-transparent text-body text-fg outline-none placeholder:text-muted"
                 autocomplete="off"
-                spellcheck={false}
+                spellcheck="false"
               />
               {/* Wide-viewport hit count (hidden until results arrive) */}
               <span
@@ -151,7 +147,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
                 aria-label="Close search"
               >
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
@@ -201,14 +196,13 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
             </div>
           </div>
         </dialog>
-      {/* @ts-expect-error closing custom element tag */}
       </site-search>
 
       {/* Inline script registers the SiteSearch custom element. Emitted once
           per page — the browser deduplicates same-id custom elements
           automatically; the `customElements.define` call below guards against
           double-registration with the `!customElements.get(...)` check. */}
-      <script dangerouslySetInnerHTML={{ __html: SEARCH_WIDGET_SCRIPT }} />
+      <script rawHtml={SEARCH_WIDGET_SCRIPT} />
     </>
   );
 }

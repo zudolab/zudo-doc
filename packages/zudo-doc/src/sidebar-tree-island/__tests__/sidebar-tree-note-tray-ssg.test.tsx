@@ -1,11 +1,15 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { describe, expect, it, vi } from "vitest";
+const themeCalls = vi.hoisted(() => [] as unknown[]);
+vi.mock("../../theme-toggle/index.js", () => ({
+  ThemeToggle: (props: unknown) => {
+    themeCalls.push(props);
+    return null;
+  },
+}));
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { filterTree } from "../../sidebar-filter/index.js";
 import type { SidebarNavNode, SidebarLocaleLink } from "../../sidebar/types.js";
-import { SidebarToggle } from "../../sidebar-toggle-island/index.js";
 import { SidebarTree } from "../index.js";
 
 function item(
@@ -52,11 +56,13 @@ const JA_LINKS: SidebarLocaleLink[] = [
 
 describe("SidebarTree — note tray SSG", () => {
   it("renders an index tray as a root link and flat ranked rows with no collapse controls", () => {
-    const nodes = [tray("index", [
-      item("alpha", "Alpha title", 1, "2026-01-02"),
-      item("beta", "Beta title", 2),
-      item("gamma", "Gamma title", 3),
-    ])];
+    const nodes = [
+      tray("index", [
+        item("alpha", "Alpha title", 1, "2026-01-02"),
+        item("beta", "Beta title", 2),
+        item("gamma", "Gamma title", 3),
+      ]),
+    ];
     const html = render(<SidebarTree nodes={nodes} currentSlug="notes/beta" />);
 
     expect(html).toContain('href="/docs/notes"');
@@ -74,7 +80,10 @@ describe("SidebarTree — note tray SSG", () => {
 
   it("marks the non-collapsible tray root active on the index page", () => {
     const html = render(
-      <SidebarTree nodes={[tray("index", [item("alpha", "Alpha", 1)])]} currentSlug="notes" />,
+      <SidebarTree
+        nodes={[tray("index", [item("alpha", "Alpha", 1)])]}
+        currentSlug="notes"
+      />,
     );
     const rootLink = html.match(/<a href="\/docs\/notes"[^>]*>/)?.[0];
 
@@ -83,14 +92,24 @@ describe("SidebarTree — note tray SSG", () => {
   });
 
   it("renders descending year groups with only the active group open and MM-DD dates", () => {
-    const nodes = [tray("year", [
-      item("older", "Older", 1, "2025-12-09"),
-      item("newest", "Newest", 3, "2026-08-22"),
-      item("active", "Active article", 2, "2026-01-03"),
-    ], "desc")];
-    const html = render(<SidebarTree nodes={nodes} currentSlug="notes/active" />);
+    const nodes = [
+      tray(
+        "year",
+        [
+          item("older", "Older", 1, "2025-12-09"),
+          item("newest", "Newest", 3, "2026-08-22"),
+          item("active", "Active article", 2, "2026-01-03"),
+        ],
+        "desc",
+      ),
+    ];
+    const html = render(
+      <SidebarTree nodes={nodes} currentSlug="notes/active" />,
+    );
 
-    expect(html.indexOf("Collapse 2026")).toBeLessThan(html.indexOf("Expand 2025"));
+    expect(html.indexOf("Collapse 2026")).toBeLessThan(
+      html.indexOf("Expand 2025"),
+    );
     expect(html).toContain('aria-label="Collapse 2026"');
     expect(html).toContain('aria-label="Expand 2025"');
     expect(html).toContain("08-22");
@@ -100,18 +119,32 @@ describe("SidebarTree — note tray SSG", () => {
     expect(html).not.toContain("text-bg/70");
 
     const activeLink = html.match(/<a href="\/docs\/notes\/active"[^>]*>/)?.[0];
-    expect(activeLink).toContain("padding-left:calc(3 * clamp(0.8rem, 1.2vw, 1.625rem) + 1.25rem + 5px)");
+    expect(activeLink).toContain(
+      "padding-left:calc(3 * clamp(0.8rem, 1.2vw, 1.625rem) + 1.25rem + 5px)",
+    );
   });
 
   it("localizes month labels for English and Japanese and keeps active groups open", () => {
-    const nodes = [tray("month", [
-      item("july", "July note", 1, "2026-07-02"),
-      item("august", "August note", 2, "2026-08-05"),
-    ], "desc")];
+    const nodes = [
+      tray(
+        "month",
+        [
+          item("july", "July note", 1, "2026-07-02"),
+          item("august", "August note", 2, "2026-08-05"),
+        ],
+        "desc",
+      ),
+    ];
 
-    const english = render(<SidebarTree nodes={nodes} currentSlug="notes/august" />);
+    const english = render(
+      <SidebarTree nodes={nodes} currentSlug="notes/august" />,
+    );
     const japanese = render(
-      <SidebarTree nodes={nodes} currentSlug="notes/august" localeLinks={JA_LINKS} />,
+      <SidebarTree
+        nodes={nodes}
+        currentSlug="notes/august"
+        localeLinks={JA_LINKS}
+      />,
     );
 
     expect(english).toContain('aria-label="Collapse 2026 August"');
@@ -122,12 +155,16 @@ describe("SidebarTree — note tray SSG", () => {
   });
 
   it("keeps a grouped tray and only its matching title when filtered", () => {
-    const nodes = [tray("month", [
-      item("alpha", "Alpha title", 1, "2026-08-01"),
-      item("beta", "Beta target", 2, "2026-08-02"),
-    ])];
+    const nodes = [
+      tray("month", [
+        item("alpha", "Alpha title", 1, "2026-08-01"),
+        item("beta", "Beta target", 2, "2026-08-02"),
+      ]),
+    ];
     const filtered = filterTree(nodes, "target");
-    const html = render(<SidebarTree nodes={filtered} currentSlug="notes/beta" />);
+    const html = render(
+      <SidebarTree nodes={filtered} currentSlug="notes/beta" />,
+    );
 
     expect(html).toContain("Beta target");
     expect(html).not.toContain("Alpha title");
@@ -136,10 +173,14 @@ describe("SidebarTree — note tray SSG", () => {
 
   it("names persisted group state by tray slug and group key", () => {
     const yearHtml = render(
-      <SidebarTree nodes={[tray("year", [item("alpha", "Alpha", 1, "2026-01-02")])]} />,
+      <SidebarTree
+        nodes={[tray("year", [item("alpha", "Alpha", 1, "2026-01-02")])]}
+      />,
     );
     const monthHtml = render(
-      <SidebarTree nodes={[tray("month", [item("alpha", "Alpha", 1, "2026-01-02")])]} />,
+      <SidebarTree
+        nodes={[tray("month", [item("alpha", "Alpha", 1, "2026-01-02")])]}
+      />,
     );
     const otherTray = tray("year", [item("alpha", "Alpha", 1, "2026-01-02")]);
     otherTray.slug = "releases";
@@ -150,26 +191,48 @@ describe("SidebarTree — note tray SSG", () => {
     expect(otherHtml).toContain('data-zd-sidebar-open-key="releases#2026"');
   });
 
-  it("renders the same tray rows inside the mobile drawer", () => {
+  it("renders the same tray rows for the mobile drawer", () => {
     const html = render(
-      <SidebarToggle
+      <SidebarTree
         nodes={[tray("index", [item("alpha", "Mobile alpha", 1)])]}
         currentSlug="notes/alpha"
       />,
     );
 
     expect(html).toMatch(/>01<\/span><span[^>]*>Mobile alpha<\/span>/);
-    expect(html).toContain('data-nav-active');
+    expect(html).toContain("data-nav-active");
   });
 
-  it("keeps the nested sidebar ThemeToggle pending until hydration", () => {
-    const html = render(
-      <SidebarToggle nodes={[]} themeDefaultMode="dark" />,
+  it("passes the stable ThemeToggle props to the bare nested footer", () => {
+    themeCalls.length = 0;
+    render(
+      <SidebarTree
+        nodes={[]}
+        themeDefaultMode="dark"
+        themeRespectSystem={true}
+        themeLabels={{
+          appearance: "Appearance",
+          light: "Light",
+          dark: "Dark",
+          system: "System",
+          systemHelper: "System helper",
+        }}
+      />,
     );
-    const button = html.match(/<button\b[^>]*data-zd-pending[^>]*>/)?.[0];
-
-    expect(button).toBeDefined();
-    expect(button).toContain('aria-disabled="true"');
+    expect(themeCalls).toEqual([
+      {
+        defaultMode: "dark",
+        labels: {
+          appearance: "Appearance",
+          light: "Light",
+          dark: "Dark",
+          system: "System",
+          systemHelper: "System helper",
+        },
+        respectPrefersColorScheme: true,
+        pendingUntilHydrated: true,
+      },
+    ]);
   });
 
   it("does not invent rank 00 when an optional rank is absent", () => {

@@ -130,6 +130,14 @@ function optionalPeersOf(): string[] {
     .map(([name]) => name);
 }
 
+function peerDependenciesOf(): Record<string, string> {
+  const require = createRequire(import.meta.url);
+  const pkg = require(resolve(pkgRoot, "package.json")) as {
+    peerDependencies?: Record<string, string>;
+  };
+  return pkg.peerDependencies ?? {};
+}
+
 /** `@scope/pkg/sub` → `@scope/pkg`; `pkg/sub` → `pkg`. */
 function packageNameOf(specifier: string): string {
   const parts = specifier.split("/");
@@ -200,7 +208,7 @@ async function collectBareSpecifiers(entryPoints: string[]): Promise<Set<string>
     format: "esm",
     platform: "neutral",
     jsx: "automatic",
-    jsxImportSource: "preact",
+    jsxImportSource: "@takazudo/zfb/zudo-react",
     logLevel: "silent",
     plugins: [
       {
@@ -237,6 +245,10 @@ async function collectBareSpecifiers(entryPoints: string[]): Promise<Set<string>
 }
 
 describe("always-bundled route graph does not reach un-allowlisted optional peers", () => {
+  it("does not declare Preact as a package peer", () => {
+    expect(peerDependenciesOf()).not.toHaveProperty("preact");
+  });
+
   it("reaches only the accepted unconditional optional peers", async () => {
     const specifiers = await collectBareSpecifiers(
       ROUTE_ENTRYPOINTS.map((p) => resolve(pkgRoot, p)),
@@ -288,8 +300,9 @@ describe("always-bundled route graph does not reach un-allowlisted optional peer
     );
     const names = new Set([...specifiers].map(packageNameOf));
 
-    expect(names.has("preact")).toBe(true);
+    expect(names.has("preact")).toBe(false);
     expect(names.has("@takazudo/zfb")).toBe(true);
+    expect(specifiers.has("@takazudo/zfb/zudo-react/jsx-runtime")).toBe(true);
     // At least one known-allowlisted optional peer must still be seen — if this
     // stops holding, the collector is under-reporting rather than the graph
     // having genuinely cleaned up.

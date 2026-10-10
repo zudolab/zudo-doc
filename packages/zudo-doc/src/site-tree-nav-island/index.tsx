@@ -1,10 +1,12 @@
 "use client";
 
-/** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-// Use preact hook entrypoints directly — the "react" → "preact/compat" alias
-// lets us consume React-typed components in this Preact app.
-import { useState } from "preact/hooks";
+import {
+  computed,
+  For,
+  Show,
+  signal,
+  type ReadonlySignal,
+} from "@takazudo/zfb/zudo-react";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import type { ResolvedDateFormats } from "../settings.js";
 import {
@@ -60,10 +62,10 @@ export interface SiteTreeNavProps {
   /** Locale used by dated note-tray rows. */
   locale?: string;
   /**
-   * Per-role date patterns already resolved for this page's locale, serialized
+   * Per-role date patterns already resolved for the page's locale, serialized
    * into the island's `data-props` by the SSR wrapper (`site-tree-nav`,
    * `home-page`). Optional and absent-safe: an omitted value means every role
-   * behaves as `"locale"` — today's `Intl` output (#4075).
+   * behaves as "locale" — today's `Intl` output (#4075).
    */
   dateFormats?: ResolvedDateFormats;
   /** @deprecated — no longer rendered (created date only). */
@@ -88,65 +90,88 @@ export function SiteTreeNav({
   if (categoryOrder) {
     processedTree = reorderTree(processedTree, categoryOrder);
   }
+
+  // Every value used to seed the tree is part of the JSON-serializable island
+  // props. There is no browser storage or location read during setup.
+  const roots = signal(processedTree);
   const initiallyCollapsed = new Set(initiallyCollapsedCategorySlugs);
+
   return (
     <nav
       aria-label={ariaLabel}
       data-site-nav
-      className="grid gap-vsp-md"
+      class="grid gap-vsp-md"
       style={{
-        gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
+        "grid-template-columns": "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
       }}
     >
-      {processedTree.map((node) => {
-        if (node.shape === "note-tray" && getNoteTrayItems(node).length === 0) {
-          return null;
-        }
-        return (
-          <div key={node.slug} className="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
-            {node.children.length > 0 ? (
-              <CategoryNode
-                node={node}
-                depth={0}
-                isLast={true}
-                initiallyCollapsed={initiallyCollapsed.has(node.slug)}
-                locale={locale}
-                dateFormats={dateFormats}
-                updatedLabel={updatedLabel}
-              />
-            ) : (
-              <LeafNode node={node} depth={0} isLast={true} />
-            )}
-          </div>
-        );
-      })}
+      <For each={roots} by={(node) => node.slug}>
+        {(node, index) => {
+          const isLast = computed(() => index.value === roots.value.length - 1);
+          return (
+            <Show
+              when={computed(
+                () =>
+                  node.value.shape !== "note-tray" ||
+                  getNoteTrayItems(node.value).length > 0,
+              )}
+            >
+              {() => (
+                <div class="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
+                  <Show
+                    when={computed(() => node.value.children.length > 0)}
+                    fallback={() => (
+                      <LeafNode node={node} depth={0} isLast={isLast} />
+                    )}
+                  >
+                    {() => (
+                      <CategoryNode
+                        node={node}
+                        depth={0}
+                        isLast={isLast}
+                        initiallyCollapsed={initiallyCollapsed.has(node.value.slug)}
+                        locale={locale}
+                        dateFormats={dateFormats}
+                        updatedLabel={updatedLabel}
+                      />
+                    )}
+                  </Show>
+                </div>
+              )}
+            </Show>
+          );
+        }}
+      </For>
     </nav>
   );
 }
 SiteTreeNav.displayName = "SiteTreeNav";
 
-function NodeList({ nodes, depth }: { nodes: SidebarNavNode[]; depth: number }) {
+function NodeList({
+  nodes,
+  depth,
+}: {
+  nodes: ReadonlySignal<readonly SidebarNavNode[]>;
+  depth: number;
+}) {
   return (
-    <>
-      {nodes.map((node, index) => {
-        const isLast = index === nodes.length - 1;
-        return node.children.length > 0 ? (
-          <CategoryNode
-            key={node.slug}
-            node={node}
-            depth={depth}
-            isLast={isLast}
-          />
-        ) : (
-          <LeafNode
-            key={node.slug}
-            node={node}
-            depth={depth}
-            isLast={isLast}
-          />
+    <For each={nodes} by={(node) => node.slug}>
+      {(node, index) => {
+        const isLast = computed(() => index.value === nodes.value.length - 1);
+        return (
+          <Show
+            when={computed(() => node.value.children.length > 0)}
+            fallback={() => (
+              <LeafNode node={node} depth={depth} isLast={isLast} />
+            )}
+          >
+            {() => (
+              <CategoryNode node={node} depth={depth} isLast={isLast} />
+            )}
+          </Show>
         );
-      })}
-    </>
+      }}
+    </For>
   );
 }
 
@@ -159,87 +184,131 @@ function CategoryNode({
   dateFormats,
   updatedLabel = "Updated",
 }: {
-  node: SidebarNavNode;
+  node: ReadonlySignal<SidebarNavNode>;
   depth: number;
-  isLast: boolean;
+  isLast: ReadonlySignal<boolean>;
   initiallyCollapsed?: boolean;
   locale?: string;
   dateFormats?: ResolvedDateFormats;
   updatedLabel?: string;
 }) {
-  const [open, setOpen] = useState(() => initialCategoryOpenState(initiallyCollapsed));
-  const toggle = () => setOpen(toggleCategoryOpenState);
+  const open = signal(initialCategoryOpenState(initiallyCollapsed));
+  const toggle = () => {
+    open.value = toggleCategoryOpenState(open.value);
+  };
+  const label = computed(() => node.value.label);
+  const href = computed(() => node.value.href);
+  const children = computed(() => node.value.children);
   const paddingLeft = padLeft(depth);
 
   return (
-    <div className={`${depth >= 1 && !isLast ? "relative" : ""}`}>
-      {depth >= 1 && !isLast && open && (
-        <div
-          className="absolute border-l border-dashed border-muted z-local-1"
-          style={{
-            left: connectorLeft(depth),
-            top: 0,
-            bottom: 0,
-          }}
-        />
-      )}
-      <div className="relative">
-        <ConnectorLines
-          depth={depth}
-          isLast={isLast}
-          widthScale={2}
-          topPad="calc(0.15rem + var(--spacing-vsp-xs))"
-        />
-        <div
-          className="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg"
-          style={{ paddingLeft }}
-        >
-          {node.href ? (
-            <a
-              href={node.href}
-              className="flex-1 flex items-start gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
-            >
-              {depth === 0 && (
-                <span className="flex h-[1lh] items-center">
-                  <CategoryLinkIcon className="w-[18px] 2xl:w-[24px]" />
-                </span>
-              )}
-              {node.label}
-            </a>
-          ) : (
-            <button
-              type="button"
-              onClick={toggle}
-              className="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline"
-            >
-              {node.label}
-            </button>
+    <div class={computed(() => (depth >= 1 && !isLast.value ? "relative" : ""))}>
+      <Show when={computed(() => depth >= 1 && !isLast.value && open.value)}>
+        {() => (
+          <div
+            class="absolute border-l border-dashed border-muted z-local-1"
+            style={{
+              left: connectorLeft(depth),
+              top: "0px",
+              bottom: "0px",
+            }}
+          />
+        )}
+      </Show>
+      <div class="relative">
+        <Show when={isLast}>
+          {() => (
+            <ConnectorLines
+              depth={depth}
+              isLast={true}
+              widthScale={2}
+              topPad="calc(0.15rem + var(--spacing-vsp-xs))"
+            />
           )}
+        </Show>
+        <Show when={computed(() => !isLast.value)}>
+          {() => (
+            <ConnectorLines
+              depth={depth}
+              isLast={false}
+              widthScale={2}
+              topPad="calc(0.15rem + var(--spacing-vsp-xs))"
+            />
+          )}
+        </Show>
+        <div
+          class="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg"
+          style={{ "padding-left": paddingLeft }}
+        >
+          <Show
+            when={computed(() => Boolean(href.value))}
+            fallback={() => (
+              <button
+                type="button"
+                on:click={toggle}
+                class="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline"
+              >
+                {label}
+              </button>
+            )}
+          >
+            {() => (
+              <a
+                href={computed(() => href.value ?? "")}
+                class="flex-1 flex items-start gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+              >
+                {depth === 0 && (
+                  <span class="flex h-[1lh] items-center">
+                    <CategoryLinkIcon class="w-[18px]" />
+                  </span>
+                )}
+                {label}
+              </a>
+            )}
+          </Show>
           <button
             type="button"
-            onClick={toggle}
-            className="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline"
-            aria-expanded={open}
-            aria-label={open ? `Collapse ${node.label}` : `Expand ${node.label}`}
+            on:click={toggle}
+            class="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline"
+            aria-expanded={computed(() => (open.value ? "true" : "false"))}
+            aria-label={computed(
+              () => `${open.value ? "Collapse" : "Expand"} ${label.value}`,
+            )}
           >
-            <ChevronRight className={`h-icon-xs w-icon-xs transition-transform duration-150 ${open ? "rotate-90" : ""} text-muted`} />
+            <span
+              class="inline-flex transition-transform duration-150"
+              style={computed(
+                () => `transform:rotate(${open.value ? "90deg" : "0deg"})`,
+              )}
+            >
+              <ChevronRight class="h-icon-xs w-icon-xs text-muted" />
+            </span>
           </button>
         </div>
       </div>
-      {open && (
-        <div>
-          {node.shape === "note-tray" && depth === 0 ? (
-            <NoteTrayNodeList
-              node={node}
-              locale={locale}
-              dateFormats={dateFormats}
-              updatedLabel={updatedLabel}
-            />
-          ) : (
-            <NodeList nodes={node.children} depth={depth + 1} />
-          )}
-        </div>
-      )}
+      <Show when={open}>
+        {() => (
+          <div>
+            <Show
+              when={computed(
+                () => node.value.shape === "note-tray" && depth === 0,
+              )}
+              fallback={() => (
+                <NodeList nodes={children} depth={depth + 1} />
+              )}
+            >
+              {() => (
+                <NoteTrayNodeList
+                  node={node}
+                  locale={locale}
+                  dateFormats={dateFormats}
+                  updatedLabel={updatedLabel}
+                />
+              )}
+            </Show>
+          </div>
+        )}
+      </Show>
     </div>
   );
 }
@@ -250,62 +319,83 @@ function NoteTrayNodeList({
   dateFormats,
   updatedLabel,
 }: {
-  node: SidebarNavNode;
+  node: ReadonlySignal<SidebarNavNode>;
   locale: string;
   dateFormats?: ResolvedDateFormats;
   updatedLabel: string;
 }) {
-  const items = getNoteTrayItems(node);
-  const width = rankWidth(items);
-  const showDate = node.noteTrayDated === true;
-  const grouping =
-    showDate && node.noteTraySidebar !== "index"
-      ? node.noteTraySidebar
-      : undefined;
-
-  if (grouping === "year" || grouping === "month") {
-    return (
-      <div className="pl-hsp-md pr-hsp-sm">
-        {groupItems(items, grouping, node.sortOrder ?? "asc").map((group) => (
-          <div key={group.key} data-note-tray-group={group.key}>
-            <div className="pt-vsp-sm pb-vsp-2xs text-micro tracking-wide uppercase text-muted">
-              {grouping === "year"
-                ? formatYearLabel(group.key, locale, dateFormats?.year)
-                : formatYearMonthLabel(group.key, locale, dateFormats?.yearMonth)}
-            </div>
-            {group.items.map((item) => (
-              <NoteTrayRow
-                key={item.slug}
-                item={item}
-                locale={locale}
-                dateFormats={dateFormats}
-                updatedLabel={updatedLabel}
-                rankWidth={width}
-                showDate={showDate}
-                groupedDate={true}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const items = computed(() => getNoteTrayItems(node.value));
+  const width = computed(() => rankWidth(items.value));
+  const showDate = computed(() => node.value.noteTrayDated === true);
+  const grouping = computed(() => {
+    const mode = node.value.noteTraySidebar;
+    return showDate.value && mode !== "index" ? mode : undefined;
+  });
+  const groups = computed(() => {
+    const mode = grouping.value;
+    if (mode !== "year" && mode !== "month") return [];
+    return groupItems(items.value, mode, node.value.sortOrder ?? "asc");
+  });
 
   return (
-    <div className="pl-hsp-md pr-hsp-sm">
-      {items.map((item) => (
-        <NoteTrayRow
-          key={item.slug}
-          item={item}
-          locale={locale}
-          dateFormats={dateFormats}
-          updatedLabel={updatedLabel}
-          rankWidth={width}
-          showDate={showDate}
-          groupedDate={false}
-        />
-      ))}
-    </div>
+    <>
+      <Show when={computed(() => grouping.value === "year" || grouping.value === "month")}>
+        {() => (
+          <div class="pl-hsp-md pr-hsp-sm">
+            <For each={groups} by={(group) => group.key}>
+              {(group) => {
+                const groupItemsSignal = computed(() => group.value.items);
+                const heading = computed(() => {
+                  const mode = grouping.value;
+                  return mode === "year"
+                    ? formatYearLabel(group.value.key, locale, dateFormats?.year)
+                    : formatYearMonthLabel(group.value.key, locale, dateFormats?.yearMonth);
+                });
+                return (
+                  <div data-note-tray-group={computed(() => group.value.key)}>
+                    <div class="pt-vsp-sm pb-vsp-2xs text-micro tracking-wide uppercase text-muted">
+                      {heading}
+                    </div>
+                    <For each={groupItemsSignal} by={(item) => item.slug}>
+                      {(item) => (
+                        <NoteTrayRow
+                          item={item}
+                          locale={locale}
+                          dateFormats={dateFormats}
+                          updatedLabel={updatedLabel}
+                          rankWidth={width}
+                          showDate={showDate}
+                          groupedDate={true}
+                        />
+                      )}
+                    </For>
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        )}
+      </Show>
+      <Show when={computed(() => grouping.value !== "year" && grouping.value !== "month")}>
+        {() => (
+          <div class="pl-hsp-md pr-hsp-sm">
+            <For each={items} by={(item) => item.slug}>
+              {(item) => (
+                <NoteTrayRow
+                  item={item}
+                  locale={locale}
+                  dateFormats={dateFormats}
+                  updatedLabel={updatedLabel}
+                  rankWidth={width}
+                  showDate={showDate}
+                  groupedDate={false}
+                />
+              )}
+            </For>
+          </div>
+        )}
+      </Show>
+    </>
   );
 }
 
@@ -313,53 +403,65 @@ function NoteTrayRow({
   item,
   locale,
   dateFormats,
-  updatedLabel,
   rankWidth: width,
   showDate,
   groupedDate,
 }: {
-  item: SidebarNavNode;
+  item: ReadonlySignal<SidebarNavNode>;
   locale: string;
   dateFormats?: ResolvedDateFormats;
   updatedLabel: string;
-  rankWidth: number;
-  showDate: boolean;
+  rankWidth: ReadonlySignal<number>;
+  showDate: ReadonlySignal<boolean>;
   groupedDate: boolean;
 }) {
-  if (!item.href) return null;
-  // formatMonthDay is (iso, pattern, locale) — pattern SECOND, unlike
-  // formatDate below; a locale in slot 2 is read as a pattern.
-  const dateLabel = showDate && item.date
-    ? groupedDate
-      ? formatMonthDay(item.date, dateFormats?.numericMonthDay, locale)
-      : formatDate(item.date, locale, dateFormats?.full)
-    : undefined;
+  const href = computed(() => item.value.href);
+  const dateLabel = computed(() => {
+    if (!showDate.value || !item.value.date) return undefined;
+    return groupedDate
+      ? formatMonthDay(item.value.date, dateFormats?.numericMonthDay, locale)
+      : formatDate(item.value.date, locale, dateFormats?.full);
+  });
+  const rankLabel = computed(() =>
+    item.value.rank === undefined
+      ? ""
+      : String(item.value.rank).padStart(width.value, "0"),
+  );
 
   return (
-    <a
-      href={item.href}
-      data-note-tray-row
-      className="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
-    >
-      {dateLabel ? (
-        <time
-          dateTime={item.date}
-          className="shrink-0 font-mono tabular-nums text-caption text-muted"
+    <Show when={computed(() => Boolean(href.value))}>
+      {() => (
+        <a
+          href={computed(() => href.value ?? "")}
+          data-note-tray-row
+          class="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
         >
-          {dateLabel}
-        </time>
-      ) : (
-        <span
-          className="shrink-0 font-mono tabular-nums text-caption text-muted"
-          style={{ width: `${width}ch` }}
-        >
-          {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
-        </span>
+          <Show
+            when={computed(() => Boolean(dateLabel.value))}
+            fallback={() => (
+              <span
+                class="shrink-0 font-mono tabular-nums text-caption text-muted"
+                style={computed(() => ({ width: `${width.value}ch` }))}
+              >
+                {rankLabel}
+              </span>
+            )}
+          >
+            {() => (
+              <time
+                datetime={computed(() => item.value.date ?? "")}
+                class="shrink-0 font-mono tabular-nums text-caption text-muted"
+              >
+                {computed(() => dateLabel.value ?? "")}
+              </time>
+            )}
+          </Show>
+          <span class="min-w-0 break-words">
+            <span>{computed(() => item.value.label)}</span>
+          </span>
+        </a>
       )}
-      <span className="min-w-0 break-words">
-        <span>{item.label}</span>
-      </span>
-    </a>
+    </Show>
   );
 }
 
@@ -368,11 +470,12 @@ function LeafNode({
   depth,
   isLast,
 }: {
-  node: SidebarNavNode;
+  node: ReadonlySignal<SidebarNavNode>;
   depth: number;
-  isLast: boolean;
+  isLast: ReadonlySignal<boolean>;
 }) {
-  if (!node.href) return null;
+  const href = computed(() => node.value.href);
+  const label = computed(() => node.value.label);
   const isRoot = depth === 0;
   const paddingLeft = padLeft(depth);
 
@@ -381,25 +484,49 @@ function LeafNode({
     : "var(--spacing-vsp-2xs)";
 
   return (
-    <div>
-      <div className="relative">
-        <ConnectorLines depth={depth} isLast={isLast} widthScale={2} topPad={topPad} />
-        <a
-          href={node.href}
-          className={isRoot
-            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent"
-            : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent`
-          }
-          style={{ paddingLeft }}
-        >
-          {isRoot && (
-            <span className="flex h-[1lh] items-center">
-              <CategoryLinkIcon className="w-[18px] 2xl:w-[24px]" />
-            </span>
-          )}
-          {isRoot ? <span className="min-w-0">{node.label}</span> : node.label}
-        </a>
-      </div>
-    </div>
+    <Show when={computed(() => Boolean(href.value))}>
+      {() => (
+        <div>
+          <div class="relative">
+            <Show when={isLast}>
+              {() => (
+                <ConnectorLines
+                  depth={depth}
+                  isLast={true}
+                  widthScale={2}
+                  topPad={topPad}
+                />
+              )}
+            </Show>
+            <Show when={computed(() => !isLast.value)}>
+              {() => (
+                <ConnectorLines
+                  depth={depth}
+                  isLast={false}
+                  widthScale={2}
+                  topPad={topPad}
+                />
+              )}
+            </Show>
+            <a
+              href={computed(() => href.value ?? "")}
+              class={computed(() =>
+                isRoot
+                  ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)_+_0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+                  : `block py-vsp-2xs pr-hsp-sm ${isLast.value ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent`,
+              )}
+              style={{ "padding-left": paddingLeft }}
+            >
+              {isRoot && (
+                <span class="flex h-[1lh] items-center">
+                  <CategoryLinkIcon class="w-[18px]" />
+                </span>
+              )}
+              {isRoot ? <span class="min-w-0">{label}</span> : label}
+            </a>
+          </div>
+        </div>
+      )}
+    </Show>
   );
 }

@@ -1,8 +1,7 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import "./island-metadata.js";
 import { Window } from "happy-dom";
 import { createHeaderWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
@@ -43,7 +42,7 @@ describe("HeaderWithDefaults — nested dropdown children", () => {
       } as Partial<ChromeContext>,
     });
     const HeaderWithDefaults = createHeaderWithDefaults(ctx);
-    return render(<HeaderWithDefaults lang={lang} currentPath={currentPath} currentVersion={currentVersion} />);
+    return render(<HeaderWithDefaults lang={lang} currentPath={currentPath} currentVersion={currentVersion} hideSidebarToggle />);
   }
 
   it.each([
@@ -61,5 +60,15 @@ describe("HeaderWithDefaults — nested dropdown children", () => {
     expect(root.querySelectorAll('a[data-active=""]').length).toBe(1);
     expect(root.querySelector('a[href*="pkg-a"]')?.getAttribute("data-active")).toBe("");
     expect(root.querySelector('a[href*="pkg-b"]')?.hasAttribute("data-active")).toBe(false);
+  });
+
+  it("renders changed nav props under the same locale-keyed persist root", () => {
+    const latest = render_("en", "/docs/changelog/pkg-a");
+    const archived = render_("en", "/v/1.0/docs/changelog/pkg-a", "1.0");
+
+    expect(latest).toContain('data-zfb-transition-persist="header-en"');
+    expect(archived).toContain('data-zfb-transition-persist="header-en"');
+    expect(latest).toContain('href="/docs/changelog/pkg-a"');
+    expect(archived).toContain('href="/v/1.0/docs/changelog/pkg-a"');
   });
 });

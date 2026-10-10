@@ -49,9 +49,15 @@ import { tmpdir } from "node:os";
 // in this file, e.g. FIXTURE_SRC below) — not a Node ESM built-in.
 // ---------------------------------------------------------------------------
 
-const { sha256Html } = await import(
+const { sha256Html, normalizeHtml } = await import(
   resolve(__dirname, "../../../../scripts/parity-html-normalize.mjs")
 );
+
+// Fingerprints live outside the linked package tree: updating the reference
+// must never itself change a native linked-package build identity (#4470).
+const a2Reference = JSON.parse(readFileSync(
+  resolve(__dirname, "../../../../scripts/__tests__/fixtures/a2-route-reference.json"), "utf8",
+)) as Record<string, string>;
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -377,7 +383,26 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   it("setup: fixture builds successfully with empty pages/", { timeout: 180_000 }, () => {
     fixtureDir = setupFixture({ emptyPages: true });
     // Should not throw — failure message includes the build output.
-    runZfbBuild(fixtureDir);
+    const buildOutput = runZfbBuild(fixtureDir);
+    // Capture original bytes before teardown without altering the asserted HTML.
+    // The destination is external to the linked package to avoid source-digest feedback.
+    if (process.env.ZUDO_A2_CAPTURE_DIR) {
+      const captureDir = resolve(process.env.ZUDO_A2_CAPTURE_DIR);
+      mkdirSync(captureDir, { recursive: true });
+      const pages = ["404.html", "docs/getting-started/index.html", "docs/getting-started/coverage/index.html"];
+      const manifest = pages.map((page) => {
+        const html = readBuiltHtml(fixtureDir, page);
+        const name = page.replaceAll("/", "--");
+        writeFileSync(join(captureDir, name), html);
+        writeFileSync(join(captureDir, name + ".normalized.html"), normalizeHtml(html));
+        return { page, bytes: Buffer.byteLength(html), sha256Html: sha256Html(html) };
+      });
+      writeFileSync(join(captureDir, "build.log"), buildOutput);
+      writeFileSync(join(captureDir, "manifest.json"), JSON.stringify({
+        sourceHead: execSync("git rev-parse HEAD", { cwd: WORKSPACE_ROOT, encoding: "utf8" }).trim(),
+        pages: manifest,
+      }, null, 2) + "\n");
+    }
   });
 
   it("static: /404 HTML contains package-default 'Page Not Found' (not a stub)", () => {
@@ -1217,19 +1242,48 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // the fixture has no icon controls, so the only normalized HTML change
   // is the header-right gap returning from gap-x-hsp-xs to gap-x-hsp-md.
   // The resulting hashes match the pre-#4381 baselines recorded above.
+  // 2026-10-09 #4470 reconciliation: exact v2 337b9f110 reproduces all three
+  // previous hashes. The repaired 4.2.1 captures differ by native build/protocol/
+  // transport metadata and zr markers, calc spacing, omitted HTML-SVG xmlns,
+  // computed aria-current=false, inherited category-icon ink, native hash-link/
+  // admonition classes, an inert style trailing semicolon, and the measured
+  // duration-0 repairs (TOC anchors + tabs script). Element open/close events,
+  // prose, URLs, heading IDs and transported props are unchanged. Full per-page
+  // census and repair evidence: docs/findings/4430-zfb3-migration/v4.2.1-gates.md.
+  // A comment-only edit to THIS test changed every data-zfb-build identity and
+  // nothing else after existing asset normalization. An external-reference edit
+  // preserved every normalized byte. References therefore live outside the
+  // linked package, retaining all native metadata/comments in the fingerprint.
+  // This is a bounded A2 review, not final browser/release acceptance.
+  it.each(["404.html", "docs/getting-started/index.html", "docs/getting-started/coverage/index.html"])(
+    "native transport: %s retains coherent owned-runtime metadata",
+    (page) => {
+      const html = readBuiltHtml(fixtureDir, page);
+      const identities = [...html.matchAll(/data-zfb-build=([a-f0-9]{16})(?=[ >])/g)].map((match) => match[1]);
+      const islands = [...html.matchAll(/data-zfb-island=/g)].length;
+      expect(islands).toBeGreaterThan(0);
+      expect(identities).toHaveLength(islands);
+      expect(new Set(identities).size).toBe(1);
+      expect([...html.matchAll(/data-zfb-protocol=zudo-react\/1(?=[ >])/g)]).toHaveLength(islands);
+      expect([...html.matchAll(/data-zfb-transport=json\/1(?=[ >])/g)]).toHaveLength(islands);
+      expect(html).toContain("<!--zr:1:");
+      expect(html).toContain("<!--/zr:1:");
+    },
+  );
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"065642fa3f30c9675939bce40e15a1ca63e0e3194c17cf544a158a1d2aa72e25"`);
+    expect(sha256Html(html)).toBe(a2Reference["404.html"]);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"452bf4b1ef86ab6286810e6e0969aecc9d6a450392f4ba64a97b185393077fa6"`);
+    expect(sha256Html(html)).toBe(a2Reference["docs/getting-started/index.html"]);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"2b22f0512bd38d32efc09d5dcff884ea7ec2655b312964acbb47e787f74e979a"`);
+    expect(sha256Html(html)).toBe(a2Reference["docs/getting-started/coverage/index.html"]);
   });
 });
 
@@ -2274,7 +2328,7 @@ describe("HOME home-page: createHomePageView adoption on the injected /[locale] 
   it("hero <h1>/description unchanged; hero logo renders the logo:\"auto\" AutoLogo default (#3074)", () => {
     const html = readBuiltHtml(fixtureDir, "ja/index.html");
     // Mirrors the hero <h1> assertion in home-page.test.tsx:106 — keep both in sync.
-    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs wrap-anywhere">Route Injection i18n Proof</h1>');
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs zd-wrap-anywhere">Route Injection i18n Proof</h1>');
     // logo:"auto" (default, commit a2ba5188a) renders the generated AutoLogo
     // SVG branch, not the masked bg-fg div — mirrors the assertion
     // convention in home-page.test.tsx:69 (semantic data-auto-logo= marker
@@ -2435,12 +2489,12 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 
   // #2480 published-shape guard: the injected chrome must statically import the
   // real DocHistory island so zfb registers it under packageOwnedRoutes. In the
-  // PUBLISHED tree the parent-relative `../doc-history/index.js` is rewritten to
+  // PUBLISHED tree the parent-relative `../doc-history-area/index.js` is rewritten to
   // the bare package subpath by copy-routes-src.mjs — prove the rewrite landed in
   // the packed output, not only in the in-repo `src/` shape.
   it("registration: published routes-src/_chrome.tsx imports the real DocHistory island (rewritten specifier)", () => {
     const chromeSrc = readFileSync(join(pkgDest, "routes-src/_chrome.tsx"), "utf-8");
-    expect(chromeSrc).toContain('from "@takazudo/zudo-doc/doc-history"');
+    expect(chromeSrc).toContain('import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area"');
     // …and threads it into the chrome builder (not left as a dead import).
     expect(chromeSrc).toMatch(/createChrome\(routeCtx,\s*\{/);
     // No residual parent-relative form survived the rewrite.
@@ -2602,8 +2656,11 @@ describe("OPT-ZDTP no-zdtp: the published package builds with the optional @taka
       join(pkgDest, "dist/design-token-panel-bootstrap.js"),
       "utf-8",
     );
-    expect(bootstrap).not.toContain("@takazudo/zdtp/constants");
-    expect(bootstrap).toContain('import("@takazudo/zudo-doc/zdtp-loader")');
+    expect(bootstrap).toContain('./design-token-panel-bootstrap-controller.js');
+    expect(bootstrap).toContain('./design-token-panel-bootstrap-island.js');
+    const controller = readFileSync(join(pkgDest, "dist/design-token-panel-bootstrap-controller.js"), "utf-8");
+    expect(bootstrap + controller).not.toContain("@takazudo/zdtp/constants");
+    expect(controller).toContain('import("@takazudo/zudo-doc/zdtp-loader")');
   });
 
   it("build: `zfb build` succeeds with zdtp absent from node_modules", { timeout: 180_000 }, () => {
@@ -3076,9 +3133,10 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
     expect(css).toContain("--text-scale-md: 1.2rem");
   });
 
-  it("group 5: the --color-*: initial tight-token guardrail is effective (no default Tailwind color utilities leak in)", () => {
+  it("group 5: the semantic token palette stays closed (no default color utilities leak in)", () => {
     const css = readBuiltCss(fixtureDir);
-    // Tailwind's built-in red-500 swatch must NOT survive the guardrail —
+    // zudo-wind uses the package's explicit semantic color token map. The
+    // former framework's built-in red-500 swatch must NOT leak into output —
     // neither as a --color-red-500 custom property nor a .bg-red-500 utility.
     expect(css).not.toContain("--color-red-500");
     expect(css).not.toContain(".bg-red-500");
@@ -3385,5 +3443,46 @@ describe("TM group 4: package-injected dev route works without the doc stub", ()
 
   it("teardown: kill the dev server", () => {
     dev?.kill();
+  });
+});
+
+// v4.2 composition contract: host boundaries win over configured-route defaults
+// and suppressed package defaults, but never bypass the package settings gate.
+describe.each([true, false])("fixed host panel boundary (enabled=%s)", (enabled) => {
+  it("preserves host selection on injected and self-contained routes", { timeout: 180_000 }, () => {
+    const dir = setupFixture({ emptyPages: true });
+    if (enabled) enableDesignTokenPanel(dir);
+    enableDesignTokenPanelConfigModule(dir);
+    const settingsPath = join(dir, "src/config/settings.ts");
+    writeFileSync(settingsPath, readFileSync(settingsPath, "utf-8").replace(
+      /packageOwnedRoutes:\s*true,/,
+      'packageOwnedRoutes: true, chromeBindingsModule: "./src/fixed-host-bindings.tsx",',
+    ));
+    writeFileSync(join(dir, "src/fixed-host-client.tsx"), `"use client";
+export function FixedHostPanel() { return <button>fixed host panel</button>; }
+`);
+    writeFileSync(join(dir, "src/fixed-host-bindings.tsx"), `
+import { Island } from "@takazudo/zfb";
+import { FixedHostPanel } from "./fixed-host-client";
+function HostBoundary() { return <><Island when="load"><FixedHostPanel /></Island></>; }
+export const chromeBindings = { DesignTokenPanelBootstrap: HostBoundary };
+`);
+    writeFileSync(join(dir, "pages/host-stub.tsx"), `
+import { routeContext } from "virtual:zudo-doc-route-context";
+import { createRouteContext } from "@takazudo/zudo-doc/route-context";
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+import { chromeBindings } from "../src/fixed-host-bindings";
+const { BodyEndIslands } = createChrome(createRouteContext(routeContext), chromeBindings);
+export default function Page() { return <html><body><BodyEndIslands basePath="/" /></body></html>; }
+`);
+    runZfbBuild(dir);
+    for (const path of ["docs/getting-started/index.html", "host-stub/index.html"]) {
+      const html = readBuiltHtml(dir, path);
+      expect(countHtmlAttr(html, "data-zfb-island", "FixedHostPanel")).toBe(enabled ? 1 : 0);
+      expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(0);
+      expect(countHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND)).toBe(0);
+      expect(html.includes("__zdtpToggleShimInstalled")).toBe(enabled);
+      expect(html.includes("fixed host panel")).toBe(enabled);
+    }
   });
 });

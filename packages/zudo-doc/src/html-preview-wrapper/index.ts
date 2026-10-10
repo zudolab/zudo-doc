@@ -1,9 +1,9 @@
 // Barrel for the html-preview-wrapper topic — HtmlPreviewWrapper component
 // and the full html-preview stack.
 export {
-  HtmlPreviewWrapper,
   HtmlPreviewWrapperInner,
 } from "./html-preview-wrapper.js";
+export { HtmlPreviewWrapper } from "./wrapper.js";
 export type {
   HtmlPreviewWrapperProps,
   HtmlPreviewGlobalConfig,

@@ -135,6 +135,7 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
   parentSortOrder?: "asc" | "desc",
 ): SidebarNode[] {
   const nodes: SidebarNode[] = [];
+  const sortPositions = new WeakMap<SidebarNode, number>();
 
   for (const child of parent.children.values()) {
     const doc = child.doc;
@@ -188,6 +189,7 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
       ...(href !== undefined ? { href } : {}),
       hasPage,
       ...(hasSortOrder ? { sortOrder } : {}),
+      ...(meta?.collapsed !== undefined ? { collapsed: meta.collapsed } : {}),
       ...(doc?.data.category_shape !== undefined
         ? { shape: doc.data.category_shape }
         : {}),
@@ -202,18 +204,14 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
       children,
     });
 
-    // Pin the position used at sort time on a private property so the
-    // comparator below can read it without re-deriving the value.
-    Object.defineProperty(nodes[nodes.length - 1], "__sortPosition", {
-      value: position,
-      enumerable: false,
-    });
+    // Keep the sort-only value outside the transportable node object.
+    sortPositions.set(nodes[nodes.length - 1]!, position);
   }
 
   const order = parentSortOrder ?? "asc";
   nodes.sort((a, b) => {
-    const aPos = (a as SidebarNode & { __sortPosition: number }).__sortPosition;
-    const bPos = (b as SidebarNode & { __sortPosition: number }).__sortPosition;
+    const aPos = sortPositions.get(a)!;
+    const bPos = sortPositions.get(b)!;
     const posCompare = aPos - bPos;
     if (posCompare !== 0) return order === "desc" ? -posCompare : posCompare;
     const slugCompare = a.id.localeCompare(b.id);

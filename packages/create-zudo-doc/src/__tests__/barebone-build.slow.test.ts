@@ -38,7 +38,7 @@
  * `/docs/*` 200 assertion lives in #2659's confirm gate
  * (`target-manifest` slow test) — do not duplicate that heavy dev-server
  * probe here. Keep this stub as the explicit host-owned route seam even though
- * zfb 2.13.1 also renders package-injected dynamic routes in dev.
+ * zfb also renders package-injected dynamic routes in dev.
  *
  * ## Tier
  *
@@ -125,5 +125,11 @@ describe("barebone (all features off) generated project", () => {
       "index.html",
     );
     expect(await fs.pathExists(docHtml)).toBe(true);
+  });
+
+  it("keeps all optional export and runtime output absent", async () => {
+    expect(await fs.pathExists(path.join(projectDir, "dist", "llms.txt"))).toBe(false);
+    expect(await fs.pathExists(path.join(projectDir, "dist", "agent"))).toBe(false);
+    expect(await fs.pathExists(path.join(projectDir, "dist", "_worker.js"))).toBe(false);
   });
 });

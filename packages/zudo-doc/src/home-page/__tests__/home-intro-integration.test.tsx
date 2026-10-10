@@ -1,12 +1,46 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { describe, expect, it, vi } from "vitest";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { createRouteContextPayload } from "../../route-context-payload/index.js";
 import { createRouteContext } from "../../route-context/index.js";
 import { createChrome } from "../../chrome/index.js";
 import { prepareHomeIntros } from "../../home-intro/prepare.js";
+import type { PreparedHomeIntro } from "../../home-intro/types.js";
 import type { Settings } from "../../settings.js";
+
+// These boundaries are ported in adjacent migration topics: the shared shell
+// (#4458), generated logo (#4459), and CompactProse (#4457). Keep this suite
+// focused on route-context preparation plus home-page composition.
+vi.mock("../../doclayout/index.js", () => ({
+  DocLayoutWithDefaults: (props: Record<string, unknown>) => (
+    <div data-zd-test-home-layout data-zd-wide={props.contentWide ? "" : undefined}>{props.children as Child}</div>
+  ),
+}));
+vi.mock("../../head-with-defaults/index.js", () => ({
+  createHeadWithDefaults: () => () => null,
+}));
+vi.mock("../../auto-logo/index.js", () => ({
+  AutoLogo: ({ class: className, seed }: { class?: string; seed: string }) => (
+    <svg class={className} data-auto-logo={seed} aria-hidden="true" />
+  ),
+}));
+vi.mock("@takazudo/zfb", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@takazudo/zfb")>();
+  return {
+    ...actual,
+    Island: () => <div data-zd-test-home-island data-when="idle" />,
+  };
+});
+vi.mock("../../home-intro/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../home-intro/index.js")>();
+  const { renderPreparedIntro } = await import("./render-prepared-intro.js");
+  return {
+    ...actual,
+    CompactProse: ({ intro }: { intro: PreparedHomeIntro | null | undefined }) =>
+      intro?.nodes.length ? <div class="zd-content zd-compact-prose">{renderPreparedIntro(intro)}</div> : null,
+  };
+});
 
 async function renderHome(settings: Partial<Settings>, locale = "en") {
   const payload = createRouteContextPayload({ siteTitle: "Integration site", settings });

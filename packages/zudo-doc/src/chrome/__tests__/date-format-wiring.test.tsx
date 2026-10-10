@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
+import "../../__tests__/fixtures/install-island-metadata.js";
 /**
  * The settings -> props wiring seam for `dateFormat` (#4075).
  *
@@ -21,12 +21,13 @@
  * `"locale"` — i.e. today's output.
  */
 
+import { defineChromeBindings } from "../../chrome-bindings.js";
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
-import { render } from "preact-render-to-string";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveDateFormats } from "../derive.js";
-import { createDocHistoryArea } from "../../doc-history-area/index.js";
+import { createDocHistoryArea, DocHistoryBoundary } from "../../doc-history-area/index.js";
 import { createHeaderWithDefaults } from "../../header-with-defaults/index.js";
 import { createSidebarWithDefaults } from "../../sidebar-with-defaults/index.js";
 import { createSiteTreeNavWrapper } from "../../site-tree-nav/index.js";
@@ -111,7 +112,7 @@ describe("deriveDateFormats", () => {
 describe("dateFormats reaches the serialized island data-props", () => {
   it("desktop sidebar (SidebarTree) carries the roles resolved for the page locale", () => {
     const ctx = makeFakeChromeContext({ settings: { dateFormat: PER_LOCALE_SETTING } });
-    const html = render(createSidebarWithDefaults(ctx)({ lang: "ja" }) as VNode);
+    const html = render(createSidebarWithDefaults(ctx)({ lang: "ja" }) as Description);
 
     expect(html).toContain(serializedProp("full", "YYYY年M月D日"));
     expect(html).toContain(serializedProp("numericMonthDay", "M/D"));
@@ -121,8 +122,8 @@ describe("dateFormats reaches the serialized island data-props", () => {
 
   it("mobile drawer (SidebarToggle, nested in the persisted header) carries them too", () => {
     const ctx = makeFakeChromeContext({ settings: { dateFormat: PER_LOCALE_SETTING } });
-    const header = createHeaderWithDefaults(ctx)({ lang: "ja" }) as VNode<Record<string, unknown>>;
-    const html = render(header.props["sidebarToggle"] as VNode);
+    const header = createHeaderWithDefaults(ctx)({ lang: "ja" }) as Description;
+    const html = render(header.props["sidebarToggle"] as Description);
 
     expect(html).toContain('data-zfb-island="SidebarToggle"');
     expect(html).toContain(serializedProp("full", "YYYY年M月D日"));
@@ -137,7 +138,7 @@ describe("dateFormats reaches the serialized island data-props", () => {
       getCategoryOrder: () => ["guides"],
       dateFormat: PER_LOCALE_SETTING,
     };
-    const html = render(createSiteTreeNavWrapper(deps)({ lang: "ja" }) as VNode);
+    const html = render(createSiteTreeNavWrapper(deps)({ lang: "ja" }) as Description);
 
     expect(html).toContain('data-zfb-island="SiteTreeNav"');
     expect(html).toContain(serializedProp("locale", "ja"));
@@ -147,11 +148,12 @@ describe("dateFormats reaches the serialized island data-props", () => {
   it("DocHistory resolves against the DISPLAY locale, not the storage-path locale", () => {
     const ctx = makeFakeChromeContext({
       settings: { bodyFootUtilArea: false, dateFormat: PER_LOCALE_SETTING },
+      overrides: { hostBindings: defineChromeBindings({ DocHistory: DocHistoryBoundary }) },
     });
     // isFallback swaps the fetch path back to the default locale; the reader is
     // still on the JA page, so the patterns must stay JA (#4073 + #4075).
     const html = render(
-      createDocHistoryArea(ctx)({ slug: "guide", locale: "ja", isFallback: true }) as VNode,
+      createDocHistoryArea(ctx)({ slug: "guide", locale: "ja", isFallback: true }) as Description,
     );
 
     expect(html).not.toMatch(/&quot;locale&quot;:/);
@@ -197,7 +199,7 @@ function makeNoteTrayDeps(dateFormat?: NoteTrayIndexDeps["dateFormat"]): NoteTra
 describe("note-tray prop chain", () => {
   it("hands the roles resolved for `lang` to <NoteTrayIndex>", () => {
     const wrapper = createNoteTrayIndexWrapper(makeNoteTrayDeps(PER_LOCALE_SETTING));
-    const vnode = wrapper({ lang: "ja", category: "notes" }) as VNode<Record<string, unknown>>;
+    const vnode = wrapper({ lang: "ja", category: "notes" }) as Description;
 
     expect(vnode.props["dateFormats"]).toEqual({
       full: "YYYY年M月D日",
@@ -210,7 +212,7 @@ describe("note-tray prop chain", () => {
 
   it("falls back to every role \"locale\" when the deps field is omitted", () => {
     const wrapper = createNoteTrayIndexWrapper(makeNoteTrayDeps());
-    const vnode = wrapper({ lang: "en", category: "notes" }) as VNode<Record<string, unknown>>;
+    const vnode = wrapper({ lang: "en", category: "notes" }) as Description;
 
     expect(vnode.props["dateFormats"]).toEqual(ALL_LOCALE);
   });
@@ -255,14 +257,14 @@ describe("dateFormats back-compat — optional everywhere", () => {
       groupSatelliteNodes: (tree) => tree,
       getCategoryOrder: () => ["guides"],
     };
-    const html = render(createSiteTreeNavWrapper(deps)({ lang: "en" }) as VNode);
+    const html = render(createSiteTreeNavWrapper(deps)({ lang: "en" }) as Description);
 
     expect(html).toContain(serializedProp("full", "locale"));
   });
 
   it("a context with no `dateFormat` still serializes a complete roles object", () => {
     const ctx = makeFakeChromeContext();
-    const html = render(createSidebarWithDefaults(ctx)({ lang: "en" }) as VNode);
+    const html = render(createSidebarWithDefaults(ctx)({ lang: "en" }) as Description);
 
     for (const role of Object.keys(ALL_LOCALE)) {
       expect(html).toContain(serializedProp(role, "locale"));
@@ -271,7 +273,7 @@ describe("dateFormats back-compat — optional everywhere", () => {
 
   it("the serialized data-props stays valid JSON once the roles object is in it", () => {
     const ctx = makeFakeChromeContext({ settings: { dateFormat: PER_LOCALE_SETTING } });
-    const html = render(createSidebarWithDefaults(ctx)({ lang: "ja" }) as VNode);
+    const html = render(createSidebarWithDefaults(ctx)({ lang: "ja" }) as Description);
 
     const match = /data-props="([^"]*)"/.exec(html);
     expect(match).not.toBeNull();

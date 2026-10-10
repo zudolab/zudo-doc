@@ -1,0 +1,98 @@
+group-hover:text-accent | outcome: resolved utility |  | declaration: color: var(--zw-color-accent)
+group-focus-visible:underline | outcome: resolved utility |  | declaration: text-decoration-line: underline
+group-open:rotate-90 | outcome: resolved utility |  | declaration: rotate: 90deg
+group/index | outcome: recognized invalid or malformed | diagnostic: ZW004 error at named markers are unsupported | 
+group-hover/index:block | outcome: recognized invalid or malformed | diagnostic: ZW004 error at named relation variants are unsupported | 
+peer-checked:bg-accent | outcome: recognized invalid or malformed | diagnostic: ZW002 error at unknown or unconfigured variant | 
+peer-hover:text-fg | outcome: resolved utility |  | declaration: color: var(--zw-color-fg)
+data-[state=open]:block | outcome: recognized invalid or malformed | diagnostic: ZW004 error at attribute variants are unsupported | 
+aria-current:font-bold | outcome: recognized invalid or malformed | diagnostic: ZW004 error at attribute variants are unsupported | 
+[&_a]:underline | outcome: recognized invalid or malformed | diagnostic: ZW004 error at arbitrary-selector variants are unsupported | 
+[&>svg]:size-icon-sm | outcome: recognized invalid or malformed | diagnostic: ZW004 error at arbitrary-selector variants are unsupported | 
+before:content-none | outcome: ordinary class |  | 
+after:absolute | outcome: resolved utility |  | declaration: position: absolute
+hover:bg-accent/10 | outcome: resolved utility |  | declaration: background-color: color-mix(in oklab, var(--zw-color-accent) 10%, transparent)
+text-[length:var(--text-scale-sm)] | outcome: recognized invalid or malformed | diagnostic: ZW005 error at value is not valid for font-size | 
+text-[0.8em] | outcome: resolved utility |  | declaration: font-size: 0.8em
+w-[calc(100vw-2rem)] | outcome: recognized invalid or malformed | diagnostic: ZW005 error at value is not valid for width | 
+w-[calc(100vw_-_2rem)] | outcome: resolved utility |  | declaration: width: calc(100vw - 2rem)
+h-[calc(100%_-_3rem)] | outcome: resolved utility |  | declaration: height: calc(100% - 3rem)
+ml-[calc(var(--spacing-hsp-xl)+1px)] | outcome: recognized invalid or malformed | diagnostic: ZW005 error at value is not valid for margin-left | 
+ml-[calc(var(--spacing-hsp-xl)_+_1px)] | outcome: resolved utility |  | declaration: margin-left: calc(var(--spacing-hsp-xl) + 1px)
+-left-[calc(var(--spacing-icon-lg)/2)] | outcome: resolved utility |  | declaration: left: calc(calc(var(--spacing-icon-lg)/2) * -1)
+shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)] | outcome: recognized invalid or malformed | diagnostic: ZW005 error at value is not valid for box-shadow | 
+shadow-[0_1px_3px_rgb(0_0_0/0.1)] | outcome: resolved utility |  | declaration: box-shadow: 0 1px 3px rgb(0 0 0/0.1)
+-translate-x-full | outcome: resolved utility |  | declaration: --zw-translate-x: -100%
+translate-x-0 | outcome: resolved utility |  | declaration: --zw-translate-x: 0
+rotate-180 | outcome: resolved utility |  | declaration: rotate: 180deg
+transition-transform | outcome: resolved utility |  | declaration: transition-property: transform,translate,rotate,scale
+transition-[left,color] | outcome: resolved utility |  | declaration: transition-property: left,color
+duration-200 | outcome: resolved utility |  | declaration: transition-duration: 200ms
+ease-in-out | outcome: recognized invalid or malformed | diagnostic: ZW006 error at unknown value or token in-out | 
+animate-spin | outcome: recognized invalid or malformed | diagnostic: ZW004 error at recognized utility family is unsupported | 
+ring-2 | outcome: recognized invalid or malformed | diagnostic: ZW004 error at recognized utility family is unsupported | 
+scale-95 | outcome: recognized invalid or malformed | diagnostic: ZW004 error at recognized utility family is unsupported | 
+sr-only | outcome: resolved utility |  | declaration: position: absolute
+not-sr-only | outcome: ordinary class |  | 
+truncate | outcome: resolved utility |  | declaration: overflow: hidden
+line-clamp-2 | outcome: ordinary class |  | 
+backdrop-blur-sm | outcome: ordinary class |  | 
+max-lg:hidden | outcome: resolved utility |  | declaration: display: none
+lg:flex | outcome: resolved utility |  | declaration: display: flex
+2xl:w-[24px] | outcome: recognized invalid or malformed | diagnostic: ZW002 error at unknown or unconfigured variant | 
+print:hidden | outcome: recognized invalid or malformed | diagnostic: ZW002 error at unknown or unconfigured variant | 
+motion-reduce:transition-none | outcome: recognized invalid or malformed | diagnostic: ZW002 error at unknown or unconfigured variant | 
+first:mt-0 | outcome: resolved utility |  | declaration: margin-top: 0
+last:border-b-0 | outcome: resolved utility |  | declaration: border-bottom-width: 0px
+space-y-vsp-xs | outcome: resolved utility |  | declaration: margin-top: var(--zw-spacing-vsp-xs)
+divide-y | outcome: resolved utility |  | declaration: border-top-width: 1px
+divide-muted | outcome: resolved utility |  | declaration: border-top-color: var(--zw-color-muted)
+rounded | outcome: resolved utility |  | declaration: border-top-left-radius: var(--zw-radius-default)
+rounded-full | outcome: resolved utility |  | declaration: border-top-left-radius: 9999px
+rounded-l-DEFAULT | outcome: recognized invalid or malformed | diagnostic: ZW006 error at unknown value or token DEFAULT | 
+leading-none | outcome: recognized invalid or malformed | diagnostic: ZW006 error at unknown value or token none | 
+font-bold | outcome: resolved utility |  | declaration: font-weight: var(--zw-font-weight-bold)
+text-small | outcome: resolved utility |  | declaration: font-size: var(--zw-font-size-small)
+size-icon-sm | outcome: resolved utility |  | declaration: width: var(--zw-spacing-icon-sm)
+p-4 | outcome: recognized invalid or malformed | diagnostic: ZW006 error at nonzero numeric spacing requires spacingUnit | 
+w-full | outcome: resolved utility |  | declaration: width: 100%
+min-w-0 | outcome: resolved utility |  | declaration: min-width: 0
+grid-cols-[minmax(0,1fr)_auto] | outcome: resolved utility |  | declaration: grid-template-columns: minmax(0,1fr) auto
+grid-cols-subgrid | outcome: resolved utility |  | declaration: grid-template-columns: subgrid
+z-modal | outcome: resolved utility |  | declaration: z-index: var(--zw-z-modal)
+bg-bg/80 | outcome: resolved utility |  | declaration: background-color: color-mix(in oklab, var(--zw-color-bg) 80%, transparent)
+backdrop:bg-bg/80 | outcome: resolved utility |  | declaration: background-color: color-mix(in oklab, var(--zw-color-bg) 80%, transparent)
+placeholder:text-muted | outcome: resolved utility |  | declaration: color: var(--zw-color-muted)
+focus-visible:outline-accent | outcome: resolved utility |  | declaration: outline-color: var(--zw-color-accent)
+outline-2 | outcome: resolved utility |  | declaration: outline-width: 2px
+text-fg/60 | outcome: resolved utility |  | declaration: color: color-mix(in oklab, var(--zw-color-fg) 60%, transparent)
+border-warning/30 | outcome: resolved utility |  | declaration: border-top-color: color-mix(in oklab, var(--zw-color-warning) 30%, transparent)
+underline-offset-4 | outcome: recognized invalid or malformed | diagnostic: ZW006 error at unknown value or token offset-4 | 
+whitespace-nowrap | outcome: resolved utility |  | declaration: white-space: nowrap
+break-words | outcome: resolved utility |  | declaration: overflow-wrap: break-word
+select-none | outcome: resolved utility |  | declaration: user-select: none
+pointer-events-none | outcome: resolved utility |  | declaration: pointer-events: none
+cursor-pointer | outcome: resolved utility |  | declaration: cursor: pointer
+appearance-none | outcome: ordinary class |  | 
+accent-accent | outcome: resolved utility |  | declaration: accent-color: var(--zw-color-accent)
+object-cover | outcome: resolved utility |  | declaration: object-fit: cover
+aspect-video | outcome: resolved utility |  | declaration: aspect-ratio: 16 / 9
+list-disc | outcome: resolved utility |  | declaration: list-style-type: disc
+hidden | outcome: resolved utility |  | declaration: display: none
+!hidden | outcome: recognized invalid or malformed | diagnostic: ZW004 error at important modifiers are unsupported | 
+overflow-x-auto | outcome: resolved utility |  | declaration: overflow-x: auto
+overscroll-contain | outcome: resolved utility |  | declaration: overscroll-behavior: contain
+scroll-mt-4 | outcome: recognized invalid or malformed | diagnostic: ZW006 error at nonzero numeric spacing requires spacingUnit | 
+inset-0 | outcome: resolved utility |  | declaration: top: 0
+opacity-0 | outcome: resolved utility |  | declaration: opacity: 0
+invisible | outcome: ordinary class |  | 
+will-change-transform | outcome: ordinary class |  | 
+tabular-nums | outcome: resolved utility |  | declaration: font-variant-numeric: tabular-nums
+fill-current | outcome: ordinary class |  | 
+stroke-current | outcome: ordinary class |  | 
+shrink-0 | outcome: resolved utility |  | declaration: flex-shrink: 0
+basis-1/2 | outcome: ordinary class |  | 
+order-first | outcome: ordinary class |  | 
+col-span-2 | outcome: resolved utility |  | declaration: grid-column: span 2 / span 2
+items-baseline | outcome: resolved utility |  | declaration: align-items: baseline
+content-[""] | outcome: ordinary class |  | 

@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import recordsValue from "virtual:zudo-doc-asset-bodies";
 import type { AssetRecords } from "../plugins/internal/asset-viewer/types.js";
 import type { AssetIndexEntry } from "../route-context-payload/types.js";
@@ -56,7 +54,7 @@ type PageArgs = LocaleFilesPathProps & {
   params: { locale: string; path: string[] };
 };
 
-export default function LocaleFilesPathPage(props: PageArgs): JSX.Element {
+export default function LocaleFilesPathPage(props: PageArgs): Child {
   if (props.kind === "index") {
     return <AssetIndexPageView entries={props.entries} locale={props.params.locale} />;
   }

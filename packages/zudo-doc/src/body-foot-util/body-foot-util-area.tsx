@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 
 /**
  * Default label used when the consumer doesn't pass one. The legacy
@@ -39,7 +37,7 @@ export interface BodyFootUtilAreaProps {
    *
    * Pass `null` / `undefined` to suppress the history trigger entirely.
    */
-  docHistoryIsland?: VNode | null;
+  docHistoryIsland?: Description | null;
 }
 
 /**
@@ -52,7 +50,7 @@ export interface BodyFootUtilAreaProps {
  * surrounding `<section>` (with its top border + spacing) doesn't
  * appear as an empty band.
  */
-export function BodyFootUtilArea(props: BodyFootUtilAreaProps): VNode | null {
+export function BodyFootUtilArea(props: BodyFootUtilAreaProps): Child {
   const {
     sourceUrl,
     viewSourceLabel = DEFAULT_VIEW_SOURCE_LABEL,
@@ -77,7 +75,6 @@ export function BodyFootUtilArea(props: BodyFootUtilAreaProps): VNode | null {
             class="inline-flex items-center gap-hsp-2xs text-small text-muted hover:text-accent"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
               class="h-[0.875rem] w-[0.875rem]"
               fill="none"
               viewBox="0 0 24 24"

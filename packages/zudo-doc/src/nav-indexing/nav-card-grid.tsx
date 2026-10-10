@@ -1,13 +1,11 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/nav-card-grid.
 //
 // The original Astro template received a NavNode[] (direct children) plus a
 // locale, and rendered a two-column grid of link cards. It used
 // `docsUrl(child.slug, locale)` as a fallback href when the node had none.
 //
-// Because v2 is decoupled from the host's URL helpers, this port requires the
+// Because the package is decoupled from the host's URL helpers, this renderer requires the
 // caller to resolve hrefs before passing the nodes. Nodes without `href` (after
 // the caller's mapping) are skipped — the consumer should ensure every node
 // that should render has a resolved `href`.
@@ -22,7 +20,7 @@
 //   - Nodes without `hasPage` and without children are filtered out.
 //   - Returns null when no renderable items remain.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 
@@ -40,7 +38,6 @@ export interface NavCardGridProps {
 function ArrowIcon(): JSX.Element {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       viewBox="0 0 103.395 107.049"
       aria-hidden="true"
@@ -52,7 +49,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * NavCardGrid — JSX port of `src/components/nav-card-grid`.
+ * NavCardGrid — server renderer for category card links.
  *
  * Renders direct children of a category as a two-column grid of card links.
  * Unlike `CategoryNav`, the arrow icon uses `text-muted` (accent on

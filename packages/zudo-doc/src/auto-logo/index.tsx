@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // auto-logo — deterministic generated fallback logo for the home hero.
 //
 // A fresh scaffold ships no `/img/logo.svg`, which used to leave the hero's
@@ -22,8 +21,9 @@
 // with the dependency-free standalone SVG builder (./standalone.ts, epic
 // #3047) so the two renderers cannot drift.
 
-import { h } from "preact";
-import type { JSX } from "preact";
+import { h } from "@takazudo/zfb/zudo-react";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   W,
   H,
@@ -49,8 +49,8 @@ export interface AutoLogoProps {
   class?: string;
 }
 
-function renderShape({ el, attrs }: ShapePrimitive, key?: number): JSX.Element {
-  return h(el, key !== undefined ? { ...attrs, key } : attrs) as JSX.Element;
+function renderShape({ el, attrs }: ShapePrimitive, key?: number): Description {
+  return h(el, key !== undefined ? { ...attrs, key } : attrs);
 }
 
 /**

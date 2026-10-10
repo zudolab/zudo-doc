@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /v/[version]/docs/[[...slug]] — package-owned
 // equivalent of pages/v/[version]/docs/[[...slug]].tsx (A1 #2361).
 //
@@ -7,7 +6,7 @@
 // `paths()` enumerates one route per (version, slug) over the
 // `docs-v-${version.slug}` collection, with versioned URL closures.
 
-import type { JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { VersionConfig } from "../settings.js";
 import type { DocPageEntryProps, DocPageAutoIndexProps } from "../doc-page-props/index.js";
 import { settings, resolveNavSource, versionedDocsUrl, buildDocRouteEntries } from "./_context.js";
@@ -56,7 +55,7 @@ export function paths(): Array<{
 
 type PageArgs = DocPageProps & { params: { version: string; slug: string[] } };
 
-export default function VersionedDocsPage(props: PageArgs): JSX.Element {
+export default function VersionedDocsPage(props: PageArgs): Child {
   return renderDocPage(props, {
     locale: settings.defaultLocale,
     version: props.version,

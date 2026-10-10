@@ -1,13 +1,12 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX, VNode } from "preact";
-import { Island } from "@takazudo/zfb";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { FactoryComponent } from "../factory-context/index.js";
 
 /**
- * SSR-emitted pre-hydration shim for the design-token panel toggle. The
- * package-owned bootstrap drains this queue once its load-time island runs.
+ * Trusted, static pre-hydration toggle shim. Keep this as one literal with no
+ * closing-script substring, children, reactive payload or author content;
+ * the package-owned bootstrap drains its queue when the load-time island
+ * activates.
  */
 const ZDTP_TOGGLE_SHIM_SRC = `(function(){
 if(window.__zdtpToggleShimInstalled)return;
@@ -26,6 +25,7 @@ type DesignTokenPanelBootstrapComponent = () => JSX.Element | null;
 
 export interface DesignTokenPanelIslandDeps {
   designTokenPanel: boolean;
+  /** Server boundary with a fixed client target, not a raw client component. */
   DesignTokenPanelBootstrap?: FactoryComponent;
 }
 
@@ -47,13 +47,8 @@ export function createDesignTokenPanelIsland(
 
     return (
       <>
-        <script dangerouslySetInnerHTML={{ __html: ZDTP_TOGGLE_SHIM_SRC }} />
-        {
-          Island({
-            when: "load",
-            children: <DesignTokenPanelBootstrap />,
-          }) as unknown as VNode
-        }
+        <script rawHtml={ZDTP_TOGGLE_SHIM_SRC} />
+        <DesignTokenPanelBootstrap />
       </>
     );
   }

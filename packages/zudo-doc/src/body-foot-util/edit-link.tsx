@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 /**
  * Default label used when the consumer doesn't pass one. The legacy
@@ -42,7 +40,7 @@ export interface EditLinkProps {
  * are pre-resolved by the caller. This matches the breadcrumb subpath
  * pattern of "no settings/i18n imports inside the v2 package".
  */
-export function EditLink(props: EditLinkProps): VNode | null {
+export function EditLink(props: EditLinkProps): Child {
   const { editUrl, label = DEFAULT_EDIT_LINK_LABEL } = props;
   if (!editUrl) return null;
 
@@ -54,7 +52,6 @@ export function EditLink(props: EditLinkProps): VNode | null {
       class="inline-flex items-center gap-hsp-2xs text-small text-muted hover:text-accent"
     >
       <svg
-        xmlns="http://www.w3.org/2000/svg"
         class="h-[0.875rem] w-[0.875rem]"
         fill="none"
         viewBox="0 0 24 24"

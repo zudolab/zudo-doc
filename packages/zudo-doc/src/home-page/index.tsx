@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // home-page — factory for the shared home-page body (epic #2499, S3 #2502).
 //
 // `/` is never injected by the routes plugin (zfb rejects `/`; upstream
@@ -31,8 +30,8 @@
 //
 // NOT an eject target — no `ejectable-snapshot` registration.
 
-import { Fragment } from "preact";
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { AutoLogo } from "../auto-logo/index.js";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
@@ -55,19 +54,19 @@ export { prepareHomeData } from "./prepare-home-data.js";
 export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
 
 /** Sitemap / Tags heading — same look as the compact intro h2 (#4194). */
-function HomeSectionHeading({ children }: { children: ComponentChildren }) {
+function HomeSectionHeading({ children }: { children: Child }) {
   return <h2 class={`${HOME_SECTION_HEADING_CLASS} mb-vsp-md`}>{children}</h2>;
 }
 
 /** Small "double-chevron + label" link shared by the secondary category row
  *  and the "See all tags" / legacy "All Tags" links (epic #4235). */
-function HomeMetaLink({ href, children }: { href: string; children: ComponentChildren }) {
+function HomeMetaLink({ href, children }: { href: string; children: Child }) {
   return (
     <a
       href={href}
       class="group inline-flex items-center gap-hsp-xs text-small text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
     >
-      <CategoryLinkIcon className="w-icon-sm text-muted group-hover:text-accent group-focus-visible:text-accent" />
+      <CategoryLinkIcon class="w-icon-sm text-muted group-hover:text-accent group-focus-visible:text-accent" />
       <span>{children}</span>
     </a>
   );
@@ -114,6 +113,11 @@ function cssUrl(url: string): string {
   return `url("${url.replace(/[\\"]/g, "\\$&")}")`;
 }
 
+function logoMaskStyle(url: string) {
+  const mask = `${cssUrl(url)} center/contain no-repeat`;
+  return { "-webkit-mask": mask, mask };
+}
+
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */
 export interface HomePageViewProps {
   /** Active locale — drives hero copy, link locale-prefixing, and the
@@ -132,7 +136,7 @@ export interface HomePageViewProps {
    * from it (a renderer). Resolved as `extras ?? hostBindings.homeExtras?.({
    * locale })`.
    */
-  extras?: ComponentChildren;
+  extras?: Child;
   /**
    * Overrides the default first hero link, which is otherwise
    * `settings.headerNav[0]` + `t("nav.overview", locale)`. `path` is
@@ -255,7 +259,7 @@ export function createHomePageView<S extends Settings = Settings>(
       locale,
       t("home.sitemapHeading", locale),
     ).sitemapHeading;
-    // `false`/`true`/`null`/`undefined` all render nothing in Preact (a
+    // `false`/`true`/`null`/`undefined` all render nothing in zudo-react (a
     // caller may pass a conditional like `extras={cond && <Link />}`), so
     // exclude them here — otherwise a "/" separator would render for content
     // that never actually appears in the row.
@@ -265,7 +269,7 @@ export function createHomePageView<S extends Settings = Settings>(
     // of each item hard-coding its own trailing/leading separator) is what
     // keeps the separator count correct regardless of which combination of
     // primary/GitHub/extras is present.
-    const rowItems: ComponentChildren[] = [];
+    const rowItems: Child[] = [];
     if (primary) {
       rowItems.push(
         <a href={primary.href} class="text-fg underline hover:text-accent">
@@ -292,8 +296,13 @@ export function createHomePageView<S extends Settings = Settings>(
       );
     }
     if (hasExtras) {
-      rowItems.push(resolvedExtras as ComponentChildren);
+      rowItems.push(resolvedExtras as Child);
     }
+    const rowContent: Child[] = [];
+    rowItems.forEach((item, index) => {
+      if (index > 0) rowContent.push(<span class="text-muted">/</span>);
+      rowContent.push(item);
+    });
 
     return (
       <DocLayoutWithDefaults
@@ -312,7 +321,7 @@ export function createHomePageView<S extends Settings = Settings>(
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
         enableClientRouter={settings.dynamicPageTransition}
       >
-        <div class="zd-home-hero mb-vsp-xl">
+        <div data-zd-home-hero class="mb-vsp-xl">
           <div class="zd-home-inner flex flex-col items-center justify-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
             {logoSetting === "auto" ? (
               <AutoLogo
@@ -322,23 +331,15 @@ export function createHomePageView<S extends Settings = Settings>(
             ) : logoSetting !== false ? (
               <div
                 class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
-                style={{
-                  WebkitMask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
-                  mask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
-                }}
+                style={logoMaskStyle(withBase(logoSetting))}
                 aria-hidden="true"
               />
             ) : null}
             <div class="zd-home-copy min-w-0 lg:flex-1">
-              <h1 class="text-heading font-bold mb-vsp-2xs wrap-anywhere">{settings.siteName}</h1>
+              <h1 class="text-heading font-bold mb-vsp-2xs zd-wrap-anywhere">{settings.siteName}</h1>
               <p class="text-muted text-small mb-vsp-sm">{rawDescription}</p>
               <div class="zd-home-links flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
-                {rowItems.map((item, index) => (
-                  <Fragment key={index}>
-                    {index > 0 && <span class="text-muted">/</span>}
-                    {item}
-                  </Fragment>
-                ))}
+                {rowContent}
               </div>
             </div>
           </div>
@@ -347,7 +348,7 @@ export function createHomePageView<S extends Settings = Settings>(
         {hasIntro && (
           <>
             <hr class="zd-home-rule" data-home-rule="upper" />
-            <div class="zd-home-intro">
+            <div data-zd-home-intro>
               <div class="zd-home-inner">
                 <CompactProse intro={intro} />
               </div>
@@ -357,7 +358,7 @@ export function createHomePageView<S extends Settings = Settings>(
 
         <hr class="zd-home-rule" data-home-rule="lower" />
 
-        <section class="zd-home-sitemap">
+        <section data-zd-home-sitemap>
           <HomeSectionHeading>{sitemapHeading}</HomeSectionHeading>
 
           {Island({
@@ -367,13 +368,13 @@ export function createHomePageView<S extends Settings = Settings>(
                 tree={tree as unknown as SidebarNavNode[]}
                 categoryOrder={categoryOrder}
                 categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
-                initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
+                {...(initiallyCollapsedCategorySlugs !== undefined ? { initiallyCollapsedCategorySlugs } : {})}
                 locale={locale}
                 updatedLabel={t("doc.updated", locale)}
                 dateFormats={dateFormatsFor(locale)}
               />
             ),
-          }) as unknown as VNode}
+          }) as unknown as Description}
 
           {movedNodes.length > 0 && (
             <nav
@@ -395,7 +396,7 @@ export function createHomePageView<S extends Settings = Settings>(
             {/* The Tags section gets the same divider the sitemap section has,
                 so every home h2 sits below a `.zd-home-rule` (#4194). */}
             <hr class="zd-home-rule" data-home-rule="tags" />
-            <section class="zd-home-tags">
+            <section data-zd-home-tags>
               {tags && tags.length > 0 ? (
                 <>
                   <HomeSectionHeading>{t("doc.tags", locale)}</HomeSectionHeading>

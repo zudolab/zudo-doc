@@ -1,6 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Cross-surface proof that ONE dataset key drives every current-route reader
 // (zudolab/zudo-doc#3408). Each of the four surfaces is exercised through
 // `document.documentElement.dataset[CURRENT_PATH_DATASET_KEY]` — never a
@@ -10,8 +9,7 @@
 // are executed, not string-matched.
 
 import { afterEach, describe, expect, it } from "vitest";
-import { render } from "preact";
-import { act } from "preact/test-utils";
+import { renderIsland } from "../../__tests__/helpers/zudo-react.js";
 import { CURRENT_PATH_DATASET_KEY, CURRENT_PATH_SCRIPT_PRELUDE, readCurrentPath } from "../index.js";
 import { NAV_OVERFLOW_SCRIPT } from "../../header/nav-overflow-script.js";
 import { LANGUAGE_SWITCHER_INIT_SCRIPT } from "../../i18n-version/language-switcher.js";
@@ -29,25 +27,18 @@ function setOverride(pathname: string): void {
   document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = pathname;
 }
 
-let mounted: HTMLDivElement | null = null;
-
-function mountSidebar(nodes: SidebarNavNode[]): HTMLDivElement {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  act(() => {
-    render(<SidebarTree nodes={nodes} />, container);
+let disposeSidebar: (() => void) | null = null;
+async function mountSidebar(nodes: SidebarNavNode[]): Promise<HTMLDivElement> {
+  const view = await renderIsland(SidebarTree, { nodes }, {
+    identity: { component: "SidebarTree", build: "4464-current-path-test" },
   });
-  mounted = container;
-  return container;
+  disposeSidebar = view.dispose;
+  return view.container as HTMLDivElement;
 }
 
 afterEach(() => {
-  if (mounted) {
-    act(() => {
-      render(null, mounted!);
-    });
-    mounted = null;
-  }
+  disposeSidebar?.();
+  disposeSidebar = null;
   document.body.innerHTML = "";
   delete document.documentElement.dataset[CURRENT_PATH_DATASET_KEY];
 });
@@ -120,11 +111,11 @@ describe("SidebarTree island reads the shared dataset key", () => {
     },
   ];
 
-  it("derives the active slug from the dataset override", () => {
+  it("derives the active slug from the dataset override", async () => {
     setLocation("/docs/advanced");
     setOverride("/docs/introduction");
 
-    const container = mountSidebar(nodes);
+    const container = await mountSidebar(nodes);
 
     expect(container.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe(
       "/docs/introduction",

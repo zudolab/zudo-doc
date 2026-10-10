@@ -1,13 +1,14 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import { useEffect, useRef, useState } from "preact/hooks";
-import type { VNode } from "preact";
-import { HighlightedCode } from "./highlighted-code.js";
 import {
-  createPreviewAutoHeightController,
-  type PreviewAutoHeightController,
-} from "./preview-auto-height.js";
+  computed,
+  getScope,
+  signal,
+  Show,
+  type Child,
+  type Ref,
+} from "@takazudo/zfb/zudo-react";
+import { HighlightedCode } from "./highlighted-code.js";
+import { createPreviewAutoHeightController } from "./preview-auto-height.js";
 
 export interface CodeBlockData {
   language: string;
@@ -86,8 +87,7 @@ const DEFAULT_VIEWPORTS: Viewport[] = buildViewports(DEFAULT_LABELS);
  * Interactive preview base: iframe viewport switcher + collapsible code
  * section.
  *
- * JSX port of src/components/html-preview/preview-base.tsx with
- * React → Preact hook imports and `className` → `class` attribute.
+ * The native iframe is rendered during SSR and hydrated by zudo-react.
  */
 export function PreviewBase({
   title,
@@ -101,68 +101,53 @@ export function PreviewBase({
   showSource,
   showViewportControls,
   autoHeight,
-}: PreviewBaseProps): VNode {
+}: PreviewBaseProps): Child {
   const resolvedLabels = resolveLabels(labels);
   const sourceVisible = showSource ?? true;
   const viewportControlsVisible = showViewportControls ?? true;
   const viewports = viewportControlsVisible
     ? buildViewports(resolvedLabels)
     : DEFAULT_VIEWPORTS;
-  const [activeViewport, setActiveViewport] = useState(2); // default: Full
-  const [codeOpen, setCodeOpen] = useState(
-    sourceVisible && (defaultOpen ?? false),
-  );
-  const [iframeHeight, setIframeHeight] = useState(height ?? 200);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const iframeHeightRef = useRef(iframeHeight);
-  const autoHeightControllerRef = useRef<PreviewAutoHeightController | null>(
-    null,
-  );
-  iframeHeightRef.current = iframeHeight;
+  const scope = getScope();
+  const activeViewport = signal(2); // default: Full
+  const codeOpen = signal(sourceVisible && (defaultOpen ?? false));
+  const iframeHeight = signal(height ?? 200);
+  const iframeRef: Ref<HTMLIFrameElement> = { current: null };
   const autoHeightEnabled = (autoHeight ?? true) && height == null;
+  let controller: ReturnType<typeof createPreviewAutoHeightController> | null = null;
 
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe || !autoHeightEnabled) return;
-    const controller = createPreviewAutoHeightController({
-      iframe,
+  scope.onActivate(() => {
+    const frame = iframeRef.current;
+    if (!frame || !autoHeightEnabled) return;
+    const nextController = createPreviewAutoHeightController({
+      iframe: frame,
       syncDelay,
-      getCurrentHeight: () => iframeHeightRef.current,
-      setHeight: (nextHeight) => {
-        iframeHeightRef.current = nextHeight;
-        setIframeHeight(nextHeight);
-      },
+      getCurrentHeight: () => iframeHeight.value,
+      setHeight: (nextHeight) => { iframeHeight.value = nextHeight; },
     });
-    autoHeightControllerRef.current = controller;
-    const onLoad = () => controller.handleLoad();
-    iframe.addEventListener("load", onLoad);
+    controller = nextController;
+    const onLoad = () => nextController.handleLoad();
+    frame.addEventListener("load", onLoad);
     try {
-      if (iframe.contentDocument?.readyState === "complete") {
-        controller.handleLoad();
-      }
+      if (frame.contentDocument?.readyState === "complete") nextController.handleLoad();
     } catch {
-      // Opaque documents remain a safe no-op and may still emit a later load.
+      // Opaque documents may still emit a later load.
     }
     return () => {
-      iframe.removeEventListener("load", onLoad);
-      controller.destroy();
-      if (autoHeightControllerRef.current === controller) {
-        autoHeightControllerRef.current = null;
-      }
+      frame.removeEventListener("load", onLoad);
+      nextController.destroy();
+      controller = null;
     };
-  }, [autoHeightEnabled, srcdoc, syncDelay]);
+  });
 
-  // Re-measure height when viewport changes (content reflows)
-  useEffect(() => {
-    if (!autoHeightEnabled) return;
-    autoHeightControllerRef.current?.schedule();
-  }, [activeViewport, autoHeightEnabled]);
+  scope.effect(() => {
+    activeViewport.value;
+    if (autoHeightEnabled) controller?.schedule();
+  });
 
-  // Without viewport controls there are no presets to select, but the
-  // existing horizontal drag-resize affordance remains available.
-  const containerWidth = viewportControlsVisible
-    ? viewports[activeViewport]?.width ?? "100%"
-    : "100%";
+  const containerWidth = computed(() =>
+    viewportControlsVisible ? viewports[activeViewport.value]?.width ?? "100%" : "100%",
+  );
 
   return (
     <div class="border border-muted rounded-lg overflow-hidden my-vsp-md">
@@ -180,15 +165,14 @@ export function PreviewBase({
             >
               {viewports.map((vp, i) => (
                 <button
-                  key={vp.label}
                   type="button"
-                  class={`min-h-[44px] min-w-[44px] px-hsp-sm py-hsp-2xs text-caption border rounded-full cursor-pointer transition-[background,color,border-color] duration-150 leading-snug ${
-                    i === activeViewport
+                  class={computed(() => `min-h-[44px] min-w-[44px] px-hsp-sm py-hsp-2xs text-caption border rounded-full cursor-pointer transition-[background,color,border-color] duration-150 leading-snug ${
+                    i === activeViewport.value
                       ? "bg-accent text-bg border-accent hover:bg-accent-hover hover:border-accent-hover"
                       : "bg-transparent text-muted border-muted hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
-                  }`}
-                  aria-pressed={i === activeViewport}
-                  onClick={() => setActiveViewport(i)}
+                  }`)}
+                  aria-pressed={computed(() => i === activeViewport.value)}
+                  on:click={() => { activeViewport.value = i; }}
                 >
                   {vp.label}
                 </button>
@@ -202,16 +186,15 @@ export function PreviewBase({
       <div class="bg-surface p-hsp-lg">
         <div
           class="resize-x overflow-auto max-w-full mx-auto"
-          style={{ width: containerWidth }}
+          style={computed(() => ({ width: containerWidth.value }))}
         >
-          {/* Intentional: white canvas regardless of site theme — matches standard browser context */}
           <iframe
             ref={iframeRef}
-            class="block w-full border-none bg-[#fff] rounded shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)]"
-            srcDoc={srcdoc}
-            sandbox={sandbox}
-            style={{ height: height ?? iframeHeight }}
+            class="block w-full border-none bg-[#fff] rounded zd-preview-shadow"
             title={title ?? resolvedLabels.preview}
+            {...(sandbox !== undefined ? { sandbox } : {})}
+            srcdoc={srcdoc}
+            style={computed(() => ({ height: `${iframeHeight.value}px` }))}
           />
         </div>
       </div>
@@ -222,22 +205,21 @@ export function PreviewBase({
           <button
             type="button"
             class="flex min-h-[44px] min-w-[44px] items-center w-full px-hsp-md py-hsp-sm text-caption font-medium text-muted bg-surface border-none cursor-pointer gap-hsp-xs hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
-            onClick={() => setCodeOpen((v) => !v)}
+            on:click={() => { codeOpen.value = !codeOpen.value; }}
             aria-expanded={codeOpen}
           >
             <span
-              class={`text-caption transition-transform duration-200 ${codeOpen ? "rotate-90" : ""}`}
+              class={computed(() => `text-caption transition-transform duration-200 ${codeOpen.value ? "rotate-90" : ""}`)}
               aria-hidden="true"
             >
               &#9654;
             </span>
-            {codeOpen ? resolvedLabels.hideCode : resolvedLabels.showCode}
+            {computed(() => codeOpen.value ? resolvedLabels.hideCode : resolvedLabels.showCode)}
           </button>
-          {codeOpen && (
-            <div>
+          <Show when={codeOpen}>
+            {() => <div>
               {codeBlocks.map((block, idx) => (
                 <div
-                  key={block.title}
                   class={`overflow-x-auto ${idx > 0 ? "border-t border-muted" : ""}`}
                 >
                   <span class="block px-hsp-md py-hsp-xs text-caption font-semibold text-muted bg-surface border-b border-muted uppercase tracking-wider">
@@ -246,8 +228,8 @@ export function PreviewBase({
                   <HighlightedCode code={block.code} language={block.language} />
                 </div>
               ))}
-            </div>
-          )}
+            </div>}
+          </Show>
         </div>
       )}
     </div>

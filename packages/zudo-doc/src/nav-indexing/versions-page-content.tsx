@@ -1,13 +1,11 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/versions-page-content.
 //
 // The original Astro template read settings.versions, resolved href helpers
 // from @/utils/base, called the host's t() i18n function, and rendered a
 // two-section versions page (latest + past versions table).
 //
-// This v2 port accepts all strings and data as props so it stays decoupled
+// This renderer accepts all strings and data as props so it stays decoupled
 // from the host's settings, URL builders, and i18n system. The consumer
 // resolves translation strings for the active locale and passes them via
 // the `labels` bag.
@@ -20,7 +18,7 @@
 //   - Returns the page content (not null) regardless of whether past
 //     versions exist (matching the Astro template's unconditional h1).
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { VersionPageEntry, VersionsPageLabels } from "./types.js";
 import { ChevronRight } from "../icons/index.js";
@@ -35,7 +33,7 @@ export interface VersionsPageContentProps {
 }
 
 /**
- * VersionsPageContent — JSX port of `src/components/versions-page-content`.
+ * VersionsPageContent — server renderer for the documentation versions page.
  *
  * Renders the full documentation versions page:
  *   - An `<h1>` heading (from `labels.pageTitle`).
@@ -64,7 +62,7 @@ export function VersionsPageContent(
           class="inline-flex items-center gap-hsp-xs text-small text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
         >
           {labels.latestLink}
-          <ChevronRight className="h-[0.875rem] w-[0.875rem]" />
+          <ChevronRight class="h-[0.875rem] w-[0.875rem]" />
         </a>
       </section>
 
@@ -77,13 +75,13 @@ export function VersionsPageContent(
             <table class="w-full text-small">
               <thead>
                 <tr class="border-b border-muted bg-surface">
-                  <th class="px-hsp-lg py-vsp-sm text-left font-medium text-muted">
+                  <th class="px-hsp-md py-vsp-xs text-left font-semibold text-muted">
                     {labels.versionCol}
                   </th>
-                  <th class="px-hsp-lg py-vsp-sm text-left font-medium text-muted">
+                  <th class="px-hsp-md py-vsp-xs text-left font-semibold text-muted">
                     {labels.statusCol}
                   </th>
-                  <th class="px-hsp-lg py-vsp-sm text-left font-medium text-muted">
+                  <th class="px-hsp-md py-vsp-xs text-left font-semibold text-muted">
                     {labels.docsCol}
                   </th>
                 </tr>
@@ -94,10 +92,10 @@ export function VersionsPageContent(
                     key={`version-${v.slug}`}
                     class="border-b border-muted last:border-b-0"
                   >
-                    <td class="px-hsp-lg py-vsp-sm font-medium text-fg">
+                    <td class="px-hsp-md py-vsp-xs font-medium text-fg">
                       {v.label}
                     </td>
-                    <td class="px-hsp-lg py-vsp-sm">
+                    <td class="px-hsp-md py-vsp-xs">
                       {v.banner === "unmaintained" && (
                         <span class="inline-block rounded px-hsp-xs py-vsp-3xs text-caption bg-warning/10 text-warning">
                           {labels.unmaintained}
@@ -109,7 +107,7 @@ export function VersionsPageContent(
                         </span>
                       )}
                     </td>
-                    <td class="px-hsp-lg py-vsp-sm">
+                    <td class="px-hsp-md py-vsp-xs">
                       <a
                         href={v.docsHref}
                         class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"

@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of the legacy `tabs-init` component.
 //
 // The original component rendered a <script> tag that created nav
@@ -11,7 +9,7 @@
 //
 // Include once in the layout — NOT inside each <Tabs> component.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { TABS_INIT_SCRIPT } from "./tabs-init-script.js";
 
 /**
@@ -31,5 +29,5 @@ import { TABS_INIT_SCRIPT } from "./tabs-init-script.js";
  * Requires `<Tabs>` to have server-rendered the tab buttons in the DOM.
  */
 export function TabsInit(): JSX.Element {
-  return <script dangerouslySetInnerHTML={{ __html: TABS_INIT_SCRIPT }} />;
+  return <script rawHtml={TABS_INIT_SCRIPT} />;
 }

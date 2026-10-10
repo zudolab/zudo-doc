@@ -1,11 +1,17 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { describe, expect, it, vi } from "vitest";
 import { createVersionsPageView } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { ChromeContext } from "../../factory-context/index.js";
+import { renderNav } from "../../nav-indexing/__tests__/helpers.js";
+
+// This factory test concerns only the rendered versions content. Keep the
+// outer DocLayout shell out of the fixture because its configured head markup
+// belongs to the separate static-head port (#4458).
+vi.mock("../../doclayout/index.js", () => ({
+  DocLayoutWithDefaults: ({ children }: { children: unknown }) => children,
+}));
 
 // MANDATORY regression guard (#3216): createVersionsPageView used to hardcode
 // "/docs/getting-started" for both the "latest docs" link and every past
@@ -27,16 +33,16 @@ describe("createVersionsPageView — entryDocSlug (#3216)", () => {
     });
 
     const VersionsPageView = createVersionsPageView(ctx);
-    const html = render(<VersionsPageView locale="en" />);
+    const root = renderNav(<VersionsPageView locale="en" />);
 
     // Latest-docs link.
-    expect(html).toContain('href="/docs/overview/getting-started"');
+    expect(root.querySelector('a[href="/docs/overview/getting-started"]')).not.toBeNull();
     // Hardcode regression check: the old literal must be absent.
-    expect(html).not.toContain("/docs/getting-started\"");
+    expect(root.querySelector('a[href="/docs/getting-started"]')).toBeNull();
 
     // Each past version's docs link.
-    expect(html).toContain('href="/v/1.0/docs/overview/getting-started/"');
-    expect(html).toContain('href="/v/2.0/docs/overview/getting-started/"');
+    expect(root.querySelector('a[href="/v/1.0/docs/overview/getting-started/"]')).not.toBeNull();
+    expect(root.querySelector('a[href="/v/2.0/docs/overview/getting-started/"]')).not.toBeNull();
   });
 
   it("drops the locale prefix on a non-default locale when entryDocSlug is defaultLocaleOnly (#2569)", () => {
@@ -54,10 +60,10 @@ describe("createVersionsPageView — entryDocSlug (#3216)", () => {
     });
 
     const VersionsPageView = createVersionsPageView(ctx);
-    const html = render(<VersionsPageView locale="ja" />);
+    const root = renderNav(<VersionsPageView locale="ja" />);
 
-    expect(html).toContain('href="/docs/claude-md/setup"');
-    expect(html).toContain('href="/v/1.0/docs/claude-md/setup/"');
-    expect(html).not.toContain("/ja/docs/claude-md/setup");
+    expect(root.querySelector('a[href="/docs/claude-md/setup"]')).not.toBeNull();
+    expect(root.querySelector('a[href="/v/1.0/docs/claude-md/setup/"]')).not.toBeNull();
+    expect(root.querySelector('a[href="/ja/docs/claude-md/setup"]')).toBeNull();
   });
 });

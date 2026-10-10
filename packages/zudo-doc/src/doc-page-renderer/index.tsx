@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-page-renderer — factory for the shared page renderer for all 4 doc routes
 // (epic #2344, S7).
 //
@@ -18,11 +17,13 @@
 //     back to the nav node's own docsUrl, doc history rendered for listed
 //     entries via `docHistoryContentDir`.
 
-import type { JSX, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { DocPageBaseProps, DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import { agentPageKey } from "../agent-docs/identity.js";
 import { createDocPageShell } from "../doc-page-shell/index.js";
 import { createDocContentHeader } from "../doc-content-header/index.js";
 import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
@@ -110,6 +111,12 @@ export interface DocPageRendererDeps {
     title: string;
     description?: string;
     canonical?: string;
+    alternateLinks?: ReadonlyArray<{
+      rel: string;
+      href: string;
+      type?: string;
+      title?: string;
+    }>;
     breadcrumbs: Array<{ label: string; href?: string }>;
     prev: DocNavNode | null;
     next: DocNavNode | null;
@@ -135,10 +142,10 @@ export interface DocPageRendererDeps {
     versionBannerLabels?: VersionBannerLabels;
     autoIndexLabel?: string;
     autoIndexChildren?: DocNavNode[];
-    metainfoSlot?: VNode | null;
-    contentHeaderSlot?: VNode;
-    contentSlot?: VNode;
-    docHistorySlot?: VNode | null;
+    metainfoSlot?: Child;
+    contentHeaderSlot?: Child;
+    contentSlot?: Child;
+    docHistorySlot?: Child;
   }) => JSX.Element;
   /**
    * The `DocContentHeader` component (host-side factory result).
@@ -168,7 +175,7 @@ export interface DocPageRendererDeps {
     sourceFileExt?: ".mdx" | ".md";
     contentDir?: string;
     isFallback?: boolean;
-  }) => VNode | null;
+  }) => Description | null;
 }
 
 /**
@@ -297,6 +304,24 @@ export function createRenderDocPage<S extends Settings = Settings>(
       ? undefined
       : `sidebar-${locale}-${navSection ?? "default"}`;
 
+    const agentMarkdownAlternates =
+      ctx.settings.agentExport === true &&
+      !version &&
+      !isFallback &&
+      props.kind === "entry" &&
+      !Boolean(
+        entryData?.draft ||
+          entryData?.unlisted ||
+          entryData?.search_exclude ||
+          entryData?.category_no_page,
+      )
+        ? [{
+            rel: "alternate",
+            type: "text/markdown",
+            href: ctx.withBase(`/agent/v1/pages/${agentPageKey(locale, slug)}.md`),
+          }]
+        : undefined;
+
     // Build the Content node for entry pages — uses the locale-aware components bag.
     const ContentComponent = props.kind === "entry"
       ? (props.entry.Content as (props: { components: Record<string, unknown> }) => JSX.Element)
@@ -310,6 +335,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
         title={title}
         description={description}
         canonical={canonical}
+        alternateLinks={agentMarkdownAlternates}
         breadcrumbs={breadcrumbs}
         prev={prev}
         next={next}

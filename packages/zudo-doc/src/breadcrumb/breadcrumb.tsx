@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { findPath } from "./find-path.js";
 import type { BreadcrumbItem, BreadcrumbNode } from "./types.js";
 import { ChevronRight } from "../icons/index.js";
@@ -46,14 +44,14 @@ interface SmartLabelProps {
  * v2 package — the legacy smart-break util lives in the host project's
  * src/utils/, which v2 must not reach into.
  *
- * Inserts a Preact <wbr/> after each delimiter character when the label
+ * Inserts a zudo-react <wbr/> after each delimiter character when the label
  * looks "path-like" (URLs, slash-separated paths, etc.). Prose labels
  * pass through unchanged.
  */
-function SmartLabel({ label }: SmartLabelProps): VNode | string {
+function SmartLabel({ label }: SmartLabelProps): Child {
   if (!isPathLike(label)) return label;
   const parts = label.split(DELIM_SPLIT);
-  const nodes: (string | VNode)[] = [];
+  const nodes: Child[] = [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (!part) continue;
@@ -83,14 +81,13 @@ function isPathLike(text: string): boolean {
   return false;
 }
 
-function ChevronIcon(): VNode {
-  return <ChevronRight className="h-icon-xs w-icon-xs text-muted shrink-0" />;
+function ChevronIcon(): Child {
+  return <ChevronRight class="h-icon-xs w-icon-xs text-muted shrink-0" />;
 }
 
-function HomeIcon(): VNode {
+function HomeIcon(): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-[1.575rem] w-[1.575rem] shrink-0"
       fill="none"
       viewBox="0 0 24 24"
@@ -123,14 +120,15 @@ export interface BreadcrumbProps {
    * breadcrumb + version-switcher row:
    *
    *   class="mb-vsp-sm flex flex-col items-start gap-vsp-xs
-   *          sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0"
+   *          sm:flex-row sm:items-center sm:justify-between zd-breadcrumb-nav-no-margin"
    *
-   * The `[&_nav]:mb-0` rule strips the nav's own `mb-vsp-md` so the
+   * The `zd-breadcrumb-nav-no-margin` rule strips the nav's own
+   * `mb-vsp-md` so the
    * wrapper margin controls spacing instead. Use this to place the
    * VersionSwitcher pill inline at the right of the breadcrumb row,
    * matching the reference site's layout on category index pages.
    */
-  rightSlot?: ComponentChildren;
+  rightSlot?: Child;
 }
 
 /**
@@ -144,7 +142,7 @@ export interface BreadcrumbProps {
  * Returns null when no items resolve, matching the documented
  * `items.length > 0 &&` guard.
  */
-export function Breadcrumb(props: BreadcrumbProps): VNode | null {
+export function Breadcrumb(props: BreadcrumbProps): Child {
   const items =
     props.items ??
     (props.tree && props.currentId !== undefined
@@ -187,11 +185,12 @@ export function Breadcrumb(props: BreadcrumbProps): VNode | null {
 
   // When a rightSlot is provided, wrap both elements in a flex row that
   // matches the original Astro doc-layout's breadcrumb + version-switcher
-  // row. The `[&_nav]:mb-0` rule cancels the nav's own bottom margin so
+  // row. The `zd-breadcrumb-nav-no-margin` rule cancels the nav's own bottom
+  // margin so
   // the wrapper margin controls spacing instead (matching the Astro
   // reference which used `mb-vsp-sm` on the outer div).
   return (
-    <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0">
+    <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between zd-breadcrumb-nav-no-margin">
       {nav}
       {props.rightSlot}
     </div>

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SidebarTree — per-role date patterns from the `dateFormats` prop (#4078).
  *
@@ -10,10 +9,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import type { ResolvedDateFormats } from "../../settings.js";
 import type { SidebarNavNode, SidebarLocaleLink } from "../../sidebar/types.js";
-import { SidebarToggle } from "../../sidebar-toggle-island/index.js";
 import { SidebarTree } from "../index.js";
 
 const FORMATS: ResolvedDateFormats = {
@@ -29,7 +27,12 @@ const JA_LINKS: SidebarLocaleLink[] = [
   { code: "ja", label: "日本語", href: "/ja/docs/notes", active: true },
 ];
 
-function item(slug: string, label: string, rank: number, date?: string): SidebarNavNode {
+function item(
+  slug: string,
+  label: string,
+  rank: number,
+  date?: string,
+): SidebarNavNode {
   return {
     slug: `notes/${slug}`,
     label,
@@ -42,7 +45,10 @@ function item(slug: string, label: string, rank: number, date?: string): Sidebar
   };
 }
 
-function tray(sidebar: "index" | "year" | "month", children: SidebarNavNode[]): SidebarNavNode {
+function tray(
+  sidebar: "index" | "year" | "month",
+  children: SidebarNavNode[],
+): SidebarNavNode {
   return {
     slug: "notes",
     label: "Notes",
@@ -57,16 +63,24 @@ function tray(sidebar: "index" | "year" | "month", children: SidebarNavNode[]): 
   };
 }
 
-const YEAR_TRAY = [tray("year", [item("august", "August note", 2, "2026-08-22")])];
-const MONTH_TRAY = [tray("month", [item("august", "August note", 2, "2026-08-22")])];
+const YEAR_TRAY = [
+  tray("year", [item("august", "August note", 2, "2026-08-22")]),
+];
+const MONTH_TRAY = [
+  tray("month", [item("august", "August note", 2, "2026-08-22")]),
+];
 // Grouped rows only render inside an expanded group, and a group auto-expands
 // when it contains the current page.
 const CURRENT = "notes/august";
 
 describe("SidebarTree — dateFormats roles", () => {
   it("falls back to today's output when the prop is omitted entirely", () => {
-    const yearHtml = render(<SidebarTree nodes={YEAR_TRAY} currentSlug={CURRENT} />);
-    const monthHtml = render(<SidebarTree nodes={MONTH_TRAY} currentSlug={CURRENT} />);
+    const yearHtml = render(
+      <SidebarTree nodes={YEAR_TRAY} currentSlug={CURRENT} />,
+    );
+    const monthHtml = render(
+      <SidebarTree nodes={MONTH_TRAY} currentSlug={CURRENT} />,
+    );
 
     expect(yearHtml).toContain('aria-label="Collapse 2026"');
     expect(yearHtml).toContain("08-22");
@@ -74,7 +88,13 @@ describe("SidebarTree — dateFormats roles", () => {
   });
 
   it("formats the year-group heading with the `year` role while the group key stays raw", () => {
-    const html = render(<SidebarTree nodes={YEAR_TRAY} currentSlug={CURRENT} dateFormats={FORMATS} />);
+    const html = render(
+      <SidebarTree
+        nodes={YEAR_TRAY}
+        currentSlug={CURRENT}
+        dateFormats={FORMATS}
+      />,
+    );
 
     expect(html).toContain('aria-label="Collapse FY2026"');
     expect(html).toContain(">FY2026</span>");
@@ -83,7 +103,13 @@ describe("SidebarTree — dateFormats roles", () => {
   });
 
   it("formats the month-group heading with the `yearMonth` role", () => {
-    const html = render(<SidebarTree nodes={MONTH_TRAY} currentSlug={CURRENT} dateFormats={FORMATS} />);
+    const html = render(
+      <SidebarTree
+        nodes={MONTH_TRAY}
+        currentSlug={CURRENT}
+        dateFormats={FORMATS}
+      />,
+    );
 
     expect(html).toContain('aria-label="Collapse August of 2026"');
     expect(html).toContain('data-zd-sidebar-open-key="notes#2026-08"');
@@ -91,7 +117,13 @@ describe("SidebarTree — dateFormats roles", () => {
   });
 
   it("formats grouped row dates with the `numericMonthDay` role, not `full` or `monthDay`", () => {
-    const html = render(<SidebarTree nodes={YEAR_TRAY} currentSlug={CURRENT} dateFormats={FORMATS} />);
+    const html = render(
+      <SidebarTree
+        nodes={YEAR_TRAY}
+        currentSlug={CURRENT}
+        dateFormats={FORMATS}
+      />,
+    );
 
     expect(html).toContain(">22.8</span>");
     expect(html).not.toContain("2026/08/22");
@@ -99,7 +131,9 @@ describe("SidebarTree — dateFormats roles", () => {
   });
 
   it("resolves MMM month names in `numericMonthDay` against the active locale", () => {
-    const nodes = [tray("year", [item("august", "August note", 2, "2026-08-22")])];
+    const nodes = [
+      tray("year", [item("august", "August note", 2, "2026-08-22")]),
+    ];
     const html = render(
       <SidebarTree
         nodes={nodes}
@@ -112,8 +146,14 @@ describe("SidebarTree — dateFormats roles", () => {
     expect(html).toContain(">8月 22</span>");
   });
 
-  it("threads the roles through the mobile drawer wrapper", () => {
-    const html = render(<SidebarToggle nodes={YEAR_TRAY} currentSlug={CURRENT} dateFormats={FORMATS} />);
+  it("threads the roles through the tree used by the mobile drawer", () => {
+    const html = render(
+      <SidebarTree
+        nodes={YEAR_TRAY}
+        currentSlug={CURRENT}
+        dateFormats={FORMATS}
+      />,
+    );
 
     expect(html).toContain("FY2026");
     expect(html).toContain("22.8");

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // CodeGroup — adapter for zfb's `:::code-group` directive (codeTabs Option A).
 // Moved from the showcase's `src/components/content/code-group.tsx` into the
 // shared package as part of the package-first migration (epic #2321, S4 #2327).
@@ -22,24 +21,19 @@
 // TabsInit (the companion init script) is expected to be present in the
 // consumer's layout — we do not duplicate it here.
 
-import type { ComponentChildren } from "preact";
+import { flattenChildren } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { Tabs } from "../code-syntax/index.js";
 import { TabItem } from "../tab-item/index.js";
 
 type Props = {
   tabs?: string[];
-  children?: ComponentChildren;
+  children?: Child;
   [key: string]: unknown;
 };
 
-function toArray(children: ComponentChildren): ComponentChildren[] {
-  if (!children) return [];
-  if (Array.isArray(children)) return children;
-  return [children];
-}
-
 export function CodeGroup({ tabs = [], children, name }: Props) {
-  const childArray = toArray(children);
+  const childArray = flattenChildren(children);
 
   // Zip tabs labels with pre children by index. Extra children beyond the
   // tabs array (shouldn't happen in normal zfb output) are ignored.

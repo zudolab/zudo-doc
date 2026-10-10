@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // sidebar-prepaint — factories for the sidebar-visibility feature (epic #2344, S5).
 //
 // This module owns TWO pieces of the desktop sidebar-toggle feature:
@@ -26,12 +25,11 @@
 // factories just need the setting value and the `Island` slot component so they
 // never import `@/config/settings`.
 
-import type { VNode, JSX } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
-import {
-  DesktopSidebarToggle,
-  SIDEBAR_STORAGE_KEY,
-} from "../desktop-sidebar-toggle-island/index.js";
+import { DesktopSidebarToggle } from "../desktop-sidebar-toggle-island/index.js";
+import { SIDEBAR_STORAGE_KEY } from "../desktop-sidebar-toggle-island/storage.js";
 
 export interface SidebarPrepaintProps {
   /**
@@ -98,7 +96,7 @@ export function createSidebarVisibilityPrepaint(
 
     return (
       <script
-        dangerouslySetInnerHTML={{ __html: SIDEBAR_VISIBILITY_PREPAINT_SCRIPT }}
+        rawHtml={SIDEBAR_VISIBILITY_PREPAINT_SCRIPT}
       />
     );
   }
@@ -135,7 +133,7 @@ export function createSidebarPrepaint(
         {Island({
           when: "load",
           children: <DesktopSidebarToggle />,
-        }) as unknown as VNode}
+        }) as unknown as Description}
       </>
     );
   }

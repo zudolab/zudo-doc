@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Locked manifest (#2653 Decision 4): a SELF-CONTAINED doc-route stub retained
 // for explicit host route ownership. zfb 2.13.1 also serves injected dynamic
 // routes in dev. This stub reconstructs the doc route from scratch using ONLY the
@@ -13,7 +12,7 @@
 // The route-injection build test covers the corresponding package-owned route;
 // this kept file remains the explicit host-owned seam.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { routeContext } from "virtual:zudo-doc-route-context";
 import {
   createRouteContext,

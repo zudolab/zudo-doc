@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // header-with-defaults — factory for the locale-/version-aware Header
 // wrapper (epic #2344, S5).
 //
@@ -8,7 +7,8 @@
 // `@/utils/github`). This factory receives those as arguments so the logic
 // lives in the package while the host stub keeps the singleton imports.
 
-import type { VNode, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { Header, filterHeaderRightItems } from "../header/index.js";
 import {
@@ -127,7 +127,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
   const docsUrl = ctx.docsUrl;
   const navHref = ctx.navHref;
   const versionedDocsUrl = ctx.versionedDocsUrl;
-  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode } =
+  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, buildSidebarContext, getThemeDefaultMode } =
     deriveNavDataPrep(ctx);
   const buildGitHubRepoUrl = (): string | null =>
     buildGitHubRepoUrlBase((ctx.settings as { githubUrl?: string | false }).githubUrl);
@@ -157,9 +157,10 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     const themeDefaultMode = getThemeDefaultMode();
     const themeRespectSystem = (ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true;
     const buildDefaultSidebarNodes = () => buildSidebarNodes(lang, navSection, currentVersion);
+    const defaultSidebar = sidebarNodesProp === undefined ? buildSidebarContext(lang, navSection, currentVersion) : undefined;
     const sidebarNodes =
       sidebarNodesProp === undefined
-        ? buildDefaultSidebarNodes()
+        ? defaultSidebar!.nodes
         : typeof sidebarNodesProp === "function"
           ? sidebarNodesProp({
               lang,
@@ -179,23 +180,31 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         children: (
           <SidebarToggle
             nodes={sidebarNodes}
-            currentSlug={currentSlug}
+            {...(defaultSidebar?.navigation ? { navigation: defaultSidebar.navigation } : {})}
+            {...(currentSlug !== undefined ? { currentSlug } : {})}
             rootMenuItems={rootMenuItems}
-            backToMenuLabel={backToMenuLabel}
+            {...(backToMenuLabel !== undefined ? { backToMenuLabel } : {})}
             locale={lang}
-            localeLinks={localeLinks}
-            themeDefaultMode={themeDefaultMode}
+            {...(localeLinks !== undefined ? { localeLinks } : {})}
+            {...(themeDefaultMode !== undefined ? { themeDefaultMode } : {})}
             themeLabels={themeToggleLabels(t, lang)}
             themeRespectSystem={themeRespectSystem}
             dateFormats={dateFormatsFor(lang)}
           />
         ),
-      }) as unknown as VNode;
+      });
 
     const themeToggle = Island({
       when: "load",
-      children: <ThemeToggle defaultMode={themeDefaultMode} labels={themeToggleLabels(t, lang)} respectPrefersColorScheme={themeRespectSystem} pendingUntilHydrated={true} />,
-    }) as unknown as VNode;
+      children: (
+        <ThemeToggle
+          {...(themeDefaultMode !== undefined ? { defaultMode: themeDefaultMode } : {})}
+          labels={themeToggleLabels(t, lang)}
+          respectPrefersColorScheme={themeRespectSystem}
+          pendingUntilHydrated={true}
+        />
+      ),
+    });
 
     const searchWidget = (
       <SearchWidget
@@ -210,7 +219,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     );
 
     // Build the version-switcher component when versioning is configured.
-    let versionSwitcher: VNode | undefined;
+    let versionSwitcher: Child | undefined;
 
     if (settings.versions && settings.versions.length > 0) {
       const isNonDefaultLocale = lang !== defaultLocale;
@@ -263,7 +272,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             currentLocale: lang,
           }}
         />
-      ) as unknown as VNode;
+      );
     }
 
     const languageSwitcher =
@@ -279,7 +288,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
           }}
           currentLocale={lang}
         />
-      ) as unknown as VNode : undefined;
+      ) : undefined;
 
     const persistKey = `header-${lang}`;
 

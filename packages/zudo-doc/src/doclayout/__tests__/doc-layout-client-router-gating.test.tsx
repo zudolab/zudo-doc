@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence test for `enableClientRouter` gating in `<DocLayout>` /
  * `<DocLayoutWithDefaults>`.
@@ -12,14 +11,27 @@
  * omitted or set to `true`, those meta tags must appear (default/enabled path).
  */
 
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { DocLayoutWithDefaults } from "../doc-layout-with-defaults.js";
+
+const testGlobal = globalThis as unknown as { __zfb?: Record<string, unknown> };
+const previousZfb = testGlobal.__zfb;
+beforeEach(() => {
+  testGlobal.__zfb = {
+    ...previousZfb,
+    zudoReactBuild: "4458-test",
+    zudoReactIslands: ["ThemeToggle"],
+  };
+});
+afterEach(() => {
+  testGlobal.__zfb = previousZfb;
+});
 
 describe("DocLayoutWithDefaults — ClientRouter gating", () => {
   it("omits ClientRouter meta when enableClientRouter={false}", () => {
     const html = render(
-      <DocLayoutWithDefaults title="No Router" enableClientRouter={false}>
+      <DocLayoutWithDefaults title="No Router" enableClientRouter={false} headerOverride={<header />} sidebarOverride={false}>
         <p>body</p>
       </DocLayoutWithDefaults>,
     );
@@ -32,7 +44,7 @@ describe("DocLayoutWithDefaults — ClientRouter gating", () => {
 
   it("includes ClientRouter meta when enableClientRouter is omitted (default=true)", () => {
     const html = render(
-      <DocLayoutWithDefaults title="With Router">
+      <DocLayoutWithDefaults title="With Router" headerOverride={<header />} sidebarOverride={false}>
         <p>body</p>
       </DocLayoutWithDefaults>,
     );
@@ -43,7 +55,7 @@ describe("DocLayoutWithDefaults — ClientRouter gating", () => {
 
   it("includes ClientRouter meta when enableClientRouter={true}", () => {
     const html = render(
-      <DocLayoutWithDefaults title="Router Explicit True" enableClientRouter={true}>
+      <DocLayoutWithDefaults title="Router Explicit True" enableClientRouter={true} headerOverride={<header />} sidebarOverride={false}>
         <p>body</p>
       </DocLayoutWithDefaults>,
     );

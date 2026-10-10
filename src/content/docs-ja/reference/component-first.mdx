@@ -6,173 +6,102 @@ tags:
   - design-system
 ---
 
-zudo-docは**コンポーネントファースト戦略**に従います：UIは常にTailwindユーティリティクラスを持つコンポーネントとして表現します。カスタムCSSクラス名を別のスタイルシートで作成することはしません。
-
-## 問題
-
-ユーティリティCSSフレームワークとコンポーネントフレームワークを併用するプロジェクトでは、開発者は従来のCSSパターンに戻りがちです。コンポーネント内でユーティリティクラスを組み合わせる代わりに、`.profile-card`、`.btn-primary`、`.sidebar-nav`といったカスタムCSSクラス名を別のスタイルシートやCSSモジュールで作成します。
-
-これにより、コードベースが断片化します：
-
-- ユーティリティをインラインで使うコンポーネント
-- カスタムCSSクラスを導入するコンポーネント
-- 両方のアプローチを混在させるコンポーネント
+<span id="問題" />
 
 ## ルール
 
-**コンポーネント自体が抽象化です。** `.card`や`.btn-primary`のようなCSSクラス名は不要です。コンポーネントがカプセル化を、ユーティリティクラスがスタイリングを担当します。
+UIの抽象はコンポーネントです。zudo-reactの`.tsx`コンポーネントを、対応するzudo-windユーティリティとセマンティックトークンで構成します。バリアントはpropsで表します。コンパイラーが対応しない機能には`zd-`名の狭いスコープのCSSを記述し、authored classのカバレッジを登録します。独自のユーティリティ名がCSSを生成すると仮定しないでください。
 
-- カードが必要？ → ユーティリティクラスを持つ`<Card>`コンポーネントを作成
-- ボタンバリアント？ → `<Button variant="primary">`コンポーネント
-- レイアウトパターン？ → `<PageLayout>`コンポーネント
+<span id="zudo-docでの実践" />
 
-## zudo-docでの実践
+## zudo-docでの使用
 
-zudo-docはzfb上で動作する**Preactコンポーネント**（`.tsx`）を、**Tailwind CSS v4**ユーティリティとともに使用します。プロジェクトが所有する `.tsx` ファイルでは、`class` ではなく `className` を書いてください。scaffold は `react` を `preact/compat` にマッピングするため、作成した JSX は React 互換の型を使い、`class` は `zfb check` に失敗します。サーバーレンダリングのみのコンポーネントでも、クライアントでハイドレートされるアイランドでも、同じコンポーネントファーストのルールが適用されます。
+サーバーコンポーネントは`Child`/`Description`を返し、クライアントJavaScriptなしでHTMLを生成します。クライアントコンポーネントは`"use client"`を追加し、スコープが所有するシグナルを使用します。どちらも`class`とJSX source `@takazudo/zfb/zudo-react`を使用し、React/Preactのノード型は使用しません。
 
-### サーバーレンダリングコンポーネント
+<span id="zudo-docでの実践-サーバーレンダリングコンポーネント" />
 
-ほとんどのUIはサーバーレンダリングです。JavaScriptを出力せず、ユーティリティクラスをインラインで使います。パッケージの `packages/zudo-doc/src/footer/footer.tsx` はサーバーレンダリングの例です。プロジェクトが所有するコンポーネントは次の形で書いてください。
+### サーバーレンダリングのコンポーネント
 
-```tsx
-export function Footer({ copyright }: Props) {
+```tsx title="src/components/my-badge.tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
+import type { Child } from "@takazudo/zfb/zudo-react";
+
+export function MyBadge({ children }: { children?: Child }) {
   return (
-    <footer className="border-t border-muted bg-surface px-hsp-xl py-vsp-xl">
-      <div
-        className="text-center text-caption text-muted"
-        dangerouslySetInnerHTML={{ __html: copyright }}
-      />
-    </footer>
+    <span class="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg">
+      {children}
+    </span>
   );
 }
 ```
 
-`.footer`クラスなし。`footer.module.css`なし。コンポーネント**が**抽象化です。
+<span id="zudo-docでの実践-クライアントでハイドレートされるアイランド" />
 
-### クライアントでハイドレートされるアイランド
+### クライアントでハイドレートするアイランド
 
-インタラクティブなモジュールは `"use client"` で始め、ホストが `@takazudo/zfb` の `Island()` でコンポーネントをラップします。`Island({ when, children })` はハイドレーションを始めるタイミング（`"load"`、`"idle"`、`"visible"`）を選び、必要なら `ssrFallback` でサーバーレンダリング時のマークアップを提供します。パッケージの `packages/zudo-doc/src/header-with-defaults/index.tsx` は、既存の `SidebarToggle` アイランドにこの呼び出し形式を使っています。必須の静的インポート経路と実験的なスキャナーの制約については、完全な[インタラクティブアイランドのレシピ](../guides/custom-components.mdx#インタラクティブアイランド（実験的）)に従ってください。
+固定ターゲットのサーバー境界とシリアライズ可能なpropsを使用します。スキャナー到達性と寿命は[Custom Components](../guides/custom-components.mdx#インタラクティブアイランド（実験的）)を参照してください。
 
-```tsx
-import { Island } from "@takazudo/zfb";
+```tsx title="src/components/counter.tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
+"use client";
 
-// Counter is imported from a module that starts with "use client".
-const CounterIsland = () =>
-  Island({
-    when: "visible",
-    ssrFallback: <span className="text-caption">Loading counter...</span>,
-    children: <Counter />,
+import { computed, getScope, signal } from "@takazudo/zfb/zudo-react";
+
+export default function Counter() {
+  const scope = getScope();
+  const count = signal(0);
+  const label = computed(() => `Count: ${count.value}`);
+
+  scope.onActivate(() => {
+    // Browser-only setup belongs here. Return cleanup when needed.
   });
-```
 
-### アンチパターン
-
-zudo-docプロジェクトでCSSクラス名を作成しては**いけません**：
-
-```css
-/* WRONG — don't create custom CSS classes */
-.profile-card {
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-}
-.profile-card__name {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-```
-
-```tsx
-// WRONG — custom class names bypass the design system
-<div className="profile-card">
-  <h3 className="profile-card__name">{name}</h3>
-</div>
-```
-
-代わりに：
-
-```tsx
-// RIGHT — utility classes, the component is the abstraction
-<div className="flex gap-hsp-md p-hsp-lg">
-  <h3 className="text-body font-semibold">{name}</h3>
-</div>
-```
-
-## バリアントはPropsで
-
-CSSモディファイアクラス（`.btn--primary`、`.btn--secondary`）ではなく、コンポーネントプロップスを使用：
-
-```tsx
-function Button({ variant = "primary", children }) {
-  const styles = {
-    primary: "bg-accent text-bg hover:bg-accent-hover",
-    secondary: "bg-surface text-fg border border-muted",
-  };
   return (
-    <button className={`${styles[variant]} font-semibold py-vsp-xs px-hsp-md rounded`}>
-      {children}
+    <button
+      type="button"
+      class="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg"
+      on:click={() => { count.value += 1; }}
+    >
+      {label}
     </button>
   );
 }
 ```
 
-使い方：
+<span id="バリアントはpropsで" />
 
-```tsx
-<Button variant="primary">Save</Button>
-<Button variant="secondary">Cancel</Button>
-```
+## Propsによるコンポーネントバリアント
 
-維持すべき`.btn-primary`クラスはありません。`variant`プロップは型安全で、補完が効き、自己文書化されています。
+バリアントに型を付けます。表示専用なら静的なクラスのlookupで十分です。シグナルに依存するバリアントは`computed`でセットアップ後の変更を反映します。
 
-## コンポーネントの組み合わせ
+<span id="コンポーネントの組み合わせ" />
 
-複雑なレイアウトは、より多くのCSSを追加するのではなく、より小さなコンポーネントを組み合わせて構築します：
+## コンポーネントの合成
 
-```tsx
-<div className="divide-y divide-muted">
-  {users.map((user) => (
-    <div className="flex items-center gap-hsp-md py-vsp-sm">
-      <Avatar src={user.avatar} size="sm" />
-      <div className="flex-1 min-w-0">
-        <p className="text-small font-medium text-fg truncate">{user.name}</p>
-        <p className="text-caption text-muted truncate">{user.email}</p>
-      </div>
-    </div>
-  ))}
-</div>
-```
+小さいコンポーネントを合成します。変化するリストにはキー付き`For`を使い、固定されたサーバーコンテンツなら通常の配列mapを使えます。保持された`Show(true)`の子は、ほかの値が変わってもローカル状態をリセットしません。構造境界は制約されたtable親の外に置きます。
 
-各要素（`<Avatar>`、リストレイアウト）はコンポーネントです。`.user-list__item`や`.user-list__avatar`といったクラス名は不要です。
+<span id="デザイントークンを使用" />
 
-## デザイントークンを使用
+## zudo-docのデザイントークンを使う
 
-任意の値ではなく、プロジェクトトークンを常に使用：
+`text-fg`、`bg-surface`、`p-hsp-md`、`text-small`を使用します。CSSカスタムプロパティは既存トークンの値を変更します。新しいユーティリティ名には`wind.tokens`の設定も必要です。[Design System](./design-system.mdx)と[Color](./color.mdx)を参照してください。
 
-```tsx
-// WRONG — arbitrary values bypass the design system
-<div className="p-[1.2rem] text-[0.875rem] text-[#6b7280]">
+<span id="zudo-docでの実践-アンチパターン" />
 
-// RIGHT — use design tokens
-<div className="p-hsp-md text-small text-muted">
-```
+<span id="カスタムcssが許容される場合" />
 
-利用可能なトークンについては[デザインシステム](./design-system.mdx)を参照してください。
+## カスタムCSSを使う場合
 
-## カスタムCSSが許容される場合
+`.zd-content`のタイポグラフィ、リセット補正、コンポーネントシームはパッケージが所有します。プロジェクトはコピーせず公開CSSをインポートします。カスタムプロパティはインポート後の`:root`で上書きします。未対応のユーティリティや明示的なコンポーネントの細部にはスコープを限定したCSSを使い、カスケードを確認します。生成ユーティリティはレイヤー化されず手書きCSSの後に配置されるため、レイヤーだけでは上書きの順序を制御できません。グローバルな`!important`よりコンポーネントに限定したセレクターを優先します。
 
-プロジェクトレベルのCSSは `src/styles/global.css` に置きますが、パッケージが所有するスタイルをそこに複製してはいけません：
+<span id="ルールのまとめ" />
 
-- **コンテンツタイポグラフィ** — `.zd-content` は `packages/zudo-doc/src/content.css` で一度だけ定義され、`@takazudo/zudo-doc/content.css` として配布されます。scaffold は MDX タイポグラフィのルールをコピーせず、このパッケージスタイルシートをインポートします
-- **プロジェクトのカスタマイズ** — `@theme` のオーバーライド、プロジェクト固有の機能スタイル、明示的なコンポーネントスロットのスタイルは `src/styles/global.css` に置きます
+## ルール一覧
 
-それ以外のすべて（プロジェクトが所有するコンポーネント、レイアウト、通常のUI要素）はユーティリティクラスを直接使用します。
-
-## ルールのまとめ
-
-1. **常にコンポーネントを作成** — CSSクラスではなく
-2. **ユーティリティクラスを直接使用** — コンポーネントマークアップ内で
-3. **CSSモジュールファイルやカスタムクラス名を作成しない**
-4. **バリアントにはプロップスを使用** — CSSモディファイアではなく
-5. **コンポーネントを組み合わせる** — より多くのCSSではなく、小さなコンポーネントから複雑なUIを構築
-6. **プロジェクトトークンを使用** — `text-fg`、`bg-surface`、`p-hsp-md`、任意の値ではなく
+1. コンポーネントを合成し、型付きpropsでバリアントを表す。
+2. 対応するユーティリティとセマンティックトークンを使う。
+3. コンパイラーの契約に応じてスコープ付きCSSを記述する。
+4. 状態とブラウザーのcleanupを所有スコープに所属させる。
+5. カスタマイズ後は生成CSSと実際の操作を確認する。

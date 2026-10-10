@@ -66,6 +66,9 @@ export default defineConfig({
       command: `cd e2e/fixtures/${name} && ./node_modules/.bin/zfb preview --port ${BASE_PORT + i}`,
       url: `http://localhost:${BASE_PORT + i}/`,
       reuseExistingServer: !process.env.CI,
+      // Native preview owns child processes; terminate the group gracefully so
+      // failed tests still finish teardown and write their JSON report.
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
       timeout: 120_000,
     };
   }),

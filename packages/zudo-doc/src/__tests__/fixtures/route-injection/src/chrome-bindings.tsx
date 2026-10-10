@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Host-callables channel fixture (CB #2501) — a minimal `chromeBindings`
 // module the CB test cases point `settings.chromeBindingsModule` at.
 //

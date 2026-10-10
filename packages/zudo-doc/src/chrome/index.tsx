@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // chrome — public `createChrome(context, hostBindings)` builder (epic Collapse
 // Wiring Shells #2420, CTX #2423; FACTORIES #2424 collapsed the per-factory
 // wiring INTO the factories).
@@ -29,7 +28,8 @@ import type {
   FactoryComponents,
 } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
-import type { JSX, VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { HeaderWithDefaultsProps } from "../header-with-defaults/index.js";
 import type { SidebarWithDefaultsProps } from "../sidebar-with-defaults/index.js";
 
@@ -72,7 +72,7 @@ export function createChrome<S extends Settings = Settings>(
   const HeaderWithDefaults = (props: HeaderWithDefaultsProps): JSX.Element => (
     <>{primary.Header({ ...props, lang: props.lang ?? context.defaultLocale })}</>
   );
-  const FooterWithDefaults = (props: { lang?: string }): VNode => (
+  const FooterWithDefaults = (props: { lang?: string }): Child => (
     <>{primary.Footer({ lang: props.lang ?? context.defaultLocale })}</>
   );
   const SidebarWithDefaults = (props: SidebarWithDefaultsProps): JSX.Element => (

@@ -5,9 +5,8 @@
 // page paints. The component is intentionally server-rendered with no
 // hydration: it just emits a <style> + <script> pair the engine streams
 // into the document head. The Astro version used `set:text` and
-// `define:vars`; the JSX equivalent is `dangerouslySetInnerHTML` with the
-// runtime values interpolated as a JSON literal so the script can read
-// them without re-fetching settings.
+// `define:vars`; this port supplies guarded static rawHtml payloads, with
+// runtime values interpolated as JSON literals into the bootstrap script.
 //
 // W3B (#1730 — Generator Pages Migration): the consumer-side palette
 // resolution and the host `settings.colorMode` lookup were lifted out of
@@ -17,7 +16,7 @@
 // and `colorMode` as required props, so this file no longer reaches into
 // host `@/config/*` modules.
 
-import type { ComponentChildren } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 import {
   COLOR_SCHEME_CHANGED_EVENT,
@@ -52,7 +51,7 @@ export interface ColorSchemeProviderProps {
    */
   colorMode: ColorSchemeProviderColorMode | null;
   /** Optional children; preserved for forward compatibility. */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /** Bootstrap script for the light/dark/system preference (settings.colorMode set). */
@@ -117,8 +116,8 @@ export default function ColorSchemeProvider({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: cssText }} />
-      {bootstrap !== null && <script dangerouslySetInnerHTML={{ __html: bootstrap }} />}
+      <style rawHtml={cssText} />
+      {bootstrap !== null && <script rawHtml={bootstrap} />}
     </>
   );
 }

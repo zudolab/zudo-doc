@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Unit tests for the `docContentHeaderExtras` host-binding seam
  * (zudolab/zudo-doc#2500, epic #2499).
@@ -11,7 +10,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { createDocContentHeader } from "../index.js";
 import type { DocPageEntry } from "../../doc-page-props/index.js";
 import type { ChromeContext } from "../../factory-context/index.js";

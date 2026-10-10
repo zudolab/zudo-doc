@@ -1,13 +1,9 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import type { Child } from "@takazudo/zfb/zudo-react";
 // `@takazudo/zfb` is provided by the consumer at integration time;
 // types come from the package-level shim at `../_zfb-shim.d.ts`.
-import { Island } from "@takazudo/zfb";
 
 import { HtmlPreview, type HtmlPreviewLabels } from "./html-preview.js";
 
@@ -29,7 +25,7 @@ export interface HtmlPreviewWrapperProps {
   /**
    * Controls when the preview subtree is rendered.
    *
-   * `"eager"` (and omission) preserves the server-rendered iframe and
+   * `"eager"` (and omission) preserves the server-rendered preview host and
    * hydrates it when visible. `"visible"` emits only an inert height
    * reservation during SSR and renders the preview on the client through
    * zfb's skip-SSR island path.
@@ -144,45 +140,13 @@ type HtmlPreviewWrapperInnerProps = Omit<
   "loading"
 >;
 
-// zfb 2.14.x intentionally mounts skip-SSR (`mode="render"`) islands
-// immediately, regardless of their `data-when` value. This private serialized
-// flag lets the bare hydration target preserve the public marker identity while
-// applying the visible gate locally. It is deliberately absent from every
-// exported prop type and stripped before HtmlPreview is instantiated.
-const VISIBLE_MOUNT_PROP = "__zudoDocVisibleMount";
-type HtmlPreviewWrapperInnerRuntimeProps =
-  HtmlPreviewWrapperInnerProps & {
-    [VISIBLE_MOUNT_PROP]?: true;
-  };
-
-function reservationHeight(height: number | undefined): number {
-  return height != null && height > 0 ? height : 200;
-}
-
-function HtmlPreviewReservation({
-  height,
-  reservationRef,
-}: {
-  height: number | undefined;
-  reservationRef?: { current: HTMLDivElement | null };
-}): VNode {
-  return (
-    <div
-      ref={reservationRef}
-      aria-hidden="true"
-      data-zd-html-preview-reservation
-      style={{ height: reservationHeight(height) }}
-    />
-  );
-}
-
 /**
  * Bare HTML preview body — the actual island **hydration target**.
  *
  * Merges global (`settings.htmlPreview`) config with per-usage props and
  * forwards everything to `<HtmlPreview>`. Renders the preview tree
  * **directly**: it does NOT wrap itself in `<Island>`. `HtmlPreviewWrapper`
- * below applies the `<Island when="visible">` wrapper around it.
+ * in `wrapper.tsx` applies the `<Island when="visible">` wrapper around it.
  *
  * ## Island invariant (read before touching the displayName / Island wiring)
  *
@@ -205,79 +169,12 @@ function HtmlPreviewReservation({
  */
 export function HtmlPreviewWrapperInner(
   props: HtmlPreviewWrapperInnerProps,
-): VNode {
-  const runtimeProps = props as HtmlPreviewWrapperInnerRuntimeProps;
-  const deferUntilVisible = runtimeProps[VISIBLE_MOUNT_PROP] === true;
-  const reservationRef = useRef<HTMLDivElement>(null);
-  const [shouldRenderPreview, setShouldRenderPreview] = useState(
-    !deferUntilVisible ||
-      typeof globalThis.IntersectionObserver !== "function",
-  );
-
-  useEffect(() => {
-    if (shouldRenderPreview) return;
-    if (!deferUntilVisible) {
-      setShouldRenderPreview(true);
-      return;
-    }
-
-    const target = reservationRef.current;
-    const Observer = globalThis.IntersectionObserver;
-    if (!target || typeof Observer !== "function") {
-      // Match zfb's visible-hydration policy: unsupported observer APIs fail
-      // open so the preview remains functional in old browsers/test hosts.
-      setShouldRenderPreview(true);
-      return;
-    }
-
-    let fired = false;
-    const observer = new Observer(
-      (entries) => {
-        if (fired || !entries.some((entry) => entry.isIntersecting)) return;
-        fired = true;
-        observer.disconnect();
-        setShouldRenderPreview(true);
-      },
-      { threshold: 0 },
-    );
-    observer.observe(target);
-
-    return () => {
-      fired = true;
-      observer.disconnect();
-    };
-  }, [deferUntilVisible, shouldRenderPreview]);
-
+): Child {
   const {
-    [VISIBLE_MOUNT_PROP]: _visibleMount,
-    globalConfig,
-    html,
-    css,
-    head,
-    js,
-    title,
-    lang,
-    height,
-    defaultOpen,
-    labels,
-    showSource,
-    showViewportControls,
-    fullHeight,
-    sandbox,
-    externalStyles,
-    externalScripts,
-    preflight,
-    showResources,
-  } = runtimeProps;
-
-  if (!shouldRenderPreview) {
-    return (
-      <HtmlPreviewReservation
-        height={height}
-        reservationRef={reservationRef}
-      />
-    );
-  }
+    globalConfig, html, css, head, js, title, lang, height,
+    defaultOpen, labels, showSource, showViewportControls, fullHeight,
+    sandbox, externalStyles, externalScripts, preflight, showResources,
+  } = props;
 
   const mergedHead =
     [globalConfig?.head, head].filter(Boolean).join("\n") || undefined;
@@ -316,48 +213,3 @@ export function HtmlPreviewWrapperInner(
 // minification renames the function. Per the invariant above, it must equal
 // the export name and must not match the self-wrapping `HtmlPreviewWrapper`.
 HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapperInner";
-
-/**
- * HTML preview wrapper component — the public MDX-registered binding
- * (`HtmlPreview: HtmlPreviewWrapper`).
- *
- * Eager mode wraps the bare `HtmlPreviewWrapperInner` in
- * `<Island when="visible">`, mirroring the legacy `client:visible` hydration
- * timing while preserving the complete server-rendered preview. Visible mode
- * uses zfb's skip-SSR fallback path: static output contains only an inert
- * nonzero reservation, while the real serializable inner props remain on the
- * island marker for the client mount. zfb intentionally mounts skip-SSR
- * islands immediately, so the bare inner target keeps that reservation in
- * place and applies its own one-shot IntersectionObserver gate before it
- * instantiates the preview subtree; missing observer support fails open.
- *
- * The public export name and signature are unchanged from before the
- * zudolab/zudo-doc#1925 fix, so existing consumers that register
- * `HtmlPreview: HtmlPreviewWrapper` keep working (and now hydrate correctly)
- * with no call-site change.
- */
-export function HtmlPreviewWrapper(
-  props: HtmlPreviewWrapperProps,
-): VNode {
-  const { loading = "eager", ...innerProps } = props;
-
-  if (loading === "visible") {
-    const visibleInnerProps = {
-      ...innerProps,
-      [VISIBLE_MOUNT_PROP]: true,
-    } as HtmlPreviewWrapperInnerProps;
-
-    const rendered = Island({
-      when: "visible",
-      ssrFallback: <HtmlPreviewReservation height={innerProps.height} />,
-      children: <HtmlPreviewWrapperInner {...visibleInnerProps} />,
-    });
-    return rendered as unknown as VNode;
-  }
-
-  const rendered = Island({
-    when: "visible",
-    children: <HtmlPreviewWrapperInner {...innerProps} />,
-  });
-  return rendered as unknown as VNode;
-}

@@ -327,6 +327,20 @@ export const FEATURES: Feature[] = [
     cliFlag: "llms-txt",
   },
   {
+    value: "agentExport",
+    label: "Agent-readable documentation export",
+    hint: "Publish static JSON and per-page Markdown for complete published documentation",
+    default: false,
+    cliFlag: "agent-export",
+  },
+  {
+    value: "mcp",
+    label: "Read-only MCP server (Cloudflare Workers)",
+    hint: "Add search and fetch tools; automatically enables the agent-readable export",
+    default: false,
+    cliFlag: "mcp",
+  },
+  {
     value: "skillSymlinker",
     label: "Skill symlinker",
     hint: "Symlink documentation skills into Claude Code or Codex",

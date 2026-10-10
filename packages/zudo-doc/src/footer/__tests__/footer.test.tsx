@@ -1,11 +1,10 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR-shape test for the Footer shell's `data-footer` stable DOM hook
 // (zudolab/zudo-doc#2873 — theme packs select `[data-footer]` instead of
 // relying on the `<footer>` tag/structure alone).
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { Footer } from "../footer.js";
 
 describe("Footer — data-footer hook", () => {
@@ -33,13 +32,11 @@ describe("Footer — link-color rule", () => {
     );
     const match = html.match(/class="([^"]*text-muted[^"]*)"/);
     expect(match).not.toBeNull();
-    // preact-render-to-string HTML-escapes `&` in attribute values, so the
-    // `[&_a]:...` arbitrary-variant selectors serialize as `[&amp;_a]:...`.
+    // The authored .zd-footer-copyright-links relation rules replace the
+    // unsupported arbitrary selector variants.
     const classAttr = match?.[1] ?? "";
-    expect(classAttr).toContain("[&amp;_a]:underline");
-    expect(classAttr).toContain("[&amp;_a:hover]:text-accent");
-    expect(classAttr).toContain("[&amp;_a:focus-visible]:text-accent");
-    expect(classAttr).not.toContain("[&amp;_a]:text-accent");
+    expect(classAttr).toContain("zd-footer-copyright-links");
+    expect(classAttr).not.toMatch(/(?:^|\s)text-accent(?:\s|$)/);
   });
 
   it("link-column anchors have no bare text-accent or underline token", () => {

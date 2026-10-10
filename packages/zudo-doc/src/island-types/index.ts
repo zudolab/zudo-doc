@@ -67,11 +67,7 @@ export interface DocHistoryData {
 // issue #2157).
 
 /** Shared inline style centering an enlarge `<dialog>` transform-free. */
-export const ENLARGE_DIALOG_STYLE = {
-  position: "fixed",
-  inset: "0",
-  margin: "auto",
-} as const;
+export const ENLARGE_DIALOG_STYLE = { position: "fixed", inset: 0, margin: "auto" } as const;
 
 /** Class string for the image-enlarge `<dialog>` (hydrated + SSR fallback). */
 export const IMAGE_ENLARGE_DIALOG_CLASS =
@@ -84,7 +80,7 @@ export const MERMAID_ENLARGE_DIALOG_CLASS =
 /** Shared shape an enlarge `<dialog>` is rendered with. */
 export interface EnlargeDialogProps {
   /** Tailwind class string for the `<dialog>`. */
-  className: string;
+  class: string;
   /** Inline style centering the dialog transform-free. */
   style: typeof ENLARGE_DIALOG_STYLE;
 }

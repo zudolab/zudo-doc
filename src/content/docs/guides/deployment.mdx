@@ -63,7 +63,7 @@ Triggered on pull requests targeting `main`. Runs twenty jobs:
 2. **check-no-host-alias-in-package** — rejects host-only import aliases from package sources
 3. **check-pin-parity** — verifies `@takazudo/zfb` pin is consistent across all package sources
 4. **check-fixture-settings-drift** — verifies every key in `src/config/settings.ts` is present in all e2e fixture settings files (or allowlisted)
-5. **check-package-safelist** — verifies the generated `dist/safelist.css` covers all responsive/arbitrary utility classes in the `@takazudo/zudo-doc` package
+5. **check-package-wind-manifest** — verify the public `wind.json` manifest and authored class coverage
 6. **check-b4push-ci-parity** — verifies every lightweight guard gate in `scripts/run-b4push.sh` has a matching CI job
 7. **check-e2e-spec-naming** — verifies all e2e spec filenames use known fixture prefixes so Playwright picks them up
 8. **check-flaky-tracking-issue** — requires tracked issues for flaky/local-only tests

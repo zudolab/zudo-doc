@@ -24,7 +24,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { loadLlmsAssetEntries } from "./assets.js";
 import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
-import { loadDocEntries } from "./load.js";
+import { loadDocEntries, withLlmsBase } from "./load.js";
 import type {
   LlmsTxtLocaleConfig,
   LlmsTxtSiteMeta,
@@ -56,6 +56,12 @@ export interface LlmsTxtDevMiddlewareOptions extends LlmsTxtSiteMeta {
   base: string;
   /** Optional absolute site URL; see `LlmsTxtLoadOptions.siteUrl`. */
   siteUrl?: string;
+  /** Actual default locale code; needed to match agent-export page IDs. */
+  defaultLocale?: string;
+  /** Link slim-index docs to agent-export Markdown artifacts when enabled. */
+  agentExport?: boolean;
+  /** Include the stateless read-only endpoint in the slim index when enabled. */
+  mcp?: boolean;
   /** Default-locale content directory. */
   defaultLocaleDir: string;
   /** Additional locales (e.g. `[{ code: "ja", dir: "src/content/docs-ja" }]`). */
@@ -97,6 +103,12 @@ export function createLlmsTxtDevMiddleware(
   );
   const base = options.base ?? "";
   const siteUrl = options.siteUrl || undefined;
+  const generationOptions = {
+    agentExport: options.agentExport === true,
+    ...(options.mcp === true
+      ? { mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl) }
+      : {}),
+  };
 
   return (req, res, next) => {
     const url = req.url ?? "";
@@ -138,6 +150,9 @@ export function createLlmsTxtDevMiddleware(
         locale: match.locale,
         base,
         siteUrl,
+        ...(options.agentExport === true
+          ? { agentExportLocale: match.locale ?? options.defaultLocale ?? "en" }
+          : {}),
       });
       const assets = loadLlmsAssetEntries({
         projectRoot: options.projectRoot,
@@ -150,7 +165,7 @@ export function createLlmsTxtDevMiddleware(
       );
       const body =
         match.kind === "llms"
-          ? generateLlmsTxt(entries, meta, assets)
+          ? generateLlmsTxt(entries, meta, assets, generationOptions)
           : generateLlmsFullTxt(entries, meta, assets);
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/plain; charset=utf-8");

@@ -14,10 +14,10 @@
 # Comments: lines starting with # are ignored. Blank lines are ignored.
 # Exact-match only (no globs, no wildcards). Every entry needs a # reason:.
 
-# hostpanel/src/chrome-bindings.fixture.tsx widens the `preact` type import to
-# also pull in JSX and VNode, needed by its extra BodyEndIslandsWithHostPanel
-# wrapper (#4310).
-hostpanel|import type { ComponentChildren } from "preact";|import type { ComponentChildren, JSX, VNode } from "preact"; # reason: fixture's BodyEndIslandsWithHostPanel wrapper needs JSX + VNode alongside ComponentChildren
+# hostpanel/src/chrome-bindings.fixture.tsx widens the core type import to
+# also pull in Description for its extra BodyEndIslandsWithHostPanel wrapper;
+# JSX now comes from the separate jsx-runtime type import (#4310, #4437).
+hostpanel|import type { Child } from "@takazudo/zfb/zudo-react";|import type { Child, Description } from "@takazudo/zfb/zudo-react"; # reason: fixture's BodyEndIslandsWithHostPanel wrapper needs Description alongside Child
 
 # hostpanel/src/chrome-bindings.fixture.tsx expands the single-line
 # _body-end-islands import into a multi-line import that also pulls in the

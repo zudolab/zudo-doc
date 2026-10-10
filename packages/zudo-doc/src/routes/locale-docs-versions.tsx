@@ -1,10 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /[locale]/docs/versions — package-owned equivalent
 // of pages/[locale]/docs/versions.tsx (A1 #2361). One route per non-default
 // locale; rendered by the shared package `VersionsPageView`.
 
-import type { JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { settings } from "./_context.js";
 import { VersionsPageView } from "./_chrome.js";
 
@@ -18,6 +17,6 @@ interface PageProps {
   params: { locale: string };
 }
 
-export default function LocaleVersionsPage({ params }: PageProps): JSX.Element {
+export default function LocaleVersionsPage({ params }: PageProps): Child {
   return <VersionsPageView locale={params.locale} />;
 }

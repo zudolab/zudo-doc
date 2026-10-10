@@ -1,0 +1,1806 @@
+{
+  "states": [
+    {
+      "route": "/docs/getting-started/",
+      "scheme": "light",
+      "state": "default",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/introduction/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">01</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 384.953125,
+            "width": 896,
+            "height": 114.203125,
+            "top": 384.953125,
+            "right": 1216,
+            "bottom": 499.15625,
+            "left": 320
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/installation/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">02</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 498.15625,
+            "width": 896,
+            "height": 114.203125,
+            "top": 498.15625,
+            "right": 1216,
+            "bottom": 612.359375,
+            "left": 320
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/setup-preset-generator/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">03</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:und",
+          "rect": {
+            "x": 320,
+            "y": 611.359375,
+            "width": 896,
+            "height": 114.203125,
+            "top": 611.359375,
+            "right": 1216,
+            "bottom": 725.5625,
+            "left": 320
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/writing-docs/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">04</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 724.5625,
+            "width": 896,
+            "height": 114.203125,
+            "top": 724.5625,
+            "right": 1216,
+            "bottom": 838.765625,
+            "left": 320
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/structuring-navigations/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">05</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:un",
+          "rect": {
+            "x": 320,
+            "y": 837.765625,
+            "width": 896,
+            "height": 114.203125,
+            "top": 837.765625,
+            "right": 1216,
+            "bottom": 951.96875,
+            "left": 320
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/contribution/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">06</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 950.96875,
+            "width": 896,
+            "height": 114.203125,
+            "top": 950.96875,
+            "right": 1216,
+            "bottom": 1065.171875,
+            "left": 320
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": null,
+      "heading": {
+        "html": "<h2 class=\"sr-only\">Revision History</h2>",
+        "rect": {
+          "x": 319,
+          "y": 1330.125,
+          "width": 1,
+          "height": 1,
+          "top": 1330.125,
+          "right": 320,
+          "bottom": 1331.125,
+          "left": 319
+        },
+        "color": "oklch(0.185 0.005 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "-1px",
+        "fontSize": "19.2px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 12.625,
+            "y": 144.140625,
+            "width": 14,
+            "height": 14.484375,
+            "top": 144.140625,
+            "right": 26.625,
+            "bottom": 158.625,
+            "left": 12.625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/components/html-preview/",
+      "scheme": "light",
+      "state": "default",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li><p>A trusted author opening <code>&lt;title&gt;</code> in the merged <code>head</code> remains caller-owned and authoritative; no generated title is added.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3263.078125,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 3263.078125,
+            "right": 897.609375,
+            "bottom": 3356.6875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>A nonblank visible <code>title</code> prop supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3370.6875,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3370.6875,
+            "right": 897.609375,
+            "bottom": 3433.09375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The merged localized/per-call <code>labels.preview</code> value supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3447.09375,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3447.09375,
+            "right": 897.609375,
+            "bottom": 3509.5,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The literal <code>Preview</code> value is used as the final fallback.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3523.5,
+            "width": 539.21875,
+            "height": 31.203125,
+            "top": 3523.5,
+            "right": 897.609375,
+            "bottom": 3554.703125,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalStyles</code></strong> — array of stylesheet URLs, emitted as <code>&lt;link rel=\"stylesheet\" href=\"...\"&gt;</code> tags. Loaded <strong class=\"font-bold text-fg\">before</strong> the author <code>css</code>, so <code>css</code> can still override the framework.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13657.109375,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 13657.109375,
+            "right": 897.609375,
+            "bottom": 13750.71875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalScripts</code></strong> — array of script URLs, emitted as <code>&lt;script src=\"...\"&gt;</code> tags. Flows through the same sandbox/<code>syncDelay</code> derivation as an inline <code>js</code> prop — the preview automatically gets <code>sandbox=\"allow-scripts allow-same-origin\"</code> and the 300ms height re-sync delay.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13764.71875,
+            "width": 539.21875,
+            "height": 156.015625,
+            "top": 13764.71875,
+            "right": 897.609375,
+            "bottom": 13920.734375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": {
+        "html": "<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a>",
+        "rect": {
+          "x": 523.453125,
+          "y": 725.984375,
+          "width": 0,
+          "height": 31,
+          "top": 725.984375,
+          "right": 523.453125,
+          "bottom": 756.984375,
+          "left": 523.453125
+        },
+        "color": "oklch(0.47 0.12 56)",
+        "content": "normal",
+        "display": "inline",
+        "opacity": "1",
+        "margin": "0px",
+        "fontSize": "22.4px",
+        "textDecoration": "underline",
+        "visibility": "visible"
+      },
+      "heading": {
+        "html": "<h2 class=\"text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent\" style=\"border-image:linear-gradient(to right, var(--color-fg), transparent) 1;\" id=\"localized-controls\">Localized Controls<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a></h2>",
+        "rect": {
+          "x": 320,
+          "y": 704.984375,
+          "width": 577.609375,
+          "height": 51,
+          "top": 704.984375,
+          "right": 897.609375,
+          "bottom": 755.984375,
+          "left": 320
+        },
+        "color": "oklch(0.185 0.005 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "56px 0px 0px",
+        "fontSize": "22.4px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/components/html-preview/",
+      "scheme": "light",
+      "state": "anchor-focus",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li><p>A trusted author opening <code>&lt;title&gt;</code> in the merged <code>head</code> remains caller-owned and authoritative; no generated title is added.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3263.078125,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 3263.078125,
+            "right": 897.609375,
+            "bottom": 3356.6875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>A nonblank visible <code>title</code> prop supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3370.6875,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3370.6875,
+            "right": 897.609375,
+            "bottom": 3433.09375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The merged localized/per-call <code>labels.preview</code> value supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3447.09375,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3447.09375,
+            "right": 897.609375,
+            "bottom": 3509.5,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The literal <code>Preview</code> value is used as the final fallback.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3523.5,
+            "width": 539.21875,
+            "height": 31.203125,
+            "top": 3523.5,
+            "right": 897.609375,
+            "bottom": 3554.703125,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalStyles</code></strong> — array of stylesheet URLs, emitted as <code>&lt;link rel=\"stylesheet\" href=\"...\"&gt;</code> tags. Loaded <strong class=\"font-bold text-fg\">before</strong> the author <code>css</code>, so <code>css</code> can still override the framework.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13657.109375,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 13657.109375,
+            "right": 897.609375,
+            "bottom": 13750.71875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalScripts</code></strong> — array of script URLs, emitted as <code>&lt;script src=\"...\"&gt;</code> tags. Flows through the same sandbox/<code>syncDelay</code> derivation as an inline <code>js</code> prop — the preview automatically gets <code>sandbox=\"allow-scripts allow-same-origin\"</code> and the 300ms height re-sync delay.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13764.71875,
+            "width": 539.21875,
+            "height": 156.015625,
+            "top": 13764.71875,
+            "right": 897.609375,
+            "bottom": 13920.734375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": {
+        "html": "<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a>",
+        "rect": {
+          "x": 523.453125,
+          "y": 725.984375,
+          "width": 0,
+          "height": 31,
+          "top": 725.984375,
+          "right": 523.453125,
+          "bottom": 756.984375,
+          "left": 523.453125
+        },
+        "color": "oklch(0.47 0.12 56)",
+        "content": "normal",
+        "display": "inline",
+        "opacity": "1",
+        "margin": "0px",
+        "fontSize": "22.4px",
+        "textDecoration": "underline",
+        "visibility": "visible"
+      },
+      "heading": {
+        "html": "<h2 class=\"text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent\" style=\"border-image:linear-gradient(to right, var(--color-fg), transparent) 1;\" id=\"localized-controls\">Localized Controls<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a></h2>",
+        "rect": {
+          "x": 320,
+          "y": 704.984375,
+          "width": 577.609375,
+          "height": 51,
+          "top": 704.984375,
+          "right": 897.609375,
+          "bottom": 755.984375,
+          "left": 320
+        },
+        "color": "oklch(0.185 0.005 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "56px 0px 0px",
+        "fontSize": "22.4px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/components/html-preview/",
+      "scheme": "light",
+      "state": "heading-hover",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li><p>A trusted author opening <code>&lt;title&gt;</code> in the merged <code>head</code> remains caller-owned and authoritative; no generated title is added.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3263.078125,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 3263.078125,
+            "right": 897.609375,
+            "bottom": 3356.6875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>A nonblank visible <code>title</code> prop supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3370.6875,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3370.6875,
+            "right": 897.609375,
+            "bottom": 3433.09375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The merged localized/per-call <code>labels.preview</code> value supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3447.09375,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3447.09375,
+            "right": 897.609375,
+            "bottom": 3509.5,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The literal <code>Preview</code> value is used as the final fallback.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3523.5,
+            "width": 539.21875,
+            "height": 31.203125,
+            "top": 3523.5,
+            "right": 897.609375,
+            "bottom": 3554.703125,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalStyles</code></strong> — array of stylesheet URLs, emitted as <code>&lt;link rel=\"stylesheet\" href=\"...\"&gt;</code> tags. Loaded <strong class=\"font-bold text-fg\">before</strong> the author <code>css</code>, so <code>css</code> can still override the framework.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13657.109375,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 13657.109375,
+            "right": 897.609375,
+            "bottom": 13750.71875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalScripts</code></strong> — array of script URLs, emitted as <code>&lt;script src=\"...\"&gt;</code> tags. Flows through the same sandbox/<code>syncDelay</code> derivation as an inline <code>js</code> prop — the preview automatically gets <code>sandbox=\"allow-scripts allow-same-origin\"</code> and the 300ms height re-sync delay.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13764.71875,
+            "width": 539.21875,
+            "height": 156.015625,
+            "top": 13764.71875,
+            "right": 897.609375,
+            "bottom": 13920.734375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": {
+        "html": "<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a>",
+        "rect": {
+          "x": 523.453125,
+          "y": 725.984375,
+          "width": 0,
+          "height": 31,
+          "top": 725.984375,
+          "right": 523.453125,
+          "bottom": 756.984375,
+          "left": 523.453125
+        },
+        "color": "oklch(0.47 0.12 56)",
+        "content": "normal",
+        "display": "inline",
+        "opacity": "1",
+        "margin": "0px",
+        "fontSize": "22.4px",
+        "textDecoration": "underline",
+        "visibility": "visible"
+      },
+      "heading": {
+        "html": "<h2 class=\"text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent\" style=\"border-image:linear-gradient(to right, var(--color-fg), transparent) 1;\" id=\"localized-controls\">Localized Controls<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a></h2>",
+        "rect": {
+          "x": 320,
+          "y": 704.984375,
+          "width": 577.609375,
+          "height": 51,
+          "top": 704.984375,
+          "right": 897.609375,
+          "bottom": 755.984375,
+          "left": 320
+        },
+        "color": "oklch(0.185 0.005 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "56px 0px 0px",
+        "fontSize": "22.4px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/guides/",
+      "scheme": "light",
+      "state": "default",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [],
+      "headingAnchor": null,
+      "heading": {
+        "html": "<h2 class=\"sr-only\">Revision History</h2>",
+        "rect": {
+          "x": 319,
+          "y": 3744.765625,
+          "width": 1,
+          "height": 1,
+          "top": 3744.765625,
+          "right": 320,
+          "bottom": 3745.765625,
+          "left": 319
+        },
+        "color": "oklch(0.185 0.005 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "-1px",
+        "fontSize": "19.2px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 12.625,
+            "y": 144.140625,
+            "width": 14,
+            "height": 14.484375,
+            "top": 144.140625,
+            "right": 26.625,
+            "bottom": 158.625,
+            "left": 12.625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/getting-started/",
+      "scheme": "dark",
+      "state": "default",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/introduction/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">01</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 384.953125,
+            "width": 896,
+            "height": 114.203125,
+            "top": 384.953125,
+            "right": 1216,
+            "bottom": 499.15625,
+            "left": 320
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/installation/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">02</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 498.15625,
+            "width": 896,
+            "height": 114.203125,
+            "top": 498.15625,
+            "right": 1216,
+            "bottom": 612.359375,
+            "left": 320
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/setup-preset-generator/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">03</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:und",
+          "rect": {
+            "x": 320,
+            "y": 611.359375,
+            "width": 896,
+            "height": 114.203125,
+            "top": 611.359375,
+            "right": 1216,
+            "bottom": 725.5625,
+            "left": 320
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/writing-docs/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">04</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 724.5625,
+            "width": 896,
+            "height": 114.203125,
+            "top": 724.5625,
+            "right": 1216,
+            "bottom": 838.765625,
+            "left": 320
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/structuring-navigations/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">05</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:un",
+          "rect": {
+            "x": 320,
+            "y": 837.765625,
+            "width": 896,
+            "height": 114.203125,
+            "top": 837.765625,
+            "right": 1216,
+            "bottom": 951.96875,
+            "left": 320
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li class=\"relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent\"><a class=\"group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md\" href=\"/docs/getting-started/contribution/\"><span class=\"tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg\" style=\"width:2ch;\">06</span><span class=\"min-w-0\"><span class=\"font-medium text-fg group-hover:text-accent group-hover:underline gro",
+          "rect": {
+            "x": 320,
+            "y": 950.96875,
+            "width": 896,
+            "height": 114.203125,
+            "top": 950.96875,
+            "right": 1216,
+            "bottom": 1065.171875,
+            "left": 320
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": null,
+      "heading": {
+        "html": "<h2 class=\"sr-only\">Revision History</h2>",
+        "rect": {
+          "x": 319,
+          "y": 1330.125,
+          "width": 1,
+          "height": 1,
+          "top": 1330.125,
+          "right": 320,
+          "bottom": 1331.125,
+          "left": 319
+        },
+        "color": "oklch(0.965 0.004 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "-1px",
+        "fontSize": "19.2px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 12.625,
+            "y": 144.140625,
+            "width": 14,
+            "height": 14.484375,
+            "top": 144.140625,
+            "right": 26.625,
+            "bottom": 158.625,
+            "left": 12.625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/components/html-preview/",
+      "scheme": "dark",
+      "state": "default",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li><p>A trusted author opening <code>&lt;title&gt;</code> in the merged <code>head</code> remains caller-owned and authoritative; no generated title is added.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3263.078125,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 3263.078125,
+            "right": 897.609375,
+            "bottom": 3356.6875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>A nonblank visible <code>title</code> prop supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3370.6875,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3370.6875,
+            "right": 897.609375,
+            "bottom": 3433.09375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The merged localized/per-call <code>labels.preview</code> value supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3447.09375,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3447.09375,
+            "right": 897.609375,
+            "bottom": 3509.5,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The literal <code>Preview</code> value is used as the final fallback.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3523.5,
+            "width": 539.21875,
+            "height": 31.203125,
+            "top": 3523.5,
+            "right": 897.609375,
+            "bottom": 3554.703125,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalStyles</code></strong> — array of stylesheet URLs, emitted as <code>&lt;link rel=\"stylesheet\" href=\"...\"&gt;</code> tags. Loaded <strong class=\"font-bold text-fg\">before</strong> the author <code>css</code>, so <code>css</code> can still override the framework.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13657.109375,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 13657.109375,
+            "right": 897.609375,
+            "bottom": 13750.71875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalScripts</code></strong> — array of script URLs, emitted as <code>&lt;script src=\"...\"&gt;</code> tags. Flows through the same sandbox/<code>syncDelay</code> derivation as an inline <code>js</code> prop — the preview automatically gets <code>sandbox=\"allow-scripts allow-same-origin\"</code> and the 300ms height re-sync delay.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13764.71875,
+            "width": 539.21875,
+            "height": 156.015625,
+            "top": 13764.71875,
+            "right": 897.609375,
+            "bottom": 13920.734375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": {
+        "html": "<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a>",
+        "rect": {
+          "x": 523.453125,
+          "y": 725.984375,
+          "width": 0,
+          "height": 31,
+          "top": 725.984375,
+          "right": 523.453125,
+          "bottom": 756.984375,
+          "left": 523.453125
+        },
+        "color": "oklch(0.7 0.158 62)",
+        "content": "normal",
+        "display": "inline",
+        "opacity": "1",
+        "margin": "0px",
+        "fontSize": "22.4px",
+        "textDecoration": "underline",
+        "visibility": "visible"
+      },
+      "heading": {
+        "html": "<h2 class=\"text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent\" style=\"border-image:linear-gradient(to right, var(--color-fg), transparent) 1;\" id=\"localized-controls\">Localized Controls<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a></h2>",
+        "rect": {
+          "x": 320,
+          "y": 704.984375,
+          "width": 577.609375,
+          "height": 51,
+          "top": 704.984375,
+          "right": 897.609375,
+          "bottom": 755.984375,
+          "left": 320
+        },
+        "color": "oklch(0.965 0.004 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "56px 0px 0px",
+        "fontSize": "22.4px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/components/html-preview/",
+      "scheme": "dark",
+      "state": "anchor-focus",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li><p>A trusted author opening <code>&lt;title&gt;</code> in the merged <code>head</code> remains caller-owned and authoritative; no generated title is added.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3263.078125,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 3263.078125,
+            "right": 897.609375,
+            "bottom": 3356.6875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>A nonblank visible <code>title</code> prop supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3370.6875,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3370.6875,
+            "right": 897.609375,
+            "bottom": 3433.09375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The merged localized/per-call <code>labels.preview</code> value supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3447.09375,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3447.09375,
+            "right": 897.609375,
+            "bottom": 3509.5,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The literal <code>Preview</code> value is used as the final fallback.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3523.5,
+            "width": 539.21875,
+            "height": 31.203125,
+            "top": 3523.5,
+            "right": 897.609375,
+            "bottom": 3554.703125,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalStyles</code></strong> — array of stylesheet URLs, emitted as <code>&lt;link rel=\"stylesheet\" href=\"...\"&gt;</code> tags. Loaded <strong class=\"font-bold text-fg\">before</strong> the author <code>css</code>, so <code>css</code> can still override the framework.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13657.109375,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 13657.109375,
+            "right": 897.609375,
+            "bottom": 13750.71875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalScripts</code></strong> — array of script URLs, emitted as <code>&lt;script src=\"...\"&gt;</code> tags. Flows through the same sandbox/<code>syncDelay</code> derivation as an inline <code>js</code> prop — the preview automatically gets <code>sandbox=\"allow-scripts allow-same-origin\"</code> and the 300ms height re-sync delay.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13764.71875,
+            "width": 539.21875,
+            "height": 156.015625,
+            "top": 13764.71875,
+            "right": 897.609375,
+            "bottom": 13920.734375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": {
+        "html": "<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a>",
+        "rect": {
+          "x": 523.453125,
+          "y": 725.984375,
+          "width": 0,
+          "height": 31,
+          "top": 725.984375,
+          "right": 523.453125,
+          "bottom": 756.984375,
+          "left": 523.453125
+        },
+        "color": "oklch(0.7 0.158 62)",
+        "content": "normal",
+        "display": "inline",
+        "opacity": "1",
+        "margin": "0px",
+        "fontSize": "22.4px",
+        "textDecoration": "underline",
+        "visibility": "visible"
+      },
+      "heading": {
+        "html": "<h2 class=\"text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent\" style=\"border-image:linear-gradient(to right, var(--color-fg), transparent) 1;\" id=\"localized-controls\">Localized Controls<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a></h2>",
+        "rect": {
+          "x": 320,
+          "y": 704.984375,
+          "width": 577.609375,
+          "height": 51,
+          "top": 704.984375,
+          "right": 897.609375,
+          "bottom": 755.984375,
+          "left": 320
+        },
+        "color": "oklch(0.965 0.004 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "56px 0px 0px",
+        "fontSize": "22.4px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/components/html-preview/",
+      "scheme": "dark",
+      "state": "heading-hover",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [
+        {
+          "html": "<li><p>A trusted author opening <code>&lt;title&gt;</code> in the merged <code>head</code> remains caller-owned and authoritative; no generated title is added.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3263.078125,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 3263.078125,
+            "right": 897.609375,
+            "bottom": 3356.6875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>A nonblank visible <code>title</code> prop supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3370.6875,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3370.6875,
+            "right": 897.609375,
+            "bottom": 3433.09375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The merged localized/per-call <code>labels.preview</code> value supplies the generated document title.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3447.09375,
+            "width": 539.21875,
+            "height": 62.40625,
+            "top": 3447.09375,
+            "right": 897.609375,
+            "bottom": 3509.5,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p>The literal <code>Preview</code> value is used as the final fallback.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 3523.5,
+            "width": 539.21875,
+            "height": 31.203125,
+            "top": 3523.5,
+            "right": 897.609375,
+            "bottom": 3554.703125,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalStyles</code></strong> — array of stylesheet URLs, emitted as <code>&lt;link rel=\"stylesheet\" href=\"...\"&gt;</code> tags. Loaded <strong class=\"font-bold text-fg\">before</strong> the author <code>css</code>, so <code>css</code> can still override the framework.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13657.109375,
+            "width": 539.21875,
+            "height": 93.609375,
+            "top": 13657.109375,
+            "right": 897.609375,
+            "bottom": 13750.71875,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<li><p><strong class=\"font-bold text-fg\"><code>externalScripts</code></strong> — array of script URLs, emitted as <code>&lt;script src=\"...\"&gt;</code> tags. Flows through the same sandbox/<code>syncDelay</code> derivation as an inline <code>js</code> prop — the preview automatically gets <code>sandbox=\"allow-scripts allow-same-origin\"</code> and the 300ms height re-sync delay.</p></li>",
+          "rect": {
+            "x": 358.390625,
+            "y": 13764.71875,
+            "width": 539.21875,
+            "height": 156.015625,
+            "top": 13764.71875,
+            "right": 897.609375,
+            "bottom": 13920.734375,
+            "left": 358.390625
+          },
+          "color": "oklch(0.965 0.004 65)",
+          "content": "normal",
+          "display": "inline-block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "19.2px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "headingAnchor": {
+        "html": "<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a>",
+        "rect": {
+          "x": 523.453125,
+          "y": 725.984375,
+          "width": 0,
+          "height": 31,
+          "top": 725.984375,
+          "right": 523.453125,
+          "bottom": 756.984375,
+          "left": 523.453125
+        },
+        "color": "oklch(0.7 0.158 62)",
+        "content": "normal",
+        "display": "inline",
+        "opacity": "1",
+        "margin": "0px",
+        "fontSize": "22.4px",
+        "textDecoration": "underline",
+        "visibility": "visible"
+      },
+      "heading": {
+        "html": "<h2 class=\"text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent\" style=\"border-image:linear-gradient(to right, var(--color-fg), transparent) 1;\" id=\"localized-controls\">Localized Controls<a aria-label=\"Direct link to Localized Controls\" class=\"text-accent underline hover:text-accent-hover\" href=\"#localized-controls\"></a></h2>",
+        "rect": {
+          "x": 320,
+          "y": 704.984375,
+          "width": 577.609375,
+          "height": 51,
+          "top": 704.984375,
+          "right": 897.609375,
+          "bottom": 755.984375,
+          "left": 320
+        },
+        "color": "oklch(0.965 0.004 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "56px 0px 0px",
+        "fontSize": "22.4px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    },
+    {
+      "route": "/docs/guides/",
+      "scheme": "dark",
+      "state": "default",
+      "supportsMarker": false,
+      "supportsEmpty": false,
+      "markers": [],
+      "headingAnchor": null,
+      "heading": {
+        "html": "<h2 class=\"sr-only\">Revision History</h2>",
+        "rect": {
+          "x": 319,
+          "y": 3744.765625,
+          "width": 1,
+          "height": 1,
+          "top": 3744.765625,
+          "right": 320,
+          "bottom": 3745.765625,
+          "left": 319
+        },
+        "color": "oklch(0.965 0.004 65)",
+        "content": "normal",
+        "display": "block",
+        "opacity": "1",
+        "margin": "-1px",
+        "fontSize": "19.2px",
+        "textDecoration": "none",
+        "visibility": "visible"
+      },
+      "activeIcon": [
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<svg class=\"h-[0.5rem] w-[0.5rem] shrink-0 text-bg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"M19 9l-7 7-7-7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>",
+          "rect": {
+            "x": 342.34375,
+            "y": 23.5,
+            "width": 8,
+            "height": 8,
+            "top": 23.5,
+            "right": 350.34375,
+            "bottom": 31.5,
+            "left": 342.34375
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        },
+        {
+          "html": "<svg class=\"shrink-0 w-[14px] text-bg\" viewBox=\"0 0 103.395 107.049\" aria-hidden=\"true\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066",
+          "rect": {
+            "x": 12.625,
+            "y": 144.140625,
+            "width": 14,
+            "height": 14.484375,
+            "top": 144.140625,
+            "right": 26.625,
+            "bottom": 158.625,
+            "left": 12.625
+          },
+          "color": "oklch(0.185 0.005 65)",
+          "content": "normal",
+          "display": "block",
+          "opacity": "1",
+          "margin": "0px",
+          "fontSize": "16px",
+          "textDecoration": "none",
+          "visibility": "visible"
+        }
+      ],
+      "invalidHeadingTargets": []
+    }
+  ]
+}

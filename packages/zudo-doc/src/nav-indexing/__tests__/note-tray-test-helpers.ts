@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 
 import type { NoteTrayIndexItem } from "../note-tray-index.js";
 

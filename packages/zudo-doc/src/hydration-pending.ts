@@ -1,13 +1,9 @@
-import { useEffect, useState } from "preact/hooks";
+import { signal } from "@takazudo/zfb/zudo-react";
+import type { ReadonlySignal, Scope } from "@takazudo/zfb/zudo-react";
 
-/**
- * Keep an interactive control pending until its first successful client mount.
- * Initializing from `enabled` preserves server/client-first-render parity.
- */
-export function useHydrationPending(enabled: boolean): boolean {
-  const [pending, setPending] = useState(enabled);
-
-  useEffect(() => setPending(false), []);
-
+/** Keep SSR and the first client render pending, then release on activation. */
+export function hydrationPending(scope: Scope, enabled: boolean): ReadonlySignal<boolean> {
+  const pending = signal(enabled);
+  scope.onActivate(() => { pending.value = false; });
   return pending;
 }

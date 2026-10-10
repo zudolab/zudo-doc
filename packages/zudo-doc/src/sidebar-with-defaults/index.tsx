@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // sidebar-with-defaults — factory for the locale-/version-aware Sidebar
 // wrapper (epic #2344, S5).
 //
@@ -8,7 +7,7 @@
 // the nav data builders as injected functions so the logic lives in the
 // package while the host stub keeps the singleton imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
@@ -16,6 +15,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { themeToggleLabels } from "../theme-toggle/labels.js";
 import { deriveDateFormats, deriveNavDataPrep } from "../chrome/derive.js";
+import { normalizeIslandData } from "../chrome/island-data.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
@@ -52,7 +52,7 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
   const defaultLocale = ctx.defaultLocale;
   const localeCount = ctx.locales.length;
   const t = ctx.t;
-  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode } =
+  const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarContext, getThemeDefaultMode } =
     deriveNavDataPrep(ctx);
   const dateFormatsFor = deriveDateFormats(ctx);
 
@@ -86,27 +86,29 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
     // emptyWhenUnsectioned=false: the desktop sidebar falls back to the FULL
     // tree for pages whose slug matches no headerNav categoryMatch (legacy
     // behavior) — only the header's mobile drawer collapses to root menu.
-    const nodes = buildSidebarNodes(lang, navSection, currentVersion, false);
+    const { nodes, navigation } = buildSidebarContext(lang, navSection, currentVersion, false);
 
     const localeLinks = buildLocaleLinksForNav(currentPath, lang, localeCount);
+    const themeDefaultMode = getThemeDefaultMode();
+
+    const treeProps = normalizeIslandData({
+      nodes,
+      navigation,
+      ...(currentSlug !== undefined ? { currentSlug } : {}),
+      rootMenuItems,
+      ...(backToMenuLabel !== undefined ? { backToMenuLabel } : {}),
+      locale: lang,
+      ...(localeLinks !== undefined ? { localeLinks } : {}),
+      ...(themeDefaultMode !== undefined ? { themeDefaultMode } : {}),
+      themeLabels: themeToggleLabels(t, lang),
+      themeRespectSystem: (ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true,
+      dateFormats: dateFormatsFor(lang),
+    });
 
     return Island({
       when: "load",
-      children: (
-        <SidebarTree
-          nodes={nodes}
-          currentSlug={currentSlug}
-          rootMenuItems={rootMenuItems}
-          backToMenuLabel={backToMenuLabel}
-          locale={lang}
-          localeLinks={localeLinks}
-          themeDefaultMode={getThemeDefaultMode()}
-          themeLabels={themeToggleLabels(t, lang)}
-          themeRespectSystem={(ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true}
-          dateFormats={dateFormatsFor(lang)}
-        />
-      ),
-    }) as unknown as JSX.Element;
+      children: <SidebarTree {...treeProps} />,
+    });
   }
 
   return SidebarWithDefaults;

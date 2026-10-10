@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { assetRawHref, assetViewerHref } from "../asset-path/index.js";
 import {
   AssetFileIcon,
@@ -59,27 +57,27 @@ export function createAssetCard(context: AssetComponentContext) {
     const finalDescription = description ?? entry.description;
 
     return (
-      <article className="rounded-lg border border-muted bg-surface px-hsp-lg py-vsp-sm">
-        <div className="flex items-start gap-x-hsp-md">
-          <span className="flex h-icon-lg w-icon-lg shrink-0 items-center justify-center text-muted">
-            <AssetFileIcon className="h-icon-lg w-icon-lg" />
+      <article class="rounded-lg border border-muted bg-surface px-hsp-lg py-vsp-sm">
+        <div class="flex items-start gap-x-hsp-md">
+          <span class="flex h-icon-lg w-icon-lg shrink-0 items-center justify-center text-muted">
+            <AssetFileIcon class="h-icon-lg w-icon-lg" />
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="font-mono text-small text-fg">
-              {entry.dir ? <span className="text-muted">{entry.dir}/</span> : null}
+          <div class="min-w-0 flex-1">
+            <div class="font-mono text-small text-fg">
+              {entry.dir ? <span class="text-muted">{entry.dir}/</span> : null}
               <strong>{title ?? entry.name}</strong>
             </div>
-            <div className="mt-vsp-3xs text-caption text-muted">
+            <div class="mt-vsp-3xs text-caption text-muted">
               {details.join(" · ")}
             </div>
             {finalDescription ? (
-              <p className="mt-vsp-xs text-small text-muted">
+              <p class="mt-vsp-xs text-small text-muted">
                 {finalDescription}
               </p>
             ) : null}
-            <div className="mt-vsp-xs flex gap-x-hsp-lg text-caption">
+            <div class="mt-vsp-xs flex gap-x-hsp-lg text-caption">
               <a
-                className="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
+                class="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
                 href={viewerHref}
               >
                 {assetComponentText(
@@ -89,9 +87,9 @@ export function createAssetCard(context: AssetComponentContext) {
                 )} →
               </a>
               <a
-                className="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
+                class="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
                 href={rawHref}
-                download
+                download=""
               >
                 {assetComponentText(
                   context,

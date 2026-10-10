@@ -1,10 +1,7 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
-import { useMemo } from "preact/hooks";
+import { computed, getScope, type Child } from "@takazudo/zfb/zudo-react";
 
 import { useActiveHeading } from "./use-active-heading.js";
 import type { HeadingItem } from "./types.js";
@@ -23,7 +20,7 @@ export interface TocProps {
 }
 
 /**
- * Desktop right-rail Table of Contents — a Preact island component.
+ * Desktop right-rail Table of Contents — a zudo-react island component.
  *
  * Renders the `<nav aria-label="Table of contents">` directly. **The
  * caller is responsible for wrapping this in `<Island when="load">`**
@@ -60,47 +57,47 @@ export interface TocProps {
  * `<nav aria-label="Table of contents">` landmark provides the section
  * semantics for screen readers. Issue #1655 / T1.
  */
-export function Toc({ headings, title = "On this page" }: TocProps): VNode {
-  const filtered = useMemo(
-    () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
-    [headings],
-  );
-  const { activeId, activate } = useActiveHeading(filtered);
+export function Toc({ headings, title = "On this page" }: TocProps): Child {
+  const filtered = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+  const { activeId, activate } = useActiveHeading(getScope(), filtered);
 
   return (
     <nav
       aria-label="Table of contents"
       data-zd-toc
-      className={cx(
+      class={cx(
         "hidden xl:flex flex-col",
         "w-[280px] shrink-0",
         "sticky top-[3.5rem] self-start z-sidebar",
         "pt-vsp-xl lg:pt-vsp-2xl",
-        "h-[calc(100vh-3.5rem)]",
+        "h-[calc(100vh_-_3.5rem)]",
       )}
     >
       {filtered.length > 0 && (
-        <ul className="border-l border-muted pl-hsp-lg overflow-y-auto">
+        <ul class="border-l border-muted pl-hsp-lg overflow-y-auto">
           {filtered.map((heading, index) => {
-            const isActive = heading.slug === activeId;
+            const isActive = computed(() => heading.slug === activeId.value);
+            const linkClass = computed(() =>
+              cx(
+                "block py-vsp-2xs text-small leading-snug transition-colors duration-0",
+                isActive.value
+                  ? "bg-fg text-bg font-medium"
+                  : "text-muted hover:underline focus:underline",
+              ),
+            );
             return (
               <li
                 key={`${heading.slug}-${index}`}
-                className={cx(
+                class={cx(
                   heading.depth === 3 && "ml-hsp-lg",
                   heading.depth === 4 && "ml-hsp-2xl",
                 )}
               >
                 <a
                   href={`#${heading.slug}`}
-                  onClick={() => activate(heading.slug)}
-                  aria-current={isActive ? "true" : undefined}
-                  className={cx(
-                    "block py-vsp-2xs text-small leading-snug transition-colors",
-                    isActive
-                      ? "bg-fg text-bg font-medium"
-                      : "text-muted hover:underline focus:underline",
-                  )}
+                  on:click={() => activate(heading.slug)}
+                  aria-current={computed(() => isActive.value ? "true" : undefined)}
+                  class={linkClass}
                 >
                   <SmartBreak>{heading.text}</SmartBreak>
                 </a>

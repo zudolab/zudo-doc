@@ -26,7 +26,7 @@ You only need to invoke the utility yourself when building a custom component th
 
 ## Manual Opt-In: `SmartBreak` Component
 
-For Preact islands (or any `.tsx` component in the project) use the `SmartBreak` component. It stringifies its children and injects `<wbr>` where appropriate:
+For client islands (or any `.tsx` component in the project) use the `SmartBreak` component. It stringifies its children and injects `<wbr>` where appropriate:
 
 ```tsx
 import { SmartBreak } from "@takazudo/zudo-doc/smart-break";
@@ -44,17 +44,17 @@ If `path` is not path-like (plain prose, `and/or`, `state-of-the-art`, etc.) it 
 
 ## Manual Opt-In: `smartBreakToHtml` Helper
 
-Any code path that renders an HTML string (for example `dangerouslySetInnerHTML`) cannot mount Preact VNodes directly. Use `smartBreakToHtml` instead — it returns an HTML-escaped string with literal `<wbr>` tags injected:
+Any code path that renders an HTML string (for example `rawHtml`) cannot mount zudo-react descriptions directly. Use `smartBreakToHtml` instead — it returns an HTML-escaped string with literal `<wbr>` tags injected:
 
 ```tsx
 import { smartBreakToHtml } from "@takazudo/zudo-doc/smart-break";
 
 export function PathLabel({ label }: { label: string }) {
-  return <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(label) }} />;
+  return <span rawHtml={smartBreakToHtml(label)} />;
 }
 ```
 
-The returned string is already HTML-escaped, so it is safe to pass to `dangerouslySetInnerHTML`.
+The returned string is already HTML-escaped, so it is safe to pass to `rawHtml`.
 
 ## How It Decides
 

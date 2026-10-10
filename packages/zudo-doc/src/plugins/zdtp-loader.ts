@@ -17,10 +17,6 @@
 // install of this package (proved by the packed-tarball OPT-ZDTP build case).
 // Virtual modules are passed as esbuild `--alias` flags, which are not
 // node_modules-gated (zfb `crates/zfb-islands/src/esbuild.rs`).
-// Workaround for https://github.com/Takazudo/zudo-front-builder/issues/3002
-// (a node_modules-safe `addAlias` would still need the source-level stub to be
-// a real file; the virtual module avoids shipping one).
-
 import type { ZfbPlugin, ZfbSetupContext } from "@takazudo/zfb/plugins";
 
 export const ZDTP_LOADER_SPECIFIER = "@takazudo/zudo-doc/zdtp-loader";

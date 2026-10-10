@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createTagPages (epic #2344, S8).
  *
@@ -10,11 +9,19 @@
  *     TagsIndexPageView.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { h } from "@takazudo/zfb/zudo-react";
 import { createTagPages } from "../index.js";
 import type { TagPagesDocsEntry, TagInfo } from "../index.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
+import { renderNav } from "../../nav-indexing/__tests__/helpers.js";
+
+// This factory test covers tag-page content. Static head serialization is
+// covered by the separate head port (#4458), so return only the page children.
+vi.mock("../../doclayout/index.js", () => ({
+  DocLayoutWithDefaults: ({ children }: { children: unknown }) => children,
+}));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,7 +44,7 @@ function makeEntry(
     },
     body: "",
     module_specifier: `mdx://docs/${slug}`,
-    Content: () => ({ type: "div", props: {}, key: null }),
+    Content: () => h("div", {}),
   };
 }
 
@@ -73,9 +80,13 @@ interface MakeDepsOptions {
 // internally, so the fixture supplies stub callables + empty host bindings.
 function makeDeps({ docs = [], collections = {} }: MakeDepsOptions = {}): ChromeContext {
   return makeFakeChromeContext({
-    settings: { docTags: true },
+    settings: { docTags: true, docHistory: false },
     collections: { docs, ...collections },
     collectTags: makeCollectTags as unknown as ChromeContext["collectTags"],
+    overrides: {
+      docsUrl: (slug, locale = "en") =>
+        locale === "en" ? `/docs/${slug}` : `/${locale}/docs/${slug}`,
+    },
   });
 }
 
@@ -157,35 +168,38 @@ describe("createTagPages — collectTagMapForLocale", () => {
   });
 });
 
-describe("createTagPages — TagDetailPageView renders without throwing", () => {
+describe("createTagPages — TagDetailPageView SSR", () => {
   it("renders a tag detail page for the default locale", () => {
-    const { TagDetailPageView } = createTagPages(makeDeps({}));
+    const { TagDetailPageView } = createTagPages(makeDeps({ docs: [makeEntry("intro", ["typescript"])] }));
     const tagInfo: TagInfo = {
       tag: "typescript",
       count: 1,
       docs: [{ slug: "intro", title: "Introduction" }],
     };
-    expect(() =>
-      TagDetailPageView({ locale: "en", tag: "typescript", tagInfo }),
-    ).not.toThrow();
+    const root = renderNav(TagDetailPageView({ locale: "en", tag: "typescript", tagInfo }));
+    expect(root.querySelector("h1")?.textContent).toContain("typescript");
+    expect(root.querySelector('a[href="/docs/intro"]')?.textContent).toContain("Introduction");
   });
 
   it("renders a tag detail page for a non-default locale", () => {
-    const { TagDetailPageView } = createTagPages(makeDeps({}));
+    const { TagDetailPageView } = createTagPages(makeDeps({ docs: [makeEntry("intro", ["typescript"])] }));
     const tagInfo: TagInfo = {
       tag: "typescript",
       count: 1,
       docs: [{ slug: "intro", title: "Introduction" }],
     };
-    expect(() =>
-      TagDetailPageView({ locale: "ja", tag: "typescript", tagInfo }),
-    ).not.toThrow();
+    const root = renderNav(TagDetailPageView({ locale: "ja", tag: "typescript", tagInfo }));
+    expect(root.querySelector('a[href="/ja/docs/intro"]')?.textContent).toContain("Introduction");
   });
 });
 
-describe("createTagPages — TagsIndexPageView renders without throwing", () => {
+describe("createTagPages — TagsIndexPageView SSR", () => {
   it("renders the all-tags index page", () => {
-    const { TagsIndexPageView } = createTagPages(makeDeps({}));
-    expect(() => TagsIndexPageView({ locale: "en" })).not.toThrow();
+    const { TagsIndexPageView } = createTagPages(makeDeps({
+      docs: [makeEntry("intro", ["typescript"]), makeEntry("setup", ["api"])],
+    }));
+    const root = renderNav(TagsIndexPageView({ locale: "en" }));
+    expect(root.querySelector('a[href="/docs/tags/api"]')?.textContent).toContain("#api");
+    expect(root.querySelector('a[href="/docs/tags/typescript"]')?.textContent).toContain("#typescript");
   });
 });

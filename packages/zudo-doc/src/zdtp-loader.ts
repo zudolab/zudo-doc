@@ -6,4 +6,20 @@
 // throwing virtual module — the island build then never bundles zdtp's lazy
 // chunks. Shadowing the bare `@takazudo/zdtp` instead would hijack a host's
 // own zdtp imports.
+import { configurePanel } from "@takazudo/zdtp";
+import type { PanelConfig, PanelInstanceHandle } from "@takazudo/zdtp";
+
 export * from "@takazudo/zdtp";
+
+/**
+ * Mount zdtp's opaque Preact root only while the activating island still owns
+ * the pending import. Once configured, zdtp keeps its document-lifetime root
+ * and its existing navigation cleanup semantics.
+ */
+export function configurePanelIfActive(
+  signal: AbortSignal | undefined,
+  config: PanelConfig,
+): PanelInstanceHandle | null {
+  if (signal?.aborted) return null;
+  return configurePanel(config);
+}

@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/language-switcher.
 //
 // Pure presentational component: the host project pre-builds the
@@ -25,93 +23,11 @@
 // (`LANGUAGE_SWITCHER_INIT_SCRIPT`) that recomputes each anchor's href from
 // `window.location.pathname` on load and on `zfb:after-swap`.
 
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { LocaleLink } from "./types.js";
-import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
-import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
 
-/**
- * The minimal project config the client re-wire needs to reproduce
- * `getPathForLocale`'s output from the live pathname. Emitted as `data-*`
- * attributes on the switcher container so {@link LANGUAGE_SWITCHER_INIT_SCRIPT}
- * can read it without any serialized props.
- */
-export interface LanguageSwitcherConfig {
-  /** Normalized site base with no trailing slash (`""` for a root site). */
-  base: string;
-  /** The project's default locale (rendered without a locale prefix). */
-  defaultLocale: string;
-  /** Whether the project appends trailing slashes to page URLs. */
-  trailingSlash: boolean;
-}
-
-/**
- * Client-side re-computation of a locale-switched href from the *current*
- * pathname. This is a self-contained port of `getPathForLocale` (+ its
- * `stripBase` / version-prefix split / `withBase` / `applyTrailingSlash`
- * dependencies) from `url-helpers`. It MUST stay behaviourally identical to
- * that function — pinned by the drift-guard test in
- * `__tests__/language-switcher.test.tsx`, which asserts equality against the
- * real `buildLocaleLinks` output across a case table.
- *
- * It is deliberately self-contained (no references to module-scope helpers)
- * because {@link LANGUAGE_SWITCHER_INIT_SCRIPT} embeds it verbatim via
- * `.toString()`, so it must be valid as a standalone function in the browser.
- */
-export function switchLocaleHref(
-  pathname: string,
-  config: LanguageSwitcherConfig,
-  currentLang: string,
-  targetLang: string,
-): string {
-  const normalizedBase = config.base;
-  const defaultLocale = config.defaultLocale;
-  const trailingSlash = config.trailingSlash;
-
-  const stripBase = (path: string): string => {
-    if (normalizedBase === "") return path;
-    if (path === normalizedBase) return "/";
-    return path.indexOf(normalizedBase + "/") === 0
-      ? path.slice(normalizedBase.length)
-      : path;
-  };
-
-  const applyTrailingSlash = (url: string): string => {
-    if (!trailingSlash) return url;
-    if (url.charAt(url.length - 1) === "/") return url;
-    const suffixIdx = url.search(/[?#]/);
-    const pathPart = suffixIdx >= 0 ? url.slice(0, suffixIdx) : url;
-    const suffix = suffixIdx >= 0 ? url.slice(suffixIdx) : "";
-    if (pathPart.charAt(pathPart.length - 1) === "/") return url;
-    const segments = pathPart.split("/");
-    const lastSegment = segments[segments.length - 1] || "";
-    if (/\.[a-zA-Z]\w*$/.test(lastSegment)) return url;
-    return pathPart + "/" + suffix;
-  };
-
-  const withBase = (path: string): string => {
-    const raw =
-      normalizedBase === ""
-        ? path
-        : normalizedBase + (path.charAt(0) === "/" ? path : "/" + path);
-    return applyTrailingSlash(raw);
-  };
-
-  const stripped = stripBase(pathname);
-  const versionMatch = stripped.match(/^(\/v\/[^/]+)(\/.*|$)/);
-  const versionPrefix = versionMatch ? versionMatch[1] || "" : "";
-  let relativePath = versionMatch ? versionMatch[2] || "/" : stripped;
-  if (currentLang !== defaultLocale) {
-    relativePath = relativePath.replace(
-      new RegExp("^/" + currentLang + "(?:/|$)"),
-      "/",
-    );
-  }
-  if (targetLang !== defaultLocale) {
-    relativePath = "/" + targetLang + relativePath;
-  }
-  return withBase(versionPrefix + relativePath);
-}
+import type { LanguageSwitcherConfig } from "./switcher-url-state.js";
+export { switchLocaleHref, type LanguageSwitcherConfig } from "./switcher-url-state.js";
 
 /**
  * Inline init script that keeps the switcher's per-page hrefs correct inside a
@@ -131,66 +47,7 @@ export function switchLocaleHref(
  * `nav-overflow-script.ts` / `sidebar-tree-island` / `version-switcher.tsx`
  * use (zudolab/zudo-doc#3398, consolidated by #3408).
  */
-export const LANGUAGE_SWITCHER_INIT_SCRIPT = `(function(){
-var FLAG="__zdLanguageSwitcherInit";
-${CURRENT_PATH_SCRIPT_PRELUDE}
-var switchLocaleHref=${switchLocaleHref.toString()};
-function close(c,restoreFocus){
-var toggle=c.querySelector("[data-language-toggle]");
-var menu=c.querySelector("[data-language-menu]");
-if(!toggle||!menu)return;
-menu.classList.add("hidden");
-toggle.setAttribute("aria-expanded","false");
-if(restoreFocus)toggle.focus();
-}
-function refresh(){
-var containers=document.querySelectorAll("[data-language-switcher]");
-for(var i=0;i<containers.length;i++){
-var c=containers[i];
-close(c,false);
-var menu=c.querySelector("[data-language-menu]");
-if(menu){
-menu.classList.remove("group-hover:block","group-focus-within:block");
-}
-if(!c.hasAttribute("data-default-locale"))continue;
-var config={base:c.getAttribute("data-base")||"",defaultLocale:c.getAttribute("data-default-locale")||"",trailingSlash:c.getAttribute("data-trailing-slash")==="true"};
-var currentLang=c.getAttribute("data-current-locale")||config.defaultLocale;
-var anchors=c.querySelectorAll("a[lang]");
-for(var j=0;j<anchors.length;j++){
-var a=anchors[j];
-var target=a.getAttribute("lang");
-if(!target)continue;
-a.setAttribute("href",switchLocaleHref(readCurrentPath(CURRENT_PATH_DATASET_KEY),config,currentLang,target));
-}
-}
-}
-if(window[FLAG]){window[FLAG]();return;}
-window[FLAG]=refresh;
-document.addEventListener("click",function(e){
-var target=e.target;
-var toggle=target&&target.closest?target.closest("[data-language-toggle]"):null;
-if(toggle){
-var switcher=toggle.closest("[data-language-switcher]");
-if(switcher){
-var menu=switcher.querySelector("[data-language-menu]");
-var willOpen=toggle.getAttribute("aria-expanded")!=="true";
-document.querySelectorAll("[data-language-switcher]").forEach(function(c){if(c!==switcher)close(c,false);});
-if(menu){menu.classList.toggle("hidden",!willOpen);toggle.setAttribute("aria-expanded",String(willOpen));}
-}
-return;
-}
-document.querySelectorAll("[data-language-switcher]").forEach(function(c){if(!c.contains(target))close(c,false);});
-});
-document.addEventListener("keydown",function(e){
-if(e.key!=="Escape")return;
-document.querySelectorAll('[data-language-toggle][aria-expanded="true"]').forEach(function(toggle){
-var switcher=toggle.closest("[data-language-switcher]");
-if(switcher)close(switcher,true);
-});
-});
-refresh();
-document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},refresh);
-})();`;
+export { LANGUAGE_SWITCHER_INIT_SCRIPT } from "./switcher-generated-scripts.js";
 
 export interface LanguageSwitcherProps {
   /**
@@ -231,7 +88,7 @@ export function LanguageSwitcher({
   currentLocale,
   accessibleLabel,
   idSuffix = "",
-}: LanguageSwitcherProps): VNode | null {
+}: LanguageSwitcherProps): Child {
   if (links.length <= 1) return null;
 
   const menuId = `language-menu${idSuffix ? `-${idSuffix}` : ""}`;
@@ -258,7 +115,7 @@ export function LanguageSwitcher({
       <button
         type="button"
         id={toggleId}
-        class="flex max-w-[16rem] cursor-pointer items-center gap-hsp-2xs whitespace-nowrap rounded border border-muted px-hsp-sm py-vsp-3xs text-small text-muted transition-colors hover:border-accent hover:text-accent focus-visible:border-accent focus-visible:text-accent"
+        class="flex max-w-[16rem] cursor-pointer items-center gap-hsp-2xs whitespace-nowrap rounded border border-muted px-hsp-sm py-vsp-3xs text-small text-muted transition-colors duration-0 hover:border-accent hover:text-accent focus-visible:border-accent focus-visible:text-accent"
         aria-label={accessibleLabel}
         aria-controls={menuId}
         aria-expanded="false"
@@ -279,7 +136,7 @@ export function LanguageSwitcher({
       <ul
         id={menuId}
         aria-labelledby={toggleId}
-        class="absolute right-0 top-full z-dropdown mt-vsp-3xs hidden min-w-[8rem] max-w-[calc(100vw-var(--spacing-hsp-xl))] overflow-x-auto whitespace-nowrap rounded border border-muted bg-surface py-vsp-3xs shadow-lg group-hover:block group-focus-within:block"
+        class="absolute right-0 top-full z-dropdown mt-vsp-3xs hidden min-w-[8rem] max-w-[calc(100vw_-_var(--spacing-hsp-xl))] overflow-x-auto whitespace-nowrap rounded border border-muted bg-surface py-vsp-3xs shadow-lg group-hover:block group-focus-within:block"
         data-language-menu
       >
         {links.map((link) => (
@@ -308,10 +165,9 @@ export function LanguageSwitcher({
   );
 }
 
-function ChevronDownIcon(): VNode {
+function ChevronDownIcon(): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-icon-xs w-icon-xs shrink-0"
       fill="none"
       viewBox="0 0 24 24"

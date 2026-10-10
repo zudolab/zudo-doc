@@ -1011,6 +1011,22 @@ Default: `false`
 
 See [llms.txt](./llms-txt.mdx).
 
+### agentExport
+
+Publish a versioned, read-only static corpus at `<base>/agent/v1/` for documentation clients. It includes a manifest, a complete agent search index, fetchable item JSON, and per-page Markdown. This works on any static host.
+
+Default: `false`
+
+See [Agent-readable export](./agent-export.mdx).
+
+### mcp
+
+Add the read-only `search` and `fetch` MCP endpoint at `<base>/mcp`. Requires `agentExport: true` and a request-time deployment adapter. The initializer's `mcpDeploy: "cloudflare"` option generates the Cloudflare adapter and deployment files; `mcpDeploy` is not a `zudoDoc` setting.
+
+Default: `false`
+
+See [MCP server](./mcp-server.mdx).
+
 ### changelogs
 
 Changelog generation config(s), or `false` to disable.
@@ -1160,6 +1176,12 @@ Default: `undefined` (pure static build)
 zfb bundler options (`exclude` / `mainFields` / `external`), passed through verbatim when set.
 
 Default: `undefined`
+
+### wind
+
+Top-level `WindConfig | false` override, passed to zfb rather than added to serialized `Settings`. Default: `undefined` (inherit the package preset).
+
+The preset registers var-backed semantic tokens, `reset: "owned-v1"`, `dark: false`, the public `@takazudo/zudo-doc/wind.json` manifest, and the `sm`/`lg`/`xl` pixel breakpoints. It omits `spacingUnit`. zfb deep-merges an explicit override over those defaults; `wind: false` disables generation. Use ordinary `:root` declarations to change an existing token value; use `wind.tokens` when introducing a new utility name. See [Design System](../reference/design-system.mdx) for examples and audit coverage limits.
 
 ## An extended project as reference
 

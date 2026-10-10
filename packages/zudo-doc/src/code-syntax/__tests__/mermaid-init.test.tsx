@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { MermaidInit } from "../mermaid-init.js";
 import {
   MERMAID_CDN_MODULE_URL,
@@ -13,6 +11,10 @@ import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
 const MERMAID_INIT_SCRIPT = buildMermaidInitScript(MERMAID_CDN_MODULE_URL);
 
 describe("<MermaidInit />", () => {
+  it("rejects a custom body that would close the script parser context", () => {
+    expect(() => render(<MermaidInit script={'ok();</script><script>alert(1)</script>'} />))
+      .toThrow(/closing script tag/);
+  });
   it("renders a <script> tag", () => {
     const html = render(<MermaidInit />);
     expect(html).toContain("<script");

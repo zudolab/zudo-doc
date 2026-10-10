@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-pager — factory for the shared prev/next pager <nav> (epic #2344, S7).
 //
 // The host's `pages/lib/_doc-pager.tsx` previously read the `t` function
@@ -7,7 +6,7 @@
 // injected dependency so the logic lives in the package while the host stub
 // keeps the singleton imports.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { ChevronLeft, ChevronRight } from "../icons/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
@@ -66,7 +65,7 @@ export function createDocPager<S extends Settings = Settings>(
             class="group border border-muted rounded-lg p-hsp-lg hover:border-accent"
           >
             <div class="flex items-center gap-hsp-xs text-caption text-muted mb-vsp-2xs group-hover:text-accent group-focus-visible:text-accent">
-              <ChevronLeft className="h-[1.125rem] w-[1.125rem]" />
+              <ChevronLeft class="h-[1.125rem] w-[1.125rem]" />
               <span class="no-underline">{t("nav.previous", locale)}</span>
             </div>
             <p class="text-small font-semibold text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline">
@@ -88,7 +87,7 @@ export function createDocPager<S extends Settings = Settings>(
           >
             <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs group-hover:text-accent group-focus-visible:text-accent">
               <span class="no-underline">{t("nav.next", locale)}</span>
-              <ChevronRight className="h-[1.125rem] w-[1.125rem]" />
+              <ChevronRight class="h-[1.125rem] w-[1.125rem]" />
             </div>
             <p class="text-small font-semibold text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline">
               {next.label}

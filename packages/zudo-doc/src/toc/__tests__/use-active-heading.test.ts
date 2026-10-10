@@ -1,5 +1,69 @@
-import { describe, expect, it } from "vitest";
+/** @vitest-environment happy-dom */
+
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { h } from "@takazudo/zfb/zudo-react";
+import { flushAll, renderIsland, renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import { getActiveHeadingId } from "../use-active-heading.js";
+import { Toc } from "../toc.js";
+import type { HeadingItem } from "../types.js";
+
+const HEADINGS: HeadingItem[] = [
+  { depth: 2, slug: "a", text: "A" },
+  { depth: 3, slug: "b", text: "B" },
+  { depth: 2, slug: "c", text: "C" },
+];
+
+const mounted: Array<() => void> = [];
+let originalInnerHeight: PropertyDescriptor | undefined;
+let capturedInnerHeight = false;
+
+afterEach(() => {
+  for (const dispose of mounted.splice(0)) dispose();
+  document.body.replaceChildren();
+  if (capturedInnerHeight) {
+    if (originalInnerHeight) {
+      Object.defineProperty(window, "innerHeight", originalInnerHeight);
+    } else {
+      Reflect.deleteProperty(window, "innerHeight");
+    }
+    originalInnerHeight = undefined;
+    capturedInnerHeight = false;
+  }
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+function addHeadingTargets(initialTops: Record<string, number>) {
+  if (!capturedInnerHeight) {
+    originalInnerHeight = Object.getOwnPropertyDescriptor(window, "innerHeight");
+    capturedInnerHeight = true;
+  }
+  Object.defineProperty(window, "innerHeight", { configurable: true, value: 800 });
+
+  const tops = new Map(Object.entries(initialTops));
+  for (const id of Object.keys(initialTops)) {
+    const element = document.createElement("h2");
+    element.id = id;
+    vi.spyOn(element, "getBoundingClientRect").mockImplementation(
+      () => ({ top: tops.get(id) ?? 0 }) as DOMRect,
+    );
+    document.body.append(element);
+  }
+  return (id: string, top: number) => tops.set(id, top);
+}
+
+function activeLink(root: HTMLElement): HTMLAnchorElement | null {
+  return root.querySelector<HTMLAnchorElement>('a[aria-current="true"]');
+}
+
+async function mountToc() {
+  const view = await renderIsland(Toc, { headings: HEADINGS }, {
+    identity: { component: "Toc", build: "use-active-heading-test" },
+  });
+  mounted.push(view.dispose);
+  expect(view.diagnostics).toEqual([]);
+  return view;
+}
 
 /**
  * Build a stub HTMLElement-ish object with a fixed `top` value. The
@@ -91,5 +155,92 @@ describe("getActiveHeadingId", () => {
     // top === 80 hits the >= comparison; with viewport 800, midline 400 ⇒ active
     const map = makeMap([["a", 80]]);
     expect(getActiveHeadingId(ids, map, VIEWPORT)).toBe("a");
+  });
+});
+
+describe("Toc scroll spy", () => {
+  it("keeps SSR neutral, then derives the active link from the current browser position", async () => {
+    addHeadingTargets({ a: 100, b: 500, c: 900 });
+    const html = renderSsr(h(Toc, { headings: HEADINGS }));
+    expect(html).not.toContain("aria-current=");
+
+    const view = await mountToc();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+    expect(activeLink(view.root)?.className).toContain("bg-fg");
+    expect(view.root.querySelector('a[href="#b"]')?.className).toContain("text-muted");
+  });
+
+  it("debounces scroll and resize, activates clicked links immediately, and reconciles at scrollend", async () => {
+    vi.useFakeTimers();
+    const setTop = addHeadingTargets({ a: 100, b: 500, c: 900 });
+    const view = await mountToc();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+
+    setTop("a", -50);
+    setTop("b", 200);
+    window.dispatchEvent(new Event("scroll"));
+    await vi.advanceTimersByTimeAsync(199);
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+    await vi.advanceTimersByTimeAsync(1);
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#b");
+
+    setTop("a", 100);
+    setTop("b", 600);
+    window.dispatchEvent(new Event("resize"));
+    await vi.advanceTimersByTimeAsync(200);
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+
+    setTop("b", 200);
+    view.root.querySelector<HTMLAnchorElement>('a[href="#b"]')!.click();
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#b");
+
+    setTop("a", -50);
+    setTop("b", 600);
+    window.dispatchEvent(new Event("scroll"));
+    await vi.advanceTimersByTimeAsync(200);
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#b");
+
+    window.dispatchEvent(new Event("scrollend"));
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+  });
+
+  it("reconciles after the fallback timeout when the browser emits no scrollend", async () => {
+    vi.useFakeTimers();
+    const setTop = addHeadingTargets({ a: 100, b: 500, c: 900 });
+    const view = await mountToc();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+
+    setTop("a", -50);
+    view.root.querySelector<HTMLAnchorElement>('a[href="#b"]')!.click();
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#b");
+
+    setTop("b", 600);
+    window.dispatchEvent(new Event("scroll"));
+    await vi.advanceTimersByTimeAsync(1500);
+    await flushAll();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+  });
+
+  it("clears pending scroll work and listeners when the scope is disposed", async () => {
+    vi.useFakeTimers();
+    const setTop = addHeadingTargets({ a: 100, b: 500, c: 900 });
+    const view = await mountToc();
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
+
+    setTop("b", 200);
+    window.dispatchEvent(new Event("scroll"));
+    view.dispose();
+    mounted.pop();
+    await vi.advanceTimersByTimeAsync(200);
+    await flushAll();
+
+    expect(activeLink(view.root)?.getAttribute("href")).toBe("#a");
   });
 });

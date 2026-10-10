@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import { deriveBodyEndIslands, deriveComposeMetaTitle } from "../chrome/derive.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";

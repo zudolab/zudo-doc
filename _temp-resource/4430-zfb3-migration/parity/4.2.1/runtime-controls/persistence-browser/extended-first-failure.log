@@ -1,0 +1,55 @@
+@takazudo/zfb=4.2.1
+@takazudo/zfb-runtime=4.2.1
+[2m[WebServer] [22m(node:403357) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:403418) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:403418) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: unchanged (1.2s)
+  ✓  2 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: changed (761ms)
+  ✓  3 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: preserve (772ms)
+  ✓  4 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: structural (786ms)
+  ✓  5 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: identity (748ms)
+  ✘  6 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:62:5 › pending skip-SSR navigation cancels old scheduling before activation (10.2s)
+
+
+  1) ../../tmp/zudo421-persistence-browser/persistence.spec.ts:62:5 › pending skip-SSR navigation cancels old scheduling before activation 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 1[39m
+
+    [2m  Object {[22m
+    [32m-   "activations": 0,[39m
+    [31m+   "activations": 1,[39m
+    [2m    "cleanups": 0,[22m
+    [2m    "helperReady": true,[22m
+    [2m  }[22m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      91 |   await page.evaluate(() => (window as any).persistenceSwap);
+      92 |   await expect(page.locator("#route")).toHaveText("pending-b");
+    > 93 |   await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 0, cleanups: 0, helperReady: true });
+         |   ^
+      94 |   expect(await ancestor!.evaluate(node => node === document.querySelector("#persisted"))).toBe(true);
+      95 |   await expect(page.locator("#counter")).toHaveCount(0);
+      96 |   const beforeVisibility = await page.evaluate(() => (window as any).persistenceControl);
+        at /tmp/zudo421-persistence-browser/persistence.spec.ts:93:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../tmp/zudo421-persistence-browser/test-results/persistence-pending-skip-S-bf56f-cheduling-before-activation/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../tmp/zudo421-persistence-browser/test-results/persistence-pending-skip-S-bf56f-cheduling-before-activation/error-context.md
+
+  1 failed
+    ../../tmp/zudo421-persistence-browser/persistence.spec.ts:62:5 › pending skip-SSR navigation cancels old scheduling before activation 
+  5 passed (17.8s)
+heavy-guard: verdict=FAIL exit=1 secs=19 min_mem_mb=13033 reason=-

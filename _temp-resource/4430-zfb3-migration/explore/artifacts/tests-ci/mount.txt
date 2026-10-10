@@ -1,0 +1,10 @@
+packages/zudo-doc/src/current-path/__tests__/current-path-surfaces.test.tsx
+packages/zudo-doc/src/doc-history/__tests__/doc-history-date-formats.test.tsx
+packages/zudo-doc/src/doc-history/__tests__/doc-history-display-locale.test.tsx
+packages/zudo-doc/src/html-preview-wrapper/__tests__/html-preview-wrapper-visible-gate.test.tsx
+packages/zudo-doc/src/html-preview-wrapper/__tests__/preview-auto-height-component.test.tsx
+packages/zudo-doc/src/mermaid-enlarge/__tests__/mermaid-enlarge-button-injection.test.tsx
+packages/zudo-doc/src/sidebar-toggle-island/__tests__/sidebar-toggle-interaction.test.tsx
+packages/zudo-doc/src/sidebar-tree-island/__tests__/sidebar-tree-active-path.test.tsx
+packages/zudo-doc/src/theme-pack-switcher/__tests__/theme-pack-switcher-interaction.test.tsx
+packages/zudo-doc/src/theme-toggle/__tests__/theme-toggle-interaction.test.tsx

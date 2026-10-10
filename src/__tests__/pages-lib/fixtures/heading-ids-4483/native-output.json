@@ -1,0 +1,33 @@
+{
+  "version": "4.2.1",
+  "ids": [
+    "1000ms",
+    "2mm",
+    "1000ms-1",
+    "1000ms-1-child-©-≂̸",
+    "1000ms-1-child-©-≂̸-deep-a",
+    "1000ms-1-child-©-≂̸-deep-a-deeper-b",
+    "1000ms-1-child-©-≂̸-sibling",
+    "after-inline-span",
+    "code-lt-and-ordinary",
+    "escaped-gt-and-literal",
+    "once-lt-and-65",
+    "unknown-notarealentity-and-incomplete-copy",
+    "unicode-日本語-→-café-🚀",
+    "numeric-a-b",
+    "invalid-�-�-�-�-�-�-�-�-�",
+    "valid-�",
+    "after-backtick-fence",
+    "after-tilde-fence",
+    "after-mixed-run",
+    "after-indented-code",
+    "repeat",
+    "repeat-nested",
+    "repeat-1",
+    "repeat-1-nested",
+    "repeat-1-nested-below-toc",
+    "repeat-1-nested-below-toc-below-deep",
+    "repeat-1-nested-visible-sibling"
+  ],
+  "html": "<h2 id=\"1000ms\">&gt;1000ms<a href=\"#1000ms\" class=\"hash-link\" aria-label=\"Direct link to &gt;1000ms\"></a></h2><h2 id=\"2mm\">&lt;2mm<a href=\"#2mm\" class=\"hash-link\" aria-label=\"Direct link to &lt;2mm\"></a></h2><h2 id=\"1000ms-1\">&gt;1000ms<a href=\"#1000ms-1\" class=\"hash-link\" aria-label=\"Direct link to &gt;1000ms\"></a></h2><h3 id=\"1000ms-1-child-©-≂̸\">Child © ≂̸<a href=\"#1000ms-1-child-©-≂̸\" class=\"hash-link\" aria-label=\"Direct link to Child © ≂̸\"></a></h3><h5 id=\"1000ms-1-child-©-≂̸-deep-a\">Deep A<a href=\"#1000ms-1-child-©-≂̸-deep-a\" class=\"hash-link\" aria-label=\"Direct link to Deep A\"></a></h5><h6 id=\"1000ms-1-child-©-≂̸-deep-a-deeper-b\">Deeper B<a href=\"#1000ms-1-child-©-≂̸-deep-a-deeper-b\" class=\"hash-link\" aria-label=\"Direct link to Deeper B\"></a></h6><h4 id=\"1000ms-1-child-©-≂̸-sibling\">Sibling<a href=\"#1000ms-1-child-©-≂̸-sibling\" class=\"hash-link\" aria-label=\"Direct link to Sibling\"></a></h4><p><code>a circuit drawing</code></p><h2 id=\"after-inline-span\">After inline span<a href=\"#after-inline-span\" class=\"hash-link\" aria-label=\"Direct link to After inline span\"></a></h2><h2 id=\"code-lt-and-ordinary\">Code <code>&amp;lt;</code> and ordinary &lt;<a href=\"#code-lt-and-ordinary\" class=\"hash-link\" aria-label=\"Direct link to Code &amp;lt; and ordinary &lt;\"></a></h2><h2 id=\"escaped-gt-and-literal\">Escaped &amp;gt; and *literal*<a href=\"#escaped-gt-and-literal\" class=\"hash-link\" aria-label=\"Direct link to Escaped &amp;gt; and *literal*\"></a></h2><h2 id=\"once-lt-and-65\">Once &amp;lt; and &amp;#65;<a href=\"#once-lt-and-65\" class=\"hash-link\" aria-label=\"Direct link to Once &amp;lt; and &amp;#65;\"></a></h2><h2 id=\"unknown-notarealentity-and-incomplete-copy\">Unknown &amp;notARealEntity; and incomplete &amp;copy<a href=\"#unknown-notarealentity-and-incomplete-copy\" class=\"hash-link\" aria-label=\"Direct link to Unknown &amp;notARealEntity; and incomplete &amp;copy\"></a></h2><h2 id=\"unicode-日本語-→-café-🚀\">Unicode 日本語 → café 🚀<a href=\"#unicode-日本語-→-café-🚀\" class=\"hash-link\" aria-label=\"Direct link to Unicode 日本語 → café 🚀\"></a></h2><h2 id=\"numeric-a-b\">Numeric A B \t \n \r<a href=\"#numeric-a-b\" class=\"hash-link\" aria-label=\"Direct link to Numeric A B \t \n \r\"></a></h2><h2 id=\"invalid-�-�-�-�-�-�-�-�-�\">Invalid � � � � � � � � �<a href=\"#invalid-�-�-�-�-�-�-�-�-�\" class=\"hash-link\" aria-label=\"Direct link to Invalid � � � � � � � � �\"></a></h2><h2 id=\"valid-�\">Valid   �<a href=\"#valid-�\" class=\"hash-link\" aria-label=\"Direct link to Valid   �\"></a></h2><pre class=\"syntect-base16-ocean-dark\"><code><span class=\"line\"><span style=\"color:#8fa1b3;\">## Code block target\n</span></span><span class=\"line\"><span style=\"color:#c0c5ce;\">``` too short\n</span></span><span class=\"line\"><span style=\"color:#c0c5ce;\">## Still code\n</span></span><span class=\"line\"><span style=\"color:#c0c5ce;\">```` suffix\n</span></span><span class=\"line\"><span style=\"color:#c0c5ce;\">## Still code after suffix\n</span></span><span class=\"line\"><span style=\"color:#c0c5ce;\">~~~~\n</span></span><span class=\"line\"><span style=\"color:#c0c5ce;\">## Still code after wrong character</span></span></code></pre><h2 id=\"after-backtick-fence\">After backtick fence<a href=\"#after-backtick-fence\" class=\"hash-link\" aria-label=\"Direct link to After backtick fence\"></a></h2><pre class=\"syntect-base16-ocean-dark\"><code data-meta=\"` allowed\"><span class=\"line\">## Tilde code target\n</span><span class=\"line\">~~~ trailing text\n</span><span class=\"line\">## Still tilde code</span></code></pre><h2 id=\"after-tilde-fence\">After tilde fence<a href=\"#after-tilde-fence\" class=\"hash-link\" aria-label=\"Direct link to After tilde fence\"></a></h2><p><del>`</del> mixed</p><h2 id=\"after-mixed-run\">After mixed run<a href=\"#after-mixed-run\" class=\"hash-link\" aria-label=\"Direct link to After mixed run\"></a></h2><pre><code>## Indented code target</code></pre><h2 id=\"after-indented-code\">After indented code<a href=\"#after-indented-code\" class=\"hash-link\" aria-label=\"Direct link to After indented code\"></a></h2><h2 id=\"repeat\">Repeat<a href=\"#repeat\" class=\"hash-link\" aria-label=\"Direct link to Repeat\"></a></h2><h3 id=\"repeat-nested\">Nested<a href=\"#repeat-nested\" class=\"hash-link\" aria-label=\"Direct link to Nested\"></a></h3><h2 id=\"repeat-1\">Repeat<a href=\"#repeat-1\" class=\"hash-link\" aria-label=\"Direct link to Repeat\"></a></h2><h3 id=\"repeat-1-nested\">Nested<a href=\"#repeat-1-nested\" class=\"hash-link\" aria-label=\"Direct link to Nested\"></a></h3><h5 id=\"repeat-1-nested-below-toc\">Below toc<a href=\"#repeat-1-nested-below-toc\" class=\"hash-link\" aria-label=\"Direct link to Below toc\"></a></h5><h6 id=\"repeat-1-nested-below-toc-below-deep\">Below deep<a href=\"#repeat-1-nested-below-toc-below-deep\" class=\"hash-link\" aria-label=\"Direct link to Below deep\"></a></h6><h4 id=\"repeat-1-nested-visible-sibling\">Visible sibling<a href=\"#repeat-1-nested-visible-sibling\" class=\"hash-link\" aria-label=\"Direct link to Visible sibling\"></a></h4>"
+}

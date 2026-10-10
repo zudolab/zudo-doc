@@ -1,5 +1,5 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * showResources code-panel placement (#2914).
  *
@@ -9,32 +9,34 @@
  * of the iframe's srcdoc attribute, which always carries the resources
  * regardless of showResources (showResources only controls what appears in
  * the human-visible code panel, not what actually loads in the preview) — so
- * these tests scope their assertions to the code-panel segment of the
- * render() output, not the whole string.
+ * these tests scope their assertions to the code-panel segment of the SSR
+ * output, not the whole string.
  *
- * SSR (no hydration) means HighlightedCode falls back to a plain
- * <pre><code> block, so the dedented source text is present verbatim.
- * preact-render-to-string escapes `<` to `&lt;` and `"` to `&quot;` in text
- * content but leaves `>` literal — see the exact escaping asserted below.
+ * SSR (no activation) means HighlightedCode falls back to a plain
+ * <pre><code> block, so the source text is present verbatim. Read it through
+ * the HTML parser so the assertion covers displayed source rather than the
+ * serializer's entity spelling.
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import { HtmlPreview } from "../html-preview.js";
 
-// The code panel starts at the "HTML" block label and ends at the first
-// </pre> (the primary/always-present HTML panel is always emitted first).
 function extractHtmlCodePanel(rendered: string): string {
-  const labelIdx = rendered.indexOf(">HTML</span>");
-  expect(labelIdx).toBeGreaterThan(-1);
-  const closeIdx = rendered.indexOf("</pre>", labelIdx);
-  expect(closeIdx).toBeGreaterThan(-1);
-  return rendered.slice(labelIdx, closeIdx);
+  const host = document.createElement("div");
+  host.innerHTML = rendered;
+  const htmlLabel = [...host.querySelectorAll("span")].find(
+    (span) => span.textContent === "HTML",
+  );
+  expect(htmlLabel).toBeDefined();
+  const code = htmlLabel?.parentElement?.querySelector("pre code");
+  expect(code).toBeDefined();
+  return code?.textContent ?? "";
 }
 
 describe("HtmlPreview — showResources code-panel placement", () => {
   it("excludes externalStyles/externalScripts from the HTML code panel by default", () => {
-    const rendered = render(
+    const rendered = renderSsr(
       <HtmlPreview
         html="<div>hi</div>"
         defaultOpen
@@ -50,11 +52,11 @@ describe("HtmlPreview — showResources code-panel placement", () => {
     expect(panel).not.toContain(
       "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4",
     );
-    expect(panel).toContain("&lt;div>hi&lt;/div>");
+    expect(panel).toContain("<div>hi</div>");
   });
 
   it("renders literal <link>/<script src> lines at the TOP of the HTML code panel when showResources is true", () => {
-    const rendered = render(
+    const rendered = renderSsr(
       <HtmlPreview
         html="<div>hi</div>"
         defaultOpen
@@ -68,12 +70,12 @@ describe("HtmlPreview — showResources code-panel placement", () => {
     const panel = extractHtmlCodePanel(rendered);
 
     const linkIdx = panel.indexOf(
-      '&lt;link rel=&quot;stylesheet&quot; href=&quot;https://example.com/a.css&quot;>',
+      '<link rel="stylesheet" href="https://example.com/a.css">',
     );
     const scriptIdx = panel.indexOf(
-      '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4&quot;>&lt;/script>',
+      '<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>',
     );
-    const htmlBodyIdx = panel.indexOf("&lt;div>hi&lt;/div>");
+    const htmlBodyIdx = panel.indexOf("<div>hi</div>");
 
     expect(linkIdx).toBeGreaterThan(-1);
     expect(scriptIdx).toBeGreaterThan(-1);
@@ -85,13 +87,13 @@ describe("HtmlPreview — showResources code-panel placement", () => {
   });
 
   it("adds no resource lines when showResources is true but no external resources are set", () => {
-    const rendered = render(
+    const rendered = renderSsr(
       <HtmlPreview html="<div>hi</div>" defaultOpen showResources />,
     );
     const panel = extractHtmlCodePanel(rendered);
 
-    expect(panel).toContain("&lt;div>hi&lt;/div>");
-    expect(panel).not.toContain("rel=&quot;stylesheet&quot;");
-    expect(panel).not.toContain("&lt;script");
+    expect(panel).toContain("<div>hi</div>");
+    expect(panel).not.toContain('rel="stylesheet"');
+    expect(panel).not.toContain("<script");
   });
 });

@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { decodeAuthoredHref } from "../asset-path/index.js";
 import type {
   AssetIndexEntry,
@@ -92,13 +90,13 @@ export function formatAssetLanguage(language: string | undefined): string {
 }
 
 export function AssetFileIcon({
-  className,
+  class: className,
 }: {
-  className?: string;
+  class?: string;
 }): JSX.Element {
   return (
     <svg
-      className={className}
+      class={className}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -120,7 +118,7 @@ export function MissingAssetWarning({
 }): JSX.Element {
   return (
     <div
-      className="rounded border border-warning/30 bg-warning/5 px-hsp-lg py-vsp-xs text-small text-warning"
+      class="rounded border border-warning/30 bg-warning/5 px-hsp-lg py-vsp-xs text-small text-warning"
       role="status"
     >
       {children}

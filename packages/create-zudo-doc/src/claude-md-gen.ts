@@ -38,11 +38,14 @@ export function generateCLAUDEFile(
 
   const defaultLocaleLabel = localeDisplayName(localePlan.defaultLang);
   const additionalLocales = localePlan.i18n ? localePlan.additionalLangs : [];
+  const componentsReference = choices.features.includes("mcp")
+    ? "https://github.com/zudolab/zudo-doc/tree/main/src/content/docs/components/"
+    : "https://zudo-doc.takazudomodular.com/docs/components/";
 
   lines.push(`# ${siteName}`);
   lines.push(``);
   lines.push(
-    `Documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc) — a zfb-based documentation framework with MDX, Tailwind CSS v4, and Preact islands. This project is intentionally minimal: one config file (\`zfb.config.ts\`) plus markdown content — layout, chrome, and islands all ship from \`@takazudo/zudo-doc\` in \`node_modules\`.`,
+    `Documentation site built with [zudo-doc](https://github.com/zudolab/zudo-doc) — a zfb-based documentation framework with MDX, zudo-react, and zudo-wind. This project is intentionally minimal: one config file (\`zfb.config.ts\`) plus markdown content — layout, chrome, and islands all ship from \`@takazudo/zudo-doc\` in \`node_modules\`.`,
   );
   lines.push(``);
 
@@ -52,16 +55,16 @@ export function generateCLAUDEFile(
   lines.push(`- **zfb** — documentation build framework`);
   lines.push(`- **MDX** — content format, authored under \`src/content/\``);
   lines.push(
-    `- **Tailwind CSS v4** — compiled by zfb's embedded Tailwind engine (no \`@tailwindcss/vite\` plugin, no \`tailwindcss\` dependency); \`src/styles/global.css\` imports \`tailwindcss/preflight\` + \`tailwindcss/utilities\` and zfb's internal resolver serves both`,
+    `- **zudo-wind** — zfb compiles the package preset's utility manifest and owned-v1 reset; \`src/styles/global.css\` imports public \`@takazudo/zudo-doc/*.css\` exports and provides a \`:root\` custom-property override slot. Override the preset through top-level \`wind\` in \`zfb.config.ts\`; no separate safelist or reset stylesheet is needed`,
   );
   lines.push(
-    `- **Preact** — for interactive islands only (with compat mode for React API)`,
+    `- **zudo-react** — the JSX and component runtime used by package-owned routes and islands`,
   );
   lines.push(
     "- **zfb semantic highlighting** — native build-time fenced-code rendering plus lazy `@takazudo/zfb-md-wasm` for HtmlPreview; both emit `hi-*` classes resolved through `--zd-syntax-*` design tokens",
   );
   lines.push(
-    `- **@takazudo/zudo-doc** — the package that owns everything: layout, chrome, islands, default \`@theme\` design tokens, and (via \`packageOwnedRoutes\`, on by default) the doc routes themselves`,
+    `- **@takazudo/zudo-doc** — the package that owns everything: layout, chrome, islands, default design-token custom properties, and (via \`packageOwnedRoutes\`, on by default) the doc routes themselves`,
   );
   lines.push(``);
 
@@ -88,6 +91,14 @@ export function generateCLAUDEFile(
   lines.push(`- \`${pmRunCommand(pm, "build")}\` — static HTML export to \`dist/\``);
   lines.push(`- \`${pmRunCommand(pm, "check")}\` — TypeScript type checking`);
   lines.push(`- \`${pmRunCommand(pm, "preview")}\` — serve the built \`dist/\``);
+  if (choices.features.includes("mcp")) {
+    lines.push(
+      `- \`${pmRunCommand(pm, "preview:worker")}\` — run the built site and MCP endpoint in Wrangler's local Worker runtime`,
+    );
+    lines.push(
+      `- \`${pmRunCommand(pm, "deploy")}\` — build and explicitly deploy this project to the Cloudflare account selected by Wrangler`,
+    );
+  }
   lines.push(``);
 
   // Key directories
@@ -179,7 +190,7 @@ export function generateCLAUDEFile(
   );
   lines.push(``);
   lines.push(
-    `Admonitions (above), tabbed content (\`<Tabs>\` / \`<TabItem>\`, \`<CodeGroup>\`), and block math (\`<MathBlock>\`) work the same way — no import. Full reference: https://zudo-doc.takazudomodular.com/docs/components/`,
+    `Admonitions (above), tabbed content (\`<Tabs>\` / \`<TabItem>\`, \`<CodeGroup>\`), and block math (\`<MathBlock>\`) work the same way — no import. Full reference: ${componentsReference}`,
   );
   lines.push(``);
 
@@ -200,7 +211,7 @@ export function generateCLAUDEFile(
       `- The \`ja\` locale, when configured, receives Japanese starter prose and uses Japanese translation conventions. Other non-EN locale directories currently receive English placeholder prose pending translation; do not assume they are already translated.`,
     );
     lines.push(
-      `- Both \`pages/docs/[[...slug]].tsx\` and \`pages/[locale]/docs/[[...slug]].tsx\` are self-contained doc-route stubs shipped by the generator as explicit host-owned seams. zfb 2.13.1 also renders package-injected dynamic routes in dev; keep these files so the generated project retains route ownership and customization.`,
+      `- Both \`pages/docs/[[...slug]].tsx\` and \`pages/[locale]/docs/[[...slug]].tsx\` are self-contained doc-route stubs shipped by the generator as explicit host-owned seams. zfb also renders package-injected dynamic routes in dev; keep these files so the generated project retains route ownership and customization.`,
     );
     lines.push(``);
   }
@@ -215,6 +226,9 @@ export function generateCLAUDEFile(
     versioning: "Multi-version documentation support",
     docHistory: "Document edit history",
     llmsTxt: "Generates llms.txt for LLM consumption",
+    agentExport:
+      "Generates the static agent documentation manifest, search index, and Markdown pages",
+    mcp: "Adds public read-only search and fetch tools through a Cloudflare Workers MCP endpoint",
     claudeResources: "Auto-generated docs for Claude Code resources",
     codexResources: "Auto-generated docs for Codex resources (.codex/, AGENTS.md)",
     changelog:

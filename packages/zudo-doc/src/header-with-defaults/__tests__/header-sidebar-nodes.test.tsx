@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createHeaderWithDefaults — #4219 optional `sidebarNodes`
  * override on `HeaderWithDefaultsProps`.
@@ -17,14 +16,15 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import type { VNode } from "preact";
+import "./island-metadata.js";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { createHeaderWithDefaults } from "../index.js";
 import { createChrome } from "../../chrome/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { ChromeContext, RouteContext } from "../../factory-context/index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 
-type AnyVNode = VNode<Record<string, unknown>>;
+type AnyVNode = Description;
 
 function fixedNode(slug: string): SidebarNavNode {
   return {
@@ -52,8 +52,21 @@ function makeCtx(overrides: Partial<ChromeContext> = {}): ChromeContext {
 function getSidebarToggleNodes(headerVNode: AnyVNode): unknown {
   const island = headerVNode.props["sidebarToggle"] as AnyVNode | false;
   if (island === false) return undefined;
-  const sidebarToggleVNode = island.props["children"] as AnyVNode;
+  const sidebarToggleVNode = island.props["child"] as AnyVNode;
   return sidebarToggleVNode.props["nodes"];
+}
+
+function assertNoUndefinedProps(value: unknown, path = "props"): void {
+  if (value === undefined) throw new Error(`Undefined island prop at ${path}`);
+  if (Array.isArray(value)) {
+    value.forEach((child, index) => assertNoUndefinedProps(child, `${path}[${index}]`));
+    return;
+  }
+  if (typeof value === "object" && value !== null) {
+    for (const [key, child] of Object.entries(value)) {
+      assertNoUndefinedProps(child, `${path}.${key}`);
+    }
+  }
 }
 
 describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
@@ -67,7 +80,20 @@ describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
     expect(getSidebarToggleNodes(withoutSection)).toEqual([]);
 
     const withSection = HeaderWithDefaults({ lang: "en", navSection: "guides" }) as AnyVNode;
-    expect(getSidebarToggleNodes(withSection)).toEqual([fixedNode("guides/intro")]);
+    expect(getSidebarToggleNodes(withSection)).toEqual([{ ...fixedNode("guides/intro"), occurrenceId: "auto/0" }]);
+  });
+
+  it("omits undefined values from nested island props before constructing descriptions", () => {
+    const header = createHeaderWithDefaults(makeCtx())({ lang: "en" }) as AnyVNode;
+    const sidebarIsland = header.props["sidebarToggle"] as AnyVNode;
+    const sidebar = sidebarIsland.props["child"] as AnyVNode;
+    const themeIsland = header.props["themeToggle"] as AnyVNode;
+    const theme = themeIsland.props["child"] as AnyVNode;
+
+    assertNoUndefinedProps(sidebar.props, "SidebarToggle");
+    assertNoUndefinedProps(theme.props, "ThemeToggle");
+    expect(Object.hasOwn(sidebar.props, "currentSlug")).toBe(false);
+    expect(Object.hasOwn(theme.props, "defaultMode")).toBe(false);
   });
 
   it("array override: the exact array reaches SidebarToggle by identity, and the default builder is never called", () => {

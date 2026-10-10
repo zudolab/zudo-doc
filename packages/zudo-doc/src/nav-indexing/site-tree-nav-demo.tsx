@@ -1,11 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/site-tree-nav-demo.
 //
 // The original Astro template loaded the full doc collection, built the nav
 // tree with groupSatelliteNodes, and rendered the interactive SiteTreeNav
-// Preact island (client:visible). Because v2 is decoupled from host helpers
+// client island. Because this renderer is decoupled from host helpers
 // and collection queries, this port:
 //
 //   1. Accepts the already-processed tree as a prop.
@@ -17,7 +15,7 @@
 // and passes it in. The categoryOrder / categoryIgnore props mirror the
 // filtering that site-tree-nav.tsx applies at runtime.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 
@@ -77,7 +75,7 @@ function Section({ node }: SectionProps): JSX.Element {
   const leaves = flattenTree(node.children);
   return (
     <details class="group border border-muted overflow-hidden" open>
-      <summary class="flex items-center gap-x-hsp-md px-hsp-xl py-vsp-md text-title font-bold cursor-pointer select-none bg-surface list-none [&::-webkit-details-marker]:hidden">
+      <summary class="flex items-center gap-x-hsp-md px-hsp-xl py-vsp-md text-title font-bold cursor-pointer select-none bg-surface list-none zd-hide-details-marker">
         <span class="inline-block text-caption text-muted transition-transform duration-200 group-open:rotate-90">
           &#9654;
         </span>
@@ -115,7 +113,7 @@ function Section({ node }: SectionProps): JSX.Element {
 }
 
 /**
- * SiteTreeNavDemo — JSX port of `src/components/site-tree-nav-demo`.
+ * SiteTreeNavDemo — static server renderer for the site navigation tree.
  *
  * Renders the full site tree as a static collapsible section-by-section view.
  * Each top-level category becomes a `<details>` block; leaves within each

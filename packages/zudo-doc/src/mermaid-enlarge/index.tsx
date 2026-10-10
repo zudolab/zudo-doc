@@ -1,20 +1,18 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Mermaid-enlarge island — relocated from src/components/mermaid-enlarge.tsx
 // (host showcase) into the package as part of Package-First Wave 3 (S3,
-// epic #2344). Uses shared hook + constants from S1a foundation:
-//   - useModalDialog  from @takazudo/zudo-doc/use-modal-dialog
-//   - MERMAID_ENLARGE_DIALOG_CLASS / ENLARGE_DIALOG_STYLE from @takazudo/zudo-doc/island-types
+// epic #2344). Browser-only observation and delegated clicks are activated
+// and disposed with the island scope.
 //
 // CSS blocks (.zd-mermaid-*) are shipped in @takazudo/zudo-doc/features.css
 // (moved from src/styles/global.css by S3).
 
-import { useState, useEffect, useRef, useCallback } from "preact/compat";
+import { batch, computed, getScope, Show, signal } from "@takazudo/zfb/zudo-react";
+import type { Ref } from "@takazudo/zfb/zudo-react";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
-import { useModalDialog } from "../use-modal-dialog/index.js";
+import { modalDialog } from "../use-modal-dialog/index.js";
 import {
   MERMAID_ENLARGE_DIALOG_CLASS,
   ENLARGE_DIALOG_STYLE,
@@ -32,7 +30,7 @@ const ARROW_PAN_STEP = 40;
 
 function PlusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
@@ -41,7 +39,7 @@ function PlusIcon() {
 
 function MinusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
@@ -49,7 +47,7 @@ function MinusIcon() {
 
 function PanIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
       <path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11" />
       <path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11" />
       <path d="M15 11V6a1.5 1.5 0 0 1 3 0v6.5a6.5 6.5 0 0 1-6.5 6.5h-1a6 6 0 0 1-4.6-2.16l-2.2-2.86a1.5 1.5 0 0 1 2.3-1.92L9 13" />
@@ -63,36 +61,48 @@ interface OpenDiagram {
   svgHtml: string;
 }
 
+interface DragState {
+  dragging: boolean;
+  startX: number;
+  startY: number;
+  originX: number;
+  originY: number;
+}
+
 export function MermaidEnlarge() {
-  const [open, setOpen] = useState<OpenDiagram | null>(null);
-  const [scale, setScale] = useState(1);
-  const [translate, setTranslate] = useState({ x: 0, y: 0 });
-  const [panActive, setPanActive] = useState(false);
+  const scope = getScope();
+  const open = signal<OpenDiagram | null>(null);
+  const scale = signal(MIN_SCALE);
+  const translate = signal({ x: 0, y: 0 });
+  const panActive = signal(false);
+  const innerRef: Ref<HTMLDivElement> = { current: null };
+  const dragState: DragState = {
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+  };
 
-  const innerRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef<{
-    dragging: boolean;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-  }>({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
+  const isOpen = computed(() => open.value !== null);
+  const zoomed = computed(() => scale.value > MIN_SCALE);
+  const atMax = computed(() => scale.value >= MAX_SCALE);
+  const transformStyle = computed(() => ({
+    transform: `translate(${translate.value.x}px, ${translate.value.y}px) scale(${scale.value})`,
+    "transform-origin": "center",
+  }));
+  const svgHtml = computed(() => open.value?.svgHtml ?? "");
+  const panActiveAttr = computed(() => panActive.value && zoomed.value ? "" : undefined);
 
-  // Button injection effect
-  useEffect(() => {
+  // Button injection follows client-rendered Mermaid diagrams. A real button
+  // in the container is the guard because a Mermaid theme re-render can wipe
+  // injected children while retaining the ready marker (#3132).
+  scope.onActivate(() => {
+    let active = true;
     let mutationObserver: MutationObserver | null = null;
 
     function injectButton(container: HTMLElement) {
-      // Gate on the button actually being in the DOM, not on the ready
-      // attribute alone (zudolab/zudo-doc#3132). The mermaid init script's
-      // re-render path restores each diagram from its cached source with
-      // `el.textContent = src`, which deletes every child of the container —
-      // including this injected button — while leaving the attribute and the
-      // `.zd-mermaid-enlargeable` class untouched. An attribute-only guard
-      // therefore made the button unrecoverable after the first theme/token
-      // re-render (which fires on a full page load as soon as the design-token
-      // panel re-applies persisted overrides to `:root`).
-      if (container.querySelector(INJECTED_BTN_SELECTOR) !== null) return;
+      if (!active || container.querySelector(INJECTED_BTN_SELECTOR) !== null) return;
       const rendered =
         container.hasAttribute("data-mermaid-rendered") ||
         container.querySelector(DIAGRAM_SVG_SELECTOR) !== null;
@@ -106,7 +116,7 @@ export function MermaidEnlarge() {
       btn.className = "zd-enlarge-btn";
       btn.setAttribute("aria-label", "Enlarge diagram");
       btn.innerHTML =
-        '<svg viewBox="0 0 38.99 38.99" fill="currentColor" focusable="false" aria-hidden="true">' +
+        '<svg viewBox="0 0 38.99 38.99" fill="currentColor" aria-hidden="true">' +
         '<polygon points="16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74" />' +
         '<polygon points="25.24 16.2 35.52 5.92 35.52 11.2 38.99 11.2 38.99 3.47 38.99 0 35.52 0 27.79 0 27.79 3.47 33.07 3.47 22.79 13.74 25.24 16.2" />' +
         '<polygon points="22.79 25.24 33.07 35.52 27.79 35.52 27.79 38.99 35.52 38.99 38.99 38.99 38.99 35.52 38.99 27.79 35.52 27.79 35.52 33.07 25.24 22.79 22.79 25.24" />' +
@@ -116,16 +126,16 @@ export function MermaidEnlarge() {
     }
 
     function scan() {
-      const scope = document.querySelector(CONTENT_SCOPE_SELECTOR);
-      if (!scope) return;
-      scope.querySelectorAll<HTMLElement>(".mermaid").forEach((el) => injectButton(el));
+      if (!active) return;
+      const content = document.querySelector<HTMLElement>(CONTENT_SCOPE_SELECTOR);
+      content?.querySelectorAll<HTMLElement>(".mermaid").forEach(injectButton);
     }
 
     function startObserving() {
-      const scope = document.querySelector(CONTENT_SCOPE_SELECTOR);
-      if (scope) {
+      const content = document.querySelector<HTMLElement>(CONTENT_SCOPE_SELECTOR);
+      if (content) {
         mutationObserver = new MutationObserver(() => scan());
-        mutationObserver.observe(scope, {
+        mutationObserver.observe(content, {
           childList: true,
           subtree: true,
           attributes: true,
@@ -145,196 +155,203 @@ export function MermaidEnlarge() {
     document.addEventListener(AFTER_NAVIGATE_EVENT, handleAfterNavigate);
 
     return () => {
+      active = false;
       mutationObserver?.disconnect();
       document.removeEventListener(AFTER_NAVIGATE_EVENT, handleAfterNavigate);
     };
-  }, []);
+  });
 
-  // Delegated open handler
-  useEffect(() => {
-    function handleDocumentClick(e: MouseEvent) {
-      const target = e.target as Element;
-      const container = target.closest(".zd-mermaid-enlargeable") as HTMLElement | null;
-      if (!container) return;
-      if (!target.closest(".zd-enlarge-btn")) return;
+  // Opening is delegated because Mermaid buttons are injected into authored
+  // content after this island hydrates.
+  scope.onActivate(() => {
+    let active = true;
+    function handleDocumentClick(event: Event) {
+      if (!active || !(event.target instanceof Element)) return;
+      const target = event.target;
+      const container = target.closest<HTMLElement>(".zd-mermaid-enlargeable");
+      if (!container || !target.closest(".zd-enlarge-btn")) return;
       const svg = container.querySelector(DIAGRAM_SVG_SELECTOR);
       if (!svg) return;
-      setScale(1);
-      setTranslate({ x: 0, y: 0 });
-      setPanActive(false);
-      setOpen({ container, svgHtml: svg.outerHTML });
+      batch(() => {
+        scale.value = MIN_SCALE;
+        translate.value = { x: 0, y: 0 };
+        panActive.value = false;
+        open.value = { container, svgHtml: svg.outerHTML };
+      });
     }
     document.addEventListener("click", handleDocumentClick);
-    return () => document.removeEventListener("click", handleDocumentClick);
-  }, []);
+    return () => {
+      active = false;
+      document.removeEventListener("click", handleDocumentClick);
+    };
+  });
 
-  // Re-clone svg when underlying diagram re-renders while dialog is open
-  useEffect(() => {
-    if (!open) return;
-    const { container } = open;
+  // Keep the open clone aligned with Mermaid's live SVG. This effect owns the
+  // observer for exactly one open diagram and disconnects it before switching
+  // diagrams, closing, or disposing the island.
+  scope.effect(() => {
+    const current = open.value;
+    if (!current) return;
+    let active = true;
     const observer = new MutationObserver(() => {
-      const svg = container.querySelector(DIAGRAM_SVG_SELECTOR);
-      if (svg && svg.outerHTML !== open.svgHtml) {
-        setOpen({ container, svgHtml: svg.outerHTML });
+      const latest = open.value;
+      if (!active || scope.abortSignal.aborted || !latest || latest.container !== current.container) return;
+      const svg = current.container.querySelector(DIAGRAM_SVG_SELECTOR);
+      if (svg && svg.outerHTML !== latest.svgHtml) {
+        open.value = { container: current.container, svgHtml: svg.outerHTML };
       }
     });
-    observer.observe(container, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [open]);
+    observer.observe(current.container, { childList: true, subtree: true });
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  });
 
-  const handleClose = useCallback(() => setOpen(null), []);
+  function handleClose() {
+    open.value = null;
+  }
 
-  const { dialogRef, handleBackdropClick } = useModalDialog({
-    isOpen: open !== null,
+  function zoomIn() {
+    scale.value = Math.min(MAX_SCALE, scale.value * ZOOM_STEP);
+  }
+
+  function zoomOut() {
+    const next = Math.max(MIN_SCALE, scale.value / ZOOM_STEP);
+    batch(() => {
+      scale.value = next;
+      if (next <= MIN_SCALE) {
+        translate.value = { x: 0, y: 0 };
+        panActive.value = false;
+      }
+    });
+  }
+
+  function togglePan() {
+    panActive.value = !panActive.value;
+  }
+
+  function clampTranslate(x: number, y: number, currentScale: number) {
+    const inner = innerRef.current;
+    if (!inner) return { x, y };
+    const rect = inner.getBoundingClientRect();
+    const baseW = rect.width / currentScale;
+    const baseH = rect.height / currentScale;
+    const maxX = Math.max(0, (baseW * currentScale - baseW) / 2);
+    const maxY = Math.max(0, (baseH * currentScale - baseH) / 2);
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  }
+
+  function onPointerDown(event: Event) {
+    const pointer = event as PointerEvent;
+    if (!panActive.value || scale.value <= MIN_SCALE) return;
+    dragState.dragging = true;
+    dragState.startX = pointer.clientX;
+    dragState.startY = pointer.clientY;
+    dragState.originX = translate.value.x;
+    dragState.originY = translate.value.y;
+    (pointer.currentTarget as HTMLElement).setPointerCapture?.(pointer.pointerId);
+  }
+
+  function onPointerMove(event: Event) {
+    const pointer = event as PointerEvent;
+    if (!dragState.dragging) return;
+    const nextX = dragState.originX + (pointer.clientX - dragState.startX);
+    const nextY = dragState.originY + (pointer.clientY - dragState.startY);
+    translate.value = clampTranslate(nextX, nextY, scale.value);
+  }
+
+  function onPointerUp(event: Event) {
+    const pointer = event as PointerEvent;
+    if (!dragState.dragging) return;
+    dragState.dragging = false;
+    (pointer.currentTarget as HTMLElement).releasePointerCapture?.(pointer.pointerId);
+  }
+
+  function onViewportKeyDown(event: Event) {
+    const keyboard = event as KeyboardEvent;
+    if (scale.value <= MIN_SCALE) return;
+    let dx = 0;
+    let dy = 0;
+    if (keyboard.key === "ArrowLeft") dx = ARROW_PAN_STEP;
+    else if (keyboard.key === "ArrowRight") dx = -ARROW_PAN_STEP;
+    else if (keyboard.key === "ArrowUp") dy = ARROW_PAN_STEP;
+    else if (keyboard.key === "ArrowDown") dy = -ARROW_PAN_STEP;
+    else return;
+    keyboard.preventDefault();
+    translate.value = clampTranslate(
+      translate.value.x + dx,
+      translate.value.y + dy,
+      scale.value,
+    );
+  }
+
+  const { dialogRef, handleBackdropClick } = modalDialog(scope, {
+    isOpen,
     onClose: handleClose,
     navigateEvent: AFTER_NAVIGATE_EVENT,
     backdropClickClose: true,
   });
 
-  const zoomIn = useCallback(() => {
-    setScale((s) => Math.min(MAX_SCALE, s * ZOOM_STEP));
-  }, []);
-
-  const zoomOut = useCallback(() => {
-    setScale((s) => {
-      const next = Math.max(MIN_SCALE, s / ZOOM_STEP);
-      if (next <= MIN_SCALE) {
-        setTranslate({ x: 0, y: 0 });
-        setPanActive(false);
-      }
-      return next;
-    });
-  }, []);
-
-  const togglePan = useCallback(() => {
-    setPanActive((p) => !p);
-  }, []);
-
-  const clampTranslate = useCallback(
-    (x: number, y: number, s: number) => {
-      const inner = innerRef.current;
-      if (!inner) return { x, y };
-      const rect = inner.getBoundingClientRect();
-      const baseW = rect.width / s;
-      const baseH = rect.height / s;
-      const maxX = Math.max(0, (baseW * s - baseW) / 2);
-      const maxY = Math.max(0, (baseH * s - baseH) / 2);
-      return {
-        x: Math.max(-maxX, Math.min(maxX, x)),
-        y: Math.max(-maxY, Math.min(maxY, y)),
-      };
-    },
-    [],
-  );
-
-  const onPointerDown = useCallback(
-    (e: PointerEvent) => {
-      if (!panActive || scale <= MIN_SCALE) return;
-      const d = dragState.current;
-      d.dragging = true;
-      d.startX = e.clientX;
-      d.startY = e.clientY;
-      d.originX = translate.x;
-      d.originY = translate.y;
-      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-    },
-    [panActive, scale, translate],
-  );
-
-  const onPointerMove = useCallback(
-    (e: PointerEvent) => {
-      const d = dragState.current;
-      if (!d.dragging) return;
-      const nextX = d.originX + (e.clientX - d.startX);
-      const nextY = d.originY + (e.clientY - d.startY);
-      setTranslate(clampTranslate(nextX, nextY, scale));
-    },
-    [scale, clampTranslate],
-  );
-
-  const onPointerUp = useCallback((e: PointerEvent) => {
-    const d = dragState.current;
-    if (!d.dragging) return;
-    d.dragging = false;
-    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
-  }, []);
-
-  const onViewportKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (scale <= MIN_SCALE) return;
-      let dx = 0;
-      let dy = 0;
-      if (e.key === "ArrowLeft") dx = ARROW_PAN_STEP;
-      else if (e.key === "ArrowRight") dx = -ARROW_PAN_STEP;
-      else if (e.key === "ArrowUp") dy = ARROW_PAN_STEP;
-      else if (e.key === "ArrowDown") dy = -ARROW_PAN_STEP;
-      else return;
-      e.preventDefault();
-      setTranslate((t) => clampTranslate(t.x + dx, t.y + dy, scale));
-    },
-    [scale, clampTranslate],
-  );
-
-  const zoomed = scale > MIN_SCALE;
-  const atMax = scale >= MAX_SCALE;
-
+  // The rawHtml assignment below is a Mermaid 11.15.0 renderer SVG clone;
+  // Mermaid's default strict securityLevel remains configured.
   return (
     <dialog
       ref={dialogRef}
-      onClick={handleBackdropClick}
+      on:click={handleBackdropClick}
       aria-label="Enlarged diagram"
-      className={MERMAID_ENLARGE_DIALOG_CLASS}
+      class={MERMAID_ENLARGE_DIALOG_CLASS}
       style={ENLARGE_DIALOG_STYLE}
     >
-      {open && (
+      <Show when={isOpen}>{() => (
         <>
           <div
-            className="zd-mermaid-viewport"
-            tabIndex={0}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onKeyDown={onViewportKeyDown}
-            data-pan-active={panActive && zoomed ? "" : undefined}
+            class="zd-mermaid-viewport"
+            tabindex={0}
+            on:pointerdown={onPointerDown}
+            on:pointermove={onPointerMove}
+            on:pointerup={onPointerUp}
+            on:pointercancel={onPointerUp}
+            on:keydown={onViewportKeyDown}
+            data-pan-active={panActiveAttr}
           >
             <div
               ref={innerRef}
-              className="zd-mermaid-transform"
-              style={{
-                transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
-                transformOrigin: "center",
-              }}
-              dangerouslySetInnerHTML={{ __html: open.svgHtml }}
+              class="zd-mermaid-transform"
+              style={transformStyle}
+              rawHtml={svgHtml}
             />
           </div>
 
-          <div className="zd-mermaid-toolbar" role="toolbar" aria-label="Diagram zoom controls">
+          <div class="zd-mermaid-toolbar" role="toolbar" aria-label="Diagram zoom controls">
             <button
               type="button"
-              className="zd-mermaid-tool-btn"
+              class="zd-mermaid-tool-btn"
               aria-label="Zoom in"
-              onClick={zoomIn}
+              on:click={zoomIn}
               disabled={atMax}
             >
               <PlusIcon />
             </button>
             <button
               type="button"
-              className="zd-mermaid-tool-btn"
+              class="zd-mermaid-tool-btn"
               aria-label="Zoom out"
-              onClick={zoomOut}
-              disabled={!zoomed}
+              on:click={zoomOut}
+              disabled={computed(() => !zoomed.value)}
             >
               <MinusIcon />
             </button>
             <button
               type="button"
-              className="zd-mermaid-tool-btn"
+              class="zd-mermaid-tool-btn"
               aria-label="Toggle pan mode"
               aria-pressed={panActive}
-              onClick={togglePan}
-              disabled={!zoomed}
+              on:click={togglePan}
+              disabled={computed(() => !zoomed.value)}
             >
               <PanIcon />
             </button>
@@ -342,27 +359,17 @@ export function MermaidEnlarge() {
 
           <button
             type="button"
-            onClick={() => dialogRef.current?.close()}
-            className="zd-enlarge-dialog-close"
+            on:click={() => dialogRef.current?.close()}
+            class="zd-enlarge-dialog-close"
             aria-label="Close enlarged diagram"
           >
-            <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true" focusable="false">
+            <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true">
               <polygon points="161.03 10.27 150.76 0 80.51 70.24 10.27 0 0 10.27 70.24 80.51 0 150.76 10.27 161.03 80.51 90.78 150.76 161.03 161.03 150.76 90.78 80.51 161.03 10.27" />
             </svg>
           </button>
         </>
-      )}
+      )}</Show>
     </dialog>
   );
 }
 MermaidEnlarge.displayName = "MermaidEnlarge";
-
-/**
- * Static SSR fallback for the {@link MermaidEnlarge} island.
- *
- * Renders an empty, closed `<dialog class="zd-mermaid-dialog ...">` so the
- * dist HTML carries the dialog shell even before hydration.
- */
-export function MermaidEnlargeSsrFallback() {
-  return <dialog aria-label="Enlarged diagram" className={MERMAID_ENLARGE_DIALOG_CLASS} style={ENLARGE_DIALOG_STYLE} />;
-}

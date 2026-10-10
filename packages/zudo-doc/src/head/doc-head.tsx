@@ -1,4 +1,5 @@
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import { h } from "@takazudo/zfb/zudo-react";
 import type { HeadProps } from "./types.js";
 import { OgTags } from "./og-tags.js";
 import { TwitterCard } from "./twitter-card.js";
@@ -84,32 +85,32 @@ export function DocHead(props: HeadProps): JSX.Element {
         />
       )}
       {stylesheets?.map((s) => (
-        <link
-          key={`stylesheet:${s.href}`}
-          rel="stylesheet"
-          href={s.href}
-          {...(s.integrity !== undefined ? { integrity: s.integrity } : {})}
-          {...(s.crossorigin !== undefined ? { crossorigin: s.crossorigin } : {})}
-        />
+        h("link", {
+          key: `stylesheet:${s.href}`,
+          rel: "stylesheet",
+          href: s.href,
+          ...(s.integrity !== undefined ? { integrity: s.integrity } : {}),
+          ...(s.crossorigin !== undefined ? { crossorigin: s.crossorigin } : {}),
+        })
       ))}
       {alternateLinks?.map((l) => (
-        <link
-          key={`${l.rel}:${l.type ?? ""}:${l.href}`}
-          rel={l.rel}
-          {...(l.type !== undefined ? { type: l.type } : {})}
-          href={l.href}
-          {...(l.title !== undefined ? { title: l.title } : {})}
-        />
+        h("link", {
+          key: `${l.rel}:${l.type ?? ""}:${l.href}`,
+          rel: l.rel,
+          ...(l.type !== undefined ? { type: l.type } : {}),
+          href: l.href,
+          ...(l.title !== undefined ? { title: l.title } : {}),
+        })
       ))}
       {preload?.map((p) => (
-        <link
-          key={`preload:${p.as}:${p.href}`}
-          rel="preload"
-          as={p.as}
-          href={p.href}
-          {...(p.type !== undefined ? { type: p.type } : {})}
-          {...(p.crossorigin !== undefined ? { crossorigin: p.crossorigin } : {})}
-        />
+        h("link", {
+          key: `preload:${p.as}:${p.href}`,
+          rel: "preload",
+          as: p.as,
+          href: p.href,
+          ...(p.type !== undefined ? { type: p.type } : {}),
+          ...(p.crossorigin !== undefined ? { crossorigin: p.crossorigin } : {}),
+        })
       ))}
     </>
   );

@@ -1,6 +1,6 @@
+/** @vitest-environment happy-dom */
 import { describe, expect, it } from "vitest";
-import { h } from "preact";
-import render from "preact-render-to-string";
+import { renderIsland } from "../../__tests__/helpers/zudo-react.js";
 import {
   containsScript,
   HtmlPreview,
@@ -70,13 +70,22 @@ describe("resolveSandbox — explicit override", () => {
     expect(resolveSandbox("", false)).toBe("");
   });
 
-  it("keeps a zero-token sandbox attribute present in rendered HTML", () => {
-    const html = render(h(HtmlPreview, { html: "<p>safe</p>", sandbox: "" }));
+  it("keeps a zero-token sandbox attribute present on the activated iframe", async () => {
+    const view = await renderIsland(
+      HtmlPreview,
+      { html: "<p>safe</p>", sandbox: "" },
+      { identity: { component: "HtmlPreview", build: "resolve-sandbox" } },
+    );
 
-    // zfb drops a valueless non-boolean attribute during site serialization.
-    // Whitespace preserves attribute presence while still parsing as no
-    // sandbox tokens (the maximally restrictive state).
-    expect(html).toContain(' sandbox=" " style=');
+    try {
+      const iframe = view.root.querySelector("iframe");
+      expect(view.diagnostics).toEqual([]);
+      expect(iframe?.hasAttribute("sandbox")).toBe(true);
+      expect(iframe?.getAttribute("sandbox")).toBe(" ");
+      expect(iframe?.sandbox.length).toBe(0);
+    } finally {
+      view.dispose();
+    }
   });
 });
 

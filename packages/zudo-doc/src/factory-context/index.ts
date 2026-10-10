@@ -15,6 +15,7 @@
 // This module is **types only** — no runtime values, no node builtins — so it
 // stays importable from the config eval graph and from client islands alike.
 
+import type { Child, Component } from "@takazudo/zfb/zudo-react";
 import type { LocaleConfig, Settings } from "../settings.js";
 // Type-only imports (erased at build — they never enter the runtime/eval graph,
 // so this module stays node-free; the foundation-eval-graph guard covers it).
@@ -70,9 +71,10 @@ export interface FactoryI18n {
  * reason and a CLAUDE.md entry. All slots are optional so a factory takes only
  * the ones it needs.
  *
- * Components are typed as the structural `FactoryComponent` (a function
- * returning Preact-renderable output) rather than a concrete signature, so the
- * type stays node-free and Preact-version-agnostic at the boundary.
+ * Components are typed as the structural `FactoryComponent` (a
+ * `Component<Record<string, unknown>>`) rather than a concrete signature, so
+ * the type stays node-free at the boundary while using zfb's component and
+ * child contract.
  */
 export interface FactoryComponents {
   /** Locale-aware category nav wrapper (reads the project's content collection). */
@@ -91,8 +93,8 @@ export interface FactoryComponents {
   PresetGenerator?: FactoryComponent;
 }
 
-/** Any Preact-renderable component — a function returning a VNode/children. */
-export type FactoryComponent = (props: Record<string, unknown>) => unknown;
+/** A component receiving the broad props shape used by chrome factories. */
+export type FactoryComponent = Component<Record<string, unknown>>;
 
 /**
  * Opaque per-locale nav-source handle. The host owns the actual content-loader
@@ -281,20 +283,21 @@ export interface ChromeHostBindings {
   /** Body-end islands (bootstrap islands). Default: the package-island subset
    *  derived from `settings` (no host-only client-router / token-panel boots). */
   BodyEndIslands?: FactoryComponent;
-  /** DocHistory island. Default: a no-op stub rendering an empty fragment. */
+  /** DocHistory server boundary. Default: a no-op stub rendering an empty fragment.
+   * Use DocHistoryBoundary from the doc-history-area entrypoint for the package
+   * client. Custom boundaries consume ssrFallback server-side and wrap their
+   * statically imported client target in a Fragment-wrapped Island. */
   DocHistory?: FactoryComponent;
   /**
-   * Design-token panel bootstrap island (#2658). Default: the PACKAGE-DEFAULT
-   * `DesignTokenPanelBootstrap` from
-   * `@takazudo/zudo-doc/design-token-panel-bootstrap`, statically imported by
-   * `chrome/derive.tsx` (`deriveBodyEndIslands`) so EVERY `createChrome`
-   * consumer — the injected `routes/_chrome.tsx` path and the locked-manifest
-   * self-contained doc stub alike — gets the settings-gated panel island with
-   * no explicit wiring (#2659 gate-2 fix; scanner reachability holds through
-   * the static route → chrome → derive → bootstrap chain, the #2480
-   * contract). Supply this slot only to REPLACE the island with a host's own
-   * bootstrap component. Mounting is still gated on
-   * `settings.designTokenPanel` inside `createBodyEndIslands` either way.
+   * Zero-prop server boundary for the design-token-panel bootstrap. Return a
+   * Fragment containing Island({ when: "load", children: <HostBootstrap /> })
+   * with a statically imported client target; a raw client component is not
+   * a boundary. The package default owns the same fixed-target shape.
+   * The package controls settings.designTokenPanel and the toggle shim; it
+   * renders this boundary unchanged and never wraps a dynamic Island target.
+   * An explicit host boundary wins over configured-route and package defaults,
+   * including when designTokenPanelConfigModule suppresses the package default.
+   * With designTokenPanel disabled neither this boundary nor the shim mounts.
    */
   DesignTokenPanelBootstrap?: FactoryComponent;
   /** MDX content-component overrides (Details / HtmlPreview / Island /
@@ -315,7 +318,7 @@ export interface ChromeHostBindings {
     locale: string;
     isFallback?: boolean;
     version?: string;
-  }) => unknown;
+  }) => Child;
   /**
    * Extra content rendered in the home hero. A RENDERER (not a component).
    * Default: absent → renders nothing. The `/` home route is never injected
@@ -323,7 +326,7 @@ export interface ChromeHostBindings {
    * `/[locale]` homes and on any host that threads it through `createChrome`.
    * A `HomePageView` `extras` prop (added in a later task) takes precedence.
    */
-  homeExtras?: (args: { locale: string }) => unknown;
+  homeExtras?: (args: { locale: string }) => Child;
 }
 
 /**

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Pins the full `<ClientRouter preserveHtmlAttrs>` array emitted by
  * `<DocLayout>` (previously unguarded — closes the gap called out by #3254).
@@ -11,7 +10,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { DocLayout } from "../doc-layout.js";
 
 describe("DocLayout — preserveHtmlAttrs full array pin", () => {

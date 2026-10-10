@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // chrome/derive — internal shared derivations from the unified ChromeContext
 // (epic Collapse Wiring Shells #2420, FACTORIES #2424).
 //
@@ -20,7 +19,9 @@
 // This module is NOT in the preset eval graph (preset.ts never imports it), so
 // its host/runtime dependency graph never touches the node-free config surface.
 
-import type { JSX, VNode, ComponentChildren } from "preact";
+import { Island } from "@takazudo/zfb";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { ChromeContext, FactoryComponent } from "../factory-context/index.js";
 import type { ResolvedDateFormats, Settings } from "../settings.js";
 import type { CategoryMeta } from "../sidebar-tree/types.js";
@@ -105,11 +106,14 @@ import {
   remapVersionedHrefs,
   getThemeDefaultMode as getThemeDefaultModeBase,
 } from "../nav-data-prep/index.js";
-import { buildSidebarForSection } from "../sidebar-utils/index.js";
+import { buildSidebarNavigation } from "../sidebar-utils/index.js";
 // Relative, not a package subpath: `resolveDateFormats` is deliberately
 // internal (absent from `package.json` exports) — the resolved roles are the
 // public surface, the resolver is not.
 import { resolveDateFormats } from "../date-format-resolve/index.js";
+
+import { normalizeIslandData } from "./island-data.js";
+export { normalizeIslandData } from "./island-data.js";
 
 // ---------------------------------------------------------------------------
 // Package-default host-only bindings (the stub defaults — moved verbatim from
@@ -170,8 +174,8 @@ function DocHistoryStub(
     displayLocale?: string;
     dateFormats?: ResolvedDateFormats;
   },
-): VNode {
-  return (<></>) as VNode;
+): Child {
+  return <></>;
 }
 
 /** Island MDX binding (package default) — an SSR pass-through that renders its
@@ -179,8 +183,8 @@ function DocHistoryStub(
  *  note in the original `routes/_chrome.tsx`). `when` is ignored at SSR time. */
 function IslandPassthrough(props: {
   when?: "load" | "idle" | "visible" | "media";
-  children?: ComponentChildren;
-}): ComponentChildren {
+  children?: Child;
+}): Child {
   return props.children ?? null;
 }
 
@@ -287,33 +291,37 @@ export function deriveColorSchemeGenerators(ctx: ChromeContext): {
  *  builder reads `ctx.hostBindings.sidebarsConfig` (default `{}`). */
 export function deriveNavDataPrep(ctx: ChromeContext) {
   function buildRootMenuItems(lang: string, currentVersion: string | undefined) {
-    return buildRootMenuItemsBase(
-      lang,
-      currentVersion,
-      ctx.settings.headerNav,
-      (key, l) => ctx.t(key, l),
-      (path, l, v, versioned) => ctx.navHref(path, l, v, versioned),
+    return normalizeIslandData(
+      buildRootMenuItemsBase(
+        lang,
+        currentVersion,
+        ctx.settings.headerNav,
+        (key, l) => ctx.t(key, l),
+        (path, l, v, versioned) => ctx.navHref(path, l, v, versioned),
+      ),
     );
   }
 
   function buildLocaleLinksForNav(currentPath: string, lang: string, localeCount: number) {
-    return buildLocaleLinksForNavBase(currentPath, lang, localeCount, (path, l) =>
-      ctx.buildLocaleLinks(path, l),
+    return normalizeIslandData(
+      buildLocaleLinksForNavBase(currentPath, lang, localeCount, (path, l) =>
+        ctx.buildLocaleLinks(path, l),
+      ),
     );
   }
 
   const sidebarsConfig = ctx.hostBindings.sidebarsConfig ?? {};
 
-  function buildSidebarNodes(
+  function buildSidebarContext(
     lang: string,
     navSection: string | undefined,
     currentVersion: string | undefined,
     emptyWhenUnsectioned = true,
   ) {
-    if (navSection === undefined && emptyWhenUnsectioned) return [];
+    if (navSection === undefined && emptyWhenUnsectioned) return { nodes: [], navigation: undefined };
     const { navDocs, categoryMeta } = ctx.loadNavSourceDocs(lang, currentVersion);
     const explicitPrefixes = ctx.getCategoryOrder().filter((cm) => cm !== "!");
-    const rawNodes = buildSidebarForSection(
+    const result = buildSidebarNavigation(
       navDocs,
       lang,
       navSection,
@@ -328,18 +336,25 @@ export function deriveNavDataPrep(ctx: ChromeContext) {
         ) as never[],
       explicitPrefixes,
     );
-    return currentVersion
-      ? remapVersionedHrefs(rawNodes, currentVersion, lang, (slug, v, l) =>
-          ctx.versionedDocsUrl(slug, v, l),
-        )
-      : rawNodes;
+    const remap = (nodes: typeof result.nodes) => currentVersion
+      ? remapVersionedHrefs(nodes, currentVersion, lang, (slug, v, l) => ctx.versionedDocsUrl(slug, v, l))
+      : nodes;
+    return normalizeIslandData({
+      nodes: remap(result.nodes),
+      navigation: { ...result.navigation, id: `${currentVersion ?? "current"}:${result.navigation.id}`, roots: remap(result.navigation.roots) },
+    });
+  }
+
+  function buildSidebarNodes(...args: Parameters<typeof buildSidebarContext>) {
+    const withoutIdentity = (nodes: import("../sidebar/types.js").SidebarNavNode[]): import("../sidebar/types.js").SidebarNavNode[] => nodes.map(({ occurrenceId: _id, children, ...node }) => ({ ...node, children: withoutIdentity(children) }));
+    return withoutIdentity(buildSidebarContext(...args).nodes);
   }
 
   function getThemeDefaultMode() {
     return getThemeDefaultModeBase(ctx.settings.colorMode);
   }
 
-  return { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode };
+  return { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, buildSidebarContext, getThemeDefaultMode };
 }
 
 // ---------------------------------------------------------------------------
@@ -447,8 +462,8 @@ export function skipsPackageDefaultDesignTokenPanel(settings: Settings): boolean
  * (#2658 gate-2 fix; #2821), preserving route → chrome → derive → component
  * scanner reachability for bare `createChrome(routeCtx)` callers. A host may
  * still replace the DTP component through
- * `hostBindings.DesignTokenPanelBootstrap`, but the package remains the sole
- * owner of the mounts and settings gates.
+ * `hostBindings.DesignTokenPanelBootstrap`, as a fixed-target server boundary. The package retains settings gates and
+ * toggle-shim ownership; the supplied boundary owns its Island mount.
  *
  * Since #3396 the injected package routes use that same slot: `routes/_chrome.tsx`
  * supplies `ConfiguredDesignTokenPanelBootstrap`, which is identical to the
@@ -458,17 +473,25 @@ export function skipsPackageDefaultDesignTokenPanel(settings: Settings): boolean
  * `createChrome` caller keeps getting — EXCEPT under the one condition
  * {@link skipsPackageDefaultDesignTokenPanel} describes.
  */
+/** Fixed targets remain visible to the scanner; factories only select server views. */
+function DefaultDesignTokenPanelBoundary() {
+  return <><Island when="load"><DesignTokenPanelBootstrap /></Island></>;
+}
+function DefaultThemePackSwitcherBoundary(props: Parameters<typeof ThemePackSwitcher>[0]) {
+  return <><Island when="load"><ThemePackSwitcher {...props} /></Island></>;
+}
+
 export function deriveBodyEndIslands(ctx: ChromeContext) {
   const designTokenPanelDeps = {
     DesignTokenPanelBootstrap:
       ctx.hostBindings.DesignTokenPanelBootstrap ??
       (skipsPackageDefaultDesignTokenPanel(ctx.settings)
         ? undefined
-        : (DesignTokenPanelBootstrap as unknown as FactoryComponent)),
+        : (DefaultDesignTokenPanelBoundary as unknown as FactoryComponent)),
   };
   const themePackSwitcherDeps = {
     themePackSwitcherProps: deriveThemePackSwitcherProps(ctx),
-    ThemePackSwitcher: ThemePackSwitcher as unknown as FactoryComponent,
+    ThemePackSwitcher: DefaultThemePackSwitcherBoundary,
   };
   const HostBodyEndIslands = ctx.hostBindings.BodyEndIslands;
 
@@ -747,20 +770,21 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     /** HtmlPreview MDX binding (package default) — `settings.htmlPreview` is a
      * serializable setting in the route-context payload. */
     function HtmlPreviewBound(props: HtmlPreviewWrapperProps): JSX.Element {
-      const labels = props.labels;
+      const definedProps = normalizeIslandData(props);
+      const labels = definedProps.labels;
       // The document metadata language is independent from the route locale:
       // an author may opt into an arbitrary BCP-47 tag for the iframe document
       // while its controls remain localized to the surrounding route. Keep
       // the original bytes after the nonblank check so authored whitespace is
       // not normalized in the generated srcdoc.
-      const effectiveLang = props.lang?.trim()
-        ? props.lang
+      const effectiveLang = definedProps.lang?.trim()
+        ? definedProps.lang
         : lang.trim()
           ? lang
           : "en";
       return HtmlPreviewWrapper({
-        globalConfig: ctx.settings.htmlPreview ?? null,
-        ...props,
+        globalConfig: normalizeIslandData(ctx.settings.htmlPreview ?? null),
+        ...definedProps,
         lang: effectiveLang,
         labels: {
           mobile: labels?.mobile ?? localizedHtmlPreviewLabels.mobile,

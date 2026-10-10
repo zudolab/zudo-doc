@@ -6,6 +6,7 @@ import { buildDocsSchema as defaultBuildDocsSchema } from "../docs-schema/index.
 import { defaultDirectiveVocabulary } from "../directive-vocabulary-defaults/index.js";
 import { defaultTranslations } from "../i18n-defaults/index.js";
 import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
+import { packageWindConfig, zudoDocWindPreset } from "../wind/index.js";
 
 const invalidHeadingIdConfig: Parameters<typeof zudoDoc>[0] = {
   // @ts-expect-error The removed strategy setting is rejected by the config type.
@@ -49,16 +50,57 @@ function assertNoFunctions(node: unknown, path = "root"): void {
 
 // ── Complete ZfbConfig shell ─────────────────────────────────────────────────
 describe("zudoDoc() returns a complete ZfbConfig", () => {
-  it("emits the host-owned shell fields (framework, port, tailwind, base)", () => {
+  it("emits the v3 shell fields (port and base), without framework or Tailwind", () => {
     const config = zudoDoc({ siteName: "My Docs" });
-    expect(config.framework).toBe("preact");
     expect(config.port).toBe(4321);
-    expect(config.tailwind).toEqual({ enabled: true });
     expect(config.base).toBe("/");
+    expect(config).not.toHaveProperty("framework");
+    expect(config).not.toHaveProperty("tailwind");
   });
 
-  it("carries NO `presets` field (JS composition, not zfb-native presets — #2653)", () => {
-    expect(zudoDoc({ siteName: "X" })).not.toHaveProperty("presets");
+  it("omits user wind by default and keeps package defaults in a zfb preset", () => {
+    const config = zudoDoc({ siteName: "X" });
+
+    expect(config).not.toHaveProperty("wind");
+    expect(config.presets).toEqual([zudoDocWindPreset]);
+    // zfb 3.2.0 annotates package manifests with preset provenance.
+    expect(config.presets?.[0]?.wind).toEqual({
+      ...packageWindConfig,
+      manifests: {
+        "zudo-doc": {
+          path: "@takazudo/zudo-doc/wind.json",
+          __zfb_source_package: "@takazudo/zudo-doc",
+        },
+      },
+    });
+  });
+
+  it("keeps a partial user color override top-level beside package wind defaults", () => {
+    const wind = { tokens: { colors: { accent: "var(--zd-accent)" } } };
+    const config = zudoDoc({ wind });
+
+    // zfb recursively merges this top-level override over the unchanged
+    // package preset. The user object is not shallow-merged into Settings.
+    expect(config.presets).toEqual([zudoDocWindPreset]);
+    // zfb 3.2.0 annotates package manifests with preset provenance.
+    expect(config.presets?.[0]?.wind).toEqual({
+      ...packageWindConfig,
+      manifests: {
+        "zudo-doc": {
+          path: "@takazudo/zudo-doc/wind.json",
+          __zfb_source_package: "@takazudo/zudo-doc",
+        },
+      },
+    });
+    expect(config.wind).toEqual(wind);
+    expect(routesOptions(config)?.settings).not.toHaveProperty("wind");
+  });
+
+  it("passes wind:false at top level so zfb disables generation over defaults", () => {
+    const config = zudoDoc({ wind: false });
+
+    expect(config.presets).toEqual([zudoDocWindPreset]);
+    expect(config.wind).toBe(false);
   });
 
   it("includes the preset-owned fields (collections/plugins/markdown/…)", () => {
@@ -367,6 +409,78 @@ describe("zudoDoc() default-merge semantics", () => {
   it("serializes siteTreeNavSecondary into the route settings", () => {
     const opts = routesOptions(zudoDoc({ siteTreeNavSecondary: ["changelog", "claude"] }));
     expect(opts?.settings.siteTreeNavSecondary).toEqual(["changelog", "claude"]);
+  });
+});
+
+// ── Package opt-in settings, validation, and MCP-only bundler support ─────────
+describe("agent documentation config", () => {
+  it("defaults both opt-in settings off and carries them into resolved settings", () => {
+    expect(DEFAULT_SETTINGS.agentExport).toBe(false);
+    expect(DEFAULT_SETTINGS.mcp).toBe(false);
+    expect(routesOptions(zudoDoc({}))?.settings).toMatchObject({
+      agentExport: false,
+      mcp: false,
+    });
+  });
+
+  it("allows static export by itself and MCP when static export is enabled", () => {
+    expect(routesOptions(zudoDoc({ agentExport: true }))?.settings).toMatchObject({
+      agentExport: true,
+      mcp: false,
+    });
+    expect(routesOptions(zudoDoc({ agentExport: true, mcp: true }))?.settings).toMatchObject({
+      agentExport: true,
+      mcp: true,
+    });
+  });
+
+  it("rejects MCP without agent export using the locked actionable message", () => {
+    expect(() => zudoDoc({ mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+    expect(() => zudoDoc({ agentExport: false, mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+  });
+
+  it.each([
+    ["agentExport", "enabled"],
+    ["mcp", 1],
+  ])("rejects unsupported runtime value for %s", (field, value) => {
+    expect(() =>
+      zudoDoc({ [field]: value } as unknown as Parameters<typeof zudoDoc>[0]),
+    ).toThrow(`${field} must be a boolean.`);
+  });
+
+  it("adds required MCP main fields while preserving caller bundle options and field order", () => {
+    const bundle = {
+      exclude: ["components/*.stories.tsx"],
+      external: ["optional-cjs-package"],
+      mainFields: ["browser", "module"],
+    };
+    const config = zudoDoc({ agentExport: true, mcp: true, bundle });
+
+    expect(config.bundle).toEqual({
+      exclude: ["components/*.stories.tsx"],
+      external: ["optional-cjs-package"],
+      mainFields: ["browser", "module", "main"],
+    });
+  });
+
+  it("does not change the caller bundle when MCP is disabled", () => {
+    const bundle = { exclude: ["components/*.stories.tsx"], mainFields: ["browser"] };
+    expect(zudoDoc({ bundle }).bundle).toBe(bundle);
+    expect(zudoDoc({ agentExport: true }).bundle).toBeUndefined();
+  });
+
+  it("adds the required fields without duplicating caller-provided entries", () => {
+    expect(
+      zudoDoc({
+        agentExport: true,
+        mcp: true,
+        bundle: { mainFields: ["main", "browser", "module"] },
+      }).bundle?.mainFields,
+    ).toEqual(["main", "browser", "module"]);
   });
 });
 

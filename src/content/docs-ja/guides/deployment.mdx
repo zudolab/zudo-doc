@@ -64,7 +64,7 @@ Wrangler dry-runをその同一ファイルに対して実行します。
 2. **check-no-host-alias-in-package** — package sourceからhost専用import aliasを拒否
 3. **check-pin-parity** — `@takazudo/zfb`のピンがすべてのパッケージソース間で一致しているか確認
 4. **check-fixture-settings-drift** — `src/config/settings.ts`のすべてのキーがe2eフィクスチャー設定ファイルに存在するか（またはアローリスト済みか）を確認
-5. **check-package-safelist** — `@takazudo/zudo-doc`パッケージ内のすべてのレスポンシブ・任意値ユーティリティクラスを生成済みの`dist/safelist.css`がカバーしているか検証
+5. **check-package-wind-manifest** — 公開 `wind.json` マニフェストと authored class のカバレッジを検証
 6. **check-b4push-ci-parity** — `scripts/run-b4push.sh`の軽量ガードゲートすべてに対応するCIジョブが存在するか確認
 7. **check-e2e-spec-naming** — すべてのe2eスペックファイル名が既知のフィクスチャープレフィックスを使用しているか確認（Playwrightが確実に検出できるよう）
 8. **check-flaky-tracking-issue** — flaky/local-only testにtracking issueを必須化

@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { formatMonthDayLabel, formatYear } from "../../format-date/index.js";
 import type { ResolvedDateFormats } from "../../settings.js";
 import { CategoryLinkIcon } from "../../tree-nav-shared/index.js";
@@ -33,13 +31,13 @@ function CardBody({
         <h2 class="text-title font-medium leading-tight">
           <span class={titleClass}>
             <span class="flex h-[1lh] items-center">
-              <CategoryLinkIcon className="w-icon-sm" />
+              <CategoryLinkIcon class="w-icon-sm" />
             </span>
             {item.label}
           </span>
         </h2>
         {props.showDate && (
-          <span class={hasStamp ? "sm:hidden" : undefined}>
+          <span {...(hasStamp ? { class: "sm:hidden" } : {})}>
             <DateLine
               item={item}
               locale={props.locale}
@@ -151,7 +149,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                   )}
                 </div>
               )}
-              <div class="col-start-1 row-start-2 relative pointer-events-none [&_a]:pointer-events-auto ml-[calc(var(--spacing-hsp-xl)+1px)] mr-[calc(var(--spacing-hsp-xl)+1px)] sm:mr-0 mb-vsp-lg">
+              <div class="col-start-1 row-start-2 relative pointer-events-none zd-card-links-interactive ml-[calc(var(--spacing-hsp-xl)_+_1px)] mr-[calc(var(--spacing-hsp-xl)_+_1px)] sm:mr-0 mb-vsp-lg">
                 <TagNav variant="page" tagLinks={item.tagLinks} labels={props.tagLabels} />
               </div>
             </>

@@ -38,7 +38,7 @@ All steps run against the local dev server at the URL passed in
 `Inputs.previewUrl` (default
 `http://localhost:4321/docs/guides/i18n/`). The page must include the
 desktop sidebar (it does on `/docs/...` routes at viewport widths
-≥ Tailwind `lg` ≥ 1024px). Use viewport `1400 x 900` (or the size in
+≥ Wind `lg` ≥ 1024px). Use viewport `1400 x 900` (or the size in
 `Inputs.viewport`).
 
 For each scenario below, capture a screenshot AND measure the live DOM

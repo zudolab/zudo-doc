@@ -1,9 +1,8 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
+import "../../__tests__/fixtures/install-island-metadata.js";
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
-import { render } from "preact-render-to-string";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { createSidebarWithDefaults } from "../../sidebar-with-defaults/index.js";
 import { createHeaderWithDefaults } from "../../header-with-defaults/index.js";
@@ -48,8 +47,8 @@ describe("sidebar locale wiring", () => {
       const props = { currentSlug, navSection: "notes" };
       const vnode = path === "desktop"
         ? createSidebarWithDefaults(ctx)(props)
-        : (createHeaderWithDefaults(ctx)(props) as VNode<Record<string, unknown>>)
-          .props["sidebarToggle"] as VNode;
+        : (createHeaderWithDefaults(ctx)(props) as Description)
+          .props["sidebarToggle"] as Description;
       const html = render(vnode);
       expect(html).toContain(`data-zfb-island="${path === "desktop" ? "SidebarTree" : "SidebarToggle"}"`);
       expect(html).toContain('aria-label="Collapse 2026年8月"');
@@ -62,8 +61,8 @@ describe("sidebar locale wiring", () => {
       const ctx = makeFakeChromeContext();
       const vnode = path === "desktop"
         ? createSidebarWithDefaults(ctx)({})
-        : (createHeaderWithDefaults(ctx)({}) as VNode<Record<string, unknown>>)
-          .props["sidebarToggle"] as VNode;
+        : (createHeaderWithDefaults(ctx)({}) as Description)
+          .props["sidebarToggle"] as Description;
       expect(islandProps(render(vnode)).locale).toBe("en");
     });
   }

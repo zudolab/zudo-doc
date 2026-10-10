@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Unit tests for the theme-pack FOUC-safe bootstrap (ADR
 // `docs/adr/theme-packs.md` Decision 3 "Hard-load bootstrap"; #2822;
 // document.write → head appendChild + explicit latch, #3399).
@@ -7,7 +6,7 @@
 // Two layers of coverage:
 //   1. RENDER — `ThemePackProvider` emits the latch <style>, the inline
 //      script, and the configured-pack <noscript> fallback (omitted for
-//      "default") via preact-render-to-string.
+//      "default") via the zudo-react server renderer.
 //   2. BEHAVIOR — the emitted script STRING is executed against a fake
 //      document/localStorage/window (the script references those three globals
 //      plus `setTimeout`, so `new Function` parameter shadowing injects the
@@ -19,7 +18,7 @@
 //      re-apply handler.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import ThemePackProvider, {
   THEME_PACK_LATCH_CSS,
   THEME_PACK_LOADING_ATTR,
@@ -674,7 +673,7 @@ describe("ThemePackProvider (rendered)", () => {
     expect(out).toContain("<script>");
     expect(out).toContain('"zudo-doc-theme-pack"');
     expect(out).toContain(
-      '<noscript><link rel="stylesheet" href="/theme-packs/foundry/pack.css?v=1.2.3"/></noscript>',
+      '<noscript><link rel="stylesheet" href="/theme-packs/foundry/pack.css?v=1.2.3"></noscript>',
     );
     // Emission order (ADR Decision 3): latch style → script → noscript. The
     // latch MUST precede the script that arms it, or the rule would not be

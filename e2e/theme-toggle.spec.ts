@@ -12,6 +12,8 @@ import {
   waitForThemePreference,
 } from "./theme-helpers";
 
+import { spaClick } from "./nav-helpers";
+
 const HOME = "/";
 
 test.describe("Appearance menu", () => {
@@ -157,10 +159,14 @@ test.describe("Appearance menu", () => {
     await page.goto(HOME, { waitUntil: "load" });
     await waitForAllThemePreferences(page, "light");
 
-    await page.getByRole("link", { name: "Getting Started" }).first().click();
-    await page.waitForURL(/getting-started/);
+    const href = await page.getByRole("link", { name: "Getting Started" }).first().getAttribute("href");
+    expect(href).toBeTruthy();
+    expect(await spaClick(page, href!)).toBe(true);
+    await expect(page).toHaveURL(/getting-started/);
 
-    await waitForAllThemePreferences(page, "light");
+    // Doc chrome includes the sidebar footer menu in addition to the two home menus.
+    // Wait for the actual swap, not only the early history URL update.
+    await waitForAllThemePreferences(page, "light", 3);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     assertNoConsoleErrors();
   });

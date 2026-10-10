@@ -1,0 +1,12 @@
+import base from '/workspace/zudo-doc/playwright.config.ts';
+export default {
+  ...base,
+  testDir: '/workspace/zudo-doc/e2e',
+  outputDir: '/tmp/zudo4482-browser-results',
+  workers: 1,
+  retries: 0,
+  reporter: [['list'], ['json', { outputFile: '/tmp/zudo4482-browser-report.json' }]],
+  use: { ...base.use, launchOptions: { executablePath: '/usr/bin/chromium' } },
+  projects: base.projects?.map(project => ({ ...project, testDir: '/workspace/zudo-doc/e2e' })),
+  webServer: (base.webServer as any[])?.map(server => ({ ...server, cwd: '/workspace/zudo-doc', reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 } })),
+};

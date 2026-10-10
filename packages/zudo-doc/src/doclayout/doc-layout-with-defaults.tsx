@@ -1,4 +1,3 @@
-/** @jsxImportSource preact */
 // "Defaults" wrapper around the composable `<DocLayout>` shell.
 //
 // This file is the single point that:
@@ -15,11 +14,8 @@
 //     slot props. Consumers can swap any of these out by passing an
 //     override prop (`headerOverride`, `sidebarOverride`, …).
 //
-// Since the sibling primitives live in adjacent topic folders that are
-// being authored in parallel, this wrapper imports them *type-only* via
-// the `../*/index.ts` barrel files. At merge time the team lead resolves
-// any cross-topic API mismatches; the slot props are intentionally
-// permissive (`ComponentChildren`) so an override is always possible.
+// Package-owned primitives are composed through zudo-react's `Child` slots;
+// callers can replace each default by supplying the corresponding override.
 //
 // Anchor cheat-sheet (matched 1:1 against the scaffolded doc-layout file
 // at `packages/create-zudo-doc/templates/base/src/layouts/`):
@@ -44,19 +40,16 @@
 //   - <!-- @slot:doc-layout:body-end-components -->
 //   - <!-- @slot:doc-layout:body-end-scripts -->
 //
-// Each anchor below is reproduced *verbatim* inside a JSX comment
-// expression `{/* … */}`. Preact's JSX handles comment expressions as
-// no-ops at runtime, so they have no effect on the output, but the
-// drift checker — which works at the source-text level — sees them as
-// substrings, identical to the way it sees them in the scaffolded
-// doc-layout source. The exception is the two frontmatter anchors, which
-// the drift checker matches in their `// @slot:doc-layout:…` line-
-// comment form at the top of this file.
+// Each anchor below is reproduced verbatim inside a JSX comment expression.
+// The comments are no-ops at runtime; the drift checker matches their source
+// text against the scaffolded doc-layout template. The frontmatter anchors
+// use their `// @slot:doc-layout:…` line-comment form above.
 //
 // // @slot:doc-layout:imports
 // // @slot:doc-layout:frontmatter
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 // `@takazudo/zfb` provides the `<Island>` JSX wrapper. We wrap the
 // default Toc / MobileToc here (rather than inside the Toc / MobileToc
 // modules themselves) so the zfb island bundle hydrates the bare inner
@@ -70,12 +63,9 @@ import type { ComponentChildren, JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 
 import { DocLayout, type DocLayoutProps } from "./doc-layout.js";
-// Default-bearing slots: when the caller does not supply an override
-// these wrapped islands keep the SSG output emitting island hydration
-// markers (`data-zfb-island=…`) so client-side interactivity wires up
-// at boot. Each import below is a self-Island'd shell — the marker is
-// produced regardless of whether the host wires real data into the
-// component yet.
+// Default TOC slots are wrapped at this call site so their island bundles
+// hydrate the bare nav/panel descriptions. Sidebar returns null for an empty
+// node list, preserving its landmark without registering an empty island.
 //
 // Wave 8 (Path A — super-epic #1333 / child epic #1355): the body-end
 // SSR-skip wrappers (AiChatModalIsland / DesignTokenTweakPanelIsland /
@@ -100,21 +90,6 @@ import {
   type VersionBannerLabels,
 } from "../i18n-version/version-banner.js";
 
-// Sibling-topic barrels. Each is being authored by a peer agent in the
-// same parallel session; the imports below assume the canonical shape
-// described in epic #474. The team lead reconciles signatures at merge
-// time. We keep these as `import type` where possible so the build
-// graph stays loose during the parallel-topic phase.
-//
-// NOTE: at the time this topic is being implemented these sibling
-// barrels may be empty / scaffold-only. We avoid importing concrete
-// values from them; only types pass through here. The runtime defaults
-// for the slots come from props the *caller* of
-// `<DocLayoutWithDefaults>` provides, which keeps this file
-// self-contained until the siblings stabilize.
-//
-// (Intentionally no concrete imports from siblings yet.)
-
 /**
  * Override slots for the default-bearing wrapper. Any slot that the
  * caller wants to replace can be passed here; otherwise the package
@@ -137,21 +112,21 @@ export interface DocLayoutWithDefaultsProps
     | "main"
   > {
   /** The page's article body. Required. */
-  children: ComponentChildren;
+  children: Child;
 
   // ---- override slots -----------------------------------------------
   /** Replace the default site header. */
-  headerOverride?: ComponentChildren;
+  headerOverride?: Child;
   /** Replace the default sidebar contents; pass `false` to omit its landmark entirely. */
-  sidebarOverride?: ComponentChildren;
+  sidebarOverride?: Child;
   /** Replace the default desktop TOC. */
-  tocOverride?: ComponentChildren;
+  tocOverride?: Child;
   /** Replace the default mobile TOC. */
-  mobileTocOverride?: ComponentChildren;
+  mobileTocOverride?: Child;
   /** Replace the default breadcrumb. */
-  breadcrumbOverride?: ComponentChildren;
+  breadcrumbOverride?: Child;
   /** Replace the default footer. */
-  footerOverride?: ComponentChildren;
+  footerOverride?: Child;
   /**
    * Heading items extracted from the page's MDX body. When provided, the
    * default Toc and MobileToc instances render the full item list in SSG
@@ -313,24 +288,19 @@ export function DocLayoutWithDefaults(
   // no-heading or hide_toc pages.
   const shouldRenderDefaultToc = !props.hideToc && tocHeadings.length > 0;
   // Wrap each default island in zfb's `<Island when="load">` so the SSG
-  // pass emits the `data-zfb-island="Toc"` / `="MobileToc"` markers and
-  // the client bundle's hydrate pass targets the bare inner component
-  // (the `<nav>` / panel) directly. The cast through `unknown` mirrors
-  // the existing `as unknown as VNode` pattern in `<Toc>`'s historical
-  // wrapper — Island returns the structural IslandElement shape and
-  // Preact's JSX.Element typing does not directly accept it, but at
-  // runtime the renderer recognises the constructor:undefined sentinel.
+  // pass emits its marker and the client bundle hydrates the bare inner
+  // nav/panel description.
   const defaultToc = shouldRenderDefaultToc
-    ? (Island({
+    ? Island({
         when: "load",
         children: <Toc headings={tocHeadings} title={tocTitle} />,
-      }) as unknown as JSX.Element)
+      })
     : undefined;
   const defaultMobileToc = shouldRenderDefaultToc
-    ? (Island({
+    ? Island({
         when: "load",
         children: <MobileToc headings={tocHeadings} title={tocTitle} />,
-      }) as unknown as JSX.Element)
+      })
     : undefined;
 
   // The empty fragments below carry the body-region injection anchors
@@ -372,21 +342,11 @@ export function DocLayoutWithDefaults(
           )
         }
         sidebar={
-          // Empty-data Sidebar emits the SSG marker via an explicit
-          // `<Island when="load">` wrap at this call site (not inside
-          // `<Sidebar>` itself) so the bundle's hydrate pass targets
-          // the bare component and Preact doesn't append a duplicate
-          // wrapper-div alongside the SSR'd tree. See `../sidebar/sidebar.tsx`
-          // for the full diagnosis. Hosts that have a real nav tree
-          // pass it through `sidebarOverride` and apply their own
-          // `<Island>` wrap (see `pages/lib/_sidebar-with-defaults.tsx`
-          // in the host project).
+          // The empty Sidebar keeps the complementary landmark without
+          // registering an island that has no navigation data.
           sidebarOverride === false
             ? undefined
-            : sidebarOverride ?? (Island({
-              when: "load",
-              children: <Sidebar nodes={[]} />,
-            }) as unknown as JSX.Element)
+            : sidebarOverride ?? <Sidebar nodes={[]} />
         }
         toc={tocOverride ?? defaultToc}
         mobileToc={mobileTocOverride ?? defaultMobileToc}
@@ -434,7 +394,7 @@ export function DocLayoutWithDefaults(
               <CodeBlockEnhancer />
               <TabsInit />
               <MermaidInit />
-              <script dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_INIT_SCRIPT }} />
+              <script rawHtml={VERSION_SWITCHER_INIT_SCRIPT} />
             </>
           )
         }

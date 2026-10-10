@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR-shape tests for the ThemePackSwitcher flyout island (#2821).
 //
 // The island hydrates `when: "load"` WITHOUT an `ssrFallback`, so zfb SSRs
@@ -14,7 +13,7 @@
 // switcher-state.test.ts.
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { ThemePackSwitcher, type ThemePackSwitcherProps } from "../index.js";
 
 const PROPS: ThemePackSwitcherProps = {

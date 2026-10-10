@@ -1,4 +1,3 @@
-/** @jsxImportSource preact */
 // Composable JSX shell for the documentation layout.
 //
 // This is intentionally a thin, slot-driven shell. It does not know
@@ -9,30 +8,26 @@
 // chrome (header / sidebar / main / TOC / footer) plus a few well-known
 // extension points (head, before-/after-sidebar, body-end).
 //
-// The slot props are deliberately typed as `ComponentChildren` rather
-// than concrete component types so this shell can compose:
-//  * native HTML markup
-//  * Preact components
-//  * zfb `<Island>` wrappers
-//  * server-rendered Astro components projected through the JSX boundary
-// without forcing any one of them on consumers.
+// Slot props use zudo-react's `Child` type so the shell composes intrinsic
+// descriptions, package components and zfb `<Island>` descriptions without
+// requiring one concrete component shape from consumers.
 //
 // Per-section design notes:
 //
-//  - `head`: rendered inside `<head>`. Consumers pass *children* (links,
-//    meta, scripts) — we own only `<title>`, `<meta charset>`, and the
-//    viewport meta so consumers can't accidentally produce broken HTML.
+//  - `head`: the shell owns the complete head sequence, including title,
+//    charset, viewport, ClientRouter output and the supplied head slot. The
+//    native zudo-react descriptions preserve the authored head order.
 //
 //  - `header`: rendered first in `<body>`. The shell wraps it in nothing;
 //    the consumer is expected to ship a `<header>` element if they want
 //    one (matches the existing Astro behavior).
 //
-//  - `sidebar`: optional. When present, rendered as a fixed-position
-//    `<aside id="desktop-sidebar">`. The persist annotation that used
-//    to be here was removed in the W7A post-fix (zudolab/zudo-doc#1510)
-//    — see the inline comment on the <aside> below for the full
-//    rationale. When `hideSidebar` is true the slot is dropped entirely
-//    and the content-margin wrapper collapses.
+//  - `sidebar`: optional. When present, rendered inside the existing
+//    `<aside id="desktop-sidebar">`. `sidebarPersistKey` applies the
+//    established ancestor persistence marker; zfb 3.1 retains unchanged
+//    nested island handles and the transition helper refreshes host-preserved
+//    props on the detached incoming document. When `hideSidebar` is true the
+//    slot is dropped and the content-margin wrapper collapses.
 //
 //  - `main`: required. Wrapped in the standard min-h / max-w content
 //    container that mirrors the Astro layout's flex/clamp rules.
@@ -49,12 +44,13 @@
 //    scripts that today live behind the `body-end-components` and
 //    `body-end-scripts` anchors.
 //
-// The shell is JSX-only and SSR-safe. It does not touch `window` or
+// The shell only builds descriptions and is SSR-safe. It does not touch `window` or
 // `document` at module scope; client-side hooks (sidebar scroll
 // preservation, etc.) belong in `<DocLayoutWithDefaults>` or in
 // downstream Island components — not here.
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 // <ClientRouter /> from @takazudo/zfb-runtime: Strategy B SPA soft-swap
 // router. Intercepts same-origin link clicks, fetches the new page, and
@@ -96,10 +92,9 @@ export interface DocLayoutHtmlAttrs {
 }
 
 /**
- * Full prop surface for the composable layout. Every "slot" is a
- * `ComponentChildren` so consumers can pass arbitrary JSX (Preact, zfb
- * Island wrappers, server-rendered output projected through the
- * boundary, etc.).
+ * Full prop surface for the composable layout. Every content slot uses
+ * zudo-react's `Child` type so consumers can pass intrinsic descriptions,
+ * package components and zfb island descriptions.
  */
 export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   /** Page title — rendered as the `<title>` value. */
@@ -111,23 +106,22 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
 
   // ---- chrome slots --------------------------------------------------
   /**
-   * Free-form children injected at the top of `<head>`, after the
-   * baseline `<title>` / charset / viewport meta. Use this for OG/
-   * Twitter meta, preload hints, color-scheme provider scripts, RSS
-   * links, the `<ClientRouter />` (Astro) or its zfb-equivalent — the
-   * shell stays out of the way.
+   * Pure head descriptions appended after the baseline tags and ClientRouter
+   * metadata. Use this for OG/Twitter metadata, preload hints, color-scheme
+   * providers, prepaint scripts and configured links. The shell serializes
+   * the complete sequence as native head children.
    */
-  head?: ComponentChildren;
+  head?: Child;
 
   /** Required. The site header. Consumer ships its own `<header>`. */
-  header: ComponentChildren;
+  header: Child;
 
   /**
    * Optional sidebar content. When omitted (or when `hideSidebar` is
    * true) the desktop-sidebar `<aside>` is not rendered and the
    * content-margin wrapper collapses to full width.
    */
-  sidebar?: ComponentChildren;
+  sidebar?: Child;
 
   /**
    * Hide the sidebar even if the slot is provided. Mirrors the
@@ -137,9 +131,10 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
 
   /**
    * When present, sets `data-zfb-transition-persist` on the desktop
-   * sidebar `<aside>`. Keyed as `sidebar-{lang}-{navSection}` so zfb's
-   * Strategy B persist swaps reuse the same DOM node across same-locale +
-   * same-section navigations. Omit for back-compat (no attribute). Must
+   * sidebar `<aside>`. Keyed as `sidebar-{lang}-{navSection}` so native zfb
+   * 3.1 persist reconciliation reuses the same DOM node across same-locale +
+   * same-section navigations and retains unchanged descendant island handles.
+   * Omit for back-compat (no attribute). Must
    * NOT be passed when `hideSidebar` is true — the sr-only aside contains
    * no real sidebar content and persisting it conflicts with the new
    * page's tree on cross-type navigations. Resolves #1546.
@@ -150,26 +145,26 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * Slot rendered between the desktop sidebar and the content-margin
    * wrapper. Used by the sidebar-toggle feature in `create-zudo-doc`.
    */
-  afterSidebar?: ComponentChildren;
+  afterSidebar?: Child;
 
   /** Optional breadcrumb shown above the article. */
-  breadcrumb?: ComponentChildren;
+  breadcrumb?: Child;
 
   /** Optional content slot rendered between breadcrumb and article. */
-  afterBreadcrumb?: ComponentChildren;
+  afterBreadcrumb?: Child;
 
   /** Optional mobile-only TOC, rendered above the article. */
-  mobileToc?: ComponentChildren;
+  mobileToc?: Child;
 
   /** Required. The page's article body. */
-  main: ComponentChildren;
+  main: Child;
 
   /**
    * Optional content slot rendered immediately after `<article>` but
    * still inside `<main>`. Used by the body-foot util area and the
    * doc-history feature.
    */
-  afterContent?: ComponentChildren;
+  afterContent?: Child;
 
   /**
    * Raw `data-*` attributes spread onto the `<article>` element. This shell
@@ -187,7 +182,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   articleAttrs?: Record<string, string>;
 
   /** Optional desktop TOC rendered alongside `<main>` on wide screens. */
-  toc?: ComponentChildren;
+  toc?: Child;
 
   /** Hide the TOC (both desktop and mobile) regardless of slot value. */
   hideToc?: boolean;
@@ -219,7 +214,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
   navSection?: string;
 
   /** Optional footer rendered below the content. */
-  footer?: ComponentChildren;
+  footer?: Child;
 
   // ---- body-end extension points -------------------------------------
   /**
@@ -227,7 +222,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * design-token panels, code-block enhancers, mock initializers, and
    * other globally-mounted islands.
    */
-  bodyEndComponents?: ComponentChildren;
+  bodyEndComponents?: Child;
 
   /**
    * Scripts / inline `<script>` islands rendered last in `</body>`.
@@ -235,7 +230,7 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    * layout had two separate anchors here, and downstream features (e.g.
    * the sidebar resizer) inject into the scripts slot specifically.
    */
-  bodyEndScripts?: ComponentChildren;
+  bodyEndScripts?: Child;
 
   /**
    * When `false`, the zfb SPA soft-swap router (`ClientRouter`) is not
@@ -302,97 +297,54 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
   const showSidebar = !hideSidebar && hasSidebar;
   const showToc = !hideToc && toc !== undefined;
 
-  // The `style` prop accepts a string in Preact, but only via
-  // type-narrowing — JSX.HTMLAttributes wants either a CSSProperties
-  // object or a string. Build a typed-htmlAttrs map so the typescript
-  // strict mode is happy with optional dataTheme/style.
-  const htmlAttrs: JSX.HTMLAttributes<HTMLHtmlElement> = { lang };
+  // Keep the root attributes limited to this shell's string-valued contract
+  // and preserve their configured insertion order during SSR.
+  const htmlAttrs: {
+    lang: string;
+    "data-theme"?: string;
+    "data-theme-pack"?: string;
+    style?: string;
+  } = { lang };
   if (dataTheme !== undefined) {
-    (htmlAttrs as Record<string, unknown>)["data-theme"] = dataTheme;
+    htmlAttrs["data-theme"] = dataTheme;
   }
   if (dataThemePack !== undefined) {
-    (htmlAttrs as Record<string, unknown>)["data-theme-pack"] = dataThemePack;
+    htmlAttrs["data-theme-pack"] = dataThemePack;
   }
   if (htmlStyle !== undefined) {
     htmlAttrs.style = htmlStyle;
   }
 
+  const headChildren: Child[] = [
+    <meta charset="utf-8" />,
+    <meta name="viewport" content="width=device-width, initial-scale=1" />,
+    <title>{title}</title>,
+  ];
+  if (description !== undefined) {
+    headChildren.push(<meta name="description" content={description} />);
+  }
+  if (noindex) {
+    headChildren.push(<meta name="robots" content="noindex, nofollow" />);
+  }
+  if (enableClientRouter !== false) {
+    headChildren.push(
+      ClientRouter({
+        preserveHtmlAttrs: [
+          "data-sidebar-hidden",
+          "data-theme",
+          "data-theme-pack",
+          "style",
+          "data-toc-hidden",
+          "data-asset-details-hidden",
+        ],
+      }) as unknown as Child,
+    );
+  }
+  if (head !== undefined) headChildren.push(head);
+
   return (
     <html {...htmlAttrs}>
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{title}</title>
-        {description !== undefined && (
-          <meta name="description" content={description} />
-        )}
-        {noindex && <meta name="robots" content="noindex, nofollow" />}
-        {/*
-          Strategy B SPA router. Emits the opt-in meta tags and the global
-          .zfb-route-announcer stylesheet. Intercepts same-origin link
-          clicks and swaps the DOM via document.startViewTransition.
-
-          preserveHtmlAttrs (zfb-runtime >= 0.1.0-next.52, zfb#1104): names the
-          *runtime* `<html>` attributes that islands set from localStorage and
-          that the SSR document does not carry. Without this, swapRootAttributes
-          copies the incoming server-rendered root's attributes over the live
-          root on every SPA swap and drops these — the sidebar flashes open
-          (`data-sidebar-hidden` lost) and the theme can revert
-          (`data-theme`). Listing them here makes the router re-apply their
-          current value within the same synchronous swap (before paint), which
-          retires the host-side flash workaround that zudolab/zudo-doc#2198
-          shipped and resolves zudolab/zudo-doc#2200. Must be the same list on
-          every page (read from the outgoing page's meta at swap time).
-
-          `style` is preserved for the same reason: the sidebar-resizer island
-          (gated on settings.sidebarResizer) writes the user's dragged width to
-          `--zd-sidebar-w` in the live root's inline `style`, and a reload
-          re-applies it pre-paint from localStorage (SidebarResizerRestore) —
-          but neither runs on an SPA swap, so without preserving `style` the
-          swap drops `--zd-sidebar-w` and the widened sidebar snaps back to the
-          CSS default on every soft navigation (zudolab/zudo-doc#2227). Preserve
-          is by attribute *name* (swapRootAttributes re-applies the whole live
-          `style` last), which is safe here because this layout never renders a
-          server-side `htmlStyle` — the only inline root style is runtime state
-          we want to keep. A no-op when the resizer is disabled (no inline
-          style is ever set), so it stays unconditional and keeps the meta
-          identical on every page.
-
-          Cast through `unknown` because ClientRouter() returns a readonly
-          array of structural VNode objects — Preact's JSX typing does not
-          directly accept that array shape, but at runtime the elements are
-          valid VNode descriptors. */}
-        {/* `data-theme-pack` is preserved for the same reason as `data-theme`:
-            the SSR document carries the CONFIGURED pack slug, but the live
-            root may hold the user's persisted slug (set pre-paint by the
-            theme-pack bootstrap or at runtime by applyThemePack). Without
-            preserving it, every SPA swap would reset the attribute to the
-            configured value and the active pack's attr-scoped CSS would stop
-            applying for a frame (ADR theme-packs.md Decision 3, #2822). */}
-        {/* `data-toc-hidden` is preserved for the same reason as
-            `data-sidebar-hidden`: the desktop TOC-toggle island writes it from
-            localStorage (toc-prepaint/desktop-toc-toggle-island, #3254). Kept
-            unconditional (same list on every page, per the preserveHtmlAttrs
-            contract above) — a no-op when the tocToggle feature is off since
-            the attribute is then never set. */}
-        {/* `data-asset-details-hidden` is preserved on the same terms: the
-            asset page's inline controller writes it from localStorage
-            (asset-page/script.ts, #3941). Kept unconditional — a no-op on
-            every non-asset page, where the attribute is never set. */}
-        {enableClientRouter !== false
-          ? (ClientRouter({
-              preserveHtmlAttrs: [
-                "data-sidebar-hidden",
-                "data-theme",
-                "data-theme-pack",
-                "style",
-                "data-toc-hidden",
-                "data-asset-details-hidden",
-              ],
-            }) as unknown as JSX.Element)
-          : null}
-        {head}
-      </head>
+      <head>{headChildren}</head>
       <body class="min-h-screen antialiased">
         {header}
 
@@ -405,16 +357,13 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
             // landmark is still present (matches the Astro layout's mobile
             // SidebarToggle aside that was always in the DOM).
             class={showSidebar
-              ? "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
+              ? "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh_-_3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
               : "sr-only"
             }
-            // Strategy B persist: data-zfb-transition-persist is set only when
-            // sidebarPersistKey is provided (i.e. when hideSidebar is false at
-            // the call site). The key is keyed on locale + nav-section so zfb's
-            // DOM byte-move only reuses this node across same-locale +
-            // same-section navigations — locale switches and cross-section jumps
-            // always repaint, avoiding the W7A island-data-mismatch regression
-            // (zudolab/zudo-doc#1510). Full rationale in #1546.
+            // The incoming-document adapter keeps this existing ancestor
+            // wrapper only for matching locale/section keys; native 3.1
+            // reconciliation retains unchanged descendants and recreates roots
+            // whose identity, props or structure changed.
             {...(sidebarPersistKey !== undefined
               ? { "data-zfb-transition-persist": sidebarPersistKey }
               : {})}
@@ -437,7 +386,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
             showSidebar ? " lg:ml-[var(--zd-sidebar-w)]" : ""
           }`}
         >
-          <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
+          <div class="flex min-h-[calc(100vh_-_3.5rem)] justify-center">
             {/*
               The inter-column `gap` is unconditional so ANY visible `toc` slot
               (including a custom always-visible override) is separated from

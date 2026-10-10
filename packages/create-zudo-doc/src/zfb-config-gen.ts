@@ -60,6 +60,8 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   tagGovernance: "off",
   tagVocabulary: false,
   llmsTxt: false,
+  agentExport: false,
+  mcp: false,
   cjkFriendly: false,
   designTokenPanel: false,
   sidebarResizer: false,
@@ -250,6 +252,13 @@ function buildDesiredConfig(
   }
 
   desired.llmsTxt = choices.features.includes("llmsTxt");
+  desired.agentExport = choices.features.includes("agentExport");
+  desired.mcp = choices.features.includes("mcp");
+  if (choices.features.includes("mcp")) {
+    // MCP currently has one supported remote deployment preset, Cloudflare
+    // Workers. Keep the adapter opt-in alongside the MCP setting.
+    desired.adapter = "@takazudo/zfb-adapter-cloudflare";
+  }
 
   // ── Feature toggles ───────────────────────────────────────────────────
   desired.designTokenPanel = choices.features.includes("designTokenPanel");
@@ -421,6 +430,8 @@ const FIELD_ORDER = [
   "tagVocabulary",
   "tagVocabularyEntries",
   "llmsTxt",
+  "agentExport",
+  "mcp",
   "cjkFriendly",
   "designTokenPanel",
   "sidebarResizer",
@@ -444,6 +455,7 @@ const FIELD_ORDER = [
   "headerNav",
   "headerRightItems",
   "minifyHtml",
+  "adapter",
 ];
 
 /**

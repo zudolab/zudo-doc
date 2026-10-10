@@ -46,7 +46,7 @@ export default defineConfig(
 
 This showcase uses the package-owned bootstrap and package-default builder. Set `designTokenPanelConfigModule` only when the auto-injected bootstrap should load a custom mode-scoped builder instead.
 
-Note that the setting applies only to pages rendered through the package-injected routes: while it is set, a doc page rendered by a self-contained host `pages/` stub mounts no panel island (and no header panel button) at all, so the stub page cannot hijack the once-per-session panel config with the package-default builder. To also get a panel on stub-rendered pages, thread your builder through `chromeBindings.DesignTokenPanelBootstrap` — that binding wins everywhere (see [Host chrome bindings](./host-chrome-bindings.mdx)).
+Note that the setting applies only to pages rendered through the package-injected routes: while it is set, a doc page rendered by a self-contained host `pages/` stub mounts no panel island (and no header panel button) at all, so the stub page cannot hijack the once-per-session panel config with the package-default builder. To also get a panel on stub-rendered pages, expose your client bootstrap through a fixed-target server boundary in `chromeBindings.DesignTokenPanelBootstrap` — that boundary wins everywhere (see [Host chrome bindings](./host-chrome-bindings.mdx)).
 
 ## The Tab Strip
 
@@ -263,9 +263,23 @@ The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@
 
 </Note>
 
+## Runtime dependencies and CSS
+
+The installed public `@takazudo/zdtp` 0.8.6 artifact carries `preact: ^10.29.1` as its own dependency (through 0.8.5 it was a peer that the project had to install). Installing zdtp is enough when enabling the panel or bundling it for a custom mount; zudo-doc's own components use zudo-react and do not require Preact nodes. The panel owns its separate Preact subtree and Tailwind browser engine, which does not register site utilities.
+
+```sh
+pnpm add @takazudo/zdtp@0.8.6
+```
+
+```css
+@import "@takazudo/zdtp/styles.css";
+```
+
+`./styles.css` and `./styles` are public exports for the same shipped CSS file. Keep the import with the other leading imports; do not import a physical `dist/` path. The scaffold adds it only when the panel feature is selected.
+
 ## Implementation
 
-The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The package-owned `DesignTokenPanelBootstrap` island and its wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — live in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The island calls `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` is a `(mode) => PanelConfig` builder — this is what lets the Color tab follow light/dark. The panel self-mounts as a side effect once the island hydrates.
+The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The package-owned `DesignTokenPanelBootstrap` island and its wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — live in `@takazudo/zudo-doc/design-token-panel-bootstrap`. Its fixed-target server boundary mounts the client bootstrap, which calls `runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "default", scope.abortSignal)` inside `scope.onActivate`. Here, `buildDesignTokenPanelConfig` is a `(mode) => PanelConfig` builder — this is what lets the Color tab follow light/dark. The panel self-mounts as a side effect once the island hydrates.
 
 ### Lazy loading
 
@@ -296,16 +310,20 @@ Call the same bootstrap the package island calls, from your own `"use client"` i
 ```tsx
 "use client";
 
+import { getScope } from "@takazudo/zfb/zudo-react";
 import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
 import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
 
 export function HostPanelBootstrap() {
-  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  const scope = getScope();
+  scope.onActivate(() => {
+    runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "configured", scope.abortSignal);
+  });
   return null;
 }
 ```
 
-Wire that component into the `BodyEndIslands` slot of your `chromeBindings` module, wrapped in `Island({ when: "load" })` — the same shape the package's own panel island uses. It renders nothing on either side; `bootstrapDesignTokenPanel` no-ops during SSR through its own `typeof window === "undefined"` guard.
+Wire a server component into `BodyEndIslands` that returns a Fragment containing `Island({ when: "load", children: <HostPanelBootstrap /> })`, using a static import of `HostPanelBootstrap`. The client bootstrap activates after hydration; it does not configure the panel during SSR. Keep the Fragment around the Island result, including when passing the server component through a binding object.
 
 Two settings move together to make this work:
 
@@ -332,7 +350,7 @@ A missing `@takazudo/zdtp` with `bundleZdtp: true` fails the build resolving `@t
 | `bundleZdtp` | `boolean` | Bundles `@takazudo/zdtp` into the build. Default `undefined` (follows `designTokenPanel`: `bundleZdtp ?? designTokenPanel`). `true` with `designTokenPanel: false` bundles zdtp without mounting the package panel — the combination for mounting your own panel (see [Mounting your own panel](#implementation-mounting-your-own-panel)). `false` with `designTokenPanel: true` is rejected at config resolution. |
 | `designTokenPanelConfigModule` | `string` | Project-root-relative path to a module exporting `buildDesignTokenPanelConfig(mode)` for a fully custom panel. Default `undefined` (package-default builder is used). |
 
-The default tokens themselves — spacing scale, font scale, icon sizes, and palette aliases — ship in `@takazudo/zudo-doc/theme.css`. A scaffold's later `src/styles/global.css` `@theme` block is an override point; for color ramps and mappings, use the package's `@takazudo/zudo-doc/color-schemes-defaults` or your own `colorSchemes` override (see [Color](./color.mdx)). The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
+The default tokens themselves — spacing scale, font scale, icon sizes, and palette aliases — ship in `@takazudo/zudo-doc/theme.css`. A scaffold's later `src/styles/global.css` `:root` block is an override point; for color ramps and mappings, use the package's `@takazudo/zudo-doc/color-schemes-defaults` or your own `colorSchemes` override (see [Color](./color.mdx)). The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
 
 <Tip>
 

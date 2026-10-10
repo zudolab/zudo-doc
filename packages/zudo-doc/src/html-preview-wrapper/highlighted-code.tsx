@@ -1,8 +1,11 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import { useEffect, useState } from "preact/hooks";
-import type { VNode } from "preact";
+import {
+  computed,
+  getScope,
+  signal,
+  Show,
+  type Child,
+} from "@takazudo/zfb/zudo-react";
 import { startHighlightRequest } from "./highlight-runtime.js";
 
 export interface HighlightedCodeProps {
@@ -15,51 +18,35 @@ export interface HighlightedCodeProps {
  * Falls back to a plain `<pre><code>` block while the runtime is loading or
  * when the current request cannot produce safe markup.
  *
- * JSX port of src/components/html-preview/highlighted-code.tsx.
+ * The runtime request is scoped to the current source panel mount.
  */
 export function HighlightedCode({
   code,
   language,
-}: HighlightedCodeProps): VNode {
-  const [highlighted, setHighlighted] = useState<{
-    code: string;
-    language: string;
-    html: string;
-  } | null>(null);
-
-  // A prop change must show the new source's fallback immediately, before its
-  // effect runs. Keeping the source identity beside the markup prevents a
-  // previous request's HTML from flashing for the new code/language pair.
-  const html =
-    highlighted?.code === code && highlighted.language === language
-      ? highlighted.html
-      : null;
-
-  useEffect(() => {
-    return startHighlightRequest({
+}: HighlightedCodeProps): Child {
+  const scope = getScope();
+  const highlighted = signal<string | null>(null);
+  scope.onActivate(() =>
+    startHighlightRequest({
       code,
       language,
       onSettled(nextHtml) {
-        setHighlighted(
-          nextHtml == null ? null : { code, language, html: nextHtml },
-        );
+        highlighted.value = nextHtml;
       },
-    });
-  }, [code, language]);
+    }),
+  );
 
-  if (!html) {
-    return (
-      <pre class="m-0 p-hsp-md bg-code-bg text-caption leading-relaxed overflow-x-auto">
-        <code class="font-mono whitespace-pre">{code}</code>
-      </pre>
-    );
-  }
-
+  const html = computed(() => highlighted.value);
   return (
-    <div
-      class="zd-html-preview-code"
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <Show
+      when={computed(() => html.value != null)}
+      fallback={() => (
+        <pre class="m-0 p-hsp-md bg-code-bg text-caption leading-relaxed overflow-x-auto">
+          <code class="font-mono whitespace-pre">{code}</code>
+        </pre>
+      )}
+    >
+      {() => <div class="zd-html-preview-code" rawHtml={html} />}
+    </Show>
   );
 }

@@ -3,7 +3,7 @@
 // In the original `header` template the script lived directly
 // inside a `<script>` tag (which Astro pipes through the bundler). For
 // the JSX port we emit the same logic verbatim via
-// `dangerouslySetInnerHTML`, so the value below is plain ECMAScript —
+// `rawHtml`, so the value below is plain ECMAScript —
 // any TypeScript-only constructs (generic params, type casts, parameter
 // type annotations) have been dropped so the browser can parse it
 // directly.

@@ -15,6 +15,7 @@ export interface SidebarFrontmatter {
   description?: string;
   sidebar_position?: number;
   sidebar_label?: string;
+  sidebar_initial_expansion?: "collapsed" | "expanded";
   draft?: boolean;
   unlisted?: boolean;
   hide_sidebar?: boolean;
@@ -69,6 +70,7 @@ export interface CollectionEntryLike<
  * Metadata supplied by a directory's `_category_.json` file.
  */
 export interface CategoryMeta {
+  collapsed?: boolean;
   label?: string;
   position?: number;
   description?: string;

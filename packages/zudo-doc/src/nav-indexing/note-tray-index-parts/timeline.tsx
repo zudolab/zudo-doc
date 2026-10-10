@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   formatDate,
   formatYearMonthLabel,
@@ -20,7 +18,7 @@ export function Timeline(props: NoteTrayIndexProps): JSX.Element {
           <h2 class="mb-vsp-sm text-small font-medium text-fg">
             {formatYearMonthLabel(group.key, props.locale, props.dateFormats?.yearMonth)}
           </h2>
-          <ol class="ml-hsp-md border-l border-muted [&_li]:mb-0">
+          <ol class="ml-hsp-md border-l border-muted zd-list-items-no-margin">
             {group.items.map((item) => (
               <li key={item.slug} class="relative grid gap-vsp-2xs pl-hsp-xl pb-vsp-lg last:pb-0">
                 {item.href ? (

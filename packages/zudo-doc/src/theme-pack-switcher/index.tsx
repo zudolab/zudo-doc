@@ -1,7 +1,6 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // ThemePackSwitcher — the bottom-right theme-pack switcher flyout island
 // (ADR `docs/adr/theme-packs.md` Decision 7; epic Theme Core #2812,
 // sub-issue #2821).
@@ -25,18 +24,12 @@
 // advances FROM that event (`connectActivePackSync`), so an aborted/failed
 // switch never moves the UI.
 //
-// SSR safety: the initial render (card closed, `active` = the SSR-configured
-// slug) is a pure function of the serializable props, so server and client
-// first render agree byte-for-byte; the user's possibly-different stored
-// pack is synced in `useEffect` AFTER hydration (the ThemeToggle pattern).
-//
-// Use the preact hook entrypoints directly — zfb's esbuild step does not
-// alias "react" to "preact/compat" (the theme-toggle precedent).
+// SSR starts closed from serializable props. Activation then reads the active
+// pack from the DOM; changes are delivered by theme-pack-changed.
 
-import type { JSX, VNode } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { computed, getScope, signal, Show, type Component, type Child, type ReadonlySignal, type Ref } from "@takazudo/zfb/zudo-react";
 import { ChevronLeft, ChevronRight, Close } from "../icons/index.js";
-import { useHydrationPending } from "../hydration-pending.js";
+import { hydrationPending } from "../hydration-pending.js";
 import { ThemePackDialog } from "../theme-pack-dialog/index.js";
 import { applyThemePack } from "./theme-pack-sync.js";
 import {
@@ -75,7 +68,7 @@ export interface ThemePackSwitcherProps {
  *  via `applyThemePack(slug)` and the dialog stays open (ADR Decision 7). */
 export interface ThemePackDialogProps {
   /** Whether the dialog is currently open. */
-  open: boolean;
+  open: ReadonlySignal<boolean>;
   /** Close callback (Esc / ✕ / backdrop — the dialog's own close paths). */
   onClose: () => void;
   /** The switcher order — also the dialog grid order. */
@@ -87,30 +80,19 @@ export interface ThemePackDialogProps {
 }
 
 /** The browse-all dialog component contract (#2825). */
-export type ThemePackDialogComponent = (props: ThemePackDialogProps) => JSX.Element | null;
+export type ThemePackDialogComponent = Component<ThemePackDialogProps>;
 
 /**
- * #2825 MOUNT SEAM — the browse-all dialog render slot.
- *
- * The dialog is a component rendered INSIDE this island's tree (single
- * island — no separate island registration; island props must stay
- * serializable, so it cannot arrive as a prop). #2825 fills this slot with a
- * STATIC import of `ThemePackDialog` from `../theme-pack-dialog/index.js`:
- *
- *   import { ThemePackDialog } from "../theme-pack-dialog/index.js";
- *   const ThemePackDialogSlot: ThemePackDialogComponent | null = ThemePackDialog;
- *
- * While `null`, the browse-all grid button renders disabled and nothing
- * mounts at the render point below.
+ * Static child component inside this island. The open signal stays in the
+ * same scope tree and never crosses the serialized Island props boundary.
  */
 const ThemePackDialogSlot: ThemePackDialogComponent | null = ThemePackDialog;
 
 /** Browse-all grid icon (2×2 rounded squares) — local like the theme-toggle
  *  sun/moon icons; `../icons` has no grid glyph and this stays private. */
-function GridIcon({ className }: { className?: string }): VNode {
+function GridIcon({ className }: { className?: string }): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -127,10 +109,9 @@ function GridIcon({ className }: { className?: string }): VNode {
 }
 
 /** Launcher glyph — a paint-swatch/palette circle. */
-function PaletteIcon({ className }: { className?: string }): VNode {
+function PaletteIcon({ className }: { className?: string }): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -151,10 +132,10 @@ function PaletteIcon({ className }: { className?: string }): VNode {
 }
 
 const CONTROL_BUTTON_CLASS =
-  "flex items-center gap-hsp-xs rounded border border-muted bg-bg px-hsp-md py-hsp-2xs text-caption text-fg transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+  "flex items-center gap-hsp-xs rounded border border-muted bg-bg px-hsp-md py-hsp-2xs text-caption text-fg transition-colors duration-0 hover:border-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
 
 const ICON_BUTTON_CLASS =
-  "flex items-center justify-center rounded p-hsp-2xs text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+  "flex items-center justify-center rounded p-hsp-2xs text-muted transition-colors duration-0 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
 
 /**
  * The bottom-right theme-pack switcher flyout. Mounted (settings-gated on
@@ -167,56 +148,47 @@ export function ThemePackSwitcher({
   order,
   base,
   pendingUntilHydrated = true,
-}: ThemePackSwitcherProps): JSX.Element {
-  const pending = useHydrationPending(pendingUntilHydrated);
+}: ThemePackSwitcherProps): Child {
+  const scope = getScope();
+  const pending = hydrationPending(scope, pendingUntilHydrated);
   // Initial state must match the server render (hydration safety): card
   // closed, active = the SSR-configured slug. The user's stored pack is
-  // synced from the DOM in the effect below.
-  const [open, setOpen] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeSlug, setActiveSlug] = useState(active);
-  const launcherRef = useRef<HTMLButtonElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
+  // synced from the DOM after activation.
+  const open = signal(false);
+  const dialogOpen = signal(false);
+  const activeSlug = signal(active);
+  const launcherRef: Ref<HTMLButtonElement> = { current: null };
+  const cardRef: Ref<HTMLDivElement> = { current: null };
 
-  // Live sync: DOM value now + on every committed switch (any surface).
-  useEffect(() => connectActivePackSync(setActiveSlug), []);
-
-  // Escape closes the open card and returns focus to the launcher. Not
-  // registered while the browse-all dialog is open — the dialog owns its own
-  // Escape handling (#2825).
-  useEffect(() => {
-    if (!open || dialogOpen) return undefined;
+  scope.onActivate(() => connectActivePackSync((slug) => { activeSlug.value = slug; }));
+  scope.effect(() => {
+    if (!open.value || dialogOpen.value) return;
     return connectEscapeToClose(() => {
-      setOpen(false);
+      open.value = false;
       launcherRef.current?.focus();
     });
-  }, [open, dialogOpen]);
+  });
+  scope.effect(() => { if (open.value) cardRef.current?.focus(); });
 
-  // Keyboard accessibility: opening moves focus into the card (tabindex=-1
-  // container) so Tab reaches Prev/Next/browse/✕ immediately.
-  useEffect(() => {
-    if (open) cardRef.current?.focus();
-  }, [open]);
-
-  const entry = resolveActiveEntry(order, activeSlug);
+  const entry = computed(() => resolveActiveEntry(order, activeSlug.value));
 
   function cycle(step: 1 | -1): void {
-    const target = step === 1 ? nextPackSlug(order, activeSlug) : prevPackSlug(order, activeSlug);
+    const target = step === 1 ? nextPackSlug(order, activeSlug.value) : prevPackSlug(order, activeSlug.value);
     // Display state advances via the theme-pack-changed event only — a
     // rejected/failed apply must not move the card (ADR Decision 3).
-    if (target !== null && target !== activeSlug) void applyThemePack(target);
+    if (target !== null && target !== activeSlug.value) void applyThemePack(target);
   }
 
   function closeCard(): void {
-    setOpen(false);
+    open.value = false;
     launcherRef.current?.focus();
   }
 
   function openDialog(): void {
     // The centered dialog replaces the flyout card on screen; closing the
     // card keeps exactly one Escape target active at a time.
-    setOpen(false);
-    setDialogOpen(true);
+    open.value = false;
+    dialogOpen.value = true;
   }
 
   return (
@@ -224,20 +196,20 @@ export function ThemePackSwitcher({
       class="fixed right-hsp-lg bottom-hsp-lg z-popover flex flex-col items-end gap-vsp-2xs"
       data-theme-pack-switcher
     >
-      {open ? (
+      <Show when={open}>{() => (
         <div
           ref={cardRef}
-          tabIndex={-1}
+          tabindex={-1}
           role="dialog"
           aria-label="Theme pack switcher"
           data-switcher-card
-          class="flex w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
+          class="flex w-[360px] max-w-[calc(100vw_-_2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
         >
           <div class="flex items-start justify-between gap-hsp-sm">
             {/* min-w-0 + break-words: a flex child's min-width:auto would let a
                 long unbroken pack name push the button group out of the card. */}
             <p class="min-w-0 break-words text-body font-bold text-fg" aria-live="polite">
-              {entry?.name ?? activeSlug}
+              {computed(() => entry.value?.name ?? activeSlug.value)}
             </p>
             <div class="flex shrink-0 items-center gap-hsp-2xs">
               <button
@@ -245,7 +217,7 @@ export function ThemePackSwitcher({
                 aria-label="Browse all theme packs"
                 title="Browse all theme packs"
                 disabled={ThemePackDialogSlot === null}
-                onClick={openDialog}
+                on:click={openDialog}
                 class={ICON_BUTTON_CLASS}
               >
                 <GridIcon className="h-icon-sm w-icon-sm" />
@@ -254,60 +226,60 @@ export function ThemePackSwitcher({
                 type="button"
                 aria-label="Close theme pack switcher"
                 title="Close"
-                onClick={closeCard}
+                on:click={closeCard}
                 class={ICON_BUTTON_CLASS}
               >
-                <Close className="h-icon-sm w-icon-sm" />
+                <Close class="h-icon-sm w-icon-sm" />
               </button>
             </div>
           </div>
-          {entry !== null && (
+          <Show when={computed(() => entry.value !== null)}>{() => (
             <span class="self-start rounded-full border border-muted px-hsp-sm text-micro tracking-wide text-muted uppercase">
-              {entry.mode === "dark" ? "Dark" : "Light"}
+              {computed(() => entry.value?.mode === "dark" ? "Dark" : "Light")}
             </span>
-          )}
-          {entry !== null && entry.description !== "" && (
-            <p class="break-words text-caption text-muted">{entry.description}</p>
-          )}
+          )}</Show>
+          <Show when={computed(() => entry.value !== null && entry.value.description !== "")}>{() => (
+            <p class="break-words text-caption text-muted">{computed(() => entry.value?.description)}</p>
+          )}</Show>
           <div class="flex items-center justify-between gap-hsp-sm">
             <button
               type="button"
               aria-label="Previous theme pack"
               disabled={order.length < 2}
-              onClick={() => cycle(-1)}
+              on:click={() => cycle(-1)}
               class={CONTROL_BUTTON_CLASS}
             >
-              <ChevronLeft className="h-icon-xs w-icon-xs" />
+              <ChevronLeft class="h-icon-xs w-icon-xs" />
               Prev
             </button>
             <button
               type="button"
               aria-label="Next theme pack"
               disabled={order.length < 2}
-              onClick={() => cycle(1)}
+              on:click={() => cycle(1)}
               class={CONTROL_BUTTON_CLASS}
             >
               Next
-              <ChevronRight className="h-icon-xs w-icon-xs" />
+              <ChevronRight class="h-icon-xs w-icon-xs" />
             </button>
           </div>
         </div>
-      ) : null}
+      )}</Show>
       <button
         ref={launcherRef}
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Theme pack switcher"
-        aria-disabled={pending ? "true" : undefined}
+        aria-disabled={computed(() => pending.value ? "true" : undefined)}
         title="Theme packs"
         data-switcher-launcher
-        data-zd-pending={pending ? "" : undefined}
-        onClick={() => {
-          if (pending) return;
-          setOpen(!open);
+        data-zd-pending={computed(() => pending.value ? "" : undefined)}
+        on:click={() => {
+          if (pending.value) return;
+          open.value = !open.value;
         }}
-        class="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        class="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors duration-0 hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       >
         <PaletteIcon className="h-icon-md w-icon-md" />
       </button>
@@ -315,9 +287,9 @@ export function ThemePackSwitcher({
       {ThemePackDialogSlot !== null ? (
         <ThemePackDialogSlot
           open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
+          onClose={() => { dialogOpen.value = false; }}
           order={order}
-          active={activeSlug}
+          active={activeSlug.value}
           base={base}
         />
       ) : null}

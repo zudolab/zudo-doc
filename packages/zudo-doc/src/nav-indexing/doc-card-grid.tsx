@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/doc-card-grid.
 //
 // The original Astro template accepted a flat list of pre-built items
@@ -15,7 +13,7 @@
 //   - The arrow SVG uses `text-muted` colouring, turning accent on hover/focus
 //     of the card link — identical to nav-card-grid.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 /** A single resolved doc card item. */
 export interface DocCardItem {
@@ -39,7 +37,6 @@ export interface DocCardGridProps {
 function ArrowIcon(): JSX.Element {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       viewBox="0 0 103.395 107.049"
       aria-hidden="true"
@@ -51,7 +48,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * DocCardGrid — JSX port of `src/components/doc-card-grid`.
+ * DocCardGrid — server renderer for a flat list of documentation cards.
  *
  * Renders a flat list of `{ href, title, description? }` items as a two-column
  * card grid. Each card shows an arrow icon, the doc title, and an optional

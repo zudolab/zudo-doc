@@ -6,12 +6,12 @@
 //
 // `ChromeHostBindings` (in `./factory-context`) types every host slot with the
 // WIDE structural shapes the chrome's own call sites need to compile:
-// `FactoryComponent = (props: Record<string, unknown>) => unknown`,
+// `FactoryComponent = Component<Record<string, unknown>>`,
 // `(...args: unknown[]) => unknown[]`, `Record<string, unknown>`. Those wide
 // types make a plain assignment of a REAL host binding fail under
 // `strictFunctionTypes`: a concrete `DocHistory` component is
-// `(props: { slug: string; … }) => VNode`, and by parameter contravariance a
-// function requiring `{ slug }` is NOT assignable to one that will be called
+// `(props: { slug: string; … }) => Child`, and by parameter contravariance a
+// function requiring `{ slug }` is not assignable to one that will be called
 // with an arbitrary `Record<string, unknown>`. The showcase absorbed that today
 // with a wall of `as` / `as unknown as` casts (`src/chrome-bindings.tsx`) —
 // which ALSO erases the one check that matters: whether each provided value
@@ -33,7 +33,7 @@
 // `@takazudo/zudo-doc/chrome-bindings` (NOT folded into `./chrome`, which would
 // drag the whole `createChrome` tree into hosts that only want the helper).
 
-import type { ComponentChildren } from "preact";
+import type { Child, Component } from "@takazudo/zfb/zudo-react";
 import type { BreadcrumbItem } from "./breadcrumb/index.js";
 import type { DocPageNavNode } from "./doc-page-shell/index.js";
 import type { HeadingItem } from "./toc/index.js";
@@ -81,12 +81,14 @@ export interface BodyEndIslandsSlotProps {
 }
 
 /**
- * Props the chrome passes to the `DocHistory` island slot — matches
+ * Props the chrome passes to the `DocHistory` server boundary slot — matches
  * `DocHistoryProps` (`doc-history/index.tsx`) / `DocHistoryComponent`
  * (`doc-history-area`), rendered as
  * `<DocHistory slug=… locale=… basePath=… displayLocale=… dateFormats=… />`.
  */
 export interface DocHistorySlotProps {
+  /** Server-only fallback consumed by the boundary, never serialized as client props. */
+  ssrFallback?: Child;
   slug: string;
   locale?: string;
   basePath?: string;
@@ -98,8 +100,11 @@ export interface DocHistorySlotProps {
 
 /**
  * Props the chrome passes to the `DesignTokenPanelBootstrap` slot — NONE. It is
- * rendered as `<DesignTokenPanelBootstrap />` (zero props) inside
- * `createBodyEndIslands`. An empty object type (no index signature) so a
+ * a server boundary rendered with zero props behind the package settings gate.
+ * Return a Fragment containing an Island with a statically imported client
+ * target; do not pass the raw client component. The package owns the toggle
+ * shim but does not add an Island around this boundary.
+ * An empty object type (no index signature) so a
  * zero-prop or all-optional-prop component is accepted while a component that
  * REQUIRES any prop is drift.
  */
@@ -175,7 +180,7 @@ export interface TocSlotProps {
  */
 export interface BreadcrumbSlotProps {
   items: BreadcrumbItem[];
-  rightSlot?: ComponentChildren;
+  rightSlot?: Child;
 }
 
 /** Props supplied to the doc-route `DocPager` replacement. */
@@ -207,30 +212,30 @@ export interface DocPagerSlotProps {
  */
 export interface ChromeBindingsInput {
   /** Primary header replacement — see {@link HeaderSlotProps}. */
-  Header?: (props: HeaderSlotProps) => unknown;
+  Header?: Component<HeaderSlotProps>;
   /** Primary footer replacement — see {@link FooterSlotProps}. */
-  Footer?: (props: FooterSlotProps) => unknown;
+  Footer?: Component<FooterSlotProps>;
   /** Primary doc-sidebar replacement — see {@link SidebarSlotProps}. */
-  Sidebar?: (props: SidebarSlotProps) => unknown;
+  Sidebar?: Component<SidebarSlotProps>;
   /** Primary desktop TOC replacement — see {@link TocSlotProps}. */
-  Toc?: (props: TocSlotProps) => unknown;
+  Toc?: Component<TocSlotProps>;
   /** Primary breadcrumb replacement — see {@link BreadcrumbSlotProps}. */
-  Breadcrumb?: (props: BreadcrumbSlotProps) => unknown;
+  Breadcrumb?: Component<BreadcrumbSlotProps>;
   /** Primary previous/next pager replacement — see {@link DocPagerSlotProps}. */
-  DocPager?: (props: DocPagerSlotProps) => unknown;
+  DocPager?: Component<DocPagerSlotProps>;
   /** Header search widget — see {@link SearchWidgetSlotProps}. */
-  SearchWidget?: (props: SearchWidgetSlotProps) => unknown;
+  SearchWidget?: Component<SearchWidgetSlotProps>;
   /**
    * Named header-right renderers. Values are callable-only and receive the
    * exact `HeaderRightComponentProps` used by the header renderer.
    */
   headerRightComponents?: HeaderRightComponentRegistry;
   /** Body-end bootstrap islands — see {@link BodyEndIslandsSlotProps}. */
-  BodyEndIslands?: (props: BodyEndIslandsSlotProps) => unknown;
-  /** DocHistory island — see {@link DocHistorySlotProps}. */
-  DocHistory?: (props: DocHistorySlotProps) => unknown;
-  /** Design-token-panel bootstrap island — see {@link DesignTokenPanelBootstrapSlotProps}. */
-  DesignTokenPanelBootstrap?: (props: DesignTokenPanelBootstrapSlotProps) => unknown;
+  BodyEndIslands?: Component<BodyEndIslandsSlotProps>;
+  /** Fixed-target DocHistory server boundary — see {@link DocHistorySlotProps}. */
+  DocHistory?: Component<DocHistorySlotProps>;
+  /** Server boundary for the design-token-panel bootstrap — see {@link DesignTokenPanelBootstrapSlotProps}. */
+  DesignTokenPanelBootstrap?: Component<DesignTokenPanelBootstrapSlotProps>;
   /**
    * Per-page git-history meta manifest (data slot). Read as
    * `Record<string, DocHistoryMetaEntry>` inside `doc-metainfo-area` /
@@ -256,14 +261,15 @@ export interface ChromeBindingsInput {
    */
   frontmatterRenderers?: Record<
     string,
-    (props: FrontmatterRendererSlotProps) => unknown
+    Component<FrontmatterRendererSlotProps>
   >;
   /**
-   * MDX content-component overrides (renderer record). Same loose value type as
-   * `frontmatterRenderers`; the showcase's `MdxStub = (_props: unknown) => null`
-   * is accepted deliberately (`unknown` props are a safe supertype).
+   * MDX content-component overrides (renderer record). Component props are a
+   * broad record because each MDX component has its own authored prop shape;
+   * the showcase's `MdxStub = (_props: unknown) => null` is accepted because
+   * `unknown` safely accepts that record.
    */
-  mdxExtras?: Record<string, unknown>;
+  mdxExtras?: Record<string, Component<Record<string, unknown>>>;
   /**
    * Frontmatter preview entry builder. `doc-content-header` calls it with the
    * page `data` (`Record<string, unknown>`) and spreads the result into

@@ -1,18 +1,17 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence test for the SidebarToggle island component.
  *
  * Verifies that the hamburger button and mobile sidebar panel appear in
- * the serialized HTML produced by `preact-render-to-string`. The static
+ * the serialized HTML produced by zudo-react. The static
  * markup must include the full sidebar tree so crawlers and JS-off users
  * can navigate even when the mobile panel is closed.
  */
 
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
-import { render } from "preact-render-to-string";
-import { Island } from "@takazudo/zfb";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import { h } from "@takazudo/zfb/zudo-react";
+import { islandRoot } from "@takazudo/zfb/zudo-react/server";
 import { SidebarToggle } from "../index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 
@@ -91,19 +90,17 @@ describe("SidebarToggle — displayName pin", () => {
 describe("SidebarToggle — call-site Island marker", () => {
   it("emits data-zfb-island=SidebarToggle in SSG output", () => {
     const html = render(
-      // Island() returns the public IslandElement shape ({ type, props, key });
-      // it is a real Preact VNode at runtime, so re-view it as VNode for render().
-      Island({
+      islandRoot(h(SidebarToggle, { nodes: SAMPLE_NODES }), {
+        identity: { component: "SidebarToggle", build: "test" },
         when: "visible",
-        children: <SidebarToggle nodes={SAMPLE_NODES} />,
-      }) as unknown as VNode,
+      }),
     );
     expect(html).toContain('data-zfb-island="SidebarToggle"');
   });
 });
 
 // zudolab/zudo-doc#4355: the inactive toggle icon used to be hidden with
-// Tailwind's `.hidden` utility, which lives in `@layer utilities`. A consumer
+// the `.hidden` utility, which lives in `@layer utilities`. A consumer
 // component pack shipping an UNLAYERED `img, svg, … { display: block }` reset
 // outranks any layered rule, so both icons rendered and the toggle grew to
 // 48px. The hidden state is now an inline declaration, which no author rule —
@@ -119,6 +116,7 @@ describe("SidebarToggle — icon hidden state survives consumer cascade layers",
     // SSR always renders open=false: the X icon is hidden, the hamburger shows.
     expect(icons[0]).toContain('style="display:none"');
     expect(icons[1]).not.toContain("display:none");
+    expect(icons[1]).not.toContain("style=");
   });
 
   it("never expresses an icon's hidden state as a class", () => {

@@ -15,7 +15,7 @@ npm-library escalation trigger is: **ships a package → add a pack/publish chec
 #3484 and #3489 are this repo's answer to that trigger.
 
 The repo records its other archetype deltas here rather than silently inheriting
-the playbook defaults: L2 is replaced by SSR string contracts, the slow unit lane
+the playbook defaults: L2 uses happy-dom owned-runtime interaction contracts alongside SSR string contracts, the slow unit lane
 is a blocking PR lane, and the visual-regression baseline is deliberately skipped
 (see the sections below). These are decisions, not missing coverage.
 
@@ -27,25 +27,20 @@ is a blocking PR lane, and the visual-regression baseline is deliberately skippe
 |-------|------|-------|---------|
 | L1 | Vitest unit tests | Root fast lane: 903 tests (901 passed, 2 skipped) in `src/**/__tests__/` and `scripts/__tests__/`, via `pnpm test:unit`; package lanes: 2,988 tests (search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275), via `pnpm test:packages`. Combined `pnpm test` runs these fast lanes only. Separate Slow Unit Tests runs 60 slow root tests via `pnpm test:unit:slow` plus 5 retiered `create-zudo-doc` tests | Root: `pnpm test:unit`; packages: `pnpm test:packages`; combined: `pnpm test` |
 | L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
-| L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
+| L2 | happy-dom owned-runtime DOM tests | Native zudo-react mount/hydration, repeated state changes, event handling and disposal; no Testing Library wrapper | `ZFB3_SOURCE_RESOLVE=1 pnpm --filter @takazudo/zudo-doc test` |
 | L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, image check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
 | L4 | Playwright E2E | 6-fixture browser suite — interactive, full-build, full-browser; fixtures: sidebar (4500), i18n (4501), theme (4502), smoke (4503), versioning (4504), hostpanel (4505) | `pnpm test:e2e` (local), `pnpm test:e2e:ci` (CI) |
 | L5 | `/verify-ui` | Computed-style verification plus informal screenshot review; no committed screenshot baseline | Invoke the `/verify-ui` skill |
 | L6 | Test-flow skills | Final-resort: full user-journey replay with screen observation | `/test-flow-html-preview-hydration`, `/test-flow-sidebar-width-restore` |
 
-### Why L2 is skipped
+### L2 and SSR contracts in the owned runtime
 
-L2 (jsdom/happy-dom + `@testing-library/*` DOM component tests) is **intentionally not
-used** in this repo. Instead, SSR markup contracts — "this link/attribute must exist in the
-server-rendered HTML before any JavaScript runs" — are tested with `preact-render-to-string`
-under plain Node, at L1 cost (no simulated DOM environment needed). The `*-ssg.test.tsx`
-files under `packages/zudo-doc/src/**/__tests__/` follow this pattern, alongside other
-component tests using the same render-to-string technique. Island *interaction* (hydration,
-event handlers, post-hydration DOM shape) is covered at L4 (Playwright), not L2.
-
-Do not introduce `jsdom`/`@testing-library` without revisiting this decision — it would add
-a second, redundant DOM-testing layer alongside the L4 suite that already covers interaction,
-for a cost L1's render-to-string tests already absorb for markup-contract checks.
+The migration uses happy-dom for fast native zudo-react interaction and lifecycle
+contracts. Tests mount or hydrate with the published runtime and verify repeated
+updates, listener/disposal behavior and DOM state. SSR markup contracts use native
+`renderToString` at L1 cost. These tests supplement the six real-browser fixtures;
+happy-dom does not prove layout, CSS cascade, actual browser navigation or IME.
+No jsdom or Testing Library dependency is required.
 
 ### L3 details
 
@@ -63,10 +58,10 @@ the target spec never touches `page` — `playwright.config.ts` boots one `webSe
 active fixture regardless of which specs in that fixture's project actually use it.
 
 **Four b4push steps are also L3 in spirit** — they verify the *built* `dist/` rather than
-source, just outside the Playwright/`makeDistReader` pattern: link check (step 28, reads
-`dist/**/*.html` for broken links), image check (step 29, validates local media and asset
-references), HTML validation (step 30, `html-validate dist/**/*.html`), and the automated
-preview smoke (step 31, `scripts/smoke-preview.mjs` — boots a real `pnpm preview` server
+source, just outside the Playwright/`makeDistReader` pattern: link check (step 31, reads
+`dist/**/*.html` for broken links), image check (step 32, validates local media and asset
+references), HTML validation (step 33, `html-validate dist/**/*.html`), and the automated
+preview smoke (step 34, `scripts/smoke-preview.mjs` — boots a real `pnpm preview` server
 and asserts on live HTTP responses). These run as part of `pnpm b4push` and CI's build-site
 job family, not as `*.spec.ts` files.
 
@@ -74,8 +69,8 @@ job family, not as `*.spec.ts` files.
 
 - **Logic, data transforms, utilities, hooks** → L1 (`pnpm test`). Fast, no server needed.
 - **Component prop/state → static markup contract** (does the SSR output change correctly
-  for a given prop/state?) → L1 `preact-render-to-string` presence test, **not** L2 (unused —
-  see above). If the change is about post-hydration interaction rather than markup, use L4.
+  for a given prop/state?) → L1 native `renderToString` presence test. Use L2 for owned-runtime state/event
+  contracts and L4 for actual browser behavior.
 - **Static HTML output** (SSG markup, SEO tags, rendered prose) → L3 static reads via
   `makeDistReader(fixture)` in `e2e/dist-helper.ts` (`e2e/smoke-dist-helper.ts` is a thin
   backward-compat re-export scoped to the smoke fixture — new specs targeting a different
@@ -196,14 +191,14 @@ lane makes that failure block the PR instead of waiting for the next nightly run
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
-runs a 34-step suite
+runs a 35-step suite
 (format → template drift → no-host-alias guard → pin parity → fixture drift → chrome-bindings fixture drift →
 tags/canonical audit →
-current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
+current-only compatibility → token lint → native Wind error audit → component-tokens drift → e2e spec naming guard →
 @flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → nav-overflow-script commit drift →
 publish contract → dist-mutation guard → required-checks manifest/parity → typecheck → e2e/ type checking →
 Worker contract proof → root unit tests →
-slow unit tests → package tests → safelist check → build → content-fallback allowlist scan → link check →
+slow unit tests → package tests → Wind manifest check → build → content-fallback allowlist scan → link check →
 image check → HTML validation → preview smoke → manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
 duration.
@@ -213,16 +208,16 @@ non-allowlisted half (`strictContentBridge: true` in `zfb.config.ts`) fails plai
 `pnpm build`/CI directly and is not a b4push step at all — see the header of
 `scripts/check-content-fallback.mjs` for why both exist.
 
-**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 19) checks three
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 20) checks three
 directions: every manifest entry has CI coverage; every `pnpm` guard invocation in the
 lightweight `# >>> b4push-ci-parity:guards:begin` / `:end` region is represented in the
 manifest; and every manifest entry with a `b4pushScript` still invokes that script
 somewhere in `scripts/run-b4push.sh`. The last direction intentionally scans the whole
-script because required guards such as package safelist and plugin resolution run after
+script because required guards such as package Wind manifest and plugin resolution run after
 the lightweight region. Its scan is lexical: full-line shell comments are ignored, but
 inline comments and quoted strings count as matches.
 
-The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
+The heavy steps — typecheck, unit tests, package tests, Wind manifest check, build, link check,
 image check, HTML validation, preview smoke — are intentionally outside the lightweight
 region and outside the parity manifest unless they also have a specifically listed guard
 entry. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
@@ -280,11 +275,11 @@ with a closing comment, so the issue list doesn't accumulate stale entries (#253
 ### T4 — Local heavy lane (`pnpm b4push`)
 
 T4 is a convenience layer, never an enforcement substitute for T1. The structural
-target for `pnpm b4push` is a finite, warm-tree 34-step pass with the full per-step
+target for `pnpm b4push` is a finite, warm-tree 35-step pass with the full per-step
 timing breakdown printed by `scripts/run-b4push.sh` (the timing state is set up in
 `scripts/run-b4push.sh:62-77`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
 It includes the blocking Slow Unit Tests lane (60 slow root tests plus 5 retiered
-`create-zudo-doc` tests), but deliberately excludes the full five-fixture Playwright run and
+`create-zudo-doc` tests), but deliberately excludes the full six-fixture Playwright run and
 the registry-install/full-build slow-create sweep reserved for T3. A ≤25-minute
 wall-clock result is an advisory design target, not a hard gate: local machines are
 noisy, so pass/fail is completion plus structural boundedness, not a single timing
@@ -328,13 +323,16 @@ contract to preserve.
 
 `.required-checks-manifest` is the reviewed source of truth and
 `node scripts/check-required-checks.mjs` verifies that it covers the workflow's
-jobs. Live `main` protection currently requires exactly these 23 contexts, in the
-manifest order:
+jobs. The reviewed manifest currently contains 26 required contexts in this order
+(the native Wind error audit runs within the existing required `Lint Gates` job).
+This list records the repository contract; re-read live protection before claiming
+that GitHub enforces the same set:
 
 ```text
 Package Unit Tests
 Pin Parity Check
 Fixture Settings Drift Check
+Chrome Bindings Fixture Drift Check
 Lint Gates
 B4push/CI Parity Check
 E2E Tests
@@ -344,13 +342,15 @@ Type Check
 Root Unit Tests
 HTML validate
 Worker Contract Proof
-Package Safelist Check
+Theme A11y Audit
+Package Wind Manifest Check
 Template Drift Check
 No-Host-Alias-In-Package Guard
 E2E Spec Naming Guard
 Flaky Tracking-Issue Guard
 Wait-Debt Guard
 Component-Tokens Codegen Drift Check
+Bash 3.2 Compatibility Lint
 A2 No-Stub Parity Gate
 Dist-Mutating Test Guard
 Publish Contract Gates
@@ -361,7 +361,7 @@ Re-read the live state with `gh api repos/zudolab/zudo-doc/branches/main/protect
 The rollback was exercised and the final state reapplied. A deliberately failing
 `Type Check` on scratch PR #3523 produced GitHub's `mergeStateStatus=BLOCKED` /
 `mergeable_state=blocked`, proving that a required context blocks policy merge.
-The live protection still has `enforce_admins: false` and no required PR reviews;
+The historical protection readback had `enforce_admins: false` and no required PR reviews;
 those are deliberate solo-maintainer deviations, not evidence that CI is
 universally unbypassable. `Preview Deploy` and `Required Checks Manifest Guard`
 remain reasoned allowlist entries rather than required contexts.
@@ -401,13 +401,13 @@ the publishable artifact, not a source-only unit check. The `create-zudo-doc`
 publish contract is intentionally mapped to the existing build and package-test
 jobs rather than duplicated here; both package paths are covered before release.
 
-### Theme A11y Audit (`theme-a11y` job — T3 nightly + on-demand dev tool)
+### Theme A11y Audit (`theme-a11y` job — PR gate, nightly and on-demand tool)
 
 `scripts/theme-a11y-audit.ts` (`pnpm theme-a11y:audit`) renders the **built** showcase
 once per (theme pack × light/dark mode × page) in a real Playwright browser and reads
 computed styles to check WCAG contrast on a fixed chrome + content element inventory. It
-requires a prebuilt `dist/` and a browser, so — like `e2e-full` — it's too slow for
-pr-checks' budget and lives here as a T3 nightly + on-demand job (`theme-a11y`), plus a
+requires a prebuilt `dist/` and a browser. The current required PR job and
+T3 nightly job (`theme-a11y`) retain that browser contract, alongside a
 local dev tool for partial runs while iterating on a theme pack (`pnpm theme-a11y:audit
 --packs <name> --modes light`).
 
@@ -654,31 +654,67 @@ If a test needs `waitForTimeout`, that is usually a sign the code under test lac
 testable event or state signal. Consider adding one to the production code rather than
 sleeping in the test.
 
-## Package Safelist Check
+## Package Wind manifest and native error audit
 
-`scripts/check-package-safelist.mjs` (`pnpm check:package-safelist`) scans
-`packages/zudo-doc/src/**/*.tsx` as raw text for responsive-variant and
-arbitrary-value Tailwind classes, and fails if any of them are missing from
-the generated `packages/zudo-doc/dist/safelist.css`. Because it scans raw
-text rather than parsed JSX, a class name written in PROSE — e.g. a comment
-contrasting one class with another — reads exactly like a live class
-attribute and gets demanded of the generated safelist even though nothing
-emits it.
+`scripts/check-package-wind-manifest.mjs` (`pnpm check:package-wind-manifest`)
+byte-compares the generated `dist/wind.json` against the current package class
+candidates. The removed `./safelist.css` and `./theme-no-reset.css` exports remain
+negative package contracts. `./wind.json` is the public candidate/token manifest.
 
-A line carrying a trailing `// safelist-ok: <reason>` comment is excluded
-from extraction, mirroring the `// wait-ok:` convention above — a plain,
-shell-greppable substring with no reason-text validation. This is the ONLY
-line-aware step: comment lines WITHOUT the marker are still scanned exactly
-like any other source line (general comment-stripping was considered and
-rejected — it would also blind the guard to real class usage sitting inside
-a commented-out block). Example, from the TOC wrapper comment in
-`packages/zudo-doc/src/doc-page-shell/index.tsx`:
+`pnpm exec zfb wind audit --project-root . --fail-on error` is required in b4push
+and the existing required `Lint Gates` CI job. Error-severity diagnostics and invalid
+configuration must exit nonzero; the unflagged command can exit zero on errors.
+Keep clean, unsupported-utility and invalid-config controls. Exit status alone does
+not establish emitted utility or authored selector coverage; the manifest and
+built-output contracts retain that separate responsibility.
 
-```typescript
-// Load-bearing for the TOC's sticky scroll-follow: this wrapper must
-// be `xl:flex`, never `xl:block`.  safelist-ok: `xl:block` names the rejected alternative in prose; only `xl:flex` below is emitted
+## Migration source resolution and verification tiers (#4438, #4470)
+
+Use exact zfb family 4.3.0 and pnpm 10.30.3. On a cold migration worktree install
+with `corepack pnpm@10.30.3 install --frozen-lockfile --ignore-scripts`. Source-only
+focused units use `ZFB3_SOURCE_RESOLVE=1 corepack pnpm@10.30.3 exec vitest run
+--project scripts <spec>` or the package test command. The port helper interface is
+`node scripts/zfb3-port-check.mjs <owned paths…>`; its unresolved imports remain failures.
+
+The implemented #4438 commands are:
+
+```sh
+node scripts/zfb3-port-check.mjs packages/zudo-doc/src/theme-toggle/index.tsx
+ZFB3_SOURCE_RESOLVE=1 corepack pnpm@10.30.3 exec vitest run --config packages/zudo-doc/vitest.config.ts packages/zudo-doc/src/theme-toggle/__tests__/theme-toggle-interaction.test.tsx
+ZFB3_SOURCE_RESOLVE=1 corepack pnpm@10.30.3 exec vitest run --config vitest.config.ts scripts/__tests__/check-client-export-names.test.ts
+node scripts/check-client-export-names.mjs
 ```
 
-The marker is a **trailing** annotation, so put the class name it exempts on a
-line that ends at a natural clause boundary. Appending it to a line that breaks
-mid-sentence technically satisfies the guard but leaves the prose unreadable.
+Substitute the owned paths/config. The port helper checks package and host projects,
+fails on owned or compiler/config diagnostics and separately reports unrelated
+ones; a filtered diagnostic count does not certify the full integration typecheck.
+
+Import `packages/zudo-doc/src/__tests__/helpers/zudo-react.ts` by relative path.
+`renderSsr(node)` uses native server rendering. Await
+`renderIsland(Component, props, { identity, mode?: 'hydrate' | 'mount' })` for
+`{ container, root, handle, diagnostics, dispose }`. Identity's component/build must
+match server and client. Default hydrate starts from connected server-rendered
+island HTML; mount uses an explicit skip-SSR wrapper. Install DOM globals before
+importing a client entry. `flushAll()` drains owned work, while tests await their
+own application promises. Dispose and remove the host after each test. Diagnostics
+are failures unless explicitly asserted. `beforeActivate(root)` can plant dirty
+controls or mismatches between SSR and activation. Keep the native harness controls
+for hydration, fresh mount, dirty forms, interaction, disposal and fail-closed
+mismatch without fallback mount.
+
+Source-resolution units prove owned source contracts, not packed exports or built
+markup. Publish/prepack, no-host-alias, source/client graph, generator drift and
+Wind manifest guards remain independently required. Native package/site builds,
+A2 slow builds and all browser/fixture runs use the shared heavy guard. A2 captures
+can be preserved with `ZUDO_A2_CAPTURE_DIR=<external-directory>` while running the
+`A2 no-stub` subset; raw HTML, existing normalized HTML, fingerprints and build
+output remain available for per-page causal review. Fingerprint references live
+outside the linked package tree to avoid changing its source identity when the
+reference changes. No build identity, runtime marker or markup is normalized away.
+
+Hydration probes must demonstrate an actual registered island, real handler input,
+repeated state changes and cleanup. For non-root deployments retain prefixed asset
+requests and navigation without a new Document request; native preview and deployed
+mount behavior are separate controls. Browser/runtime parity and the human macOS
+IME check remain independent release gates. A partial local pass does not replace
+hosted CI or the full locked migration matrix.

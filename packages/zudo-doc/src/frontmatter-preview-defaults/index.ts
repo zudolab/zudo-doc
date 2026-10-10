@@ -20,6 +20,7 @@ export const defaultFrontmatterPreviewIgnoreKeys: readonly string[] = [
   "category",
   "sidebar_position",
   "sidebar_label",
+  "sidebar_initial_expansion",
   "tags",
   "search_exclude",
   "pagination_next",

@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Host-mounted design-token-panel fixture (#4286, epic #4283) — a SECOND
 // chromeBindings module, distinct from `./chrome-bindings.tsx`, used ONLY by
 // the "DTP host-owned" describe block in
@@ -24,7 +23,6 @@
 //
 // Every other `ChromeHostBindings` slot is left at its package-default stub.
 
-import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 import { HostPanelBootstrap } from "./host-panel-bootstrap-island.js";
@@ -34,5 +32,5 @@ export const chromeBindings: ChromeHostBindings = {
     Island({
       when: "load",
       children: <HostPanelBootstrap />,
-    }) as unknown as VNode,
+    }),
 };

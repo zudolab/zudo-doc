@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
-import type { ComponentChildren, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import {
   VersionSwitcher,
   VERSION_SWITCHER_INIT_SCRIPT,
@@ -19,7 +17,7 @@ import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
 import { CURRENT_PATH_SCRIPT_PRELUDE } from "../../current-path/index.js";
 import { makeUrlHelpers } from "../../url-helpers/index.js";
 
-type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
+type AnyVNode = Description;
 
 function isVNode(v: unknown): v is AnyVNode {
   return (
@@ -34,7 +32,7 @@ function escapeAttr(s: string): string {
   return s.replace(/"/g, "&quot;");
 }
 
-function serialize(node: ComponentChildren): string {
+function serialize(node: Child): string {
   if (node == null || typeof node === "boolean") return "";
   if (typeof node === "string") return node;
   if (typeof node === "number" || typeof node === "bigint") return String(node);
@@ -42,12 +40,12 @@ function serialize(node: ComponentChildren): string {
   if (!isVNode(node)) return "";
   const { type, props } = node;
   const { children, ...rest } = (props ?? {}) as {
-    children?: ComponentChildren;
+    children?: Child;
     [key: string]: unknown;
   };
 
   if (typeof type === "function") {
-    const fn = type as (p: typeof props) => ComponentChildren;
+    const fn = type as (p: typeof props) => Child;
     return serialize(fn(props));
   }
   if (type == null || (typeof type === "string" && type === "")) {
@@ -101,6 +99,21 @@ describe("VersionSwitcher", () => {
     expect(html).toContain("data-version-toggle");
     expect(html).toContain("data-version-menu");
     expect(html).toContain('id="version-menu"');
+  });
+
+  it("uses data-version-switcher as the marker and emits only the required relative utility", () => {
+    const html = serialize(
+      <VersionSwitcher
+        versions={versions}
+        latestUrl="/docs/intro/"
+        versionsPageUrl="/docs/versions/"
+        versionUrls={versionUrls}
+        labels={labels}
+      />,
+    );
+
+    expect(html).toContain('<div class="relative" data-version-switcher>');
+    expect(html).not.toContain('class="version-switcher relative"');
   });
 
   it("appends idSuffix to the menu id and aria-controls", () => {

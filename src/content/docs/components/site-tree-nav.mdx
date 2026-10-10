@@ -6,7 +6,7 @@ sidebar_position: 7
 
 ## Overview
 
-`SiteTreeNav` is a Preact island component that renders a responsive grid of expandable category cards showing the full documentation tree. It provides a sitemap-style index of all documentation pages, with categories that can be expanded and collapsed.
+`SiteTreeNav` is a client island component that renders a responsive grid of expandable category cards showing the full documentation tree. It provides a sitemap-style index of all documentation pages, with categories that can be expanded and collapsed.
 
 <Info>
 
@@ -58,7 +58,7 @@ The raw island's `categoryIgnore` prop is the per-call equivalent of the site-wi
 
 This repository's own home page (`pages/index.tsx`) doesn't call this island directly — it hands the resolved locale to `prepareHomeData()` and passes the result to `HomePageView`, both from `@takazudo/zudo-doc/home-page`, which renders `SiteTreeNav` internally alongside the hero and tag section.
 
-The component uses Preact state for expand/collapse interactivity, so it hydrates on the client through zfb's island runtime.
+The component uses signals for expand/collapse interactivity, so it hydrates on the client through zfb's island runtime.
 
 ## Props
 

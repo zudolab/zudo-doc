@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Footer presentational shell for the documentation layout.
 //
 // The original template mixed data-prep (settings + getDocsCollection
@@ -22,7 +20,7 @@
 //  - The link/tag column grid is only emitted when at least one column is
 //    present (mirrors the Astro `hasColumns &&` guard).
 //
-//  - The copyright block is rendered as-is via `dangerouslySetInnerHTML`
+//  - The copyright block is rendered as-is via `rawHtml`
 //    because the original template used `<Fragment set:html={copyright} />`
 //    to allow inline anchors. Callers are responsible for sanitising
 //    the string (the Astro version did the same — it trusted
@@ -33,7 +31,7 @@
 //    `mt-vsp-lg border-t border-muted pt-vsp-md` that the Astro template
 //    applied via `class:list` conditional.
 
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 import type { FooterLinkColumn, FooterTagColumn } from "./types.js";
 
@@ -50,7 +48,7 @@ export interface FooterProps {
    */
   tagColumns?: FooterTagColumn[];
   /**
-   * Copyright HTML. Rendered via `dangerouslySetInnerHTML` so embedded
+   * Copyright HTML. Rendered via `rawHtml` so embedded
    * anchors work. The caller is responsible for the contents.
    */
   copyright?: string;
@@ -71,7 +69,7 @@ export interface FooterProps {
  * configured. The inner content (link grid, copyright) is only emitted
  * when the respective slots carry data.
  */
-export function Footer(props: FooterProps): VNode {
+export function Footer(props: FooterProps): Child {
   const linkColumns = props.linkColumns ?? [];
   const tagColumns = props.tagColumns ?? [];
   const copyright = props.copyright ?? "";
@@ -81,8 +79,8 @@ export function Footer(props: FooterProps): VNode {
   const hasCopyright = copyright.length > 0;
 
   const copyrightClass = hasColumns
-    ? "text-center text-caption text-muted [&_a]:underline [&_a:hover]:text-accent [&_a:focus-visible]:text-accent mt-vsp-lg border-t border-muted pt-vsp-md"
-    : "text-center text-caption text-muted [&_a]:underline [&_a:hover]:text-accent [&_a:focus-visible]:text-accent";
+    ? "text-center text-caption text-muted zd-footer-copyright-links mt-vsp-lg border-t border-muted pt-vsp-md"
+    : "text-center text-caption text-muted zd-footer-copyright-links";
 
   return (
     <footer
@@ -159,7 +157,7 @@ export function Footer(props: FooterProps): VNode {
         {hasCopyright && (
           <div
             class={copyrightClass}
-            dangerouslySetInnerHTML={{ __html: copyright }}
+            rawHtml={copyright}
           />
         )}
       </div>

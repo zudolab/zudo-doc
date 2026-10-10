@@ -1,16 +1,15 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence test for the desktop Toc component.
  *
  * Verifies that anchor links appear in the serialized HTML produced by
- * `preact-render-to-string` (which mirrors what the zfb SSG renderer
+ * the zudo-react server renderer (which mirrors what the zfb SSG renderer
  * emits into `dist/**\/index.html`). This is the contract that crawlers
  * rely on — JS-off users must see the TOC links in the static markup.
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import { Toc } from "../toc.js";
 import type { HeadingItem } from "../types.js";
 
@@ -23,7 +22,7 @@ const SAMPLE_HEADINGS: HeadingItem[] = [
 
 describe("Toc — SSG HTML presence", () => {
   it("renders anchor links for each qualifying heading in static HTML", () => {
-    const html = render(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
+    const html = renderSsr(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
 
     // Every depth-2/3/4 heading should produce an anchor link.
     expect(html).toContain('href="#introduction"');
@@ -33,19 +32,24 @@ describe("Toc — SSG HTML presence", () => {
   });
 
   it("renders the nav landmark with aria-label in static HTML", () => {
-    const html = render(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
+    const html = renderSsr(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
     expect(html).toContain('aria-label="Table of contents"');
   });
 
+  it("keeps the browser-derived current heading out of the initial SSR markup", () => {
+    const html = renderSsr(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
+    expect(html).not.toContain("aria-current=");
+  });
+
   it("renders heading text inside anchor elements", () => {
-    const html = render(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
+    const html = renderSsr(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
     expect(html).toContain("Introduction");
     expect(html).toContain("Prerequisites");
     expect(html).toContain("Configuration");
   });
 
   it("does not render a visible title <p> in static HTML (desktop heading removed, issue #1655/T1)", () => {
-    const html = render(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
+    const html = renderSsr(<Toc headings={SAMPLE_HEADINGS} title="On this page" />);
     // Desktop Toc no longer emits a visible heading — the nav landmark is the
     // accessible section boundary for screen readers.
     expect(html).not.toContain("On this page");
@@ -54,7 +58,7 @@ describe("Toc — SSG HTML presence", () => {
   });
 
   it("renders no content when headings array is empty (title <p> absent)", () => {
-    const html = render(<Toc headings={[]} title="目次" />);
+    const html = renderSsr(<Toc headings={[]} title="目次" />);
     // No visible title and no anchor links when there are no headings.
     expect(html).not.toContain("目次");
     expect(html).not.toContain('href="#');
@@ -66,7 +70,7 @@ describe("Toc — SSG HTML presence", () => {
       { depth: 2, slug: "section", text: "Section" },
       { depth: 5, slug: "too-deep", text: "Too Deep" },
     ];
-    const html = render(<Toc headings={mixed} title="On this page" />);
+    const html = renderSsr(<Toc headings={mixed} title="On this page" />);
     expect(html).toContain('href="#section"');
     expect(html).not.toContain('href="#page-title"');
     expect(html).not.toContain('href="#too-deep"');

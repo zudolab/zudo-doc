@@ -146,7 +146,7 @@ current before setup checks the markers.
 
 ## Sidebar Test Helpers
 
-`e2e/sidebar-helpers.ts` exports `desktopSidebar(page)` and `waitForSidebarHydration(page)` for tests that interact with the sidebar Preact island.
+`e2e/sidebar-helpers.ts` exports `desktopSidebar(page)` and `waitForSidebarHydration(page)` for tests that interact with the sidebar zudo-react island.
 
 `e2e/nav-helpers.ts` exports `spaClick`, `spaClickSelector` (SPA navigation via `zfb:after-swap`), and `waitForSidebarNav` (i18n fixture sidebar hydration wait).
 

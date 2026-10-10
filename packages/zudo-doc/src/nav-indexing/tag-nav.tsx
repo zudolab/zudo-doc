@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/tag-nav.
 //
 // The original Astro template had two rendering branches controlled by the
@@ -10,7 +8,7 @@
 //            a full tag cloud (pointed-chip style) with counts.
 //   "page" — renders a small inline chip row for the tags on the current page.
 //
-// Because v2 must not call getCollection() or import the host's collectTags /
+// Because package-owned navigation must not call getCollection() or import the host's collectTags /
 // settings helpers, both variants now accept pre-resolved data as props.
 // The host builds the tag list upstream and passes it in.
 //
@@ -20,7 +18,7 @@
 //   - Both use the same two-layer border-faking technique from the original.
 //   - Returns null when the relevant data is empty.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { TagItem, TagLink, TagNavLabels } from "./types.js";
 

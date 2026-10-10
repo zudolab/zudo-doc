@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // SSR fallback shell for the <PresetGenerator> interactive form.
 //
 // The real component (src/components/preset-generator.tsx) is a large
@@ -10,7 +9,7 @@
 // client-side hydration never fires (orphan-component problem; same root
 // cause fixed for body-end islands in _body-end-islands.tsx).
 //
-// The fallback renders all 9 section headings as static SSR HTML so:
+// The fallback preserves the 9 section headings from the v2 static SSR shell so:
 //   1. Screen readers and search engines see the section structure (a11y/SEO).
 //   2. Layout does not collapse to nothing while JS loads (no-JS layout).
 //   3. The scanner traces this file → preset-generator.tsx via the Island child
@@ -20,23 +19,15 @@
 // connect the import to the manifest entry and the hydration runtime can
 // mount the real form into the skip-ssr placeholder on the client.
 
-import type { VNode } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
 import { HeadingH3 } from "@takazudo/zudo-doc/content";
 import { Island } from "@takazudo/zfb";
 import PresetGenerator from "@/components/preset-generator";
 
-// Pin displayName so zfb's captureComponentName produces a stable marker
-// name even after the SSR pipeline runs through a function-name-rewriting
-// layer. Matches the data-zfb-island-skip-ssr attribute value the runtime
-// queries. Mirrors the pattern in _body-end-islands.tsx.
-(PresetGenerator as { displayName?: string }).displayName = "PresetGenerator";
-
-// Heading text for each of the 9 sections — must match the original
-// SectionHeading calls in src/components/preset-generator.tsx exactly
-// so the SSR fallback and the real component render the same section labels.
-// Order must mirror the JSX source order in preset-generator.tsx — do NOT
-// sort alphabetically. The array drives the SSR fallback heading sequence
-// shown to screen readers and visible before JS hydration.
+// Preserve the exact v2 SSR fallback presentation during the runtime migration.
+// The interactive form already used "Languages" and included "Meta tags" in v2;
+// those client labels intentionally differ from this historical static shell.
+// Aligning the fallback with the client is a separate presentation change.
 const SECTION_HEADINGS = [
   "Project Name",
   "Default Language",
@@ -52,12 +43,12 @@ const SECTION_HEADINGS = [
 /**
  * Static SSR fallback for the interactive PresetGenerator form.
  *
- * Renders all 9 section headings as static HTML for a11y/SEO and no-JS
+ * Renders the 9 baseline section headings as static HTML for a11y/SEO and no-JS
  * layout stability. Uses Island with ssrFallback so the zfb scanner traces
  * this file → preset-generator.tsx and registers the real component in the
  * island manifest for client-side mounting.
  */
-export function PresetGeneratorFallback(): VNode {
+export function PresetGeneratorFallback(): Description {
   const fallback = (
     <div class="zd-preset-gen-fallback">
       {SECTION_HEADINGS.map((heading) => (
@@ -74,9 +65,9 @@ export function PresetGeneratorFallback(): VNode {
   //   the manifest under "PresetGenerator".
   // - The hydration runtime mounts the real interactive form into the
   //   skip-ssr placeholder on the client after load.
-  return Island({
+  return <>{Island({
     when: "load",
     ssrFallback: fallback,
     children: <PresetGenerator />,
-  }) as unknown as VNode;
+  }) as unknown as Description}</>;
 }

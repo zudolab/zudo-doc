@@ -25,7 +25,7 @@ Resolve `@takazudo/zudo-doc/compiled.css` through your package manager and copy 
 <script type="module" src="/browser-embed.js"></script>
 ```
 
-The file is already compiled. A browser consumer does not need zfb's Tailwind pipeline, a zfb content tree, or a `zfb build` step. Styles for a selected theme pack remain a separate layer and load after this base file.
+The file is already compiled. A browser consumer does not need zfb's zudo-wind pipeline, a zfb content tree, or a `zfb build` step. Styles for a selected theme pack remain a separate layer and load after this base file.
 
 ## 2. Build a payload and render the chrome
 
@@ -33,9 +33,14 @@ The following shape mirrors the durable browser-embed integration test. The host
 
 ```tsx title="src/browser-embed.tsx"
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
 
-import { render as renderToString } from "preact-render-to-string";
+import { renderToString } from "@takazudo/zfb/zudo-react/server";
+import { withIslandTestContext } from "@takazudo/zfb/zudo-react/testing";
+import { SidebarToggle } from "@takazudo/zudo-doc/sidebar-toggle-island";
+import { SidebarTree } from "@takazudo/zudo-doc/sidebar-tree-island";
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+import { MermaidEnlarge } from "@takazudo/zudo-doc/mermaid-enlarge";
 import catalog from "@takazudo/zudo-doc/catalog";
 import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
 import { createRouteContext } from "@takazudo/zudo-doc/route-context";
@@ -86,12 +91,19 @@ const page = chrome.renderDocPage(
   { locale: "en" },
 );
 
-document.querySelector("#browser-embed-root")!.innerHTML = renderToString(page);
+const html = withIslandTestContext(
+  {
+    components: [SidebarToggle, ThemeToggle, SidebarTree, MermaidEnlarge],
+    build: "browser-embed-v1",
+  },
+  () => renderToString(page),
+);
+document.querySelector("#browser-embed-root")!.innerHTML = html;
 ```
 
 `createRouteContextPayload` applies its documented package defaults first and the top-level `settings` overrides last. Nested settings objects replace rather than deep-merge. Passing `catalog` lets the payload builder derive the enabled theme-pack registry with the same ordering and validation as the package build.
 
-This example serializes the returned Preact node to HTML because the host only needs a render surface. A host that owns a Preact runtime may render the returned node through that runtime instead.
+This is the public SDK rendering proof used by the browser-embed fixture, not a replacement island bootloader. `renderToString` consumes zudo-react descriptions; it cannot render Preact nodes. The public testing helper supplies a temporary fixed-target identity context for this proof and restores it afterward. Rendering chrome that constructs islands without such a context throws `ZR_ISLAND_IDENTITY`. These HTML markers alone do not activate islands: a production embed must supply a supported discovery/activation integration, or restrict its surface to static components. Do not copy a private serializer or claim this fixture provides full browser interactivity.
 
 ## The `createRouteContext` boundary still resolves zfb
 
@@ -173,7 +185,7 @@ The package-default appearance menu and theme-pack switcher launcher render this
 
 Both bare components expose `pendingUntilHydrated?: boolean`, defaulting to `true`. Direct consumers with real progressive enhancement may pass `pendingUntilHydrated={false}`; that removes the pending attribute, ARIA state, handler guard, and package pending style. There is no global zudo-doc setting for this lifecycle escape hatch.
 
-The first client `useEffect` clears the pending state after mount, keeping SSR and the first client render identical. A fresh island remount during client-router navigation may briefly emit the pending state again; that is intentional because activation is not yet available during the remount.
+The activation callback clears the pending state after mount, keeping SSR and the first client render identical. A fresh island remount during client-router navigation may briefly emit the pending state again; that is intentional because activation is not yet available during the remount.
 
 ## zfb's mounted marker is a separate, read-only signal
 
@@ -193,4 +205,4 @@ Theme controls now add `data-zd-pending=""` and `aria-disabled="true"` to their 
 
 Hosts may remove visual or pointer-only readiness workarounds after upgrading, including the workaround tracked by [CCResDoc #183](https://github.com/Takazudo/ccresdoc/issues/183), [#184](https://github.com/Takazudo/ccresdoc/issues/184), and [#185](https://github.com/Takazudo/ccresdoc/issues/185). If a host wants a different pending appearance, restyle the stable `data-zd-pending` hook instead of probing script status. Direct component consumers that genuinely work before hydration can opt out with `pendingUntilHydrated={false}`.
 
-If an embedder renders Markdown with `@takazudo/zfb-md-wasm`, directive and alert bodies require the first release after 2.10.1 ([zfb #2570](https://github.com/Takazudo/zudo-front-builder/issues/2570)). This repository currently pins 2.16.0; 2.10.1 flattens those bodies and loses paragraph and inline-markup structure.
+If an embedder renders Markdown with `@takazudo/zfb-md-wasm`, directive and alert bodies require the first release after 2.10.1 ([zfb #2570](https://github.com/Takazudo/zudo-front-builder/issues/2570)). This repository pins the aligned 4.3.0 family. The older 2.10.1 renderer flattened those bodies and lost paragraph and inline-markup structure.

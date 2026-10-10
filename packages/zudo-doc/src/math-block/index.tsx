@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // MathBlock — server-rendered KaTeX component for MDX math expressions.
 // Moved from the showcase's `pages/lib/_math-block.tsx` into the shared
 // package as part of the package-first migration (epic #2321, S4 #2327).
@@ -25,7 +24,7 @@
 // `import("katex").then(onFulfilled, onRejected)` as a bare specifier instead
 // of failing the build (#4015 / #4209), and evaluating this module never throws.
 
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 type KatexLike = typeof import("katex").default;
 
@@ -55,12 +54,10 @@ export interface MathBlockProps {
 /**
  * Server-rendered KaTeX math component.
  *
- * Block mode wraps the output in `<div class="math math-display">`;
- * inline mode uses `<span class="math math-inline">`. The class names
- * match the standard rehype-katex output so existing CSS (e.g. the
- * KaTeX stylesheet) still applies.
+ * Block mode wraps the output in `<div data-math="display">`; inline mode
+ * uses `<span data-math="inline">`. KaTeX owns the styled inner classes.
  */
-export function MathBlock({ latex, block = false }: MathBlockProps): VNode {
+export function MathBlock({ latex, block = false }: MathBlockProps): Child {
   if (!katex) throw new Error(MISSING_KATEX_MESSAGE);
   const html = katex.renderToString(latex, {
     displayMode: block,
@@ -72,18 +69,18 @@ export function MathBlock({ latex, block = false }: MathBlockProps): VNode {
   if (block) {
     return (
       <div
-        class="math math-display"
+        data-math="display"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: html }}
+        rawHtml={html}
       />
     );
   }
 
   return (
     <span
-      class="math math-inline"
+      data-math="inline"
       // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: html }}
+      rawHtml={html}
     />
   );
 }

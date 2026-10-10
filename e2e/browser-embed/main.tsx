@@ -1,13 +1,19 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import { Fragment, h, type ComponentType, type VNode } from "preact";
-import { render as renderToString } from "preact-render-to-string";
+import { Fragment, h } from "@takazudo/zfb/zudo-react";
+import type { Component, Description } from "@takazudo/zfb/zudo-react";
+import { renderToString } from "@takazudo/zfb/zudo-react/server";
+import { withIslandTestContext } from "@takazudo/zfb/zudo-react/testing";
 import { renderHtml } from "@takazudo/zfb-md-wasm/render";
 import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
 import { createRouteContext } from "@takazudo/zudo-doc/route-context";
 import { createChrome } from "@takazudo/zudo-doc/chrome";
 import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+import { MermaidEnlarge } from "@takazudo/zudo-doc/mermaid-enlarge";
+import { SidebarToggle } from "@takazudo/zudo-doc/sidebar-toggle-island";
+import { SidebarTree } from "@takazudo/zudo-doc/sidebar-tree-island";
+import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
+
+const ISLAND_BUILD = "browser-embed-v1";
 
 const MARKDOWN = `:::note[Heads up]
 First paragraph with **bold**, \`code\`, and [a link](https://example.com).
@@ -29,23 +35,20 @@ const DIRECTIVES = {
   caution: "Caution",
 };
 
-function htmlToPreact(html: string, components: Record<string, unknown>): VNode {
+function htmlToDescription(html: string, components: Record<string, unknown>): Description {
   const document = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
   const componentByTag = new Map(
     Object.entries(components).map(([name, component]) => [name.toLowerCase(), component]),
   );
 
-  function convert(node: Node): VNode | string | null {
+  function convert(node: Node): Description | string | null {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
     if (!(node instanceof Element)) return null;
 
     const props = Object.fromEntries(
-      Array.from(node.attributes).map(({ name, value }) => [
-        name === "class" ? "className" : name,
-        value,
-      ]),
+      Array.from(node.attributes).map(({ name, value }) => [name, value]),
     );
-    const component = componentByTag.get(node.localName) as ComponentType | undefined;
+    const component = componentByTag.get(node.localName) as Component | undefined;
     const children = Array.from(node.childNodes).map(convert);
     return h(component ?? node.localName, props, children);
   }
@@ -87,7 +90,7 @@ async function main() {
       description: "Rendered entirely in a browser bundle",
     },
     Content: ({ components }: { components: Record<string, unknown> }) =>
-      htmlToPreact(mdWasmHtml, components),
+      htmlToDescription(mdWasmHtml, components),
   } as unknown as DocPageEntry;
 
   const payload = createRouteContextPayload({
@@ -114,7 +117,33 @@ async function main() {
     { locale: "en" },
   );
 
-  document.querySelector("#browser-embed-root")!.innerHTML = renderToString(page);
+  const html = withIslandTestContext(
+    {
+      // HeaderWithDefaults constructs the ThemeToggle Island before the
+      // color-mode gate filters it from output. MermaidEnlarge is the default
+      // skip-SSR body-end Island; SidebarToggle and SidebarTree are emitted.
+      components: [SidebarToggle, ThemeToggle, SidebarTree, MermaidEnlarge],
+      build: ISLAND_BUILD,
+    },
+    () => renderToString(page),
+  );
+
+  // The helper must restore the prior scanner context after the callback.
+  // A second public SDK render without a context fails when its first Island is
+  // reached; this checks restoration without inspecting the SDK's private global.
+  let contextRestored = false;
+  try {
+    renderToString(page);
+  } catch (error) {
+    contextRestored =
+      error instanceof TypeError && error.message.startsWith("ZR_ISLAND_IDENTITY:");
+    if (!contextRestored) throw error;
+  }
+  if (!contextRestored) {
+    throw new Error("withIslandTestContext did not restore the prior scanner context");
+  }
+
+  document.querySelector("#browser-embed-root")!.innerHTML = html;
   document.documentElement.dataset.browserEmbedReady = "";
 
   window.browserEmbed = {

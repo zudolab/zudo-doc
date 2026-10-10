@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Regression cover for zudolab/zudo-doc#4288.
  *
@@ -18,7 +17,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { Header, type HeaderProps } from "../header.js";
 import { SidebarToggle } from "../../sidebar-toggle-island/index.js";
 

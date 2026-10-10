@@ -1,5 +1,5 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createCategoryNavWrapper — version threading (#3218).
  *
@@ -17,9 +17,10 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { createCategoryNavWrapper } from "../index.js";
 import type { CategoryNavDeps, CategoryNavNode } from "../index.js";
-import type { NavNode as V2NavNode } from "../../nav-indexing/types.js";
+import { renderNav } from "../../nav-indexing/__tests__/helpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -67,8 +68,16 @@ function makeDeps(overrides: Partial<CategoryNavDeps> = {}): CategoryNavDeps {
   };
 }
 
-function cardsOf(result: unknown): V2NavNode[] {
-  return (result as { props: { children: V2NavNode[] } }).props.children;
+function cardsOf(result: Child): { label: string; href: string | null; description?: string }[] {
+  const root = renderNav(result);
+  return Array.from(root.querySelectorAll("nav > a")).map((card) => {
+    const description = card.querySelector(".text-small")?.textContent ?? undefined;
+    return {
+      label: card.querySelector(".font-medium")?.textContent ?? "",
+      href: card.getAttribute("href"),
+      ...(description === undefined ? {} : { description }),
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------

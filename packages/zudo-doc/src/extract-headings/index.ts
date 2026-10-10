@@ -1,3 +1,5 @@
+import { parseFragment } from "parse5";
+
 // extract-headings — extract TOC headings from a raw MDX body.
 // Moved from the showcase's `pages/lib/_extract-headings.ts` into the shared
 // package as part of the package-first migration (epic #2321, S4 #2327).
@@ -49,7 +51,7 @@
 //     heading line — so a stray `a <b` in prose never hides a heading either.
 //   - Lines inside code fences (``` … ``` or ~~~ … ~~~) are skipped to avoid
 //     treating literal `## code` examples as real headings. Fence detection
-//     uses `line.trimStart()` to handle indented fences correctly.
+//     allows at most three spaces and requires homogeneous runs and valid info.
 //   - Reference-style links (`[text][id]`) and image links (`![alt](url)`)
 //     are not stripped — uncommon in headings, treated as plain text.
 //   - The renderer slugs all h2–h6 regardless of `tocMinDepth`/`tocMaxDepth`, so
@@ -223,9 +225,43 @@ function stripInlineMarkdown(raw: string): string {
       // Italic *text* or _text_ (underscore form only at word boundaries)
       .replace(/\*([^*]+)\*/g, "$1")
       .replace(/(?<![A-Za-z0-9])_([^_]+)_(?![A-Za-z0-9])/g, "$1")
+      // Decode only ordinary text, once; protected code/escapes stay literal.
+      .replace(/&#(?:[0-9]{1,7}|[xX][0-9a-fA-F]{1,6});|&[A-Za-z][A-Za-z0-9]{1,31};/g, decodeCharacterReference)
       .replace(/\uE000(\d+)\uE001/g, (_match, index: string) => protectedText[Number(index)] ?? "")
       .trim()
   );
+}
+
+/** Markdown references differ from HTML's permissive legacy decoding. */
+function decodeCharacterReference(reference: string): string {
+  if (reference.startsWith("&#")) {
+    const hex = reference[2]?.toLowerCase() === "x";
+    const value = Number.parseInt(reference.slice(hex ? 3 : 2, -1), hex ? 16 : 10);
+    // markdown-rs replaces invalid Unicode and controls (except tab/LF/CR).
+    if (value === 0 || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff) ||
+      (value < 0x20 && ![9, 10, 13].includes(value)) || (value >= 0x7f && value <= 0x9f)) {
+      return "\uFFFD";
+    }
+    return String.fromCodePoint(value);
+  }
+  let invalid = false;
+  const fragment = parseFragment(reference, { onParseError: () => { invalid = true; } });
+  // Unknown names can otherwise decode an HTML legacy prefix (&notARealEntity;).
+  if (invalid) return reference;
+  return fragment.childNodes.map(node => node.nodeName === "#text" && "value" in node ? node.value : "").join("");
+}
+
+/** CommonMark block fence: at most three spaces, one homogeneous 3+ run. */
+function openingFence(line: string): string | null {
+  const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+  if (!match || (match[1]?.startsWith("`") && match[2]?.includes("`"))) return null;
+  return match[1] ?? null;
+}
+
+function closesFence(line: string, opener: string): boolean {
+  const match = /^ {0,3}(`{3,}|~{3,})[ \t\r]*$/.exec(line);
+  const run = match?.[1];
+  return run !== undefined && run[0] === opener[0] && run.length >= opener.length;
 }
 
 /**
@@ -305,7 +341,7 @@ function collectHeadings(body: string, lo: number, hi: number): HeadingItem[] {
     // the page's h1), so matching h1 here would advance the shared dedup counter
     // out of step with the renderer and break the TOC anchor for a same-text h2.
     // Allow one or more spaces/tabs after the hashes (both valid per CommonMark).
-    const match = /^(#{2,6})[ \t]+(.+)$/.exec(line.trim());
+    const match = /^ {0,3}(#{2,6})[ \t]+(.+)$/.exec(line);
     if (!match) continue;
 
     const hashes = match[1];
@@ -350,7 +386,7 @@ function findCodeSpanEnd(
   for (let lineIndex = from; lineIndex < lines.length; lineIndex++) {
     const line = lines[lineIndex] ?? "";
     const trimmed = line.trimStart();
-    if (trimmed.trim() === "" || ATX_HEADING.test(trimmed) || /^(?:`{3,}|~{3,})/.test(trimmed)) {
+    if (trimmed.trim() === "" || ATX_HEADING.test(trimmed) || openingFence(line) !== null) {
       return null;
     }
     for (const match of line.matchAll(/`+/g)) {
@@ -415,27 +451,23 @@ function scanLines(
     } else if (exprDepth > 0 || tag !== null) {
       candidate.push(false);
     } else {
-      // Detect code fence open/close. A fence is 3+ backticks OR 3+ tildes,
-      // optionally followed by a language specifier. The closing fence must use
-      // the same character and match or exceed the opener's length.
-      // Use trimStart() so indented fences (e.g. inside lists) are also detected.
-      const fence = /^([`~]{3,})/.exec(trimmed)?.[1];
-      if (fence !== undefined) {
-        if (codeFenceOpener === null) {
-          codeFenceOpener = fence;
-        } else if (
-          fence[0] === codeFenceOpener[0] &&
-          fence.length >= codeFenceOpener.length
-        ) {
-          codeFenceOpener = null;
-        }
-        // Whether opening, closing, or a mismatched-character line (content
-        // inside a fence), never treat a fence line as a heading.
+      if (codeFenceOpener !== null) {
+        if (closesFence(line, codeFenceOpener)) codeFenceOpener = null;
         candidate.push(false);
         continue;
       }
-      candidate.push(codeFenceOpener === null);
-      if (codeFenceOpener !== null) continue;
+      const fence = openingFence(line);
+      if (fence !== null) {
+        codeFenceOpener = fence;
+        candidate.push(false);
+        continue;
+      }
+      // Four-space/tab indented code cannot start headings or JSX state.
+      if (/^(?: {4}| *\t)/.test(line)) {
+        candidate.push(false);
+        continue;
+      }
+      candidate.push(true);
     }
 
     for (let i = start; i < line.length; i++) {

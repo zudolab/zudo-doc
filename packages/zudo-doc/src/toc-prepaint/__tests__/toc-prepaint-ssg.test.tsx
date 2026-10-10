@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG tests for the toc-prepaint factories (epic #3252, #3254). Mirrors
  * sidebar-prepaint/__tests__/sidebar-prepaint-ssg.test.tsx 1:1 for the desktop
@@ -18,14 +17,27 @@
  *      pre-paint script is no longer duplicated there.
  */
 
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   createTocPrepaint,
   createTocVisibilityPrepaint,
   tocPrepaintActive,
 } from "../index.js";
 import { DocLayout } from "../../doclayout/doc-layout.js";
+
+const testGlobal = globalThis as unknown as { __zfb?: Record<string, unknown> };
+const previousZfb = testGlobal.__zfb;
+beforeEach(() => {
+  testGlobal.__zfb = {
+    ...previousZfb,
+    zudoReactBuild: "4458-test",
+    zudoReactIslands: ["DesktopTocToggle"],
+  };
+});
+afterEach(() => {
+  testGlobal.__zfb = previousZfb;
+});
 
 // Distinctive substrings of the pre-paint script body.
 const SCRIPT_STORAGE_READ = `localStorage.getItem("zudo-doc-toc-visible")`;

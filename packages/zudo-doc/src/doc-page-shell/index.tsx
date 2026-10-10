@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-page-shell — factory for the shared render shell used by all 4
 // doc-route page components (epic #2344, S5).
 //
@@ -14,10 +13,11 @@
 // slots. The base EN route (shipped in every scaffold) can depend on it
 // without dragging in the versioning/i18n feature surface.
 
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { MobileToc, getTocTitle } from "../toc/index.js";
+import { Toc as DefaultToc, MobileToc, getTocTitle } from "../toc/index.js";
 import { NavCardGrid } from "../nav-indexing/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -35,6 +35,7 @@ import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
 import { deriveComposeMetaTitle } from "../chrome/derive.js";
+import { normalizeIslandData } from "../chrome/island-data.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
@@ -80,6 +81,13 @@ export interface DocPageShellProps {
   description?: string;
   /** Absolute canonical URL, or undefined when siteUrl is unset. */
   canonical?: string;
+  /** Additional per-page alternate links passed through to the head defaults. */
+  alternateLinks?: ReadonlyArray<{
+    rel: string;
+    href: string;
+    type?: string;
+    title?: string;
+  }>;
   /** Pre-resolved breadcrumb trail (hrefs already remapped per route). */
   breadcrumbs: DocPageBreadcrumbItem[];
   /** Pre-resolved prev/next nav nodes (hrefs already remapped per route). */
@@ -104,7 +112,7 @@ export interface DocPageShellProps {
   /** Version slug for Header/Sidebar active-state, or undefined on latest routes. */
   currentVersion?: string;
   /** Inline version switcher VNode for the breadcrumb right-slot. */
-  versionSwitcher: ComponentChildren;
+  versionSwitcher: Child;
 
   /**
    * This page's unavailable-version slugs, straight from
@@ -136,20 +144,20 @@ export interface DocPageShellProps {
    * Auto-index branch slot: the build-time date block (DocMetainfoArea), or
    * null to omit it.
    */
-  metainfoSlot?: VNode | null;
+  metainfoSlot?: Child;
 
   /**
    * Entry branch slot: the content header (h1 + meta + tags + description +
    * frontmatter preview), built per route (carries isFallback).
    */
-  contentHeaderSlot?: VNode;
+  contentHeaderSlot?: Child;
   /** Entry branch slot: the rendered MDX `<Content />`. */
-  contentSlot?: VNode;
+  contentSlot?: Child;
   /**
    * Entry branch slot: the document-utilities area (DocHistoryArea), or null
    * to omit it.
    */
-  docHistorySlot?: VNode | null;
+  docHistorySlot?: Child;
 }
 
 /** Settings subset read by {@link createDocPageShell}. */
@@ -166,7 +174,12 @@ export interface DocPageShellDeps {
   settings: DocPageShellSettings;
   composeMetaTitle: (title: string) => string;
   getTocTitle: (locale: string) => string;
-  HeadWithDefaults: (props: { title: string; description?: string; canonical?: string }) => JSX.Element;
+  HeadWithDefaults: (props: {
+    title: string;
+    description?: string;
+    canonical?: string;
+    alternateLinks?: ReadonlyArray<{ rel: string; href: string; type?: string; title?: string }>;
+  }) => JSX.Element;
   SidebarWithDefaults: (props: {
     currentSlug?: string;
     lang?: string;
@@ -255,6 +268,7 @@ export function createDocPageShell<S extends Settings = Settings>(
       title,
       description,
       canonical,
+      alternateLinks,
       breadcrumbs,
       prev,
       next,
@@ -284,6 +298,7 @@ export function createDocPageShell<S extends Settings = Settings>(
     // `shouldRenderDefaultToc` exactly so an undefined override never silently
     // falls back to the package default with a different title.
     const tocTitle = getTocTitle(locale);
+    const transportHeadings = normalizeIslandData(headings);
     const shouldRenderToc = !hideToc && headings.length > 0;
     // Gate shared with the toc-prepaint factories (head script + afterSidebar
     // toggle island): true only when the page renders the package's OWN
@@ -295,7 +310,7 @@ export function createDocPageShell<S extends Settings = Settings>(
     // receives an Island hydration wrapper.
     const tocOverride = shouldRenderToc
       ? customTocIsPresent
-        ? <Toc headings={headings} title={tocTitle} />
+        ? <Toc headings={transportHeadings} title={tocTitle} />
         : // The zfb <Island> wrapper renders a bare <div> with no class, so
           // below xl (where <Toc> itself is `hidden xl:flex`) it would remain
           // an in-flow, zero-width flex child of the content band and reserve a
@@ -322,16 +337,16 @@ export function createDocPageShell<S extends Settings = Settings>(
             <div class="zd-toc-col hidden xl:flex">
               {Island({
                 when: "load",
-                children: <Toc headings={headings} title={tocTitle} />,
-              }) as unknown as VNode}
+                children: <DefaultToc headings={transportHeadings} title={tocTitle} />,
+              })}
             </div>
           )
       : undefined;
     const mobileTocOverride = shouldRenderToc
       ? (Island({
           when: "load",
-          children: <MobileToc headings={headings} title={tocTitle} />,
-        }) as unknown as VNode)
+          children: <MobileToc headings={transportHeadings} title={tocTitle} />,
+        }))
       : undefined;
 
     return (
@@ -340,7 +355,12 @@ export function createDocPageShell<S extends Settings = Settings>(
         description={settings.metaTags.description ? description : undefined}
         head={
           <>
-            <HeadWithDefaults title={title} description={description} canonical={canonical} />
+            <HeadWithDefaults
+              title={title}
+              description={description}
+              canonical={canonical}
+              alternateLinks={alternateLinks}
+            />
             {/* Pre-paint sidebar-visibility restore — must sit in <head> so it
                 runs before the <aside> desktop sidebar is painted (#2571).
                 Gated identically to the afterSidebar toggle Island below. */}

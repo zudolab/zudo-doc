@@ -13,6 +13,7 @@ describe("current integration subpaths", () => {
         "./plugins/doc-history",
         "./plugins/img-src-check",
         "./plugins/llms-txt",
+        "./plugins/agent-export",
         "./plugins/search-index",
         "./plugins/claude-resources",
         "./plugins/codex-resources",

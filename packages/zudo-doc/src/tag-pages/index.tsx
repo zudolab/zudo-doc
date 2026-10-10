@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // tag-pages — factory for the doc-tags page renderers (epic #2344, S8).
 //
 // The host's `pages/lib/_tag-pages.tsx` previously imported host singletons
@@ -26,7 +25,8 @@
 //     unflagged base doc would resurface as a card linking to a locale route
 //     the docs route never builds.
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import type { BreadcrumbItem } from "../breadcrumb/index.js";
 import { DocCardGrid, TagNav } from "../nav-indexing/index.js";
@@ -127,7 +127,7 @@ export interface TagPagesAPI {
     tagInfo: TagInfo;
   }) => JSX.Element;
   /** "All Tags" index page — computes the tag map at render time. */
-  TagsIndexPageView: (props: { locale: string; children?: ComponentChildren }) => JSX.Element;
+  TagsIndexPageView: (props: { locale: string; children?: Child }) => JSX.Element;
 }
 
 /**
@@ -238,18 +238,20 @@ export function createTagPages<S extends Settings = Settings>(
     const cardItems = tagInfo.docs.map((doc) => ({
       href: docsUrl(doc.slug, locale),
       title: doc.title,
-      description: doc.description,
+      ...(doc.description !== undefined
+        ? { description: doc.description }
+        : {}),
     }));
 
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
-        // The original default-locale page omitted `lang` entirely; passing
-        // undefined relies on Preact treating an undefined prop as absent.
-        lang={isDefault ? undefined : locale}
-        dataThemePack={dataThemePack}
-        noindex={settings.noindex}
+        // Keep `lang` absent on the default-locale page, matching its original
+        // output and avoiding an own undefined prop on the description.
+        {...(isDefault ? {} : { lang: locale })}
+        {...(dataThemePack !== undefined ? { dataThemePack } : {})}
+        {...(settings.noindex !== undefined ? { noindex: settings.noindex } : {})}
         hideSidebar={true}
         hideToc={true}
         // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -263,7 +265,9 @@ export function createTagPages<S extends Settings = Settings>(
         breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-        enableClientRouter={settings.dynamicPageTransition}
+        {...(settings.dynamicPageTransition !== undefined
+          ? { enableClientRouter: settings.dynamicPageTransition }
+          : {})}
       >
         <h1 class="text-heading font-bold mb-vsp-xs break-words">{pageTitle}</h1>
         <p class="text-muted mb-vsp-lg">{countText}</p>
@@ -275,7 +279,7 @@ export function createTagPages<S extends Settings = Settings>(
 
   /** "All Tags" index page — computes the tag map at render time (matching the
    *  original pages, which had no props from paths()). */
-  function TagsIndexPageView({ locale }: { locale: string; children?: ComponentChildren }): JSX.Element {
+  function TagsIndexPageView({ locale }: { locale: string; children?: Child }): JSX.Element {
     const isDefault = locale === defaultLocale;
     const prefix = localePrefix(locale);
     const pageTitle = t("doc.allTags", locale);
@@ -306,10 +310,10 @@ export function createTagPages<S extends Settings = Settings>(
       <DocLayoutWithDefaults
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
-        // Same undefined-≡-absent reliance as TagDetailPageView above.
-        lang={isDefault ? undefined : locale}
-        dataThemePack={dataThemePack}
-        noindex={settings.noindex}
+        // Keep `lang` absent on the default-locale page, as above.
+        {...(isDefault ? {} : { lang: locale })}
+        {...(dataThemePack !== undefined ? { dataThemePack } : {})}
+        {...(settings.noindex !== undefined ? { noindex: settings.noindex } : {})}
         hideSidebar={true}
         hideToc={true}
         // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -321,7 +325,9 @@ export function createTagPages<S extends Settings = Settings>(
         breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-        enableClientRouter={settings.dynamicPageTransition}
+        {...(settings.dynamicPageTransition !== undefined
+          ? { enableClientRouter: settings.dynamicPageTransition }
+          : {})}
       >
         <h1 class="text-heading font-bold mb-vsp-lg break-words">{pageTitle}</h1>
         {!settings.docTags || tags.length === 0 ? (

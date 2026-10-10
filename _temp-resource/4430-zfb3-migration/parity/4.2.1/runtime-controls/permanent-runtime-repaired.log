@@ -1,0 +1,81 @@
+[2m[WebServer] [22m(node:399269) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m[33m⚠[39m preview: adapter mode hands off entirely to `wrangler dev` — plugin middleware (devMiddleware/previewMiddleware) does not run under wrangler-backed preview. `_redirects` is still honoured natively by wrangler.
+[2m[WebServer] [22m(node:399348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m(node:399360) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+[2m[WebServer] [22m
+[2m[WebServer] [22m
+[2m[WebServer] [22m(node:399373) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 22 tests using 1 worker
+
+(node:399427) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:399427) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [smoke] › e2e/smoke-doc-history.spec.ts:15:3 › Doc History: revision panel and diff › history trigger button is present (398ms)
+  ✓   2 [smoke] › e2e/smoke-doc-history.spec.ts:23:3 › Doc History: revision panel and diff › clicking trigger opens the history panel (446ms)
+  ✓   3 [smoke] › e2e/smoke-doc-history.spec.ts:41:3 › Doc History: revision panel and diff › revision list shows 2+ entries after data loads (393ms)
+  ✓   4 [smoke] › e2e/smoke-doc-history.spec.ts:58:3 › Doc History: revision panel and diff › A/B selection buttons are present for each revision (405ms)
+  ✓   5 [smoke] › e2e/smoke-doc-history.spec.ts:85:3 › Doc History: revision panel and diff › Compare button is present (434ms)
+  ✓   6 [smoke] › e2e/smoke-doc-history.spec.ts:104:3 › Doc History: revision panel and diff › clicking Compare shows diff viewer with a table (436ms)
+  ✓   7 [smoke] › e2e/smoke-doc-history.spec.ts:128:3 › Doc History: revision panel and diff › pressing Escape closes the panel (382ms)
+  ✘   8 [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:35:1 › same-document navigation finishes, resets the sidebar filter, and keeps filtering active (988ms)
+(node:399826) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:399826) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   9 [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:165:1 › appearance menu uses a focused manual popover positioned within a narrow viewport (783ms)
+  ✓  10 [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:208:1 › preset generator array checkboxes, reorder, and reset produce the selected JSON order (805ms)
+  ✓  11 [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:264:1 › AI chat ignores Enter during IME composition, then submits normally (573ms)
+  ✓  12 [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:308:1 › DocHistory keeps the open revision panel current across two distinct comparisons (678ms)
+  ✓  13 [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:366:1 › built article preserves list start and pre LF, then copies the authored code exactly (605ms)
+  ✓  14 [smoke] › e2e/smoke-preset-generator.spec.ts:28:3 › PresetGenerator: SSR fallback shape › SSR emits the skip-ssr island marker for PresetGenerator (188ms)
+  ✓  15 [smoke] › e2e/smoke-preset-generator.spec.ts:32:3 › PresetGenerator: SSR fallback shape › SSR fallback renders the static section-heading shell (175ms)
+  ✓  16 [smoke] › e2e/smoke-preset-generator.spec.ts:38:3 › PresetGenerator: SSR fallback shape › SSR output does not include the real form controls (hydration-only) (163ms)
+  ✓  17 [smoke] › e2e/smoke-preset-generator.spec.ts:51:3 › PresetGenerator: hydration and interaction › island hydrates: SSR fallback shell is replaced by the real form (442ms)
+  ✓  18 [smoke] › e2e/smoke-preset-generator.spec.ts:72:3 › PresetGenerator: hydration and interaction › primary EN plus JA and DE round-trips through JSON and CLI output (686ms)
+  ✓  19 [smoke] › e2e/smoke-preset-generator.spec.ts:115:5 › PresetGenerator: hydration and interaction › invalid locale input "../ja" is rejected inline (597ms)
+  ✓  20 [smoke] › e2e/smoke-preset-generator.spec.ts:115:5 › PresetGenerator: hydration and interaction › invalid locale input "ja, ja" is rejected inline (491ms)
+  ✓  21 [smoke] › e2e/smoke-preset-generator.spec.ts:115:5 › PresetGenerator: hydration and interaction › invalid locale input "en" is rejected inline (470ms)
+  ✓  22 [smoke] › e2e/smoke-preset-generator.spec.ts:136:3 › PresetGenerator: hydration and interaction › blank additional locales keep the generated project single-language (507ms)
+
+
+  1) [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:35:1 › same-document navigation finishes, resets the sidebar filter, and keeps filtering active 
+
+    Error: Unexpected console errors:
+    Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED
+    [mermaid-init] Failed to render mermaid diagrams: TypeError: Failed to fetch dynamically imported module: https://esm.sh/mermaid@11.15.0
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoHaveLength[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected length: [32m0[39m
+    Received length: [31m2[39m
+    Received array:  [31m["Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "[mermaid-init] Failed to render mermaid diagrams: TypeError: Failed to fetch dynamically imported module: https://esm.sh/mermaid@11.15.0"][39m
+
+       at fixtures.ts:79
+
+      77 |         actionable,
+      78 |         `Unexpected console errors:\n${actionable.join("\n")}`,
+    > 79 |       ).toHaveLength(0);
+         |         ^
+      80 |     };
+      81 |     await use(assert);
+      82 |   },
+        at assertNoConsoleErrors (/workspace/zudo-doc/e2e/fixtures.ts:79:9)
+        at Object.base.extend.autoAssertNoConsoleErrors.auto (/workspace/zudo-doc/e2e/fixtures.ts:93:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../tmp/zudo421-runtime-probes/browser-repaired/test-results/smoke-migration-parity-run-7d7b3--and-keeps-filtering-active-smoke/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../tmp/zudo421-runtime-probes/browser-repaired/test-results/smoke-migration-parity-run-7d7b3--and-keeps-filtering-active-smoke/error-context.md
+
+  1 failed
+    [smoke] › e2e/smoke-migration-parity-runtime.spec.ts:35:1 › same-document navigation finishes, resets the sidebar filter, and keeps filtering active 
+  21 passed (16.9s)
+heavy-guard: verdict=FAIL exit=1 secs=19 min_mem_mb=12527 reason=-

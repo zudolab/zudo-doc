@@ -1,12 +1,11 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Card-rendering-from-meta-fixtures tests (#2825 acceptance criterion): the
 // mini preview must paint entirely from `meta.preview[<mode>]` resolved plain
 // colors — never by loading a pack stylesheet or webfont — plus the name,
 // Light/Dark badge, and description from the rest of `ThemePackMeta`.
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { ThemePackCard } from "../theme-pack-card.js";
 import type { ThemePackMeta } from "../../theme-packs-registry/index.js";
 
@@ -92,7 +91,7 @@ describe("ThemePackCard — rendering from meta fixtures", () => {
     expect(html).toContain("the lazy dog");
     expect(html).toContain("const");
     expect(html).toContain("theme");
-    expect(html).toContain("&quot;foundry&quot;"); // preact-render-to-string HTML-escapes quotes in text nodes
+    expect(html).toContain('"foundry"'); // zudo-react SSR preserves quotes in text nodes
   });
 
   it("renders name, description, and the Light badge from meta.mode", () => {
@@ -136,7 +135,7 @@ describe("ThemePackCard — rendering from meta fixtures", () => {
     );
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("border-accent");
-    expect(html).toContain("ring-accent");
+    expect(html).toContain("zd-theme-pack-active-ring");
   });
 
   it("does not mark an inactive card with the selected ring", () => {
@@ -144,7 +143,7 @@ describe("ThemePackCard — rendering from meta fixtures", () => {
       <ThemePackCard meta={FOUNDRY} mode="light" isActive={false} onSelect={() => {}} />,
     );
     expect(html).toContain('aria-pressed="false"');
-    expect(html).not.toContain("ring-accent");
+    expect(html).not.toContain("zd-theme-pack-active-ring");
   });
 
   it("never references a pack stylesheet, webfont, or <link> — paints from swatches only", () => {

@@ -60,15 +60,25 @@ if [ "$FETCHED_CSS" != true ]; then
 fi
 
 CSS_BYTES=$(wc -c < "$CSS_OUTPUT_PATH")
-MIN_CSS_BYTES=50000  # post-zfb#159 split-import fix (in pin 9239267) drops leaked Tailwind defaults; healthy baseline ~64-66 KB (down from pre-fix ~77.7 KB). Threshold sits well above the ~30-40 KB broken-scanner floor with headroom for future intentional shrinkage.
-[ "$CSS_BYTES" -ge "$MIN_CSS_BYTES" ] || { echo "::error::deployed CSS is $CSS_BYTES bytes, below threshold $MIN_CSS_BYTES (broken scanner produces ~30-40 KB)"; exit 1; }
+# #4470: exact repaired f1c3d727 site measurement: 230494 bytes, 87 @media
+# occurrences (86 start a line). See permanent v4.2.1-gates.md. These floors
+# retain headroom while detecting a missing package scan/import; neither is lowered.
+MIN_CSS_BYTES=180000
+[ "$CSS_BYTES" -ge "$MIN_CSS_BYTES" ] || { echo "::error::deployed CSS is $CSS_BYTES bytes, below threshold $MIN_CSS_BYTES"; exit 1; }
 
-MEDIA_COUNT=$(grep -cE '^@media' "$CSS_OUTPUT_PATH" || true)
-MIN_MEDIA=3  # tuned from the Sub-2 manager-confirm baseline (post-fix has 4 @media; threshold 3 leaves one block of safety)
+# Count occurrences, not lines: one minified line can contain many media rules.
+MEDIA_COUNT=$( (grep -oE '@media[[:space:](]' "$CSS_OUTPUT_PATH" || true) | wc -l)
+MIN_MEDIA=65
 [ "$MEDIA_COUNT" -ge "$MIN_MEDIA" ] || { echo "::error::deployed CSS has $MEDIA_COUNT @media blocks, below threshold $MIN_MEDIA"; exit 1; }
 
-LEAKED_DEFAULT_COLORS=$(grep -cE -- '--color-(gray|zinc|red|amber|green|cyan|blue|indigo|purple|slate)-[0-9]+:' "$CSS_OUTPUT_PATH" || true)
-MAX_DEFAULT_THEME_COLOR_TOKENS=2  # tuned from the Sub-2 manager-confirm baseline (post-fix has 0; broken state has 36)
-[ "$LEAKED_DEFAULT_COLORS" -le "$MAX_DEFAULT_THEME_COLOR_TOKENS" ] || { echo "::error::deployed CSS has $LEAKED_DEFAULT_COLORS leaked Tailwind default color tokens, above threshold $MAX_DEFAULT_THEME_COLOR_TOKENS (zfb user_has_import blind-spot regression)"; exit 1; }
+# Owned Wind output must carry the reset/token layers and emitted responsive
+# package utilities. Palette tokens alone do not establish scanner coverage.
+for REQUIRED in '@layer zw-reset' '@layer zw-tokens' '--color-bg:' '.lg\:block' '.xl\:flex'; do
+  grep -Fq -- "$REQUIRED" "$CSS_OUTPUT_PATH" || { echo "::error::deployed CSS is missing owned Wind contract $REQUIRED"; exit 1; }
+done
+if grep -Eq '@(theme|source)[[:space:](]|\.(bg|text)-red-500([[:space:]{:,]|$)' "$CSS_OUTPUT_PATH"; then
+  echo "::error::deployed CSS contains retired Tailwind directives or unsupported palette utilities"
+  exit 1
+fi
 
-echo "OK: deployed CSS is $CSS_BYTES bytes, $MEDIA_COUNT @media blocks, $LEAKED_DEFAULT_COLORS leaked default color tokens"
+echo "OK: deployed CSS is $CSS_BYTES bytes, $MEDIA_COUNT @media blocks, owned Wind reset/tokens and responsive utilities present"

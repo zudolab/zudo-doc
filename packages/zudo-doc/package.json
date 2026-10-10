@@ -167,6 +167,10 @@
       "types": "./dist/plugins/llms-txt.d.ts",
       "default": "./dist/plugins/llms-txt.js"
     },
+    "./plugins/agent-export": {
+      "types": "./dist/plugins/agent-export.d.ts",
+      "default": "./dist/plugins/agent-export.js"
+    },
     "./plugins/changelog": {
       "types": "./dist/plugins/changelog.d.ts",
       "default": "./dist/plugins/changelog.js"
@@ -268,12 +272,11 @@
       "default": "./dist/home-intro/prepare.js"
     },
     "./theme.css": "./dist/theme.css",
-    "./theme-no-reset.css": "./dist/theme-no-reset.css",
-    "./safelist.css": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
     "./page-loading.css": "./dist/page-loading.css",
     "./features.css": "./dist/features.css",
     "./compiled.css": "./dist/compiled.css",
+    "./wind.json": "./dist/wind.json",
     "./theme-packs/*": "./dist/theme-packs/*",
     "./routes-src/*": "./routes-src/*",
     "./tsconfig.base.json": "./tsconfig.base.json",
@@ -352,12 +355,12 @@
       "default": "./dist/site-tree-nav-island/index.js"
     },
     "./image-enlarge": {
-      "types": "./dist/image-enlarge/index.d.ts",
-      "default": "./dist/image-enlarge/index.js"
+      "types": "./dist/image-enlarge/public.d.ts",
+      "default": "./dist/image-enlarge/public.js"
     },
     "./mermaid-enlarge": {
-      "types": "./dist/mermaid-enlarge/index.d.ts",
-      "default": "./dist/mermaid-enlarge/index.js"
+      "types": "./dist/mermaid-enlarge/public.d.ts",
+      "default": "./dist/mermaid-enlarge/public.js"
     },
     "./ai-chat-modal": {
       "types": "./dist/ai-chat-modal/index.d.ts",
@@ -511,6 +514,10 @@
       "types": "./dist/site-tree-nav/index.d.ts",
       "default": "./dist/site-tree-nav/index.js"
     },
+    "./routes/design-token-panel-bootstrap": {
+      "types": "./dist/routes/_design-token-panel-bootstrap.d.ts",
+      "default": "./dist/routes/_design-token-panel-bootstrap.js"
+    },
     "./routes/index": {
       "types": "./dist/routes/index.d.ts",
       "default": "./dist/routes/index.js"
@@ -554,6 +561,14 @@
     "./routes/api-ai-chat": {
       "types": "./dist/routes/api-ai-chat.d.ts",
       "default": "./dist/routes/api-ai-chat.js"
+    },
+    "./routes/mcp": {
+      "types": "./dist/routes/mcp.d.ts",
+      "default": "./dist/routes/mcp.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "default": "./dist/mcp/index.js"
     },
     "./routes/locale-index": {
       "types": "./dist/routes/locale-index.d.ts",
@@ -707,15 +722,16 @@
   "scripts": {
     "gen:search-widget-script": "node scripts/gen-search-widget-script.mjs",
     "gen:nav-overflow-script": "node scripts/gen-nav-overflow-script.mjs",
-    "build": "node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs && tsup && tsc -p tsconfig.build.json",
-    "predev": "node ../../scripts/ensure-workspace-build.mjs && node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs",
+    "gen:switcher-scripts": "node scripts/gen-switcher-scripts.mjs",
+    "build": "node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs && node scripts/gen-switcher-scripts.mjs && tsup && tsc -p tsconfig.build.json",
+    "predev": "node ../../scripts/ensure-workspace-build.mjs && node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs && node scripts/gen-switcher-scripts.mjs",
     "// dev": "Do NOT add `--continue-on-error` here. It stops a fatal watcher exit from cascading, but the dead watcher then fails silently — a dead dev:dts leaves dist/*.d.ts frozen while the JS keeps updating, which typechecks cleanly against stale types instead of failing loudly like #3113's absent declarations did. See the #3129 section in CLAUDE.md.",
     "dev": "node bin/run-parallel.mjs dev:js dev:dts",
     "dev:js": "tsup --watch",
     "dev:dts": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "prepare": "node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs && tsup --silent && tsc -p tsconfig.build.json",
-    "// check:prepack-contract": "check:search-widget-drift and check:nav-overflow-drift run here (not just b4push/CI) because `prepare` regenerates BOTH frozen literals unconditionally — without a prepack gate, packing from a tree where a source changed but a literal was never re-committed would silently publish new script bytes and break every consumer's pinned CSP hash (#3534/#3535 for nav-overflow; #3540 extended the same gate to search-widget, the exact failure class the freezes exist to prevent).",
-    "check:prepack-contract": "pnpm --dir ../.. check:search-widget-drift && pnpm --dir ../.. check:nav-overflow-drift && pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-compiled-css.mjs && node scripts/check-theme-packs.mjs && node scripts/check-catalog.mjs && node scripts/check-site-schema.mjs && node scripts/check-theme-packs-registry.mjs && node scripts/check-plugins.mjs && node scripts/check-plugin-resolution.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check && node scripts/check-route-context-payload.mjs && node scripts/check-asset-viewer-exports.mjs",
+    "prepare": "node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs && node scripts/gen-switcher-scripts.mjs && tsup --silent && tsc -p tsconfig.build.json",
+    "// check:prepack-contract": "Switcher, search-widget and nav-overflow drift checks run here (not just b4push/CI) because `prepare` regenerates frozen literals unconditionally — without a prepack gate, packing from a tree where a source changed but a literal was never re-committed would silently publish new script bytes and break every consumer's pinned CSP hash (#3534/#3535 for nav-overflow; #3540 extended the same gate to search-widget, the exact failure class the freezes exist to prevent).",
+    "check:prepack-contract": "bash ../../scripts/check-switcher-scripts-drift.sh && pnpm --dir ../.. check:search-widget-drift && pnpm --dir ../.. check:nav-overflow-drift && pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-wind-manifest.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-compiled-css.mjs && node scripts/check-theme-packs.mjs && node scripts/check-catalog.mjs && node scripts/check-site-schema.mjs && node scripts/check-theme-packs-registry.mjs && node scripts/check-plugins.mjs && node scripts/check-plugin-resolution.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check && node scripts/check-route-context-payload.mjs && node scripts/check-asset-viewer-exports.mjs",
     "prepack": "pnpm check:prepack-contract",
     "test:plugin-resolution": "node scripts/check-plugin-resolution.mjs",
     "test": "vitest run --config vitest.config.ts",
@@ -734,17 +750,20 @@
     "CHANGELOG.md"
   ],
   "peerDependencies": {
+    "@modelcontextprotocol/sdk": "1.31.0",
     "@takazudo/zdtp": "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0",
-    "@takazudo/zfb": "^2.22.1",
-    "@takazudo/zfb-md-wasm": "^2.22.1",
-    "@takazudo/zfb-runtime": "^2.22.1",
+    "@takazudo/zfb": "^4.3.0",
+    "@takazudo/zfb-md-wasm": "^4.3.0",
+    "@takazudo/zfb-runtime": "^4.3.0",
     "@takazudo/zudo-doc-history-server": "^5.17.2",
     "diff": "^8.0.0",
     "katex": "^0.16.0",
-    "preact": "^10.29.1",
     "zod": "^4.3.6"
   },
   "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    },
     "@takazudo/zudo-doc-history-server": {
       "optional": true
     },
@@ -774,18 +793,17 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.31.0",
     "@takazudo/mdx-formatter": "1.3.0",
-    "@takazudo/zfb": "2.22.1",
-    "@takazudo/zfb-md-wasm": "2.22.1",
-    "@takazudo/zfb-runtime": "2.22.1",
+    "@takazudo/zfb": "4.3.0",
+    "@takazudo/zfb-md-wasm": "4.3.0",
+    "@takazudo/zfb-runtime": "4.3.0",
     "@takazudo/zudo-doc-history-server": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",
     "@types/node": "^25.3.5",
     "@types/pluralize": "^0.0.33",
     "happy-dom": "^20.10.6",
-    "preact": "^10.29.1",
-    "preact-render-to-string": "^6.6.6",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { h, type ComponentType } from "preact";
-import render from "preact-render-to-string";
+import { h } from "@takazudo/zfb/zudo-react";
+import type { Component } from "@takazudo/zfb/zudo-react";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveMdxComponents } from "../derive.js";
@@ -53,7 +54,7 @@ describe("asset MDX defaults", () => {
     });
     const { createMdxComponentsBound } = deriveMdxComponents(ctx);
     const components = createMdxComponentsBound("ja");
-    const Asset = components.Asset as ComponentType<{ src: string }>;
+    const Asset = components.Asset as Component<{ src: string }>;
     const html = render(h(Asset, { src: "/assets/demo.js" }));
     expect(html).toContain("3 行");
     expect(html).not.toContain("3 lines");

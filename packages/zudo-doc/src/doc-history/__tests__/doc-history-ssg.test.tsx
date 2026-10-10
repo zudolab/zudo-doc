@@ -1,11 +1,10 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * SSG HTML-presence + hydration-smoke test for the DocHistory island.
  *
  * Verifies:
  *  1. SSG markup — the trigger button and dialog landmark appear in static HTML
- *     produced by `preact-render-to-string` (mirroring zfb's SSG renderer).
+ *     produced by zudo-react's static renderer.
  *  2. displayName assertion — ensures the island marker name "DocHistory" is
  *     stable after minification/renaming.
  *  3. Call-site `data-zfb-island="DocHistory"` marker — emitted by the
@@ -18,38 +17,38 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import { DocHistory } from "../index.js";
 
 describe("DocHistory — SSG HTML presence", () => {
   it("renders the history trigger button in static HTML", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     // The trigger button must appear in SSG output so users without JS can
     // still see the button (it degrades gracefully without the dialog API).
     expect(html).toContain('aria-label="View document history"');
-    expect(html).toContain("doc-history-trigger");
+    expect(html).toContain("data-doc-history-trigger");
     expect(html).toContain("History");
   });
 
   it("renders the dialog landmark in static HTML", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     expect(html).toContain('aria-label="Document revision history"');
-    expect(html).toContain("doc-history-panel");
+    expect(html).toContain("data-doc-history-panel");
   });
 
   it("renders close button inside the dialog", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     expect(html).toContain('aria-label="Close history panel"');
   });
 
   it("renders the panel header with Revision History title", () => {
-    const html = render(
+    const html = renderSsr(
       <DocHistory slug="getting-started/intro" />,
     );
     // The default view is 'closed' (dialog not yet opened); header still renders

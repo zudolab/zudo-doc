@@ -131,7 +131,7 @@ export const chromeBindings = defineChromeBindings({
 | `tagVocabulary` | `[]` — フッターのタグ語彙なし |
 | `BodyEndIslands` | settings から導出されるパッケージのアイランド群 |
 | `DocHistory` | 何も描画しない no-op スタブ |
-| `DesignTokenPanelBootstrap` | 実際のパッケージ bootstrap。ホスト配線なしで `designTokenPanel: true` のときにマウントされる。このスロットは、パッケージのパネルがオンの間に、どのビルダーをマウントするかを差し替えるだけです — ここに何を渡しても `designTokenPanel: false` のままではマウントされません。パッケージのパネルをオフにしたまま自前のパネルをマウントしたい場合は、自前のアイランド（たとえば下の `BodyEndIslands` スロット経由で配線）から `bootstrapDesignTokenPanel` を呼び出し、`bundleZdtp: true` を設定してください。設定しないと、本物のローダーは例外を投げるスタブのままです。[自前のパネルをマウントする](./design-token-panel.mdx#実装-自前のパネルをマウントする)を参照してください。 |
+| `DesignTokenPanelBootstrap` | パッケージの固定ターゲットのサーバー境界。ホスト配線なしで `designTokenPanel: true` のときにマウントされる。このスロットは、パッケージのパネルがオンの間に、どのビルダーをマウントするかを差し替えるだけです — ここに何を渡しても `designTokenPanel: false` のままではマウントされません。パッケージのパネルをオフにしたまま自前のパネルをマウントしたい場合は、自前のアイランド（たとえば下の `BodyEndIslands` スロット経由で配線）から `runDesignTokenPanelBootstrapOnce` を呼び出し、`bundleZdtp: true` を設定してください。設定しないと、本物のローダーは例外を投げるスタブのままです。[自前のパネルをマウントする](./design-token-panel.mdx#実装-自前のパネルをマウントする)を参照してください。 |
 | `mdxExtras` | パッケージの SSR コンポーネント（`Details`、`HtmlPreview`、`Island`）と no-op の `PresetGenerator` |
 | `docContentHeaderExtras` | 未指定 — 何も描画されない |
 | `homeExtras` | 未指定 — 何も描画されない |
@@ -270,13 +270,44 @@ export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
 
 </Note>
 
-`chromeBindingsModule` との違いで知っておくべき点が2つあります:
+`chromeBindingsModule` との違いで知っておくべき点があります:
 
 - **デフォルトは空オブジェクトではなくパッケージビルダーです。** 設定が無い場合、ローダーはパッケージデフォルト（完全に動作するパネル）を re-export します — フォールバックすべき意味のある「空の」ビルダーは存在しません。
-- **スキャナー到達可能性がこのコントラクトの一部です。** 実際の `DesignTokenPanelBootstrap` アイランドは（設定仮想モジュールを経由せず）パッケージのクロームによって静的にインポートされるため、常に zfb のアイランドスキャナーから到達可能です。チャネルを通じて移動するのはパネル設定の*データ*（モードスコープのビルダー）だけであり、これがクロームバインディングのアイランドがハイドレートしない注入ルート上でも、カスタマイズされたパネルがハイドレートする理由です。
-- **この設定がある間、自己完結型の `pages/` スタブはパネルをマウントしません。** この設定はパッケージ注入ルートでレンダリングされるページにしか届かず、パネルの設定はブラウザセッションごとに一度だけ行われます — そのため、パッケージデフォルトのブートストラップをマウントするスタブページがハードロードの入口になると、セッション全体の設定をそのページが決めてしまっていました。設定が存在する場合（かつ明示的な `chromeBindings.DesignTokenPanelBootstrap` が無い場合）、スタブでレンダリングされるページはパネルアイランド（およびヘッダーのパネルボタン）を一切マウントしません。注入ルートはどの入口ページからでも、あなたの設定済みパネルを受け取ります。スタブページにもパネルを出したい場合は、ビルダーを `chromeBindings.DesignTokenPanelBootstrap` に通してください — このバインディングはどこでも勝ちます。
+- **スキャナー到達可能性がこのコントラクトの一部です。** 各サーバー境界はクライアントのターゲットを静的にインポートします。パッケージデフォルトとルート専用の設定済み境界は、それぞれ別の固定ターゲットを持ち、設定済みクライアントは設定仮想モジュール経由でビルダーをインポートします。ホストの差し替えも、バインディングマップに生のクライアントターゲットを渡すのではなく、以下の境界合成規則に従います。
+- **この設定がある間、自己完結型の `pages/` スタブはパネルをマウントしません。** この設定はパッケージ注入ルートでレンダリングされるページにしか届かず、パネルの設定はブラウザセッションごとに一度だけ行われます — そのため、パッケージデフォルトのブートストラップをマウントするスタブページがハードロードの入口になると、セッション全体の設定をそのページが決めてしまっていました。設定が存在する場合（かつ明示的な `chromeBindings.DesignTokenPanelBootstrap` が無い場合）、スタブでレンダリングされるページはパネルアイランド（およびヘッダーのパネルボタン）を一切マウントしません。注入ルートはどの入口ページからでも、あなたの設定済みパネルを受け取ります。スタブページにもパネルを出したい場合は、クライアントのブートストラップを以下のサーバー境界経由で渡してください — このバインディングはどこでも優先されます。
 
 同じガード規則が適用されます: 明示的な空文字列、存在しないファイル、ディレクトリパスは、プラグインのセットアップ時に解決済みパスを明示して大きな声で失敗します。`storagePrefix: "zudo-doc-tweak"` はパッケージデフォルトで維持されるため、既存のユーザー保存は引き継がれます。
+
+## DocHistory の境界
+
+`DocHistory` スロットもサーバー境界を受け取ります。パッケージのクライアントを使う場合は、`@takazudo/zudo-doc/doc-history-area` から `DocHistoryBoundary` をインポートし、`DocHistory` として登録してください。この境界は任意の `ssrFallback` 子要素をサーバー側で処理し、固定クライアントターゲットを `when="idle"` の Island と Fragment で包みます。カスタム境界でも `ssrFallback` を取り除いてから、残りのシリアライズ可能な props をクライアントへ渡してください。フォールバックの JSX をクライアントデータとして転送してはいけません。領域を描画するかどうかは、既存のドキュメント履歴の設定と除外ゲートが引き続き制御します。
+
+## パネル境界の差し替え
+
+v6 の `chromeBindings.DesignTokenPanelBootstrap` は、生の `"use client"` コンポーネントではなく、props を受け取らない**サーバー境界**を受け取ります。クライアントのブートストラップを静的にインポートし、固定ターゲットの `Island` を Fragment で包んで返します。このサーバーファイルはクライアントモジュールと分けてください。クライアントのブートストラップでは、[自前のパネルをマウントする](./design-token-panel.mdx#実装-自前のパネルをマウントする)の例のように、`getScope().onActivate` 内で `runDesignTokenPanelBootstrapOnce` を起動します。
+
+```tsx title="src/panel-boundary.tsx"
+/** @jsxRuntime automatic */
+import { Island } from "@takazudo/zfb";
+import { HostPanelBootstrap } from "./host-panel-bootstrap";
+
+export function HostPanelBoundary() {
+  return <>{Island({ when: "load", children: <HostPanelBootstrap /> })}</>;
+}
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { HostPanelBoundary } from "./panel-boundary";
+
+export const chromeBindings = defineChromeBindings({
+  DesignTokenPanelBootstrap: HostPanelBoundary,
+});
+```
+
+この差し替えスロットでは `designTokenPanel: true` を維持します。設定のゲートとハイドレーション前のトグル shim は引き続きパッケージが管理し、機能を無効にすると境界も shim も出力しません。明示的なホスト境界は、`designTokenPanelConfigModule` がパッケージデフォルトを抑制する場合も優先され、注入ルートの設定済みデフォルトよりも優先されます。パッケージ機能を無効にして独立したホストパネルをマウントする場合は、リンク先の独立した `BodyEndIslands` 経路を使ってください。
+
+`createBodyEndIslands` を直接使う場合も、任意の依存コンポーネント `DesignTokenPanelBootstrap` と `ThemePackSwitcher` は同じ合成規則に従います。渡すコンポーネント側が固定ターゲットの Fragment で包んだ境界を所有し、ファクトリーは機能のゲート内で描画するだけです。依存コンポーネントを省略した場合、そのアイランドは従来どおり何も描画しません。クライアント関数をアイランドの props として渡すことはありません。
 
 ## 関連ページ
 

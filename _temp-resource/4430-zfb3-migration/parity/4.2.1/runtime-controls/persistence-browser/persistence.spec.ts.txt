@@ -1,0 +1,193 @@
+import { test, expect } from "@playwright/test";
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as any).persistenceControl = { activations: 0, cleanups: 0, helperReady: false };
+  });
+});
+
+for (const scenario of ["unchanged", "changed", "preserve", "structural", "identity"] as const) {
+  test(`real navigation: ${scenario}`, async ({ page }, testInfo) => {
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    page.on("console", message => { if (message.type() === "error") errors.push(`${message.text()} at ${JSON.stringify(message.location())}`); });
+    const failedResponses: { url: string; status: number }[] = [];
+    page.on("response", response => { if (response.status() >= 400) failedResponses.push({ url: response.url(), status: response.status() }); });
+    let documentRequests = 0;
+    page.on("request", request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentRequests++; });
+    const start = scenario === "preserve" ? "preserve-a" : "same-a";
+    await page.goto(`/${start}/`);
+    await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 1, cleanups: 0, helperReady: true });
+    const baselineRequests = documentRequests;
+    const origin = await page.evaluate(() => performance.timeOrigin);
+    const doc = await page.evaluateHandle(() => document);
+    const ancestor = await page.locator("#persisted").elementHandle();
+    const counter = await page.locator("#counter").elementHandle();
+    const button = await page.locator("#increment").elementHandle();
+    await page.locator("#increment").click();
+    await page.locator("#increment").click();
+    await expect(page.locator("#count")).toHaveText("2");
+    const targets = scenario === "unchanged" ? ["same-b", "same-a"] : [scenario === "preserve" ? "preserve-b" : scenario];
+    const captures = [];
+    for (const target of targets) {
+      await page.evaluate(() => {
+        (window as any).persistenceSwap = new Promise(resolve => document.addEventListener("zfb:after-swap", () => resolve(true), { once: true }));
+      });
+      await page.locator(`nav a[href="/${target}/"]`).click();
+      await page.evaluate(() => (window as any).persistenceSwap);
+      await expect(page.locator("#route")).toHaveText(target);
+      const retained = scenario === "unchanged" || scenario === "preserve";
+      await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: retained ? 1 : 2, cleanups: retained ? 0 : 1, helperReady: true });
+      await expect(page.locator("#count")).toHaveText(retained ? "2" : "0");
+      await expect(page.locator("#label")).toHaveText(scenario === "changed" ? "changed" : "original");
+      expect(await doc.evaluate(node => node === document)).toBe(true);
+      expect(await ancestor!.evaluate(node => node === document.querySelector("#persisted"))).toBe(scenario !== "structural" && scenario !== "identity");
+      expect(await counter!.evaluate(node => node === document.querySelector("#counter"))).toBe(retained);
+      expect(await button!.evaluate(node => node === document.querySelector("#increment"))).toBe(retained);
+      expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
+      expect(documentRequests).toBe(baselineRequests);
+      if (scenario === "structural") await expect(page.locator("#added-structure")).toBeVisible();
+      captures.push({ target, lifecycle: await page.evaluate(() => (window as any).persistenceControl), documentRequests, origin });
+    }
+    // A retained event listener must still drive the original local signal.
+    await page.locator("#increment").click();
+    await expect(page.locator("#count")).toHaveText(scenario === "unchanged" || scenario === "preserve" ? "3" : "1");
+    await testInfo.attach("lifecycle-and-navigation", { body: JSON.stringify({ captures, errors, failedResponses }, null, 2), contentType: "application/json" });
+    expect(errors).toEqual([]);
+    expect(failedResponses).toEqual([]);
+  });
+}
+
+
+
+async function pendingSnapshot(page: import("@playwright/test").Page) {
+  return page.evaluate(() => {
+    const marker = document.querySelector('[data-zfb-island-skip-ssr="CounterIsland"]');
+    const rect = marker?.getBoundingClientRect();
+    return {
+      lifecycle: { ...(window as any).persistenceControl }, scrollY: window.scrollY,
+      viewportHeight: innerHeight, markerAttributes: marker ? Object.fromEntries([...marker.attributes].map(a => [a.name, a.value])) : null,
+      bounds: rect ? { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height } : null,
+      reservationCount: document.querySelectorAll("#reservation").length,
+      counterCount: document.querySelectorAll("#counter").length,
+      label: document.querySelector("#label")?.textContent ?? null,
+      activeElement: document.activeElement?.outerHTML ?? null,
+      ancestorPersist: document.querySelector("#persisted")?.getAttribute("data-zfb-transition-persist"),
+    };
+  });
+}
+
+test("pending skip-SSR navigation cancels old scheduling before activation", async ({ page }, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(`${message.text()} at ${JSON.stringify(message.location())}`); });
+  const failedResponses: { url: string; status: number }[] = [];
+  page.on("response", response => { if (response.status() >= 400) failedResponses.push({ url: response.url(), status: response.status() }); });
+  let documentRequests = 0;
+  page.on("request", request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentRequests++; });
+  await page.goto("/pending-a/");
+  await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 0, cleanups: 0, helperReady: true });
+  const doc = await page.evaluateHandle(() => document);
+  const ancestor = await page.locator("#persisted").elementHandle();
+  const origin = await page.evaluate(() => performance.timeOrigin);
+  const baselineRequests = documentRequests;
+  const initial = await page.evaluate(() => ({
+    reservationCount: document.querySelectorAll("#reservation").length,
+    counterCount: document.querySelectorAll("#counter").length,
+    scrollY: window.scrollY,
+    reservationTop: document.querySelector("#reservation")!.getBoundingClientRect().top,
+    viewportHeight: innerHeight,
+  }));
+  const initialRaw = await pendingSnapshot(page);
+  await testInfo.attach("pending-before-navigation", { body: JSON.stringify(initialRaw, null, 2), contentType: "application/json" });
+  expect(initial.reservationCount).toBe(1);
+  expect(initial.counterCount).toBe(0);
+  expect(initial.scrollY).toBe(0);
+  expect(initial.reservationTop).toBeGreaterThan(initial.viewportHeight);
+  await page.evaluate(() => {
+    (window as any).persistenceSwap = new Promise(resolve => document.addEventListener("zfb:after-swap", () => resolve(true), { once: true }));
+  });
+  await page.locator('nav a[href="/pending-b/"]').click();
+  await page.evaluate(() => (window as any).persistenceSwap);
+  await expect(page.locator("#route")).toHaveText("pending-b");
+  const postSwapRaw = await pendingSnapshot(page);
+  await testInfo.attach("pending-after-navigation-before-assertion", { body: JSON.stringify(postSwapRaw, null, 2), contentType: "application/json" });
+  await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 0, cleanups: 0, helperReady: true });
+  expect(await ancestor!.evaluate(node => node === document.querySelector("#persisted"))).toBe(true);
+  await expect(page.locator("#counter")).toHaveCount(0);
+  const beforeVisibility = await page.evaluate(() => (window as any).persistenceControl);
+  // Only this explicit action makes the pending incoming island eligible.
+  await page.evaluate(() => document.querySelector("#reservation")!.scrollIntoView({ block: "center" }));
+  await expect(page.locator("#label")).toHaveText("incoming");
+  await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 1, cleanups: 0, helperReady: true });
+  await page.locator("#increment").click();
+  await expect(page.locator("#count")).toHaveText("1");
+  const afterVisibility = await page.evaluate(() => (window as any).persistenceControl);
+  // A subsequent unsafe structure/schedule change must clean the mounted scope.
+  await page.evaluate(() => {
+    (window as any).persistenceSwap = new Promise(resolve => document.addEventListener("zfb:after-swap", () => resolve(true), { once: true }));
+  });
+  await page.locator('nav a[href="/same-a/"]').click();
+  await page.evaluate(() => (window as any).persistenceSwap);
+  await expect(page.locator("#route")).toHaveText("same-a");
+  await expect(page.locator("#label")).toHaveText("original");
+  await expect(page.locator("#count")).toHaveText("0");
+  await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 2, cleanups: 1, helperReady: true });
+  expect(await ancestor!.evaluate(node => node === document.querySelector("#persisted"))).toBe(false);
+  expect(await doc.evaluate(node => node === document)).toBe(true);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
+  expect(documentRequests).toBe(baselineRequests);
+  await testInfo.attach("pending-lifecycle-and-navigation", { body: JSON.stringify({ initial, beforeVisibility, afterVisibility, final: await page.evaluate(() => (window as any).persistenceControl), documentRequests, errors, failedResponses }, null, 2), contentType: "application/json" });
+  expect(errors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+});
+
+
+test("diagnostic control: direct pending-b remains below viewport until explicit visibility", async ({ page }, testInfo) => {
+  await page.goto("/pending-b/");
+  await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 0, cleanups: 0, helperReady: true });
+  const before = await pendingSnapshot(page);
+  expect(before.bounds!.top).toBeGreaterThan(before.viewportHeight);
+  expect(before.reservationCount).toBe(1);
+  expect(before.counterCount).toBe(0);
+  await page.evaluate(() => document.querySelector("#reservation")!.scrollIntoView({ block: "center" }));
+  await expect(page.locator("#label")).toHaveText("incoming");
+  await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 1, cleanups: 0, helperReady: true });
+  await testInfo.attach("direct-pending-control", { body: JSON.stringify({ before, after: await pendingSnapshot(page) }, null, 2), contentType: "application/json" });
+});
+
+for (const variant of ["fresh", "native"] as const) {
+  test(`diagnostic control: ${variant} pending navigation geometry and lifecycle`, async ({ page }, testInfo) => {
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    page.on("console", message => { if (message.type() === "error") errors.push(`${message.text()} at ${JSON.stringify(message.location())}`); });
+    await page.goto(`/${variant}-pending-a/`);
+    if (variant === "fresh") await expect.poll(() => page.evaluate(() => (window as any).persistenceControl.helperReady)).toBe(true);
+    const before = await pendingSnapshot(page);
+    expect(before.lifecycle.activations).toBe(0);
+    expect(before.lifecycle.cleanups).toBe(0);
+    expect(before.bounds!.top).toBeGreaterThan(before.viewportHeight);
+    await page.evaluate(() => {
+      (window as any).persistenceSwap = new Promise(resolve => document.addEventListener("zfb:after-swap", () => resolve(true), { once: true }));
+    });
+    await page.locator(`nav a[href="/${variant}-pending-b/"]`).click();
+    await page.evaluate(() => (window as any).persistenceSwap);
+    await expect(page.locator("#route")).toHaveText(`${variant}-pending-b`);
+    const after = await pendingSnapshot(page);
+    await testInfo.attach(`${variant}-pending-navigation`, { body: JSON.stringify({ before, after, errors }, null, 2), contentType: "application/json" });
+    expect(after.bounds!.top).toBeGreaterThan(after.viewportHeight);
+    expect(after.scrollY).toBe(0);
+    expect(errors).toEqual([]);
+    if (variant === "fresh") {
+      expect(after.lifecycle.activations).toBe(0);
+      expect(after.lifecycle.cleanups).toBe(0);
+      expect(after.counterCount).toBe(0);
+      expect(after.reservationCount).toBe(1);
+      await page.evaluate(() => document.querySelector("#reservation")!.scrollIntoView({ block: "center" }));
+      await expect(page.locator("#label")).toHaveText("incoming");
+      await expect.poll(() => page.evaluate(() => (window as any).persistenceControl.activations)).toBe(1);
+    }
+    // Native persisted route is a measurement, not a zero-activation gate.
+    // The original strict pending test above retains that acceptance assertion.
+  });
+}

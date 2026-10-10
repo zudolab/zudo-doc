@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-import { h, type ComponentChildren, type ComponentType } from "preact";
+import { h } from "@takazudo/zfb/zudo-react";
+import type { Child, ElementType } from "@takazudo/zfb/zudo-react";
 import { defaultComponents } from "../content/index.js";
 import { makeAdmonition } from "../content-admonition/index.js";
 import type { IntroNode, PreparedHomeIntro } from "./types.js";
@@ -18,21 +18,25 @@ export { resolveHomeIntro } from "./resolve.js";
 export const HOME_SECTION_HEADING_CLASS = "zd-home-heading text-title font-bold leading-tight";
 
 const { h2: _h2, h3: _h3, h4: _h4, ...typography } = defaultComponents;
-const components: Record<string, ComponentType<Record<string, unknown>>> = { ...typography };
-components.h2 = ({ class: klass, className, children, ...rest }) =>
+const components: Record<string, ElementType> = { ...typography };
+components.h2 = ({ class: klass, children, ...rest }: { class?: string; children?: Child; [key: string]: unknown }) =>
   h(
     "h2",
-    { ...rest, class: [HOME_SECTION_HEADING_CLASS, klass, className].filter(Boolean).join(" ") },
-    children as ComponentChildren,
+    { ...rest, class: [HOME_SECTION_HEADING_CLASS, klass].filter(Boolean).join(" ") },
+    children as Child,
   );
 for (const variant of ["note", "tip", "info", "warning", "danger", "caution", "important"] as const) components[variant] = makeAdmonition(variant);
 
-function renderNode(node: IntroNode): ComponentChildren {
+const voidTags = new Set(["br", "hr", "img", "input"]);
+function renderNode(node: IntroNode): Child {
   if (typeof node === "string") return node;
-  return h(components[node.tag] ?? node.tag, node.attrs, node.children.map(renderNode));
+  const type = components[node.tag] ?? node.tag;
+  return voidTags.has(node.tag)
+    ? h(type, node.attrs)
+    : h(type, node.attrs, ...node.children.map(renderNode));
 }
 
-/** Synchronous SSR view of output produced by home-intro/prepare. No raw HTML sink. */
+/** Synchronous SSR view of output produced by home-intro/prepare. Ruby uses the native zudo-react vocabulary. */
 export function CompactProse({ intro }: { intro: PreparedHomeIntro | null | undefined }) {
   if (!intro?.nodes.length) return null;
   return <div class="zd-content zd-compact-prose">{intro.nodes.map(renderNode)}</div>;

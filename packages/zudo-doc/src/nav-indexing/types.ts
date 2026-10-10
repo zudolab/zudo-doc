@@ -1,5 +1,5 @@
 /**
- * Shared types for the nav-indexing v2 primitives.
+ * Shared data types for the package-owned navigation components.
  *
  * All types are presentational: every value the components need to render
  * arrives via props. No host-project imports, no Astro collection queries.
@@ -43,7 +43,7 @@ export interface TagLink {
 }
 
 /**
- * i18n label bag for `TagNav`. Keeps v2 decoupled from the host's `t()`
+ * i18n label bag for `TagNav`. Keeps the package decoupled from the host's `t()`
  * function — the consumer resolves strings for the active locale and passes
  * them in.
  */

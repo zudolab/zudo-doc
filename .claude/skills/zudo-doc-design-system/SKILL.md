@@ -1,13 +1,13 @@
 ---
 name: zudo-doc-design-system
-description: "Project-specific CSS and component rules for zudo-doc. Must be consulted before writing or editing CSS, Tailwind classes, color tokens, or component markup in this project. Covers: component-first strategy, design token system, three-tier color architecture, and palette index convention. Triggered by 'design system', 'zudo-doc-design-system', 'zudo-doc-css-wisdom' (old name)."
+description: "Project-specific CSS and component rules for zudo-doc. Must be consulted before writing or editing CSS, Wind classes, color tokens, or component markup in this project. Covers: component-first strategy, design token system, three-tier color architecture, and palette index convention. Triggered by 'design system', 'zudo-doc-design-system', 'zudo-doc-css-wisdom' (old name)."
 user-invocable: true
 argument-hint: "[topic: tokens, colors, component-first, palette]"
 ---
 
 # zudo-doc CSS & Component Rules
 
-**IMPORTANT**: These rules are mandatory for all code changes in this project that touch CSS, Tailwind classes, color tokens, or component markup. Read the relevant section before making changes.
+**IMPORTANT**: These rules are mandatory for all code changes in this project that touch CSS, Wind classes, color tokens, or component markup. Read the relevant section before making changes.
 
 ## How to Use
 
@@ -23,16 +23,18 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 
 ## Quick Rules (always apply)
 
-### Component First (no custom CSS classes)
+<span id="quick-rules-always-apply-component-first-no-custom-css-classes" />
 
-- **NEVER** create CSS module files, custom class names, or separate stylesheets
-- **ALWAYS** use Tailwind utility classes directly in component markup
+### Component First (supported utilities and deliberate authored CSS)
+
+- Prefer supported Wind utilities. Unsupported forms need authored `zd-` CSS with manifest/authored/emitted coverage; do not invent utility-root class collisions.
+- Use supported Wind utilities directly in component markup; keep authored exceptions component-scoped.
 - The component itself is the abstraction — `.card`, `.btn-primary` are forbidden
 - Use props for variants, not CSS modifiers
 
 ### Design Tokens (no arbitrary values)
 
-- **NEVER** use Tailwind default colors (`bg-gray-500`, `text-blue-600`) — they are reset to `initial`
+- **NEVER** use unconfigured default colors (`bg-gray-500`, `text-blue-600`) — they are not configured in the package Wind map
 - **NEVER** use arbitrary values (`text-[0.875rem]`, `p-[1.2rem]`) when a token exists
 - **ALWAYS** use project tokens: `text-fg`, `bg-surface`, `border-muted`, `p-hsp-md`, `text-small`
 - Spacing: `hsp-*` (horizontal), `vsp-*` (vertical) — see design-system.mdx for full list
@@ -40,14 +42,14 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 
 ### Color Tokens (three-tier system)
 
-- **Tier 1** (ramps): shared `base` (5 stops), `accent` (3 stops), and `state` (`danger`/`success`/`warning`/`info`) OKLCH ramps — no Tailwind utility reaches these directly (no `p0`–`p15`-style classes); they only feed Tier 2
-- **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — the only Tailwind-facing color tokens; prefer these always
+- **Tier 1** (ramps): shared `base` (5 stops), `accent` (3 stops), and `state` (`danger`/`success`/`warning`/`info`) OKLCH ramps — no Wind utility reaches these directly (no `p0`–`p15`-style classes); they only feed Tier 2
+- **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — the only Wind-facing color tokens; prefer these always
 - **NEVER** use hardcoded hex values in components
 - Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs — see `packages/zudo-doc/src/color-schemes-defaults/index.ts` (package-owned; the former host copy, `src/config/color-schemes.ts`, was deleted as byte-identical dead weight in the minimal-scaffold cutover, epic #2651)
 
 #### Raw ramp stops, overlays, and the acceptable exceptions
 
-- There is no Tailwind utility for a raw ramp stop. A one-off style that genuinely needs one references `var(--palette-*)` directly — rare; see `src/content/docs/reference/color.mdx`.
+- There is no Wind utility for a raw ramp stop. A one-off style that genuinely needs one references `var(--palette-*)` directly — rare; see `src/content/docs/reference/color.mdx`.
 - **Overlays / backdrops**: use `bg-overlay/{opacity}` (e.g. `bg-overlay/50`) in markup, or `color-mix(in oklch, var(--color-overlay) 50%, transparent)` in CSS.
 - **Acceptable exceptions to the no-hardcoded-color rule** (these are the whole list — anything else is a bug):
   - CSS fallback values, e.g. `var(--color-fg, #fff)`
@@ -108,8 +110,10 @@ actually shipped 14 times before epic #4032 turned it into a stated rule.
 Full rule text, the `data-nav-active` trap, and the descendant-color trap: the
 `color-scheme-a11y` skill §7 and `packages/zudo-doc/CLAUDE.md`.
 
-### Server-rendered Preact vs client islands
+<span id="quick-rules-always-apply-server-rendered-preact-vs-client-islands" />
 
-- Default to **server-rendered Preact `.tsx`** (no `client:*` directive) — emits zero JS. See `src/CLAUDE.md` for the canonical rule: "All components are Preact `.tsx` — there are no `.astro` files."
+### Server-rendered zudo-react vs client islands
+
+- Default to **server-rendered zudo-react `.tsx`** (no `client:*` directive) — emits zero JS. See `src/CLAUDE.md` for the canonical rule: "All components are zudo-react `.tsx` — there are no `.astro` files."
 - Promote to a **client island** only when interactivity is needed
 - Both follow the same utility-class approach

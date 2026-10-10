@@ -1,8 +1,6 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it } from "vitest";
-import render from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import type { AssetManifest } from "../../route-context-payload/types.js";
 import { createAssetCard, createAssetCode } from "../index.js";
 

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { FrontmatterCellRenderer } from "@takazudo/zudo-doc/metainfo";
 
 /**
@@ -30,10 +30,10 @@ const pillColorClass: Record<PillColor, string> = {
   muted: "zd-fm-pill--muted",
 };
 
-function Pill({ children, color }: { children: ReactNode; color: PillColor }) {
+function Pill({ children, color }: { children: Child; color: PillColor }) {
   return (
     <span
-      className={`inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full ${pillColorClass[color]}`}
+      class={`inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full ${pillColorClass[color]}`}
     >
       {children}
     </span>

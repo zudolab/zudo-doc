@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const EMBED_URL = "/browser-embed/";
 const HOME_URL = "/";
@@ -19,6 +19,25 @@ test("browser bundle renders md-wasm content through route context and real chro
   const sidebar = page.locator('aside[aria-label="Documentation sidebar"]');
   const pager = page.locator("nav[data-doc-pager]");
   const content = page.locator(".zd-content");
+  const islandMarkers = await page
+    .locator("[data-zfb-island], [data-zfb-island-skip-ssr]")
+    .evaluateAll((elements) =>
+      elements.map((element) => ({
+        component:
+          element.getAttribute("data-zfb-island") ??
+          element.getAttribute("data-zfb-island-skip-ssr"),
+        skipSsr: element.hasAttribute("data-zfb-island-skip-ssr"),
+        build: element.getAttribute("data-zfb-build"),
+      })),
+    );
+  expect(islandMarkers).toEqual([
+    { component: "SidebarToggle", skipSsr: false, build: "browser-embed-v1" },
+    { component: "SidebarTree", skipSsr: false, build: "browser-embed-v1" },
+    { component: "MermaidEnlarge", skipSsr: true, build: "browser-embed-v1" },
+  ]);
+  await expect(
+    page.locator('[data-zfb-island="ThemeToggle"], [data-zfb-island-skip-ssr="ThemeToggle"]'),
+  ).toHaveCount(0);
   await expect(header).toHaveCSS("height", "56px");
   await expect(header).toHaveCSS("display", "flex");
   await expect(sidebar).toHaveCSS("background-color", "oklch(0.185 0.005 65)");

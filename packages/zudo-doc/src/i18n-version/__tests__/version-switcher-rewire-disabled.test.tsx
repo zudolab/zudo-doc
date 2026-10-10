@@ -1,7 +1,5 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Drift-guard extension for epic #3242 / #3244: simulates a real
 // `zfb:after-swap` cycle in happy-dom and asserts the persisted header's
 // version-switcher anchors end up matching a fresh SSR render of the
@@ -18,7 +16,7 @@
 // a real DOM (`happy-dom`, declared via the file-scoped pragma above).
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   VersionSwitcher,
   VERSION_SWITCHER_REWIRE_SCRIPT,

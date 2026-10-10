@@ -147,7 +147,7 @@ For a registered island whose props belong to the browser session rather than th
 
 ## Customizing the appearance menu
 
-The built-in `theme-toggle` component is enough for most sites. Some consumers still keep their **own** `ThemeToggle` in their project — to place it in a custom spot, compose it into their own island wrapper, or because they were avoiding the `@takazudo/zudo-doc/theme` barrel (which has a React-resolution hazard — see below). In all of these cases, **import `ThemeToggle` from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath** instead of hand-copying a local component.
+The built-in `theme-toggle` serves the standard header. To place the same appearance menu elsewhere, import `ThemeToggle` from the public `@takazudo/zudo-doc/theme-toggle` subpath and compose it through a fixed-target server boundary.
 
 ```tsx
 import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
@@ -157,19 +157,13 @@ The exported `ThemeToggle` renders its own compact `<button>` and a Light / Dark
 
 ### Why import the package island
 
-zfb (since `0.1.0-next.39`) scans the `"use client"` modules shipped in npm `dist/`, and `@takazudo/zudo-doc` ships a scanner-visible `ThemeToggle` island. If you hand-copy a local `ThemeToggle` of the same name, zfb sees **two** components claiming the `ThemeToggle` island marker and emits a collision warning on every build:
+Each client entry must have one unique island identity. A second source file claiming `ThemeToggle` is an error, not a benign warning or a supported scan-order override. Reuse the package entry; if you build a different menu, give its client entry a distinct exported name and statically import that one target into its server boundary. Do not rely on `displayName` assignments or duplicate local shims to replace a package island.
 
-```
-⚠ island marker name collision: "ThemeToggle" is produced by two different source files —
-keeping <consumer>/src/components/theme-toggle.tsx and dropping
-<pkg>/@takazudo/zudo-doc/dist/theme-toggle/index.js. ...
-```
-
-The warning is benign — your local component wins and hydrates correctly — but it is noisy and the "keep one, drop one" resolution is scan-order-dependent. Importing `ThemeToggle` from the package registers under the same marker, so there is nothing to collide with, and you drop the maintenance burden of a hand-rolled copy.
+This repository validates entry graphs with `node scripts/check-client-export-names.mjs`. That gate rejects duplicate identities before a build. A callable renderer in the virtual bindings map alone does not make its client entry scanner-reachable; follow the concrete static route import in [Custom Components](./custom-components.mdx#interactive-islands-experimental).
 
 <Warning title="Import from /theme-toggle, not /theme">
 
-Pull the toggle from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath specifically. Do **not** import it from the broader `@takazudo/zudo-doc/theme` barrel: that barrel drags the react-importing design-token-panel modules into the esbuild graph, and `react` is **not** aliased to `preact/compat` there. The `/theme-toggle` subpath is a clean, preact-only module with no react-barrel hazard.
+Import the appearance control from the public `@takazudo/zudo-doc/theme-toggle` subpath. It is a zudo-react client component; mount it through a statically imported server boundary using `Island`.
 
 </Warning>
 

@@ -24,9 +24,7 @@ function buildDocsSchema() {
 const directiveVocabulary = {};
 
 export default defineConfig({
-  framework: "preact",
   port: 4351,
-  tailwind: { enabled: true },
   base: settings.base,
   // No adapter — static output only (no SSR routes needed for this proof).
   ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary }),

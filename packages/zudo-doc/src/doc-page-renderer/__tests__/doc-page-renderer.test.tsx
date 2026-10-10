@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Factory tests for createRenderDocPage — standalone chrome suppression (#2395).
  *
@@ -8,7 +7,8 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { JSX, VNode } from "preact";
+import { h, type Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { createRenderDocPage } from "../index.js";
 import type { RenderDocPageOptions } from "../index.js";
 import type { DocPageBaseProps } from "../../doc-page-props/index.js";
@@ -16,7 +16,8 @@ import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveGetUnavailableVersions } from "../../chrome/derive.js";
 import type { NoteTrayIndexProps } from "../../nav-indexing/note-tray-index.js";
-import { serialize } from "../../nav-indexing/__tests__/helpers.js";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
+import { agentPageKey } from "../../agent-docs/identity.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fakes factory
@@ -44,7 +45,7 @@ function makeEntryProps(
       },
       body: "",
       module_specifier: "test-page.mdx",
-      Content: () => ({ type: "div", props: {}, key: null }),
+      Content: () => h("div", {}),
     },
     breadcrumbs: [],
     prev: null,
@@ -62,7 +63,7 @@ const opts: RenderDocPageOptions = { locale: "en" };
 describe("createRenderDocPage — standalone chrome suppression", () => {
   it("standalone: true → hideSidebar true, hideToc true, sidebarPersistKey undefined", () => {
     const renderDocPage = createRenderDocPage(makeDeps());
-    const vnode = renderDocPage(makeEntryProps({ standalone: true }), opts) as VNode<Record<string, unknown>>;
+    const vnode = renderDocPage(makeEntryProps({ standalone: true }), opts) as Description;
     expect(vnode.props["hideSidebar"]).toBe(true);
     expect(vnode.props["hideToc"]).toBe(true);
     expect(vnode.props["sidebarPersistKey"]).toBeUndefined();
@@ -70,21 +71,21 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
 
   it("hide_sidebar: true only → hideSidebar true, hideToc falsy", () => {
     const renderDocPage = createRenderDocPage(makeDeps());
-    const vnode = renderDocPage(makeEntryProps({ hide_sidebar: true }), opts) as VNode<Record<string, unknown>>;
+    const vnode = renderDocPage(makeEntryProps({ hide_sidebar: true }), opts) as Description;
     expect(vnode.props["hideSidebar"]).toBe(true);
     expect(vnode.props["hideToc"]).toBeFalsy();
   });
 
   it("hide_toc: true only → hideToc true, hideSidebar falsy", () => {
     const renderDocPage = createRenderDocPage(makeDeps());
-    const vnode = renderDocPage(makeEntryProps({ hide_toc: true }), opts) as VNode<Record<string, unknown>>;
+    const vnode = renderDocPage(makeEntryProps({ hide_toc: true }), opts) as Description;
     expect(vnode.props["hideToc"]).toBe(true);
     expect(vnode.props["hideSidebar"]).toBeFalsy();
   });
 
   it("no flags → both falsy", () => {
     const renderDocPage = createRenderDocPage(makeDeps());
-    const vnode = renderDocPage(makeEntryProps(), opts) as VNode<Record<string, unknown>>;
+    const vnode = renderDocPage(makeEntryProps(), opts) as Description;
     expect(vnode.props["hideSidebar"]).toBeFalsy();
     expect(vnode.props["hideToc"]).toBeFalsy();
   });
@@ -103,14 +104,65 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
       const vnode = renderDocPage(props, {
         locale: "en",
         docHistoryContentDir: "src/content/docs",
-      }) as VNode<Record<string, unknown>>;
-      const historySlot = vnode.props["docHistorySlot"] as VNode<
-        Record<string, unknown>
-      >;
+      }) as Description;
+      const historySlot = vnode.props["docHistorySlot"] as Description;
 
       expect(historySlot.props["sourceFileExt"]).toBe(ext);
     },
   );
+});
+
+describe("createRenderDocPage — agent Markdown alternate eligibility", () => {
+  it("uses the actual locale and frontmatter route override under a non-root base", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { agentExport: true, base: "/manual/", defaultLocale: "ja" },
+      overrides: {
+        withBase: (path: string) =>
+          path === "/" ? "/manual/" : `/manual${path}`,
+      },
+    });
+    const vnode = createRenderDocPage(ctx)(
+      makeEntryProps({ slug: "frontmatter-route" }),
+      { locale: "ja" },
+    ) as Description;
+    const pageKey = agentPageKey("ja", "frontmatter-route");
+
+    expect(vnode.props["alternateLinks"]).toEqual([
+      {
+        rel: "alternate",
+        type: "text/markdown",
+        href: `/manual/agent/v1/pages/${pageKey}.md`,
+      },
+    ]);
+  });
+
+  it.each([
+    ["draft", { draft: true }],
+    ["unlisted", { unlisted: true }],
+    ["search excluded", { search_exclude: true }],
+    ["metadata-only category", { category_no_page: true }],
+  ])("omits the alternate for %s entries", (_label, excluded) => {
+    const ctx = makeFakeChromeContext({ settings: { agentExport: true } });
+    const vnode = createRenderDocPage(ctx)(
+      makeEntryProps(excluded as Record<string, unknown>),
+      opts,
+    ) as Description;
+
+    expect(vnode.props["alternateLinks"]).toBeUndefined();
+  });
+
+  it.each([
+    ["fallback content", { isFallback: true }],
+    ["versioned content", { version: { slug: "1.0" } }],
+  ])("omits the alternate for %s", (_label, options) => {
+    const ctx = makeFakeChromeContext({ settings: { agentExport: true } });
+    const vnode = createRenderDocPage(ctx)(
+      makeEntryProps(),
+      { locale: "en", ...options },
+    ) as Description;
+
+    expect(vnode.props["alternateLinks"]).toBeUndefined();
+  });
 });
 
 describe("createRenderDocPage — NoteTrayIndex MDX registration", () => {
@@ -163,12 +215,12 @@ describe("createRenderDocPage — NoteTrayIndex MDX registration", () => {
     const page = createRenderDocPage(ctx)(props, {
       locale,
       version: version ? { slug: version } : undefined,
-    }) as VNode<Record<string, unknown>>;
-    const content = page.props.contentSlot as VNode<Record<string, unknown>>;
-    const bound = (content.type as (props: Record<string, unknown>) => VNode)(content.props);
-    const rendered = (bound.type as (props: Record<string, unknown>) => VNode)(bound.props);
+    }) as Description;
+    const content = page.props.contentSlot as Description;
+    const bound = (content.type as (props: Record<string, unknown>) => Description)(content.props);
+    const rendered = (bound.type as (props: Record<string, unknown>) => Description)(bound.props);
     const noteTrayProps = rendered.props as unknown as NoteTrayIndexProps;
-    const html = serialize(
+    const html = renderSsr(
       (rendered.type as (props: NoteTrayIndexProps) => JSX.Element)(noteTrayProps),
     );
 
@@ -194,7 +246,7 @@ describe("createRenderDocPage — unavailableVersions payload", () => {
       overrides: { resolveNavSource: resolveNavSource as never },
     });
     const renderDocPage = createRenderDocPage(ctx);
-    const vnode = renderDocPage(makeEntryProps(), opts) as VNode<Record<string, unknown>>;
+    const vnode = renderDocPage(makeEntryProps(), opts) as Description;
 
     const real = deriveGetUnavailableVersions(ctx)("test-page", "en");
     expect(real).toEqual(new Set(["v2"]));
@@ -212,7 +264,7 @@ describe("createRenderDocPage — unavailableVersions payload", () => {
       overrides: { resolveNavSource: resolveNavSource as never },
     });
     const renderDocPage = createRenderDocPage(ctx);
-    const vnode = renderDocPage(makeEntryProps(), opts) as VNode<Record<string, unknown>>;
+    const vnode = renderDocPage(makeEntryProps(), opts) as Description;
 
     const real = deriveGetUnavailableVersions(ctx)("test-page", "en");
     expect(real).toEqual(new Set());
@@ -223,7 +275,7 @@ describe("createRenderDocPage — unavailableVersions payload", () => {
     // makeDeps() fixture default already sets settings.versions: false.
     const ctx = makeDeps();
     const renderDocPage = createRenderDocPage(ctx);
-    const vnode = renderDocPage(makeEntryProps(), opts) as VNode<Record<string, unknown>>;
+    const vnode = renderDocPage(makeEntryProps(), opts) as Description;
 
     expect(deriveGetUnavailableVersions(ctx)("test-page", "en")).toBeUndefined();
     expect(vnode.props["unavailableVersions"]).toBeUndefined();
@@ -243,7 +295,7 @@ describe("createRenderDocPage — unavailableVersions payload", () => {
     const renderDocPage = createRenderDocPage(ctx);
     const vnode = renderDocPage(makeEntryProps(), {
       locale: "ja",
-    }) as VNode<Record<string, unknown>>;
+    }) as Description;
 
     const real = deriveGetUnavailableVersions(ctx)("test-page", "ja");
     expect(real).toEqual(new Set(["v1"]));

@@ -1,0 +1,21 @@
+{
+  "name": "zfb-basic-blog",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "zfb dev",
+    "build": "zfb build",
+    "preview": "zfb preview",
+    "typecheck": "zfb check"
+  },
+  "dependencies": {
+    "@takazudo/zfb": "3.0.0",
+    "@takazudo/zfb-runtime": "3.0.0",
+    "@takazudo/zdtp": "0.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

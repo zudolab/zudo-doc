@@ -699,16 +699,16 @@ test.describe("HtmlPreview: lifecycle integration", () => {
     // Do not use a locator before the explicit scroll. Locator visibility and
     // interaction helpers may scroll the page and accidentally satisfy the
     // visible gate. Inspect the marker and its inert subtree directly instead.
-    // zfb attaches the render-mode marker asynchronously after navigation.
-    // Wait for that lightweight mount through page.evaluate only: no locator
-    // action may auto-scroll the marker before this no-work check settles.
+    // The locked native visible boundary (#4453) remains unmounted until
+    // visibility. Read the inert reservation without a locator action that
+    // could auto-scroll it and accidentally satisfy the scheduling gate.
     await expect
       .poll(
         async () => {
           const snapshot = await inspectVisibleMarker(page);
           return (
             snapshot.markerIndex >= 0 &&
-            snapshot.mountedSignal &&
+            !snapshot.mountedSignal &&
             snapshot.reservationCount === 1 &&
             snapshot.iframeCount === 0 &&
             snapshot.inlineTargetCount === 0 &&
@@ -724,14 +724,13 @@ test.describe("HtmlPreview: lifecycle integration", () => {
     expect(preVisibility.markerCount).toBeGreaterThan(0);
     expect(preVisibility.markerIndex).toBeGreaterThanOrEqual(0);
     expect(preVisibility.pageScrollY).toBe(0);
-    expect(preVisibility.mountedSignal).toBe(true);
+    expect(preVisibility.mountedSignal).toBe(false);
     expect(preVisibility.markerTop).not.toBeNull();
     expect(preVisibility.markerTop as number).toBeGreaterThan(
       preVisibility.viewportHeight,
     );
-    // zfb may already have marked the skip-SSR container as mounted. That
-    // marker is not the heavy preview: the reservation must still contain no
-    // iframe, source document, nested island, or inline side-effect target.
+    // Native scheduling must preserve the inert reservation: no iframe,
+    // source document, nested island, or inline side-effect target.
     expect(preVisibility.iframeCount).toBe(0);
     expect(preVisibility.reservationCount).toBe(1);
     expect(preVisibility.inlineTargetCount).toBe(0);
@@ -754,9 +753,8 @@ test.describe("HtmlPreview: lifecycle integration", () => {
       .locator(HTML_PREVIEW_SKIP_SSR)
       .nth(preVisibility.markerIndex);
     const visibleIframe = visible.locator("iframe");
-    // Poll the actual iframe, not data-zfb-island-mounted: zfb mounts the
-    // skip-SSR target immediately while HtmlPreviewWrapperInner still waits
-    // for its private one-shot IntersectionObserver.
+    // Require both real iframe work and the native mounted marker only after
+    // explicit visibility; the retired private observer is not involved.
     await expect.poll(() => visibleIframe.count(), { timeout: 10_000 }).toBe(1);
     await expect(visible).toHaveAttribute("data-zfb-island-mounted", "");
 

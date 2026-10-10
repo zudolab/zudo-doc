@@ -1,6 +1,6 @@
 # zudo-doc
 
-Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact islands.
+Minimal documentation framework built with zfb, MDX, zudo-wind, and zudo-react islands.
 
 The current repository contract targets zfb exclusively.
 
@@ -10,13 +10,19 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 
 - **zfb** (`@takazudo/zfb`) — static site generator with MDX content collections, file-routed `pages/`, and a built-in dev/build/preview/check CLI
 - **MDX** — authored under `src/content/`, content directory configurable via the `docsDir` setting; pipeline configured in `zfb.config.ts`
-- **Tailwind CSS v4** — compiled by zfb's embedded Tailwind engine; `@import "tailwindcss/preflight"` / `"tailwindcss/utilities"` in `src/styles/global.css` are intercepted by zfb's internal resolver and never reach `node_modules`, so neither `tailwindcss` nor `@tailwindcss/vite` is a dependency of this project
-- **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
+- **zudo-wind** — zfb's owned utility compiler; `zudoDoc()` supplies var-backed token defaults, reset selection, and the public `@takazudo/zudo-doc/wind.json` manifest. Author CSS variables in `:root`; do not add Tailwind imports or `@theme`/`@source` directives.
+- **zudo-react** — zfb's owned JSX and signals runtime for server components and interactive islands. Preact is installed only for zdtp's opaque UI; do not return Preact nodes to owned JSX.
 - **zfb semantic highlighting** — document fences use zfb's native build-time renderer; HtmlPreview lazily imports the public `@takazudo/zfb-md-wasm/highlight` subpath for browser-time HTML/CSS/JavaScript. Both emit `pre.hi-root` / `hi-*` classes and resolve through `--zd-syntax-*` design tokens. The public `./highlight` entry is explicitly allowed; do not add Shiki, theme-name config, inline token colors, or package-internal WASM paths.
 - **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; the package-owned `DesignTokenPanelBootstrap` island configures it from a mode-scoped builder and self-mounts it as a side effect
-- **TypeScript** — strict mode via `@takazudo/zudo-doc/tsconfig.base.json`, which the project `tsconfig.json` extends. The project file adds exactly one extra compiler flag of its own, `noUncheckedIndexedAccess`, plus `include`/`exclude`/`baseUrl`/`paths` (`exclude` drops `src/**/__tests__`; the `paths` block is required, not cosmetic — see the GOTCHA in `packages/zudo-doc/CLAUDE.md`).
+- **TypeScript** — strict mode via `@takazudo/zudo-doc/tsconfig.base.json`, which the project `tsconfig.json` extends. The project file adds exactly one extra compiler flag of its own, `noUncheckedIndexedAccess`, plus `include`/`exclude`/`baseUrl`/`paths` (`exclude` drops `src/**/__tests__`). The base owns `jsxImportSource: "@takazudo/zfb/zudo-react"`; host aliases may remain, but React→Preact compatibility paths must be removed.
 
 ## Commands
+
+Current migration target: published zfb family 4.3.0, peers ^4.3.0. Coordinated
+zudo-doc/create-zudo-doc 6.0.0 remains unreleased; upstream #4097 is still open.
+Use the pinned pnpm 10.30.3 (Corepack) for this workspace. Native Wind audit is
+`pnpm exec zfb wind audit --project-root . --fail-on error`; manifest/emitted CSS
+and browser checks remain separate evidence.
 
 - `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), `.claude/` and `.codex/` watchers, and `@takazudo/zudo-doc`'s own paired JS + declarations watchers concurrently via `run-parallel` (the package-owned bin that replaced npm-run-all2 — see `packages/zudo-doc/bin/run-parallel.mjs`); edits to `.claude/` or `.codex/` files regenerate the corresponding MDX live, and edits to `packages/zudo-doc/src/**` auto-rebuild `dist/` so zfb HMR picks them up. If a previous dev process is still bound to 4321 / 4322, the new launch fails fast with `EADDRINUSE` — kill it manually before retrying (e.g. `lsof -ti :4321 -ti :4322 | xargs -r kill`, after confirming the matched PIDs are actually yours). A hook used to do this automatically; it was removed because matching by port alone meant `pnpm dev` would silently kill unrelated apps on the same port (4321 is the Vite default) — do not re-add one. **A fatal exit in any one of those processes tears down all of them** — for why, the inotify `EMFILE`-vs-`ENOSPC` distinction, and why `--continue-on-error` is the wrong remedy, see the `#3129` section in `packages/zudo-doc/CLAUDE.md`.
 - `pnpm dev:zfb` — zfb dev server only (port 4321)
@@ -27,7 +33,7 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
 - `pnpm preview` — serve the built `dist/` (runs `zfb preview`)
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
-- `pnpm b4push` — pre-push validation: 34-step suite (format check → template drift → no-host-alias guard → pin parity → fixture drift → chrome-bindings fixture drift → tags audit → current-only compatibility contract → token lint → component-tokens drift → e2e spec naming guard → @flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → nav-overflow-script drift → publish contract → dist-mutation guard → bash 3.2 compatibility lint → required-checks manifest/parity → scaffold published-pin guard → typecheck → e2e/ type checking → Worker contract proof → root unit tests → slow unit tests → package tests → safelist check → build → content-fallback allowlist scan → link check → image check → html validation → preview smoke → manual smoke); each step's elapsed time is recorded and printed as a breakdown in the final summary. The content-fallback step (`scripts/check-content-fallback.mjs`) is the **allowlist-gated** half of the content-bridge guard — the **non-allowlisted** half, `strictContentBridge: true` in `zfb.config.ts`, fails plain `pnpm build`/CI directly and never runs as a b4push step; see the script's header for why both exist. Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see `TESTING.md` for the full tier rationale
+- `pnpm b4push` — pre-push validation: 34-step suite (format check → template drift → no-host-alias guard → pin parity → fixture drift → chrome-bindings fixture drift → tags audit → current-only compatibility contract → token lint → component-tokens drift → e2e spec naming guard → @flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → nav-overflow-script drift → publish contract → dist-mutation guard → bash 3.2 compatibility lint → required-checks manifest/parity → scaffold published-pin guard → typecheck → e2e/ type checking → Worker contract proof → root unit tests → slow unit tests → package tests → package Wind manifest check → build → content-fallback allowlist scan → link check → image check → html validation → preview smoke → manual smoke); each step's elapsed time is recorded and printed as a breakdown in the final summary. The content-fallback step (`scripts/check-content-fallback.mjs`) is the **allowlist-gated** half of the content-bridge guard — the **non-allowlisted** half, `strictContentBridge: true` in `zfb.config.ts`, fails plain `pnpm build`/CI directly and never runs as a b4push step; see the script's header for why both exist. Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see `TESTING.md` for the full tier rationale
 - `pnpm test` — unified test entry point: runs `build:workspace` (a full rebuild of both workspace packages) then root unit tests (`test:unit`) and workspace package tests (`test:packages`); does not include e2e
 - `pnpm build:workspace` — force-rebuild the workspace packages consumers compile against, in dependency order: `@takazudo/zudo-doc-history-server` then `@takazudo/zudo-doc`
 - `pnpm ensure:workspace-build` — the same list, but builds only what is *missing*; a no-op on a warm tree
@@ -109,11 +115,11 @@ src/
 ├── lib/                  # SHOWCASE island logic (preset-generator-logic.ts)
 ├── types/                # SHOWCASE types + ambient decls (locale.ts, doc-history-meta.d.ts)
 ├── utils/                # SHOWCASE helpers (base.ts, docs.ts, tags.ts)
-└── styles/global.css     # @theme tokens, feature styles, slots; @imports the shared
+└── styles/global.css     # :root token overrides and showcase feature styles; imports the shared
                           # @takazudo/zudo-doc/theme.css + content.css
 ```
 
-`chromeBindingsModule` is the supported callable/markup seam for package-owned chrome. `defineChromeBindings` accepts partial objects (omitted slots keep package defaults); its six primary replacement keys are `Header`, `Footer`, `Sidebar`, `Toc`, `Breadcrumb`, `DocPager`, and serializable custom `headerRightItems` names resolve through `headerRightComponents`. Do not add a legacy host DesignTokenPanel override or resurrect removed public aliases. Full contract: `packages/zudo-doc/CLAUDE.md`.
+`chromeBindingsModule` is the supported callable/markup seam for package-owned chrome. `defineChromeBindings` accepts partial objects (omitted slots keep package defaults); its six primary replacement keys are `Header`, `Footer`, `Sidebar`, `Toc`, `Breadcrumb`, `DocPager`, and serializable custom `headerRightItems` names resolve through `headerRightComponents`. `DocHistory` and `DesignTokenPanelBootstrap` overrides are fixed-target server boundaries that own their static Island mount; they are not raw client targets. Do not resurrect removed public aliases. Full contract: `packages/zudo-doc/CLAUDE.md`.
 
 ## Content Collections
 
@@ -180,7 +186,7 @@ rather than keeping a second copy — do not re-fork it.
 
 Since the minimal-scaffold cutover (epic zudolab/zudo-doc#2651), a feature's field census lives in ONE place (`packages/zudo-doc/src/config.ts`) and a generated project's config is a SINGLE file (`zfb.config.ts`, diff-from-defaults `zudoDoc({...})`). The old `settings-gen.ts` + `zfb-config-gen.ts` two-file split, and the per-project `src/config/settings.ts` a fresh scaffold used to ship, are both gone from the generator's output — this repo's own showcase still has a real `src/config/settings.ts` (spread into `zudoDoc({...settings})`) because it demonstrates every feature with real data, but that's a showcase choice, not something a fresh scaffold gets. When adding or removing a feature from zudo-doc, update these in order:
 
-1. **`packages/zudo-doc/src/config.ts`** — Add/remove the field on `ZudoDocConfig` (with a `@default` JSDoc — enforced by `config-jsdoc.test.ts`) and `DEFAULT_SETTINGS`. This is the ONE census every other step reads against.
+1. **`packages/zudo-doc/src/config.ts`** — Add/remove the field on `ZudoDocConfig` (with a `@default` JSDoc — enforced by `config-jsdoc.test.ts`) and defaults in the browser-safe `packages/zudo-doc/src/settings-defaults.ts` (re-exported by `config.ts`). This is the ONE census every other step reads against.
 2. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, update `zudoDocPreset()` to wire it from the settings field you just added. `zudoDoc()` (step 1's `config.ts`) calls this internally — a generated project's `zfb.config.ts` never wires plugins directly.
 3. **`packages/create-zudo-doc/src/zfb-config-gen.ts`** — Add/remove the field in `DEFAULT_MIRROR` (a hand-kept local copy of step 1's `DEFAULT_SETTINGS` — the generator can't `import` the package, see the file's header comment) + `buildDesiredConfig()` (user-choice → field mapping) + `FIELD_ORDER` (cosmetic emission order).
 4. **`packages/create-zudo-doc/src/features/<name>.ts`** — Create/update the feature module. Register a new module in `packages/create-zudo-doc/src/features/index.ts` (or, for the scaffold.ts-handled features `skillSymlinker`/`claudeSkills`/`claudeSkillsWriting`/`changelog`, in `scaffold.ts`). Most features need ONLY step 3's field mapping (leave `injections: []`, no `postProcess`) — only add a `postProcess` patch or `templates/features/<name>/files/` copy if the feature genuinely has no package-owned equivalent (rare; see `docHistory`/`designTokenPanel`/`tagGovernance`/`tauri`/`tauriDev` for the current examples and why each one needs it). Also add the feature to `FEATURES` in `packages/create-zudo-doc/src/constants.ts` if it needs a CLI flag.
@@ -197,7 +203,7 @@ Since the minimal-scaffold cutover (epic zudolab/zudo-doc#2651), a feature's fie
 **Content typography (`.zd-content`) is NOT per-project — it ships once from
 `packages/zudo-doc/src/content.css`.** Never re-inline `.zd-content` rules into any
 `global.css`. Canonical rules (consumer contract, import order, rebuild duty) are in
-`packages/zudo-doc/CLAUDE.md#shipped-css-artifacts-six`. Note the propagation lag:
+`packages/zudo-doc/CLAUDE.md#shipped-css-artifacts-and-wind-manifest`. Note the propagation lag:
 generated projects only pick up a `content.css` change after a new `@takazudo/zudo-doc`
 is published and `create-zudo-doc`'s pinned dependency is bumped (the lockstep release
 handles this).

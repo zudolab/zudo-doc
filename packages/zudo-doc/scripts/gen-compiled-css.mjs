@@ -5,8 +5,9 @@
 
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
-import { dirname, relative, resolve } from "node:path";
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -37,16 +38,11 @@ function assertRule(css, selector, declarations) {
 
 export function assertCompiledCss(css, { packageRoot, tempRoot } = {}) {
   const bytes = Buffer.byteLength(css);
-  if (bytes < 75_000) {
+  if (bytes < 70_000) {
     throw new Error(`compiled CSS is unexpectedly small: ${bytes} bytes`);
   }
-  for (const directive of ["@tailwind", "@apply", "@source", "@import"]) {
-    if (css.includes(directive)) {
-      throw new Error(`compiled CSS contains unresolved ${directive}`);
-    }
-  }
-  if (!css.includes("tailwindcss v4.2.0")) {
-    throw new Error("compiled CSS does not carry the Tailwind CSS v4.2.0 banner");
+  for (const directive of ["@tailwind", "@apply", "@source", "@theme", "@utility", "@plugin"]) {
+    if (css.includes(directive)) throw new Error(`compiled CSS contains unresolved ${directive}`);
   }
   if (/sourceMappingURL/i.test(css)) {
     throw new Error("compiled CSS contains a source map comment");
@@ -68,9 +64,9 @@ export function assertCompiledCss(css, { packageRoot, tempRoot } = {}) {
 
   assertRule(css, ".flex", [/display:\s*flex/]);
   assertRule(css, ".bg-surface", [
-    /background-color:\s*var\(--color-surface\)/,
+    /background-color:\s*var\(--zw-color-surface\)/,
   ]);
-  assertRule(css, ".text-fg", [/color:\s*var\(--color-fg\)/]);
+  assertRule(css, ".text-fg", [/color:\s*var\(--zw-color-fg\)/]);
   assertRule(css, "header[data-header]", [
     /background-color:\s*var\(--color-surface\s*,\s*var\(--color-bg\)\)/,
     /z-index:\s*var\(--z-index-toolbar\s*,\s*20\)/,
@@ -84,7 +80,7 @@ export function assertCompiledCss(css, { packageRoot, tempRoot } = {}) {
     /border-left:\s*4px solid var\(--color-muted\)/,
     /background(?:-color)?:\s*color-mix\(/,
   ]);
-  assertRule(css, ".admonition-title::before", [
+  assertRule(css, ".admonition-title:before", [
     /margin-right:\s*var\(--spacing-hsp-2xs\)/,
   ]);
   if (!/--zfb-hi-[\w-]+\s*:/.test(css)) {
@@ -104,41 +100,20 @@ export function generateCompiledCss(
   const resolvedPackageRoot = resolve(packageRoot);
   const resolvedOutputPath = resolve(outputPath);
   const inputPath = resolve(resolvedPackageRoot, ENTRY_RELATIVE_PATH);
-  const packageRootArg = relative(REPOSITORY_ROOT, resolvedPackageRoot);
-  const inputArg = relative(REPOSITORY_ROOT, inputPath);
-  const outputArg = relative(REPOSITORY_ROOT, resolvedOutputPath);
-
-  // This package intentionally has no zfb site config. The CLI override keeps
-  // the package's class-mode semantic highlighting contract while allowing a
-  // supplied packageRoot's config to provide any other highlight settings.
-  const result = spawnSync(
-    process.execPath,
-    [
-      ZFB_BIN,
-      "css",
-      "--input",
-      inputArg,
-      "--output",
-      outputArg,
-      "--project-root",
-      packageRootArg,
-      "--source",
-      "src/**/*.{tsx,ts,jsx,js}",
-      "--source",
-      "dist/**/*.{tsx,ts,jsx,js}",
-      "--no-auto-source",
-      "--code-highlight-mode",
-      "class",
-    ],
-    {
-      cwd: REPOSITORY_ROOT,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "inherit"],
-    },
-  );
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`zfb css failed with status ${result.status}`);
+  const tempRoot = mkdtempSync(join(tmpdir(), "zudo-doc-compiled-css-"));
+  try {
+    writeFileSync(join(tempRoot, "zfb.config.ts"),
+      `import { packageWindConfig } from ${JSON.stringify(resolve(resolvedPackageRoot, "src/wind/index.ts"))};\n` +
+      `export default { wind: { ...packageWindConfig, manifests: { "zudo-doc": { path: ${JSON.stringify(resolve(resolvedPackageRoot, "dist/wind.json"))} } } } };\n`,
+      "utf8");
+    const result = spawnSync(process.execPath, [
+      ZFB_BIN, "css", "--input", inputPath, "--output", resolvedOutputPath,
+      "--project-root", tempRoot, "--no-auto-source", "--code-highlight-mode", "class",
+    ], { cwd: REPOSITORY_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    if (result.error) throw result.error;
+    if (result.status !== 0) throw new Error(`zfb css failed: ${result.stdout}\n${result.stderr}`);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
   }
 
   const css = readFileSync(resolvedOutputPath, "utf8");

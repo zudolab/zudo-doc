@@ -1,0 +1,1 @@
+{"name":"@zfb-spike/pkg","version":"1.0.0","type":"module","exports":{"./route":"./route.tsx","./route2":"./route2.tsx","./island":"./island.tsx","./iframe-probe":"./iframe-probe.tsx","./layout":"./layout.tsx","./router-bootstrap":"./router-bootstrap.tsx","./plugin":"./plugin.mjs"},"peerDependencies":{"@takazudo/zfb":"3.0.0","@takazudo/zfb-runtime":"3.0.0"}}

@@ -1,15 +1,14 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // head-with-defaults theme-pack emission tests (ADR
 // `docs/adr/theme-packs.md` Decision 3; #2822).
 //
 // The ADR's "Ordering note (MUST-verify in #2822)": assert the theme-pack
-// provider renders IMMEDIATELY AFTER <ColorSchemeProvider/> in the
+// provider renders IMMEDIATELY AFTER <ColorSchemeProvider> in the
 // head-with-defaults output, and that the emitted bootstrap contains the
 // inlined-map + noscript shapes.
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderToString as render } from "@takazudo/zfb/zudo-react/server";
 import { createHeadWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { THEME_PACK_LATCH_CSS } from "../../theme/theme-pack-provider.js";
@@ -75,7 +74,7 @@ describe("HeadWithDefaults — theme-pack bootstrap emission", () => {
     expect(out).toContain('var base="/"');
     // Non-default configured pack → noscript fallback for the no-JS path.
     expect(out).toContain(
-      '<noscript><link rel="stylesheet" href="/theme-packs/foundry/pack.css?v=1.2.3"/></noscript>',
+      '<noscript><link rel="stylesheet" href="/theme-packs/foundry/pack.css?v=1.2.3"></noscript>',
     );
   });
 

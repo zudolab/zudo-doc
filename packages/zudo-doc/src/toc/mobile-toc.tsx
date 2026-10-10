@@ -1,10 +1,8 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
-import { useMemo, useState } from "preact/hooks";
+import { computed, signal } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 import type { HeadingItem } from "./types.js";
 import { SmartBreak } from "../smart-break/index.js";
@@ -16,7 +14,7 @@ export interface MobileTocProps {
 }
 
 /**
- * Collapsible TOC for narrow viewports (`xl:hidden`) — a Preact island
+ * Collapsible TOC for narrow viewports (`xl:hidden`) — a zudo-react island
  * component. Closed by default; tapping the header toggles, and tapping
  * any entry closes the panel after navigation.
  *
@@ -48,12 +46,17 @@ export interface MobileTocProps {
 export function MobileToc({
   headings,
   title = "On this page",
-}: MobileTocProps): VNode {
-  const filtered = useMemo(
-    () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
-    [headings],
-  );
-  const [open, setOpen] = useState(false);
+}: MobileTocProps): Child {
+  const filtered = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+  const open = signal(false);
+  const chevronClass = computed(() => cx(
+    "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
+    open.value && "rotate-180",
+  ));
+  const itemsClass = computed(() => cx(
+    "border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs",
+    !open.value && "hidden",
+  ));
 
   // No qualifying headings: emit a CSS-hidden container that still carries
   // the locale title text. The `hidden` class sets display:none visually,
@@ -62,7 +65,7 @@ export function MobileToc({
   // aria-hidden prevents screen readers from announcing the invisible label.
   if (filtered.length === 0) {
     return (
-      <div className="hidden" aria-hidden="true">
+      <div class="hidden" aria-hidden="true">
         {title}
       </div>
     );
@@ -77,29 +80,25 @@ export function MobileToc({
   // branch is a `display:none` placeholder carrying only the locale label, so
   // there is nothing for a pack to style.
   return (
-    <div data-zd-mobile-toc className="xl:hidden border border-muted mb-vsp-lg">
+    <div data-zd-mobile-toc class="xl:hidden border border-muted mb-vsp-lg">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        on:click={() => { open.value = !open.value; }}
         aria-expanded={open}
-        className="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
+        class="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
       >
         <span>{title}</span>
         <svg
-          xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
-          className={cx(
-            "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
-            open && "rotate-180",
-          )}
+          class={chevronClass}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          strokeWidth={2}
+          stroke-width={2}
         >
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            stroke-linecap="round"
+            stroke-linejoin="round"
             d="M19 9l-7 7-7-7"
           />
         </svg>
@@ -110,24 +109,21 @@ export function MobileToc({
           elements remain in the static markup, satisfying the a11y requirement
           for keyboard accessibility after hydration. */}
       <ul
-        className={cx(
-          "border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs",
-          !open && "hidden",
-        )}
-        aria-hidden={!open}
+        class={itemsClass}
+        aria-hidden={computed(() => !open.value)}
       >
         {filtered.map((heading, index) => (
           <li
             key={`${heading.slug}-${index}`}
-            className={cx(
+            class={cx(
               heading.depth === 3 && "ml-hsp-lg",
               heading.depth === 4 && "ml-hsp-2xl",
             )}
           >
             <a
               href={`#${heading.slug}`}
-              onClick={() => setOpen(false)}
-              className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
+              on:click={() => { open.value = false; }}
+              class="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
             >
               <SmartBreak>{heading.text}</SmartBreak>
             </a>

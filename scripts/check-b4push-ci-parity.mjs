@@ -51,7 +51,22 @@ const ROOT = resolve(__dirname, "..");
 // paths while b4push invokes colon-delimited pnpm scripts. A single string
 // would fail to match one direction on the clean tree.
 
+/**
+ * @typedef {Object} CiGuard
+ * @property {string} ciNeedle
+ * @property {string | null} b4pushScript
+ * @property {string} comment
+ * @property {string} [b4pushCommand] Exact command required in addition to its pnpm token.
+ */
+
+/** @type {CiGuard[]} */
 export const REQUIRED_CI_GUARDS = [
+  {
+    ciNeedle: "pnpm exec zfb wind audit --project-root . --fail-on error",
+    b4pushScript: "exec",
+    b4pushCommand: "pnpm exec zfb wind audit --project-root . --fail-on error",
+    comment: "Native Wind error gate (#4470)",
+  },
   {
     // Template drift: bash scripts/check-template-drift.sh in b4push; same in CI
     ciNeedle: "check-template-drift",
@@ -102,10 +117,10 @@ export const REQUIRED_CI_GUARDS = [
     comment: "Current and retired package subpath resolution (#2772)",
   },
   {
-    // Package safelist: node scripts/check-package-safelist.mjs (CI) / pnpm check:package-safelist (b4push)
-    ciNeedle: "check-package-safelist.mjs",
-    b4pushScript: "check:package-safelist",
-    comment: "Package safelist drift check (#1982)",
+    // Package wind manifest: node scripts/check-package-wind-manifest.mjs (CI) / pnpm check:package-wind-manifest (b4push)
+    ciNeedle: "check-package-wind-manifest.mjs",
+    b4pushScript: "check:package-wind-manifest",
+    comment: "Package wind manifest drift check (#1982)",
   },
   {
     // No-host-alias-in-package: node scripts/check-no-host-alias-in-package.mjs
@@ -324,6 +339,8 @@ export function stripYamlComments(src) {
  * `workflowSrc` and `b4pushSrc` are raw file contents. `allowlist` may be a
  * Set (the CLI form) or any Set-like object exposing `has`; `guards` defaults
  * to the production manifest so tests can provide a small fixture manifest.
+ *
+ * @param {{workflowSrc: string, b4pushSrc: string, allowlist?: Pick<Set<string>, "has">, guards?: readonly CiGuard[]}} options
  */
 export function checkParity({
   workflowSrc,
@@ -367,9 +384,15 @@ export function checkParity({
   }
 
   // ── Direction 3: manifest → b4push ───────────────────────────────────────
+  for (const guard of guards) {
+    if (guard.b4pushCommand && !stripShellCommentLines(b4pushSrc).includes(guard.b4pushCommand)) {
+      errors.push(`[manifest→b4push] Missing exact gate command: ${guard.b4pushCommand}`);
+    }
+  }
+
   // A manifest entry with a b4pushScript must still invoke that script
   // somewhere in run-b4push.sh. This is intentionally a whole-file scan:
-  // required guards such as package safelist and plugin resolution run after
+  // required guards such as package wind manifest and plugin resolution run after
   // the lightweight guard region. Full-line comments are ignored by the
   // scanner; inline comments and quoted strings remain lexical matches.
   const b4pushInvocations = new Set(extractB4pushInvocations(b4pushSrc));

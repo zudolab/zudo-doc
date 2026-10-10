@@ -1,23 +1,22 @@
 "use client";
 
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // DocHistory island — relocated from src/components/doc-history.tsx (epic #2344, S4).
-// Uses the shared hook and types shipped by S1a instead of re-inlining them:
-//   - useModalDialog from @takazudo/zudo-doc/use-modal-dialog (open/close sync, focus management)
+// Uses the shared modal helper and types instead of re-inlining them:
+//   - modalDialog from @takazudo/zudo-doc/use-modal-dialog (open/close sync, focus management)
 //   - DocHistoryData / DocHistoryEntry from @takazudo/zudo-doc/island-types
 //   - SmartBreak from @takazudo/zudo-doc/smart-break
 //
 // CSS: island-coupled .diff-* rules are now in packages/zudo-doc/src/features.css
 // (moved from src/styles/global.css in this same commit).
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "preact/compat";
+import { computed, For, getScope, Show, signal } from "@takazudo/zfb/zudo-react";
+import type { Ref } from "@takazudo/zfb/zudo-react";
 import type { DocHistoryData, DocHistoryEntry } from "../island-types/index.js";
 import { SmartBreak } from "../smart-break/index.js";
 import { History, Close, ArrowLeft } from "../icons/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
-import { useModalDialog } from "../use-modal-dialog/index.js";
+import { modalDialog } from "../use-modal-dialog/index.js";
 import { formatDate } from "../format-date/index.js";
 import type { ResolvedDateFormats } from "../settings.js";
 
@@ -55,14 +54,14 @@ interface DiffSelection {
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center py-vsp-xl">
+    <div class="flex items-center justify-center py-vsp-xl">
       <span
-        className="inline-block box-border rounded-full animate-spin"
+        class="inline-block box-border rounded-full page-loading-spinner"
         style={{
-          width: 48,
-          height: 48,
+          width: "48px",
+          height: "48px",
           border: "5px solid var(--color-fg, #fff)",
-          borderBottomColor: "transparent",
+          "border-bottom-color": "transparent",
         }}
       />
     </div>
@@ -170,6 +169,7 @@ async function getCachedDiff(
   newerHash: string,
   olderContent: string,
   newerContent: string,
+  isCurrent: () => boolean,
 ): Promise<DiffChanges> {
   const key = `${olderHash}::${newerHash}`;
   const hit = diffCache.get(key);
@@ -190,6 +190,9 @@ async function getCachedDiff(
       throw new Error('Compare requires the optional peer "diff": install it to use docHistory');
     },
   );
+  // The module import cannot be aborted; a replaced comparison must not do
+  // work or populate the cache after its owning scope has been disposed.
+  if (!isCurrent()) throw new Error("Comparison cancelled");
   const changes = diffLines(olderContent, newerContent);
   diffCache.set(key, changes);
   if (diffCache.size > DIFF_CACHE_LIMIT) {
@@ -208,63 +211,67 @@ function DiffViewer({
   onBack: () => void;
   showBackButton: boolean;
 }) {
-  const [changes, setChanges] = useState<DiffChanges | null>(null);
-  const [diffError, setDiffError] = useState<string | null>(null);
-
-  useEffect(() => {
+  const scope = getScope();
+  const changes = signal<DiffChanges | null>(null);
+  const diffError = signal<string | null>(null);
+  const tableRevision = signal(0);
+  scope.onActivate(() => {
     let cancelled = false;
-    setDiffError(null);
     getCachedDiff(
       selection.older.hash,
       selection.newer.hash,
       selection.older.content,
       selection.newer.content,
+      () => !cancelled && !scope.abortSignal.aborted,
     ).then((result) => {
-      if (!cancelled) setChanges(result);
+      if (!cancelled && !scope.abortSignal.aborted) {
+        changes.value = result;
+        tableRevision.value++;
+      }
     }).catch((e: unknown) => {
-      if (!cancelled) {
-        setDiffError(e instanceof Error ? e.message : "Failed to compute diff");
+      if (!cancelled && !scope.abortSignal.aborted) {
+        diffError.value = e instanceof Error ? e.message : "Failed to compute diff";
       }
     });
     return () => { cancelled = true; };
-  }, [selection.older.hash, selection.newer.hash]);
-
-  const rows = useMemo(
-    () => (changes ? buildSideBySideRows(changes) : []),
-    [changes],
-  );
+  });
+  const tableSnapshots = computed(() => changes.value
+    ? [{ revision: tableRevision.value, rows: buildSideBySideRows(changes.value) }]
+    : []);
 
   return (
-    <div className="flex flex-col h-full">
+    <div class="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-hsp-sm px-hsp-lg py-vsp-xs border-b border-muted">
+      <div class="flex items-center gap-hsp-sm px-hsp-lg py-vsp-xs border-b border-muted">
         {showBackButton && (
           <button
             type="button"
-            onClick={onBack}
-            className="text-muted hover:text-fg lg:hidden"
+            on:click={onBack}
+            class="text-muted hover:text-fg lg:hidden"
             aria-label="Back to revisions"
           >
-            <ArrowLeft className="h-icon-sm w-icon-sm" />
+            <ArrowLeft class="h-icon-sm w-icon-sm" />
           </button>
         )}
-        <div className="flex-1 min-w-0 flex">
-          <div className="w-1/2 text-small text-muted font-mono truncate pr-hsp-sm">
+        <div class="flex-1 min-w-0 flex">
+          <div class="w-1/2 text-small text-muted font-mono truncate pr-hsp-sm">
             {selection.older.hash.slice(0, 7)}
           </div>
-          <div className="w-1/2 text-small text-muted font-mono truncate pl-hsp-sm">
+          <div class="w-1/2 text-small text-muted font-mono truncate pl-hsp-sm">
             {selection.newer.hash.slice(0, 7)}
           </div>
         </div>
       </div>
 
       {/* Side-by-side diff — shows a spinner while the diff module lazy-loads */}
-      {diffError && (
-        <div className="px-hsp-lg py-vsp-lg text-danger text-small">{diffError}</div>
-      )}
-      {!changes && !diffError && <Spinner />}
-      <div className={`flex-1 overflow-auto${!changes ? " hidden" : ""}`}>
-        <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
+      <Show when={computed(() => diffError.value !== null)}>
+        {() => <div class="px-hsp-lg py-vsp-lg text-danger text-small">{diffError}</div>}
+      </Show>
+      <Show when={computed(() => !changes.value && !diffError.value)}>{() => <Spinner />}</Show>
+      <div class={computed(() => `flex-1 overflow-auto${!changes.value ? " hidden" : ""}`)}>
+        <For each={tableSnapshots} by={(snapshot) => snapshot.revision}>
+          {(snapshot) => (
+        <table class="w-full border-collapse" style={{ "table-layout": "fixed" }}>
           <colgroup>
             <col style={{ width: "2.5rem" }} />
             <col />
@@ -272,7 +279,7 @@ function DiffViewer({
             <col />
           </colgroup>
           <tbody>
-            {rows.map((row, idx) => {
+            {snapshot.value.rows.map((row) => {
               const leftBg =
                 row.type === "removed" || row.type === "changed"
                   ? "diff-line-removed"
@@ -285,21 +292,21 @@ function DiffViewer({
               const rightEmpty = row.rightLine === null;
 
               return (
-                <tr key={idx} className="diff-row">
+                <tr class="diff-row">
                   {/* Left line number */}
-                  <td className={`diff-line-num ${leftBg}`}>
+                  <td class={`diff-line-num ${leftBg}`}>
                     {row.leftNum ?? ""}
                   </td>
                   {/* Left content */}
-                  <td className={`diff-line-content ${leftBg}${leftEmpty ? " diff-line-empty" : ""}`}>
+                  <td class={`diff-line-content ${leftBg}${leftEmpty ? " diff-line-empty" : ""}`}>
                     {row.leftLine ?? ""}
                   </td>
                   {/* Right line number */}
-                  <td className={`diff-line-num ${rightBg}`}>
+                  <td class={`diff-line-num ${rightBg}`}>
                     {row.rightNum ?? ""}
                   </td>
                   {/* Right content */}
-                  <td className={`diff-line-content ${rightBg}${rightEmpty ? " diff-line-empty" : ""}`}>
+                  <td class={`diff-line-content ${rightBg}${rightEmpty ? " diff-line-empty" : ""}`}>
                     {row.rightLine ?? ""}
                   </td>
                 </tr>
@@ -307,6 +314,8 @@ function DiffViewer({
             })}
           </tbody>
         </table>
+          )}
+        </For>
       </div>
     </div>
   );
@@ -327,28 +336,29 @@ function RevisionList({
   displayLocale?: string;
   dateFormats?: ResolvedDateFormats;
 }) {
-  const [selectedA, setSelectedA] = useState<number>(1); // older (default: second entry)
-  const [selectedB, setSelectedB] = useState<number>(0); // newer (default: first entry)
+  const revisionEntries = signal(entries);
+  const selectedA = signal(1); // older (default: second entry)
+  const selectedB = signal(0); // newer (default: first entry)
 
   if (entries.length === 0) {
     return (
-      <div className="px-hsp-lg py-vsp-lg text-muted text-small">
+      <div class="px-hsp-lg py-vsp-lg text-muted text-small">
         No revision history available.
       </div>
     );
   }
 
-  const canCompare =
-    selectedA !== selectedB &&
-    selectedA >= 0 &&
-    selectedB >= 0 &&
-    selectedA < entries.length &&
-    selectedB < entries.length;
+  const canCompare = computed(() =>
+    selectedA.value !== selectedB.value &&
+    selectedA.value >= 0 &&
+    selectedB.value >= 0 &&
+    selectedA.value < entries.length &&
+    selectedB.value < entries.length);
 
   function handleCompare() {
-    if (!canCompare) return;
-    const idxOlder = Math.max(selectedA, selectedB);
-    const idxNewer = Math.min(selectedA, selectedB);
+    if (!canCompare.value) return;
+    const idxOlder = Math.max(selectedA.value, selectedB.value);
+    const idxNewer = Math.min(selectedA.value, selectedB.value);
     const olderEntry = entries[idxOlder];
     const newerEntry = entries[idxNewer];
     if (!olderEntry || !newerEntry) return;
@@ -359,33 +369,33 @@ function RevisionList({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div class="flex flex-col h-full">
       {/* Compare bar */}
       {entries.length >= 2 && (
-        <div className="px-hsp-lg py-vsp-xs border-b border-muted flex items-center gap-hsp-sm">
+        <div class="px-hsp-lg py-vsp-xs border-b border-muted flex items-center gap-hsp-sm">
           <button
             type="button"
-            disabled={!canCompare}
-            onClick={handleCompare}
-            className={
-              canCompare
+            disabled={computed(() => !canCompare.value)}
+            on:click={handleCompare}
+            class={computed(() =>
+              canCompare.value
                 ? "px-hsp-md py-vsp-2xs text-small rounded bg-accent text-bg hover:bg-accent-hover"
                 : "px-hsp-md py-vsp-2xs text-small rounded bg-surface text-muted cursor-not-allowed"
-            }
+            )}
           >
             Compare
           </button>
-          <span className="text-caption text-muted">
+          <span class="text-caption text-muted">
             Select two revisions (A / B)
           </span>
         </div>
       )}
 
       {/* Revision entries */}
-      <div className="flex-1 overflow-auto">
-        {entries.map((entry, idx) => {
-          const isA = selectedA === idx;
-          const isB = selectedB === idx;
+      <div class="flex-1 overflow-auto">
+        <For each={revisionEntries} by={(entry) => entry.hash}>{(entry, idx) => {
+          const isA = computed(() => selectedA.value === idx.value);
+          const isB = computed(() => selectedB.value === idx.value);
           // Renders in UTC (via the shared formatter) rather than the
           // visitor's local time zone — a deliberate correction over the
           // previous ambient-browser-locale-dependent formatting, not a
@@ -393,45 +403,44 @@ function RevisionList({
           // shift by one day versus the prior behavior; the wave-6
           // default-parity gate exempts doc-history on this basis (#4073).
           const dateStr = formatDate(
-            entry.date,
+            entry.value.date,
             displayLocale ?? "en",
             dateFormats?.full,
           );
 
           return (
             <div
-              key={entry.hash}
-              className={
-                isA || isB
+              class={computed(() =>
+                isA.value || isB.value
                   ? "px-hsp-lg py-vsp-xs border-b border-muted bg-surface"
                   : "px-hsp-lg py-vsp-xs border-b border-muted hover:bg-surface"
-              }
+              )}
             >
-              <div className="flex items-start gap-hsp-sm">
+              <div class="flex items-start gap-hsp-sm">
                 {/* Selection badges */}
                 {entries.length >= 2 && (
-                  <div className="flex flex-col gap-vsp-2xs pt-[2px] shrink-0">
+                  <div class="flex flex-col gap-vsp-2xs pt-[2px] shrink-0">
                     <button
                       type="button"
-                      onClick={() => setSelectedA(idx)}
-                      className={
-                        isA
+                      on:click={() => { selectedA.value = idx.value; }}
+                      class={computed(() =>
+                        isA.value
                           ? "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center bg-accent text-bg"
                           : "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center border border-muted text-muted hover:border-fg hover:text-fg"
-                      }
-                      aria-label={`Select revision ${entry.hash.slice(0, 7)} as A`}
+                      )}
+                      aria-label={`Select revision ${entry.value.hash.slice(0, 7)} as A`}
                     >
                       A
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSelectedB(idx)}
-                      className={
-                        isB
+                      on:click={() => { selectedB.value = idx.value; }}
+                      class={computed(() =>
+                        isB.value
                           ? "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center bg-accent text-bg"
                           : "w-[1.5rem] h-[1.25rem] text-caption rounded flex items-center justify-center border border-muted text-muted hover:border-fg hover:text-fg"
-                      }
-                      aria-label={`Select revision ${entry.hash.slice(0, 7)} as B`}
+                      )}
+                      aria-label={`Select revision ${entry.value.hash.slice(0, 7)} as B`}
                     >
                       B
                     </button>
@@ -439,22 +448,22 @@ function RevisionList({
                 )}
 
                 {/* Revision info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-hsp-sm">
-                    <code className="text-caption text-accent font-mono">
-                      {entry.hash.slice(0, 7)}
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-baseline gap-hsp-sm">
+                    <code class="text-caption text-accent font-mono">
+                      {entry.value.hash.slice(0, 7)}
                     </code>
-                    <span className="text-caption text-muted">{dateStr}</span>
+                    <span class="text-caption text-muted">{dateStr}</span>
                   </div>
-                  <div className="text-small text-fg mt-vsp-2xs truncate">
-                    <SmartBreak>{entry.message}</SmartBreak>
+                  <div class="text-small text-fg mt-vsp-2xs truncate">
+                    <SmartBreak>{entry.value.message}</SmartBreak>
                   </div>
-                  <div className="text-caption text-muted">{entry.author}</div>
+                  <div class="text-caption text-muted">{entry.value.author}</div>
                 </div>
               </div>
             </div>
           );
-        })}
+        }}</For>
       </div>
     </div>
   );
@@ -471,19 +480,16 @@ export function DocHistory({
   displayLocale,
   dateFormats,
 }: DocHistoryProps) {
-  const [view, setView] = useState<PanelView>("closed");
-  const [data, setData] = useState<DocHistoryData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [diffSelection, setDiffSelection] = useState<DiffSelection | null>(
-    null,
-  );
+  const scope = getScope();
+  const view = signal<PanelView>("closed");
+  const data = signal<DocHistoryData | null>(null);
+  const loading = signal(false);
+  const error = signal<string | null>(null);
+  const diffSelection = signal<DiffSelection | null>(null);
   // Holds the history trigger button element captured in handleOpen() so the
-  // hook can restore focus to it when the dialog closes. We capture it there
-  // (synchronously in the click handler, before React re-renders) rather than
-  // inside the hook's effect because the button is unmounted when isOpen=true
-  // (conditional render) — by the time the open-effect fires, it's gone (#2295).
-  const returnFocusRef = useRef<HTMLElement | null>(null);
+  // helper can restore focus to it when the dialog closes. Capture it in the
+  // click handler so the connected trigger remains the return target (#2295).
+  const returnFocusRef: Ref<HTMLElement> = { current: null };
 
   const base = basePath.replace(/\/+$/, "");
   // Doc-history storage sentinel ("" -> "index"): a root index page has the
@@ -499,74 +505,85 @@ export function DocHistory({
     ? `${base}/doc-history/${locale}/${historySlug}.json`
     : `${base}/doc-history/${historySlug}.json`;
 
-  const fetchHistory = useCallback(async () => {
-    if (data) return; // already loaded
-    setLoading(true);
-    setError(null);
+  let fetchController: AbortController | null = null;
+  let fetchRun = 0;
+  const fetchHistory = async () => {
+    if (data.value || loading.value) return;
+    fetchController?.abort();
+    const controller = new AbortController();
+    fetchController = controller;
+    const run = ++fetchRun;
+    loading.value = true;
+    error.value = null;
     try {
-      const res = await fetch(fetchPath);
+      const res = await fetch(fetchPath, { signal: controller.signal });
+      if (controller.signal.aborted || scope.abortSignal.aborted || run !== fetchRun) return;
       if (!res.ok) {
         throw new Error(`Failed to load history (${res.status})`);
       }
       const json: DocHistoryData = await res.json();
+      if (controller.signal.aborted || scope.abortSignal.aborted || run !== fetchRun) return;
       if (!json || !Array.isArray(json.entries)) {
         throw new Error("Malformed history response");
       }
-      setData(json);
+      data.value = json;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load history");
+      if (!controller.signal.aborted && !scope.abortSignal.aborted && run === fetchRun)
+        error.value = e instanceof Error ? e.message : "Failed to load history";
     } finally {
-      setLoading(false);
+      if (!scope.abortSignal.aborted && run === fetchRun) loading.value = false;
     }
-  }, [data, fetchPath]);
+  };
+  scope.onActivate(() => () => { fetchController?.abort(); fetchRun++; });
 
-  function handleOpen(e: React.MouseEvent<HTMLButtonElement>) {
+  function handleOpen(e: Event) {
     // Capture the trigger so the dialog hook can restore focus to it on close
     // (a11y #2295). The button now stays mounted while the panel is open (see
     // the render below), so this ref stays a *connected* node — required for
     // .focus() to actually land on close (zudolab/zudo-doc#2303).
-    returnFocusRef.current = e.currentTarget;
-    setView("revisions");
-    fetchHistory();
+    returnFocusRef.current = e.currentTarget as HTMLButtonElement;
+    view.value = "revisions";
+    void fetchHistory();
   }
 
-  const handleClose = useCallback(() => {
-    setView("closed");
-    setDiffSelection(null);
-  }, []);
+  const handleClose = () => {
+    view.value = "closed";
+    diffSelection.value = null;
+    fetchController?.abort();
+    fetchRun++;
+    loading.value = false;
+  };
 
   function handleSelectDiff(selection: DiffSelection) {
-    setDiffSelection(selection);
-    setView("diff");
+    diffSelection.value = selection;
+    view.value = "diff";
   }
 
   function handleBackToRevisions() {
-    setDiffSelection(null);
-    setView("revisions");
+    diffSelection.value = null;
+    view.value = "revisions";
   }
 
   // Lock body scroll when panel is open
-  useEffect(() => {
-    if (view !== "closed") {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [view]);
+  scope.effect(() => {
+    if (view.value === "closed") return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  });
 
-  const isOpen = view !== "closed";
-  const hasDiff = view === "diff" && diffSelection;
+  const isOpen = computed(() => view.value !== "closed");
+  const hasDiff = computed(() => view.value === "diff" && diffSelection.value !== null);
+  const diffPairs = computed(() => diffSelection.value && view.value === "diff"
+    ? [{ key: `${diffSelection.value.older.hash}:${diffSelection.value.newer.hash}`, selection: diffSelection.value }]
+    : []);
 
   // Shared dialog lifecycle: showModal/close sync, native-close callback,
-  // and navigation-close — delegated to useModalDialog.
+  // and navigation-close — delegated to modalDialog.
   // manageFocus: move focus to the close button on open, restore to the
   // history trigger button on close (a11y interaction #2295).
-  // returnFocusRef: pre-captured trigger element (button is unmounted when
-  // isOpen=true, so capture must happen in the click handler, not the effect).
-  const { dialogRef } = useModalDialog({
+  // returnFocusRef: pre-captured, still-connected trigger element.
+  const { dialogRef } = modalDialog(scope, {
     isOpen,
     onClose: handleClose,
     navigateEvent: AFTER_NAVIGATE_EVENT,
@@ -585,15 +602,16 @@ export function DocHistory({
           (the old `{!isOpen && …}`) left the ref pointing at a detached node,
           so `.focus()` no-op'd and focus fell to <body> on close
           (zudolab/zudo-doc#2303). */}
-      <div className="flex justify-end mt-vsp-xl">
+      <div class="flex justify-end mt-vsp-xl">
         <button
           type="button"
-          onClick={handleOpen}
-          className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors"
+          on:click={handleOpen}
+          data-doc-history-trigger=""
+          class="flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors duration-0"
           aria-label="View document history"
         >
-          <History className="h-icon-md w-icon-md" />
-          <span className="text-small">History</span>
+          <History class="h-icon-md w-icon-md" />
+          <span class="text-small">History</span>
         </button>
       </div>
 
@@ -609,47 +627,46 @@ export function DocHistory({
       <dialog
         ref={dialogRef}
         aria-label="Document revision history"
-        className="doc-history-panel z-modal fixed inset-0 m-0 h-full w-full max-h-full max-w-full bg-bg border-none p-0 backdrop:z-modal-backdrop backdrop:bg-bg/30"
+        data-doc-history-panel=""
+        class="z-modal fixed inset-0 m-0 h-full w-full max-h-full max-w-full bg-bg border-none p-0 backdrop:z-modal-backdrop backdrop:bg-bg/30"
         style={{ color: "var(--color-fg)" }}
       >
         {/* Panel header */}
-        <div className="flex items-center justify-between px-hsp-lg py-vsp-xs border-b border-muted">
-          <h2 className="text-body font-semibold text-fg">
-            {view === "diff" ? "Diff" : "Revision History"}
+        <div class="flex items-center justify-between px-hsp-lg py-vsp-xs border-b border-muted">
+          <h2 class="text-body font-semibold text-fg">
+            {computed(() => view.value === "diff" ? "Diff" : "Revision History")}
           </h2>
           <button
             type="button"
-            onClick={handleClose}
-            className="text-muted hover:text-fg"
+            on:click={handleClose}
+            class="text-muted hover:text-fg"
             aria-label="Close history panel"
           >
-            <Close className="h-icon-md w-icon-md" />
+            <Close class="h-icon-md w-icon-md" />
           </button>
         </div>
 
         {/* Panel body */}
-        <div className="h-[calc(100%-3rem)] overflow-hidden">
-          {loading && <Spinner />}
+        <div class="h-[calc(100%_-_3rem)] overflow-hidden">
+          <Show when={loading}>{() => <Spinner />}</Show>
 
-          {error && (
-            <div className="px-hsp-lg py-vsp-lg text-danger text-small">
-              {error}
-            </div>
-          )}
+          <Show when={computed(() => error.value !== null)}>
+            {() => <div class="px-hsp-lg py-vsp-lg text-danger text-small">{error}</div>}
+          </Show>
 
           {/* Difit-style LR split: revision sidebar | diff area */}
-          {!loading && !error && data && (
-            <div className="flex h-full">
+          <Show when={computed(() => !loading.value && !error.value && data.value !== null)}>{() => (
+            <div class="flex h-full">
               {/* Left sidebar: revision list — always visible on lg */}
               <div
-                className={
-                  hasDiff
+                class={computed(() =>
+                  hasDiff.value
                     ? "hidden lg:flex lg:flex-col lg:w-[clamp(16rem,25%,22rem)] shrink-0 border-r border-muted h-full"
                     : "flex flex-col w-full h-full"
-                }
+                )}
               >
                 <RevisionList
-                  entries={data.entries}
+                  entries={data.value!.entries}
                   onSelectDiff={handleSelectDiff}
                   displayLocale={displayLocale}
                   dateFormats={dateFormats}
@@ -657,22 +674,19 @@ export function DocHistory({
               </div>
 
               {/* Right: diff viewer (on mobile, replaces the sidebar) */}
-              {hasDiff && (
-                <div className="flex-1 min-w-0 h-full">
+              <Show when={hasDiff}>{() => (
+                <div class="flex-1 min-w-0 h-full">
                   {/* Key on the compared pair forces a fresh mount whenever the
                       selection changes, so the previous pair's diff rows can
                       never render under the new header hashes while the lazy
                       diff recompute is in flight (#2068). */}
-                  <DiffViewer
-                    key={`${diffSelection.older.hash}:${diffSelection.newer.hash}`}
-                    selection={diffSelection}
-                    onBack={handleBackToRevisions}
-                    showBackButton={true}
-                  />
+                  <For each={diffPairs} by={(pair) => pair.key}>{(pair) => (
+                    <DiffViewer selection={pair.value.selection} onBack={handleBackToRevisions} showBackButton={true} />
+                  )}</For>
                 </div>
-              )}
+              )}</Show>
             </div>
-          )}
+          )}</Show>
         </div>
       </dialog>
     </>

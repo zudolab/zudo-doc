@@ -1,6 +1,11 @@
 import { SINGLE_SCHEMES, THEME_PACKS } from "./constants.js";
-import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "./preset.js";
+import type {
+  McpDeployTarget,
+  PresetHeaderRightItem,
+  PresetMetaTagsConfig,
+} from "./preset.js";
 import {
+  normalizeAgentMcpChoices,
   parseChangelogPackages,
   validateChangelogPackages,
   validateHeaderRightItems,
@@ -38,6 +43,8 @@ export interface CreateOptions {
   /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. Default: "default". */
   themePack?: string;
   features: string[];
+  /** MCP deployment preset; currently Cloudflare Workers Static Assets only. */
+  mcpDeploy?: McpDeployTarget;
   /** Package slugs for the nested changelog layout; implies `changelog`. */
   changelogPackages?: string[];
   /** GitHub repository URL — drives the header GitHub link and body-foot
@@ -103,6 +110,16 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
     const err = validateMetaTags(rest.metaTags);
     if (err) throw new Error(err);
   }
+  const agentMcp = normalizeAgentMcpChoices({
+    agentExport: rest.features.includes("agentExport") ? true : undefined,
+    mcp: rest.features.includes("mcp"),
+    mcpDeploy: rest.mcpDeploy,
+  });
+  if (agentMcp.error) throw new Error(agentMcp.error);
+  const features =
+    agentMcp.agentExport === true && !rest.features.includes("agentExport")
+      ? [...rest.features, "agentExport"]
+      : rest.features;
   let changelogPackages = rest.changelogPackages;
   if (changelogPackages !== undefined) {
     const err = validateChangelogPackages(changelogPackages);
@@ -112,16 +129,17 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
   const localePlan = resolveLocalePlan({
     defaultLang: rest.defaultLang ?? "en",
     additionalLangs: rest.additionalLangs,
-    i18n: rest.features.includes("i18n"),
+    i18n: features.includes("i18n"),
   });
   const choices = {
     ...rest,
+    mcpDeploy: agentMcp.mcpDeploy,
     defaultLang: localePlan.defaultLang,
     additionalLangs:
       rest.additionalLangs === undefined ? undefined : localePlan.additionalLangs,
     features: localePlan.i18n
-      ? [...new Set([...rest.features, "i18n"])]
-      : rest.features.filter((feature) => feature !== "i18n"),
+      ? [...new Set([...features, "i18n"])]
+      : features.filter((feature) => feature !== "i18n"),
     changelogPackages,
   };
   await scaffold(choices);

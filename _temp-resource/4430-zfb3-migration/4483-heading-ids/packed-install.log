@@ -1,0 +1,26 @@
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 24, reused 12, downloaded 7, added 0
+Progress: resolved 74, reused 20, downloaded 20, added 0
+Progress: resolved 124, reused 58, downloaded 29, added 0
+Packages: +108
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 138, reused 71, downloaded 37, added 108, done
+
+dependencies:
++ @takazudo/zfb 4.2.1
++ @takazudo/zfb-md-wasm 4.2.1
++ @takazudo/zfb-runtime 4.2.1
++ @takazudo/zudo-doc 5.28.2
++ zod 4.3.6 (4.6.5 is available)
+
+devDependencies:
++ parse5 8.0.1
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild@0.28.2.                                     │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Done in 3.8s using pnpm v10.30.3

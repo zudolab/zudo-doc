@@ -1,9 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
+import "../../__tests__/fixtures/install-island-metadata.js";
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
-import type { ComponentChildren, JSX, VNode } from "preact";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { defineChromeBindings } from "../../chrome-bindings.js";
 import type {
   BreadcrumbSlotProps,
@@ -29,7 +29,7 @@ export function _createChromeDeclarationAssertions(
 ): void {
   const header: (props: HeaderWithDefaultsProps) => JSX.Element =
     chrome.HeaderWithDefaults;
-  const footer: (props: { lang?: string }) => VNode = chrome.FooterWithDefaults;
+  const footer: (props: { lang?: string }) => Child = chrome.FooterWithDefaults;
   const sidebar: (props: SidebarWithDefaultsProps) => JSX.Element =
     chrome.SidebarWithDefaults;
   void [header, footer, sidebar];
@@ -96,7 +96,7 @@ describe("primary chrome replacement slots", () => {
       },
       Breadcrumb: (props) => {
         received.Breadcrumb = props;
-        return <nav data-slot="breadcrumb">{props.rightSlot as ComponentChildren}</nav>;
+        return <nav data-slot="breadcrumb">{props.rightSlot as Child}</nav>;
       },
       DocPager: (props) => {
         received.DocPager = props;

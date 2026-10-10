@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // toc-prepaint — factories for the desktop TOC visibility feature (epic #3252, #3254).
 //
 // This module owns TWO pieces of the desktop TOC-toggle feature, mirroring
@@ -27,12 +26,11 @@
 // reached after hiding the default TOC elsewhere (the #2571 pattern, applied
 // to the customTocIsPresent gate this feature adds on top of it).
 
-import type { VNode, JSX } from "preact";
+import type { Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
-import {
-  DesktopTocToggle,
-  TOC_STORAGE_KEY,
-} from "../desktop-toc-toggle-island/index.js";
+import { DesktopTocToggle } from "../desktop-toc-toggle-island/index.js";
+import { TOC_STORAGE_KEY } from "../desktop-toc-toggle-island/storage.js";
 
 export interface TocPrepaintProps {
   /**
@@ -104,7 +102,7 @@ export function createTocVisibilityPrepaint(
 
     return (
       <script
-        dangerouslySetInnerHTML={{ __html: TOC_VISIBILITY_PREPAINT_SCRIPT }}
+        rawHtml={TOC_VISIBILITY_PREPAINT_SCRIPT}
       />
     );
   }
@@ -141,7 +139,7 @@ export function createTocPrepaint(
         {Island({
           when: "load",
           children: <DesktopTocToggle />,
-        }) as unknown as VNode}
+        }) as unknown as Description}
       </>
     );
   }

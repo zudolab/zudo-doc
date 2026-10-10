@@ -1,14 +1,12 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 import { describe, expect, it, vi } from "vitest";
-import type { VNode } from "preact";
 import {
   createNoteTrayIndexWrapper,
   type NoteTrayIndexDeps,
   type NoteTrayIndexNode,
 } from "../index.js";
-import type { NoteTrayIndexProps } from "../../nav-indexing/note-tray-index.js";
+import { renderNav } from "../../nav-indexing/__tests__/helpers.js";
 
 const child = (slug: string, rank: number): NoteTrayIndexNode => ({
   slug,
@@ -58,15 +56,13 @@ function deps(overrides: Partial<NoteTrayIndexDeps> = {}): NoteTrayIndexDeps {
   };
 }
 
-const propsOf = (value: unknown) => (value as VNode<NoteTrayIndexProps>).props;
-
 describe("createNoteTrayIndexWrapper", () => {
   it("defaults category to the tray containing currentSlug and resolves canonical tags", () => {
-    const result = createNoteTrayIndexWrapper(deps())({ currentSlug: "notes/one" });
-    expect(propsOf(result).items).toHaveLength(2);
-    expect(propsOf(result).items[0]?.tagLinks).toEqual([
-      { tag: "ai", href: "/en/docs/tags/ai" },
-    ]);
+    const result = createNoteTrayIndexWrapper(deps())({ style: "cards", currentSlug: "notes/one" });
+    const root = renderNav(result);
+    expect(root.querySelectorAll("article")).toHaveLength(2);
+    expect(root.querySelector('a[href="/en/docs/tags/ai"]')?.textContent).toContain("#ai");
+    expect(root.querySelector('a[href="/en/docs/tags/ai"]')).not.toBeNull();
   });
 
   it("supports an explicit category from any current page", () => {
@@ -74,7 +70,10 @@ describe("createNoteTrayIndexWrapper", () => {
       category: "notes",
       currentSlug: "elsewhere/page",
     });
-    expect(propsOf(result).items.map((item) => item.slug)).toEqual(["notes/one", "notes/two"]);
+    const root = renderNav(result);
+    expect(root.querySelectorAll('a[href^="/docs/notes/"]')).toHaveLength(2);
+    expect(root.querySelector('a[href="/docs/notes/one"]')?.textContent).toContain("notes/one");
+    expect(root.querySelector('a[href="/docs/notes/two"]')?.textContent).toContain("notes/two");
   });
 
   it("loads the localized source and remaps versioned hrefs", () => {
@@ -85,6 +84,6 @@ describe("createNoteTrayIndexWrapper", () => {
       currentVersion: "1.0",
     });
     expect(resolveNavSource).toHaveBeenCalledWith("ja", "1.0", { keepUnlisted: true });
-    expect(propsOf(result).items[0]?.href).toBe("/v/1.0/ja/docs/notes/one");
+    expect(renderNav(result).querySelector('a[href="/v/1.0/ja/docs/notes/one"]')).not.toBeNull();
   });
 });

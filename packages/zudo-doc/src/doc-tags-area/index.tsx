@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // doc-tags-area — factory for the locale-aware DocTags area wrapper
 // (epic #2344, S7).
 //
@@ -8,7 +7,7 @@
 // (which itself read `settings.tagVocabulary/tagGovernance` at module scope).
 // This factory receives all these as injected dependencies.
 
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { DocTags } from "../metainfo/index.js";
 import type { TagVocabularyEntry, TagGovernanceMode, Settings } from "../settings.js";
 import { resolvePageTags } from "../tag-helpers/index.js";
@@ -41,7 +40,7 @@ export interface DocTagsAreaProps {
  */
 export function createDocTagsArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
-): (props: DocTagsAreaProps) => VNode | null {
+): (props: DocTagsAreaProps) => Child {
   assertChromeContext(ctx, "createDocTagsArea");
   const settings = ctx.settings as unknown as DocTagsAreaSettings;
   const defaultLocale = ctx.defaultLocale;
@@ -58,7 +57,7 @@ export function createDocTagsArea<S extends Settings = Settings>(
   };
   const t = ctx.t;
 
-  function DocTagsArea({ locale, tags }: DocTagsAreaProps): VNode | null {
+  function DocTagsArea({ locale, tags }: DocTagsAreaProps): Child {
     if (!settings.docTags) return null;
 
     const rawTags = tags ?? [];

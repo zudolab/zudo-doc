@@ -57,6 +57,8 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
+  agentExport: true,
+  mcp: true,
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
@@ -80,6 +82,7 @@ export const settings = {
       categoryMatch: "getting-started",
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+    { label: "Editorial", path: "/docs/editorial", categoryMatch: "editorial" },
     { label: "Notes", path: "/docs/notes", categoryMatch: "notes" },
     { label: "Journal", path: "/docs/journal", categoryMatch: "journal" },
     {

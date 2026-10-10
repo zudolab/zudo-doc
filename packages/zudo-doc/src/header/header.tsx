@@ -1,23 +1,18 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // Layout-level JSX port of `src/components/header` for the
 // zudo-doc framework primitives layer (super-epic #473, sub-issue
 // #476). The component is intentionally server-render-friendly: it
 // emits the same markup the legacy Astro template did, leaving the two
 // interactive child islands (the mobile sidebar toggle and the dropdown
 // "..." overflow controller) as either consumer-supplied slots or an
-// inline-script `<script dangerouslySetInnerHTML>`.
+// inline-script `<script rawHtml>`.
 //
 // Why this shape:
-//   * The Astro template embeds three Astro-only sub-components
-//     (`<LanguageSwitcher />`, `<VersionSwitcher />`, `<Search />`).
-//     None of those have a JSX equivalent yet (Task #3 ports them), so
-//     they are exposed as `languageSwitcher` / `versionSwitcher` /
-//     `search` slot props. The host project keeps using
-//     `header` until the sibling ports land — this file exists
-//     so consumers of the v2 package can opt into the JSX path early.
-//   * The two Preact islands (`SidebarToggle`, `ThemeToggle`) are also
+//   * The Astro template embeds locale/version switchers and a search
+//     widget. Their ports remain injectable through `languageSwitcher` /
+//     `versionSwitcher` / `search` slot props so this host-agnostic header
+//     does not depend on the concrete widget configuration.
+//   * The two interactive islands (`SidebarToggle`, `ThemeToggle`) are also
 //     accepted as slots so consumers control hydration boundaries
 //     (e.g. wrap them in zfb's `<Island when="media">` / `<Island
 //     when="load">`). The matching `<slot name="sidebar" />` in the
@@ -32,12 +27,13 @@
 //     `./nav-active.ts` so they stay unit-testable without booting the
 //     host config.
 //   * The inline overflow script is a pure-JS string emitted via
-//     `dangerouslySetInnerHTML` (see `./nav-overflow-script.ts`). The
+//     `rawHtml` (see `./nav-overflow-script.ts`). The
 //     behaviour is identical to the original `<script>` block — only
 //     the TypeScript syntax was stripped because a raw `<script>` tag
 //     ships its body to the browser as-is.
 
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import {
   computeActiveNavPath,
   isNavItemActive,
@@ -120,7 +116,7 @@ export interface HeaderProps {
    * replaces the legacy `<slot name="sidebar" />`. Consumers pass the
    * sidebar tree they want to surface in the mobile sheet.
    */
-  sidebarSlot?: ComponentChildren;
+  sidebarSlot?: Child;
 
   /**
    * Replacement for the `<SidebarToggle client:media="...">` element in
@@ -130,23 +126,23 @@ export interface HeaderProps {
    * that slot — the layout is still valid (e.g. doc pages with
    * `hide_sidebar`).
    */
-  sidebarToggle?: ComponentChildren;
+  sidebarToggle?: Child;
 
   /**
    * Replacement for `<ThemeToggle client:load />`. Rendered only when
    * `colorModeEnabled` is `true` AND a `theme-toggle` entry survives
    * `filterHeaderRightItems` — matching the original template.
    */
-  themeToggle?: ComponentChildren;
+  themeToggle?: Child;
 
   /** Replacement for the `<LanguageSwitcher />` Astro child. */
-  languageSwitcher?: ComponentChildren;
+  languageSwitcher?: Child;
 
   /** Replacement for the `<VersionSwitcher />` Astro child. */
-  versionSwitcher?: ComponentChildren;
+  versionSwitcher?: Child;
 
   /** Replacement for the `<Search />` Astro child. */
-  search?: ComponentChildren;
+  search?: Child;
 
   /**
    * Emits `data-zfb-transition-persist={persistKey}` on the
@@ -314,9 +310,9 @@ export function Header(props: HeaderProps): JSX.Element {
         rightItemDispatch,
       ),
     }))
-    .filter((entry): entry is typeof entry & { node: VNode } => entry.node !== null);
-  const rightGroups: VNode[] = [];
-  let iconGroup: VNode[] = [];
+    .filter((entry): entry is typeof entry & { node: Child } => entry.node !== null);
+  const rightGroups: Child[] = [];
+  let iconGroup: Child[] = [];
 
   const flushIconGroup = () => {
     if (iconGroup.length === 0) return;
@@ -358,20 +354,14 @@ export function Header(props: HeaderProps): JSX.Element {
       //     re-binds the dropdown toggle on AFTER_NAVIGATE_EVENT, and
       //     VERSION_SWITCHER_REWIRE_SCRIPT recomputes the menu from
       //     window.location on the same event (zudolab/zudo-doc#2553).
-      //   - Search: <site-search> custom element re-registers on
-      //     AFTER_NAVIGATE_EVENT (_search-widget-script.ts:184, verified (a))
+      //   - Search: the persisted <site-search> instance refreshes its
+      //     page-level state on AFTER_NAVIGATE_EVENT.
       //   - SidebarToggle (mobile): closes on AFTER_NAVIGATE_EVENT
-      //     (sidebar-toggle-island/index.tsx, verified (a)). Its section tree
-      //     rides the Island's serialised data-props, and re-hydration alone
-      //     does NOT correct it — the header is lifted verbatim, so the Island
-      //     re-mounts from the OLD props (zudolab/zudo-doc#3525). What corrects
-      //     it is `ensureNestedIslandPropsRefresh`
-      //     (transitions/nested-island-props-refresh.ts, registered from the
-      //     island module): on BEFORE_SWAP_EVENT it copies the incoming
-      //     document's data-props onto the live nested islands, and
-      //     mountNewIslands re-reads the attribute at mount time (#3530)
-      //     Host islands can opt out with data-zd-props-preserve on the live
-      //     island or an ancestor inside this persisted root (#3555).
+      //     (sidebar-toggle-island/index.tsx). zfb 3.1 keeps unchanged island
+      //     roots live and applies changed incoming props natively. The
+      //     transition adapter copies old props only for islands opted into
+      //     host preservation with data-zd-props-preserve; unsafe incoming
+      //     structure drops persistence before native reconciliation.
       //   - Header nav + aria-current: NAV_OVERFLOW_SCRIPT re-runs on
       //     AFTER_NAVIGATE_EVENT (frozen by zudolab/zudo-doc#3534 — the
       //     `addEventListener(${afterNavigateEventLiteral}, initNavOverflow)`
@@ -458,14 +448,14 @@ export function Header(props: HeaderProps): JSX.Element {
         {rightGroups}
       </div>
 
-      <script dangerouslySetInnerHTML={{ __html: NAV_OVERFLOW_SCRIPT }} />
+      <script rawHtml={NAV_OVERFLOW_SCRIPT} />
       {hasLocales ? (
         // Keeps the persisted header's language-switcher hrefs pointing at the
         // current page's equivalent in each other locale across same-locale SPA
         // navigation (#2551). Registers a document-level AFTER_NAVIGATE_EVENT
         // listener once; idempotent across re-execution.
         <script
-          dangerouslySetInnerHTML={{ __html: LANGUAGE_SWITCHER_INIT_SCRIPT }}
+          rawHtml={LANGUAGE_SWITCHER_INIT_SCRIPT}
         />
       ) : null}
       {hasVersions ? (
@@ -474,7 +464,7 @@ export function Header(props: HeaderProps): JSX.Element {
         // navigation (#2553). Registers a document-level AFTER_NAVIGATE_EVENT
         // listener once; idempotent across re-execution.
         <script
-          dangerouslySetInnerHTML={{ __html: VERSION_SWITCHER_REWIRE_SCRIPT }}
+          rawHtml={VERSION_SWITCHER_REWIRE_SCRIPT}
         />
       ) : null}
     </header>
@@ -488,8 +478,8 @@ export function Header(props: HeaderProps): JSX.Element {
 function SidebarSlotFallback({
   children,
 }: {
-  children?: ComponentChildren;
-}): VNode | null {
+  children?: Child;
+}): Child {
   if (children === undefined || children === null) return null;
   return <span hidden>{children}</span>;
 }
@@ -502,7 +492,7 @@ function renderNavItem(
   currentVersion: string | undefined,
   urlHelpers: HeaderUrlHelpers,
   i18n: HeaderI18n,
-): VNode {
+): Child {
   // Category matching (the page's resolved big category) is the primary
   // signal; URL-path matching stays as a secondary fallback so items that
   // declare no `categoryMatch`, and pages with no resolved section (home,
@@ -527,7 +517,7 @@ function renderNavItem(
           aria-haspopup="true"
           aria-expanded="false"
           class={[
-            "flex items-center gap-x-hsp-xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
+            "flex items-center gap-x-hsp-xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors duration-0",
             isActive
               ? NAV_TOP_ACTIVE.join(" ")
               : NAV_TOP_INACTIVE.join(" "),
@@ -589,7 +579,7 @@ function renderNavItem(
       data-nav-category={item.categoryMatch}
       data-nav-item
       class={[
-        "px-hsp-md py-vsp-2xs text-small font-medium transition-colors shrink-0",
+        "px-hsp-md py-vsp-2xs text-small font-medium transition-colors duration-0 shrink-0",
         isActive
           ? NAV_TOP_ACTIVE.join(" ")
           : NAV_TOP_INACTIVE.join(" "),
@@ -645,8 +635,8 @@ function TriggerButton({
   id: string;
   ariaLabel: string;
   event: string;
-  children: ComponentChildren;
-}): VNode {
+  children: Child;
+}): Child {
   const inlineOnclick: Record<string, string> = {
     onclick: `window.dispatchEvent(new CustomEvent('${event}'))`,
   };
@@ -655,7 +645,7 @@ function TriggerButton({
       key={`right-${index}`}
       id={id}
       type="button"
-      class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+      class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors duration-0 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       aria-label={ariaLabel}
       {...inlineOnclick}
     >
@@ -676,8 +666,8 @@ function SlotWrapper({
 }: {
   index: number;
   className?: string;
-  children: ComponentChildren;
-}): VNode {
+  children: Child;
+}): Child {
   return (
     <div key={`right-${index}`} class={className}>
       {children}
@@ -689,7 +679,7 @@ type RightItemHandler = (
   item: HeaderRightItem,
   index: number,
   ctx: RightItemContext,
-) => VNode | null;
+) => Child;
 
 // Dispatch table keyed by `${type}:${trigger|component}`, or just `type`
 // for link/html items that carry no sub-type discriminant.
@@ -710,7 +700,6 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
       event="toggle-design-token-panel"
     >
       <svg
-        xmlns="http://www.w3.org/2000/svg"
         width="20"
         height="20"
         viewBox="0 0 24 24"
@@ -738,7 +727,6 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
       event="toggle-ai-chat"
     >
       <svg
-        xmlns="http://www.w3.org/2000/svg"
         width="20"
         height="20"
         viewBox="0 0 24 24"
@@ -765,7 +753,7 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         href={ctx.githubRepoUrl}
         target="_blank"
         rel="noopener noreferrer"
-        class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors duration-0 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
         aria-label={ctx.githubLabel}
         title={ctx.githubLabel}
       >
@@ -843,7 +831,7 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         // Mirrors `<Fragment set:html={item.html} />` from the Astro
         // template — the legacy code already trusts this string, and
         // this port preserves that contract.
-        dangerouslySetInnerHTML={{ __html: item.html }}
+        rawHtml={item.html}
       />
     );
   },
@@ -898,7 +886,7 @@ function renderRightItem(
   index: number,
   ctx: RightItemContext,
   dispatch: ReadonlyMap<string, RightItemHandler>,
-): VNode | null {
+): Child {
   const key =
     item.type === "trigger"
       ? `trigger:${item.trigger}`

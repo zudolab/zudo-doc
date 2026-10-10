@@ -55,7 +55,7 @@ function inspect(node: MdastNode, settings: HomeIntroSettings, locale: string, s
 }
 
 const allowedTags = new Set("p h1 h2 h3 h4 h5 h6 a img em strong del ul ol li blockquote pre code span br hr table thead tbody tr th td input div ruby rb rt rp note tip info warning danger caution important".split(" "));
-const plainAttrs = new Set(["title", "alt", "class", "id", "start", "align", "width", "height", "data-mermaid", "data-lang"]);
+const plainAttrs = new Set(["title", "alt", "class", "id", "start", "width", "height", "data-mermaid", "data-lang"]);
 
 function prepareNode(node: DefaultTreeAdapterMap["childNode"], settings: HomeIntroSettings, locale: string): IntroNode | null {
   if (node.nodeName === "#text") return (node as DefaultTreeAdapterMap["textNode"]).value;
@@ -66,8 +66,9 @@ function prepareNode(node: DefaultTreeAdapterMap["childNode"], settings: HomeInt
   for (const { name, value } of node.attrs) {
     if (name === "href" && node.tagName === "a") attrs.href = resolveIntroUrl(value, settings, locale);
     else if (name === "src" && node.tagName === "img") attrs.src = resolveIntroUrl(value, settings, locale, true);
-    else if (name === "style" && ["th", "td"].includes(node.tagName) && ["text-align: left", "text-align: center", "text-align: right"].includes(value)) attrs.style = value;
-    else if (plainAttrs.has(name)) attrs[name === "class" ? "className" : name] = value;
+    else if (name === "style" && ["th", "td"].includes(node.tagName) && /^text-align: (left|center|right);?$/u.test(value)) attrs.style = value;
+    else if (name === "align" && ["th", "td"].includes(node.tagName) && ["left", "center", "right"].includes(value)) attrs.style = `text-align: ${value}`;
+    else if (plainAttrs.has(name)) attrs[name] = value;
     else if (node.tagName === "input" && name === "type" && value === "checkbox") attrs.type = value;
     else if (node.tagName === "input" && (name === "checked" || name === "disabled")) attrs[name] = true;
     else throw new Error(`home.introMarkdown: unsupported rendered attribute ${name}`);

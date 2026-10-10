@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/docs-sitemap.
 //
 // The original Astro template loaded the docs collection, built the nav tree,
@@ -8,7 +6,7 @@
 // category. Within each section it flattened the children (depth-first,
 // hasPage only) and listed them as links.
 //
-// This v2 port accepts the already-built tree directly. The host calls
+// This renderer accepts the already-built tree directly. The host calls
 // buildNavTree (or buildSidebarTree from @takazudo/zudo-doc/sidebar-tree)
 // before rendering this component.
 //
@@ -20,7 +18,7 @@
 //     wrapper regardless.
 //   - Returns null when the tree is empty.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 
@@ -55,7 +53,7 @@ function SitemapSection({ node, index }: SitemapSectionProps): JSX.Element {
 
   return (
     <details key={`section-${index}`} class="group border border-muted overflow-hidden" open>
-      <summary class="flex items-center gap-x-hsp-md px-hsp-xl py-vsp-md text-title font-bold cursor-pointer select-none bg-surface list-none [&::-webkit-details-marker]:hidden">
+      <summary class="flex items-center gap-x-hsp-md px-hsp-xl py-vsp-md text-title font-bold cursor-pointer select-none bg-surface list-none zd-hide-details-marker">
         <span class="inline-block text-caption text-muted transition-transform duration-200 group-open:rotate-90">
           &#9654;
         </span>
@@ -93,7 +91,7 @@ function SitemapSection({ node, index }: SitemapSectionProps): JSX.Element {
 }
 
 /**
- * DocsSitemap — JSX port of `src/components/docs-sitemap`.
+ * DocsSitemap — server renderer for collapsible documentation sections.
  *
  * Renders the full documentation tree as a series of collapsible
  * `<details>` sections. Each top-level node becomes one section; its

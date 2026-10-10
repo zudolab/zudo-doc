@@ -1,0 +1,372 @@
+{
+  "real navigation: unchanged": {
+    "status": "expected",
+    "attachments": {
+      "lifecycle-and-navigation": {
+        "captures": [
+          {
+            "target": "same-b",
+            "lifecycle": {
+              "activations": 1,
+              "cleanups": 0,
+              "helperReady": true
+            },
+            "documentRequests": 1,
+            "origin": 1791537407078.9
+          },
+          {
+            "target": "same-a",
+            "lifecycle": {
+              "activations": 1,
+              "cleanups": 0,
+              "helperReady": true
+            },
+            "documentRequests": 1,
+            "origin": 1791537407078.9
+          }
+        ],
+        "errors": [],
+        "failedResponses": []
+      }
+    }
+  },
+  "real navigation: changed": {
+    "status": "expected",
+    "attachments": {
+      "lifecycle-and-navigation": {
+        "captures": [
+          {
+            "target": "changed",
+            "lifecycle": {
+              "activations": 2,
+              "cleanups": 1,
+              "helperReady": true
+            },
+            "documentRequests": 1,
+            "origin": 1791537408255.2
+          }
+        ],
+        "errors": [],
+        "failedResponses": []
+      }
+    }
+  },
+  "real navigation: preserve": {
+    "status": "expected",
+    "attachments": {
+      "lifecycle-and-navigation": {
+        "captures": [
+          {
+            "target": "preserve-b",
+            "lifecycle": {
+              "activations": 1,
+              "cleanups": 0,
+              "helperReady": true
+            },
+            "documentRequests": 1,
+            "origin": 1791537409060
+          }
+        ],
+        "errors": [],
+        "failedResponses": []
+      }
+    }
+  },
+  "real navigation: structural": {
+    "status": "expected",
+    "attachments": {
+      "lifecycle-and-navigation": {
+        "captures": [
+          {
+            "target": "structural",
+            "lifecycle": {
+              "activations": 2,
+              "cleanups": 1,
+              "helperReady": true
+            },
+            "documentRequests": 1,
+            "origin": 1791537409815.2
+          }
+        ],
+        "errors": [],
+        "failedResponses": []
+      }
+    }
+  },
+  "real navigation: identity": {
+    "status": "expected",
+    "attachments": {
+      "lifecycle-and-navigation": {
+        "captures": [
+          {
+            "target": "identity",
+            "lifecycle": {
+              "activations": 2,
+              "cleanups": 1,
+              "helperReady": true
+            },
+            "documentRequests": 1,
+            "origin": 1791537410565.5
+          }
+        ],
+        "errors": [],
+        "failedResponses": []
+      }
+    }
+  },
+  "pending skip-SSR navigation cancels old scheduling before activation": {
+    "status": "unexpected",
+    "attachments": {
+      "pending-before-navigation": {
+        "lifecycle": {
+          "activations": 0,
+          "cleanups": 0,
+          "helperReady": true
+        },
+        "scrollY": 0,
+        "viewportHeight": 720,
+        "markerAttributes": {
+          "data-zfb-island-skip-ssr": "CounterIsland",
+          "data-when": "visible",
+          "data-zfb-transport": "json/1",
+          "data-zfb-protocol": "zudo-react/1",
+          "data-zfb-build": "87ed6eba78cc28e3",
+          "data-props": "{\"label\":\"original\"}"
+        },
+        "bounds": {
+          "top": 2097.875,
+          "bottom": 2115.875,
+          "width": 1264,
+          "height": 18
+        },
+        "reservationCount": 1,
+        "counterCount": 0,
+        "label": null,
+        "activeElement": "<body><main><h1 id=\"route\">pending-a</h1><nav><a href=\"/pending-b/\">pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\" data-zfb-transition-persist=\"counter-header\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;original&quot;}\"><div id=\"reservation\">Await visibility</div></div></header><div data-zfb-island=\"PolicyBootstrap\" data-when=\"load\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><!--/zr:1:0--></div><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script></body>",
+        "ancestorPersist": "counter-header"
+      },
+      "pending-after-navigation-before-assertion": {
+        "lifecycle": {
+          "activations": 1,
+          "cleanups": 0,
+          "helperReady": true
+        },
+        "scrollY": 0,
+        "viewportHeight": 720,
+        "markerAttributes": {
+          "data-zfb-island-skip-ssr": "CounterIsland",
+          "data-when": "visible",
+          "data-zfb-transport": "json/1",
+          "data-zfb-protocol": "zudo-react/1",
+          "data-zfb-build": "87ed6eba78cc28e3",
+          "data-props": "{\"label\":\"incoming\"}",
+          "data-zfb-island-mounted": ""
+        },
+        "bounds": {
+          "top": 2097.875,
+          "bottom": 2118.875,
+          "width": 1264,
+          "height": 21
+        },
+        "reservationCount": 0,
+        "counterCount": 1,
+        "label": "incoming",
+        "activeElement": "<body><main><h1 id=\"route\">pending-b</h1><nav><a href=\"/pending-b/\">pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\" data-zfb-transition-persist=\"counter-header\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;incoming&quot;}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><div id=\"counter\"><span id=\"label\">incoming</span><button id=\"increment\">Increment</button><output id=\"count\"><!--zr:1:1:t-->0<!--/zr:1:1--></output></div><!--/zr:1:0--></div></header><div data-zfb-island=\"PolicyBootstrap\" data-when=\"load\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><!--/zr:1:0--></div><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script><div aria-live=\"assertive\" aria-atomic=\"true\" class=\"zfb-route-announcer\"></div></body>",
+        "ancestorPersist": "counter-header"
+      }
+    }
+  },
+  "diagnostic control: direct pending-b remains below viewport until explicit visibility": {
+    "status": "expected",
+    "attachments": {
+      "direct-pending-control": {
+        "before": {
+          "lifecycle": {
+            "activations": 0,
+            "cleanups": 0,
+            "helperReady": true
+          },
+          "scrollY": 0,
+          "viewportHeight": 720,
+          "markerAttributes": {
+            "data-zfb-island-skip-ssr": "CounterIsland",
+            "data-when": "visible",
+            "data-zfb-transport": "json/1",
+            "data-zfb-protocol": "zudo-react/1",
+            "data-zfb-build": "87ed6eba78cc28e3",
+            "data-props": "{\"label\":\"incoming\"}"
+          },
+          "bounds": {
+            "top": 2097.875,
+            "bottom": 2115.875,
+            "width": 1264,
+            "height": 18
+          },
+          "reservationCount": 1,
+          "counterCount": 0,
+          "label": null,
+          "activeElement": "<body><main><h1 id=\"route\">pending-b</h1><nav><a href=\"/pending-b/\">pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\" data-zfb-transition-persist=\"counter-header\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;incoming&quot;}\"><div id=\"reservation\">Await visibility</div></div></header><div data-zfb-island=\"PolicyBootstrap\" data-when=\"load\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><!--/zr:1:0--></div><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script></body>",
+          "ancestorPersist": "counter-header"
+        },
+        "after": {
+          "lifecycle": {
+            "activations": 1,
+            "cleanups": 0,
+            "helperReady": true
+          },
+          "scrollY": 1404,
+          "viewportHeight": 720,
+          "markerAttributes": {
+            "data-zfb-island-skip-ssr": "CounterIsland",
+            "data-when": "visible",
+            "data-zfb-transport": "json/1",
+            "data-zfb-protocol": "zudo-react/1",
+            "data-zfb-build": "87ed6eba78cc28e3",
+            "data-props": "{\"label\":\"incoming\"}",
+            "data-zfb-island-mounted": ""
+          },
+          "bounds": {
+            "top": 693.875,
+            "bottom": 714.875,
+            "width": 1264,
+            "height": 21
+          },
+          "reservationCount": 0,
+          "counterCount": 1,
+          "label": "incoming",
+          "activeElement": "<body><main><h1 id=\"route\">pending-b</h1><nav><a href=\"/pending-b/\">pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\" data-zfb-transition-persist=\"counter-header\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;incoming&quot;}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><div id=\"counter\"><span id=\"label\">incoming</span><button id=\"increment\">Increment</button><output id=\"count\"><!--zr:1:1:t-->0<!--/zr:1:1--></output></div><!--/zr:1:0--></div></header><div data-zfb-island=\"PolicyBootstrap\" data-when=\"load\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><!--/zr:1:0--></div><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script></body>",
+          "ancestorPersist": "counter-header"
+        }
+      }
+    }
+  },
+  "diagnostic control: fresh pending navigation geometry and lifecycle": {
+    "status": "expected",
+    "attachments": {
+      "fresh-pending-navigation": {
+        "before": {
+          "lifecycle": {
+            "activations": 0,
+            "cleanups": 0,
+            "helperReady": true
+          },
+          "scrollY": 0,
+          "viewportHeight": 720,
+          "markerAttributes": {
+            "data-zfb-island-skip-ssr": "CounterIsland",
+            "data-when": "visible",
+            "data-zfb-transport": "json/1",
+            "data-zfb-protocol": "zudo-react/1",
+            "data-zfb-build": "87ed6eba78cc28e3",
+            "data-props": "{\"label\":\"original\"}"
+          },
+          "bounds": {
+            "top": 2097.875,
+            "bottom": 2115.875,
+            "width": 1264,
+            "height": 18
+          },
+          "reservationCount": 1,
+          "counterCount": 0,
+          "label": null,
+          "activeElement": "<body><main><h1 id=\"route\">fresh-pending-a</h1><nav><a href=\"/fresh-pending-b/\">fresh-pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;original&quot;}\"><div id=\"reservation\">Await visibility</div></div></header><div data-zfb-island=\"PolicyBootstrap\" data-when=\"load\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><!--/zr:1:0--></div><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script></body>",
+          "ancestorPersist": null
+        },
+        "after": {
+          "lifecycle": {
+            "activations": 0,
+            "cleanups": 0,
+            "helperReady": true
+          },
+          "scrollY": 0,
+          "viewportHeight": 720,
+          "markerAttributes": {
+            "data-zfb-island-skip-ssr": "CounterIsland",
+            "data-when": "visible",
+            "data-zfb-transport": "json/1",
+            "data-zfb-protocol": "zudo-react/1",
+            "data-zfb-build": "87ed6eba78cc28e3",
+            "data-props": "{\"label\":\"incoming\"}"
+          },
+          "bounds": {
+            "top": 2097.875,
+            "bottom": 2115.875,
+            "width": 1264,
+            "height": 18
+          },
+          "reservationCount": 1,
+          "counterCount": 0,
+          "label": null,
+          "activeElement": "<body><main><h1 id=\"route\">fresh-pending-b</h1><nav><a href=\"/fresh-pending-b/\">fresh-pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;incoming&quot;}\"><div id=\"reservation\">Await visibility</div></div></header><div data-zfb-island=\"PolicyBootstrap\" data-when=\"load\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><!--/zr:1:0--></div><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script><div aria-live=\"assertive\" aria-atomic=\"true\" class=\"zfb-route-announcer\"></div></body>",
+          "ancestorPersist": null
+        },
+        "errors": []
+      }
+    }
+  },
+  "diagnostic control: native pending navigation geometry and lifecycle": {
+    "status": "expected",
+    "attachments": {
+      "native-pending-navigation": {
+        "before": {
+          "lifecycle": {
+            "activations": 0,
+            "cleanups": 0,
+            "helperReady": false
+          },
+          "scrollY": 0,
+          "viewportHeight": 720,
+          "markerAttributes": {
+            "data-zfb-island-skip-ssr": "CounterIsland",
+            "data-when": "visible",
+            "data-zfb-transport": "json/1",
+            "data-zfb-protocol": "zudo-react/1",
+            "data-zfb-build": "87ed6eba78cc28e3",
+            "data-props": "{\"label\":\"original\"}"
+          },
+          "bounds": {
+            "top": 2097.875,
+            "bottom": 2115.875,
+            "width": 1264,
+            "height": 18
+          },
+          "reservationCount": 1,
+          "counterCount": 0,
+          "label": null,
+          "activeElement": "<body><main><h1 id=\"route\">native-pending-a</h1><nav><a href=\"/native-pending-b/\">native-pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\" data-zfb-transition-persist=\"counter-header\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;original&quot;}\"><div id=\"reservation\">Await visibility</div></div></header><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script></body>",
+          "ancestorPersist": "counter-header"
+        },
+        "after": {
+          "lifecycle": {
+            "activations": 1,
+            "cleanups": 0,
+            "helperReady": false
+          },
+          "scrollY": 0,
+          "viewportHeight": 720,
+          "markerAttributes": {
+            "data-zfb-island-skip-ssr": "CounterIsland",
+            "data-when": "visible",
+            "data-zfb-transport": "json/1",
+            "data-zfb-protocol": "zudo-react/1",
+            "data-zfb-build": "87ed6eba78cc28e3",
+            "data-props": "{\"label\":\"incoming\"}",
+            "data-zfb-island-mounted": ""
+          },
+          "bounds": {
+            "top": 2097.875,
+            "bottom": 2118.875,
+            "width": 1264,
+            "height": 21
+          },
+          "reservationCount": 0,
+          "counterCount": 1,
+          "label": "incoming",
+          "activeElement": "<body><main><h1 id=\"route\">native-pending-b</h1><nav><a href=\"/native-pending-b/\">native-pending-b</a> <a href=\"/same-a/\">same-a</a></nav></main><header id=\"persisted\" data-zfb-transition-persist=\"counter-header\"><div id=\"spacer\" style=\"height:2000px;\">Below-viewport counter follows</div><div data-zfb-island-skip-ssr=\"CounterIsland\" data-when=\"visible\" data-zfb-transport=\"json/1\" data-zfb-protocol=\"zudo-react/1\" data-zfb-build=\"87ed6eba78cc28e3\" data-props=\"{&quot;label&quot;:&quot;incoming&quot;}\" data-zfb-island-mounted=\"\"><!--zr:1:0:c--><div id=\"counter\"><span id=\"label\">incoming</span><button id=\"increment\">Increment</button><output id=\"count\"><!--zr:1:1:t-->0<!--/zr:1:1--></output></div><!--/zr:1:0--></div></header><script src=\"/__zfb/livereload.js\" data-zfb-exec=\"\"></script><div aria-live=\"assertive\" aria-atomic=\"true\" class=\"zfb-route-announcer\"></div></body>",
+          "ancestorPersist": "counter-header"
+        },
+        "errors": []
+      }
+    }
+  }
+}

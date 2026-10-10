@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // versions-page — factory for the documentation-versions page renderer
 // (epic #2344, S8).
 //
@@ -8,7 +7,8 @@
 // receives those as injected dependencies so the logic lives in the package
 // while the host stub keeps the singleton imports.
 
-import type { ComponentChildren, JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { VersionsPageContent } from "../nav-indexing/index.js";
 import type { VersionPageEntry, VersionsPageLabels } from "../nav-indexing/index.js";
@@ -72,7 +72,7 @@ export interface VersionsPageDeps {
 /** Props for the VersionsPageView component. */
 export interface VersionsPageViewProps {
   locale: string;
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**
@@ -143,7 +143,9 @@ export function createVersionsPageView<S extends Settings = Settings>(
           // Version prefix comes BEFORE the locale — the only routed shape is
           // pages/v/[version]/{locale}/docs/...; /{locale}/v/... has no route.
           docsHref: withBase(`/v/${v.slug}${entryDocPrefix}/docs/${entryDocSlug}/`),
-          banner: v.banner as "unmaintained" | "unreleased" | undefined,
+          ...(v.banner !== undefined
+            ? { banner: v.banner as "unmaintained" | "unreleased" }
+            : {}),
         }))
       : [];
 
@@ -152,8 +154,8 @@ export function createVersionsPageView<S extends Settings = Settings>(
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
         lang={locale}
-        dataThemePack={dataThemePack}
-        noindex={settings.noindex}
+        {...(dataThemePack !== undefined ? { dataThemePack } : {})}
+        {...(settings.noindex !== undefined ? { noindex: settings.noindex } : {})}
         hideSidebar={true}
         hideToc={true}
         // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -164,7 +166,9 @@ export function createVersionsPageView<S extends Settings = Settings>(
         headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/docs/versions`)} />}
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-        enableClientRouter={settings.dynamicPageTransition}
+        {...(settings.dynamicPageTransition !== undefined
+          ? { enableClientRouter: settings.dynamicPageTransition }
+          : {})}
       >
         <VersionsPageContent
           latestHref={latestHref}

@@ -2,12 +2,12 @@
 
 Shared layout + content-rendering package consumed by both this repo's showcase
 (`workspace:*`) and every project scaffolded by `create-zudo-doc` (published npm).
-Components are Preact `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dist/`
+Components are zudo-react `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dist/`
 so `"use client"` directives survive — see `tsup.config.ts`). The `exports` map
 in `package.json` is the API surface; consumers import from `dist/`.
 
-The frozen 1.0 public API contract is documented in `API.md` (this directory):
-subpath exports, `zudoDocPreset` options (`Settings`), `@theme` design tokens,
+The current public API contract is documented in `API.md` (this directory):
+subpath exports, `zudoDocPreset` options (`Settings`), Wind tokens and CSS variables,
 `doclayout` slot anchors, and the ejectable component list.
 
 ## Note-tray schema and navigation
@@ -21,7 +21,7 @@ re-deriving tray behavior.
 ## Build: tsup (JS) + tsc (DTS) — two passes, not one
 
 `build`/`prepare` run **`gen-search-widget-script.mjs`, `gen-nav-overflow-script.mjs`,
-THEN tsup, THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`). Both
+`gen-switcher-scripts.mjs`, THEN tsup, THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`). All three
 generators must run first: `gen-search-widget-script.mjs` (#3412) writes
 `src/search-widget-script/generated-script.ts` that `search-widget-script/index.ts`
 imports, and `gen-nav-overflow-script.mjs` (#3534) writes
@@ -30,7 +30,10 @@ imports — without either, the first tsup/tsc pass fails resolving the missing
 `./generated-script.js` / `./nav-overflow-generated-script.js` (both generators
 are also wired into `predev` and the tsup `onSuccess` chain for the same
 reason). tsup emits only the JS
-(`dts:false`); `tsc` emits the `.d.ts`. The split exists
+(`dts:false`); `tsc` emits the `.d.ts`. Switcher scripts are frozen from
+`scripts/switcher-script-source.ts`; the generator emits
+`src/i18n-version/switcher-generated-scripts.ts`, with drift validation
+in the prepack contract. The split exists
 because tsup's `dts:true` rollup-based declaration bundler is **combinatorial in
 memory across entries** — with `bundle:false` + ~200 source entries it OOMs even
 at an 8GB Node heap (the JS pass alone finishes in ~150ms). `tsc
@@ -212,10 +215,11 @@ do not widen this into a generic component bag.
   `escapeAndInjectWbr` / `smartBreakToHtml`. The former toc-local copy
   (`toc/smart-break.tsx`) was consolidated into this single module; toc and
   content overrides import it from here.
-- **`./use-modal-dialog`** — `useModalDialog(...)`: the shared `<dialog>` modal
-  hook (open/close sync, native-close callback, backdrop click, SPA-navigation
-  close, opt-in focus management). Carries `"use client"`. The S3/S4 enlarge /
-  ai-chat / doc-history islands import it.
+- **`./use-modal-dialog`** — `modalDialog(scope, options)` with exported
+  `ModalDialogOptions` / `ModalDialogResult`: setup-only dialog synchronization,
+  native-close/backdrop callbacks, navigation close and focus return. It is an
+  ordinary module; `useModalDialog` is removed. A conditional dialog needs a
+  child component/scope inside `Show` so the helper owns its actual element.
 - **`./island-types`** — shared island prop/type contracts: `ChatMessage`,
   `DocHistoryData` (+ `DocHistoryEntry`), and the enlarge-dialog shared
   constants (`ENLARGE_DIALOG_STYLE`, `IMAGE_ENLARGE_DIALOG_CLASS`,
@@ -236,7 +240,7 @@ fragment every project used to hand-write in `zfb.config.ts` — collections loo
 `markdown.features`, dual-theme `codeHighlight`, `resolveMarkdownLinks`,
 `stripMdExt`, `trailingSlash`, `minifyHtml`, and the integration `plugins` array. The host
 spreads it into `defineConfig` and keeps only the shell fields it still owns
-(`framework`, `port`, `tailwind`, `bundle`, `base`, `adapter`).
+(`port`, `wind`, `bundle`, `base`, `adapter`).
 
 - **Signature:** `zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary })`.
   `buildDocsSchema` and `directiveVocabulary` are **passed in, not imported**, so
@@ -287,194 +291,73 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   `tagVocabulary`; everything callable is an importable package subpath; package
   routes use `@takazudo/zfb/content`, not the host `zfb/content` tsconfig alias).
 
-## Shipped CSS artifacts (six static + one compiled)
+<span id="shipped-css-artifacts-six-static-one-compiled" />
 
-tsup only compiles `.ts/.tsx`. The six static CSS artifacts are produced by
-the tsup `onSuccess` hook (runs after every build/`--watch`, so a one-shot
-build's `clean` cannot leave `dist/` without them); `compiled.css` is generated
-by that same chain only for one-shot builds. The CSS-relevant prefix of the chain (the full chain in
-`tsup.config.ts` continues with `gen-nav-overflow-script.mjs` — which must
-stay BEFORE the eject-sources copy, since `eject/header/` gets `src/header/`
-verbatim and would otherwise carry the previous literal for one watch cycle
-(#3534) — then the eject-sources / routes-src / virtual-modules / theme-packs
-/ catalog copies and `gen-search-widget-script.mjs` — see that file for the
-authoritative order):
+## Shipped CSS artifacts and Wind manifest
 
+The current migration target is published zfb family **4.3.0**, peers **^4.3.0**.
+The coordinated zudo-doc/create-zudo-doc **6.0.0 is not released**. Source package
+versions still read 5.28.2. Upstream zfb #4097 remains an open browser/navigation
+gate; do not infer release readiness from these architecture instructions.
+
+`theme.css`, `content.css`, `page-loading.css`, and `features.css` are copied from
+`src/` to `dist/` by the tsup `onSuccess` chain. `gen-wind-manifest.mjs` then
+produces `dist/wind.json` from compiled JS, and one-shot builds run
+`gen-compiled-css.mjs`. Watch builds skip compiled CSS generation. All five CSS
+files and `wind.json` have public export subpaths. The former `safelist.css` and
+`theme-no-reset.css` exports, generators and imports are removed.
+
+Consumer entry order:
+
+```css
+@layer zw-reset, zd-flow;
+@import "@takazudo/zudo-doc/theme.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
 ```
-onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && …"
-```
 
-1. **`dist/theme.css`** ← copied verbatim from `src/theme.css` by
-   `scripts/copy-theme-css.mjs`. Exported as `@takazudo/zudo-doc/theme.css`.
-   Ships the project's **default `@theme` token block** (colors including the
-   `--color-*: initial` tight-token guardrail, spacing, icon sizes, elevation,
-   typography, radius, breakpoints, and the 13 default `--z-index-*` tiers)
-   plus a handful of project-agnostic base rules (scroll-margin, selection
-   color, focus ring, search/find-in-page highlight, version-switcher
-   visibility). Introduced by zudolab/zudo-doc#2655 (epic #2651, Wave 3) so a
-   project's own `global.css` no longer has to hand-carry ~250 lines of
-   boilerplate token declarations.
-   - **Consumer contract**: must `@import` AFTER `@layer zd-preflight,
-     zd-flow;` + the two Tailwind imports (which stay project-side — see
-     `packages/create-zudo-doc/templates/base/src/styles/global.css`), and
-     BEFORE `safelist.css`/`content.css`/`page-loading.css`/`features.css`
-     (all four consume the `@theme` tokens declared here) and before the
-     project's own token-override `@theme { … }` block (later
-     declarations win). The `--color-page-loading-overlay` scrim token is
-     deliberately NOT included — it stays feature-injected by a project's
-     `dynamicPageTransition` wiring.
-   - **Z-index defaults**: the 13 `--z-index-*` tiers baked into `theme.css`
-     mirror `defaultZIndexTiers` (`@takazudo/zudo-doc/z-index-defaults`,
-     #2654). A project's own `src/config/z-index-tokens.ts` +
-     `gen:z-index`/`check:z-index` codegen is now opt-in — only needed when a
-     project overrides a tier (its own `@theme` block, declared after this
-     import, simply redefines the specific token it wants to change).
-   - **Namespace contract**: zudo-doc reserves the 23 bare `--color-*` aliases
-     declared in the first `@theme` block and the `--color-zd-*` prefix. The
-     `@theme static` namespaced tier mirrors those aliases for code outside
-     zudo-doc's Tailwind scan; `static` guarantees the variables are emitted,
-     while `bg-zd-*`/`text-zd-*` utilities still require the consumer's scan.
-     The package chrome deliberately consumes the bare aliases. Embedders
-     should namespace their own colors and must not define a reserved bare
-     alias in a second `@theme` block.
-   - **No-reset variant**: `dist/theme-no-reset.css`, exported as
-     `@takazudo/zudo-doc/theme-no-reset.css`, is derived from `src/theme.css`
-     by replacing only the `--color-*: initial` guardrail line. That guardrail
-     clears every `--color-*` declared before the import, including an
-     embedder's tokens (#4051). Import `theme.css` before the embedder's own
-     `@theme` when import order is controllable; use `theme-no-reset.css` when
-     it is not. The derived file must differ by exactly one line, and the
-     prepack guard byte-compares it with the source-derived result.
-   - **Editing**: change `src/theme.css`, then rebuild the package so both
-     `dist/theme.css` and `dist/theme-no-reset.css` update. Never hand-edit
-     either `dist` file. `tsup --watch` does NOT re-copy on a bare `.css`
-     change (it only watches `.ts/.tsx`), so re-run `pnpm build` after editing
-     the stylesheet.
+Add `@takazudo/zdtp/styles.css` only for a panel-enabled consumer. Use public CSS
+exports, never physical package `dist/*.css` paths. `theme.css` owns the default
+`:root` custom properties and reset-parity/base rules; `content.css` owns the
+single `.zd-content` typography/flow contract; `page-loading.css` owns navigation
+overlay/pending styles; `features.css` owns highlighting, preview, math, sidebar,
+transition, enlarge and history styles. Keep the existing theme-independent
+page-loading spinner fallback rather than replacing it with scheme foreground.
 
-2. **`dist/content.css`** ← copied verbatim from `src/content.css` by
-   `scripts/copy-content-css.mjs`. Exported as `@takazudo/zudo-doc/content.css`.
-   This is the **single source of truth for `.zd-content` content typography**
-   (flow-space rhythm, headings' `--flow-space`, minor elements, admonitions,
-   mermaid layout). Both the showcase `src/styles/global.css` and the
-   `create-zudo-doc` template `@import` it instead of inlining the rules — this
-   is what killed the old showcase↔template copy-drift (zudolab/zudo-doc#2188).
-   - **Consumer contract** (documented in full at the top of `src/content.css`):
-     the consumer must declare `@layer zd-preflight, zd-flow;`, define the
-     `@theme` design tokens the rules consume (`--color-*`, `--spacing-*`,
-     `--text-*`, `--font-*`, `--leading-*`, `--radius-DEFAULT`), and also import
-     `safelist.css` so the component-emitted utility classes are generated.
-   - Major-element visuals (h2–h4, p, a, strong, blockquote, ul, ol, table) do
-     NOT live here — they are emitted by the `defaultComponents` map in
-     `src/content/` (Tailwind classes + inline styles). `content.css` owns only
-     what those components don't emit.
-   - **Editing**: change `src/content.css`, then rebuild the package so
-     `dist/content.css` updates. `tsup --watch` does NOT re-copy on a bare
-     `.css` change (it only watches `.ts/.tsx`), so re-run `pnpm build` after
-     editing the stylesheet.
+`zudoDoc()` supplies the `definePreset`-owned Wind fragment, including
+`@takazudo/zudo-doc/wind.json`, var-backed token mappings, `reset: "owned-v1"`,
+`dark: false`, and sm/lg/xl breakpoints (640/1024/1280px). Consumers ordinarily
+do not register the package manifest themselves. No implicit numeric spacing
+scale is enabled. `wind` is a top-level engine option, not a Settings field.
+zfb deep-merges a supplied override over defaults; explicit `wind: false`
+disables generation. Override variable values in ordinary `:root` rules after
+the imports, or mapping values through `zudoDoc({ wind: { tokens: … } })`.
 
-3. **`dist/safelist.css`** ← generated by `scripts/gen-safelist.mjs`, which
-   scans the compiled `dist/**/*.js` for Tailwind class candidates and emits a
-   single `@source inline(...)`. Exported as `@takazudo/zudo-doc/safelist.css`.
-   Consumers import it so the utilities the components emit (which the consumer's
-   own Tailwind scanner can't see inside `node_modules`) are generated.
+Remove Tailwind imports and directives (`@theme`, `@source`, `@apply`, etc.).
+Keep token names, including bare `--color-*` and namespaced `--color-zd-*`; do
+not reintroduce the former `--color-*: initial` palette reset. Unsupported Wind
+utility forms need authored `zd-` CSS and a coverage disposition. Generated
+utilities are unlayered and follow authored CSS: check actual specificity,
+hover/focus winners and computed values rather than assuming layer parity.
 
-4. **`dist/page-loading.css`** ← copied verbatim from `src/page-loading.css` by
-   `scripts/copy-page-loading-css.mjs`. Exported as `@takazudo/zudo-doc/page-loading.css`.
-   Provides the full visual contract for the page-loading overlay, spinner, and
-   pending-navigation link indicator. Consumers `@import` it alongside the
-   `<PageLoadingOverlay>` component rather than inlining these rules per-project.
-   - **Consumer contract**: the stylesheet consumes host tokens
-     `--color-page-loading-overlay` (falling back to
-     `color-mix(in oklch, var(--color-overlay, #000) 60%, transparent)`),
-     `--color-page-loading-spinner` (spinner border; falls back to `#fff`),
-     `--color-accent` (pending-nav link colour), and `--z-index-modal` (overlay
-     stack level; falls back to `100`). All tokens are optional — bare consumers
-     get sensible defaults.
-   - **The spinner token is deliberately NOT `--color-fg`** (#3999/#4002). The
-     scrim is theme-independent (always dark), so a scheme-flipping foreground
-     put the ring at 3.02:1 against it in a light scheme — effectively at the
-     WCAG 1.4.11 non-text 3:1 floor. Pinned light it measures 6.18:1 (Default
-     Light) / 20.13:1 (Default Dark); 6.18:1 is the light-mode ceiling, since
-     the scrim composites over a near-white page to ~`rgb(98,97,96)`. For the
-     same reason the `prefers-reduced-motion` block carries **no** `opacity` —
-     a white ring at `0.5` composites to 2.85:1 in a light scheme. Do not
-     reintroduce either.
-   - **Editing**: change `src/page-loading.css`, then rebuild the package so
-     `dist/page-loading.css` updates. `tsup --watch` does NOT re-copy on a bare
-     `.css` change (it only watches `.ts/.tsx`), so re-run `pnpm build` after
-     editing the stylesheet.
+`compiled.css` is the browser-ready embedding export. Its entry is
+`src/compiled.entry.css`. `gen-compiled-css.mjs` invokes native `zfb css` with
+`--no-auto-source --code-highlight-mode class` and a temporary config using the
+package Wind defaults and strict manifest. It does not scan host content or
+package outDir as a substitute for the manifest. Never hand-edit generated
+`dist/` files. CSS-only edits do not trigger tsup's source watcher; rebuild the
+package when source CSS changes.
 
-5. **`dist/features.css`** ← copied verbatim from `src/features.css` by
-   `scripts/copy-features-css.mjs`. Exported as `@takazudo/zudo-doc/features.css`.
-   Contains **all** feature CSS every project using the package needs,
-   island-coupled or not: code block buttons, the zfb `hi-*` semantic-token
-   bridge, `.zd-html-preview-code`, KaTeX, desktop sidebar toggle
-   geometry, view-transition chrome (epic #2331), and — since S4 of epic
-   #2344 — the `.ai-chat-md`/`.zd-enlargeable`/`.zd-mermaid-enlargeable`
-   island CSS and the docHistory diff-viewer (`.diff-row`/`.diff-line-*`)
-   rules. All of it ships unconditionally (dead-weight cost accepted per the
-   Minimal Scaffold plan, zudolab/zudo-doc#2655) so a project's `global.css`
-   needs no per-feature `@slot` anchor for CSS — only the `@takazudo/zdtp`
-   stylesheet `@import` stays conditional (gated on `designTokenPanel`,
-   since it pulls in zdtp's own bytes and can't be made unconditional).
-   - **Consumer contract**: must @import AFTER `@takazudo/zudo-doc/theme.css`,
-     `content.css`, and `page-loading.css` (the `@import` order in
-     `global.css` is: `theme.css`, `safelist.css`, `content.css`,
-     `page-loading.css`, `features.css`). Cascade order matters: features.css
-     rules are unlayered and rely on the token definitions from `@theme` which
-     must precede this file in the compiled output.
-   - **Editing**: change `src/features.css`, then rebuild the package. `tsup
-     --watch` does NOT re-copy on a bare `.css` change — re-run `pnpm build`.
-
-6. **`dist/compiled.css`** ← generated by `scripts/gen-compiled-css.mjs` with
-   zfb 2.12's standalone `zfb css` command. This is the package's browser-ready
-   stylesheet: unlike the five source artifacts above, it is a Tailwind output
-   and is committed because downstream consumers import it directly.
-   - **Entry contract**: `src/compiled.entry.css` owns the layer declaration,
-     Tailwind preflight/utilities imports, and the five package CSS imports in
-     the order above. Its only source directive is exactly
-     `@source not "./dist/catalog.js";`. Positive sources are deliberately
-     CLI arguments, not entry directives, so the exclusion is rebased against
-     the package project root while the source order remains explicit:
-
-     ```sh
-     zfb css \
-       --input packages/zudo-doc/src/compiled.entry.css \
-       --output packages/zudo-doc/dist/compiled.css \
-       --project-root packages/zudo-doc \
-       --source 'src/**/*.{tsx,ts,jsx,js}' \
-       --source 'dist/**/*.{tsx,ts,jsx,js}' \
-       --no-auto-source \
-       --code-highlight-mode class
-     ```
-
-     The generator runs this command from the repository root. The explicit
-     class-mode flag is required because this library package has no site
-     `zfb.config.ts`; a supplied fixture/package root still owns its own entry,
-     source trees, config, imports, and output. A fixture that is outside the
-     workspace may provide only a package-self resolution link at
-     `node_modules/@takazudo/zudo-doc` so the package CSS imports resolve.
-   - **Reproducibility**: `--no-auto-source` prevents host pages/components/
-     layouts/content/src roots from entering the scan. The ordered `src` and
-     `dist` globs cover package sources and compiled consumer files, while the
-     authored catalog exclusion prevents generated `dist/catalog.js` content
-     from changing the stylesheet. zfb owns deterministic atomic output; the
-     generator does not create a scratch site, run `zfb build`, discover hashed
-     assets, or perform a second replacement.
-   - **Build order**: the tsup one-shot `onSuccess` chain copies the five CSS
-     artifacts and regenerates `safelist.css` before invoking this generator.
-     The generator is omitted in `tsup --watch` mode so ordinary package watch
-     rebuilds do not trigger a heavyweight whole-package CSS scan.
-   - **Editing**: change the entry or package sources, then run the package
-     build to regenerate `dist/compiled.css`. `check-compiled-css.mjs` is part
-     of `prepack` and byte-compares a fresh native-CLI regeneration against the
-     committed file; the package tests additionally verify clean/warm catalog
-     exclusion and packed-tarball parity.
-
-`prepack` guards all seven CSS artifacts (`check-theme-css.mjs && check-safelist.mjs && check-content-css.mjs && check-page-loading-css.mjs && check-features-css.mjs && check-compiled-css.mjs`); `check-theme-css.mjs` validates both `theme.css` and the derived `theme-no-reset.css`
-so a build that skipped the `onSuccess` step fails loudly instead of publishing a package
-whose `./theme.css` / `./theme-no-reset.css` / `./content.css` / `./safelist.css` /
-`./page-loading.css` / `./features.css` / `./compiled.css` export 404s or stale bytes for consumers.
+`check:prepack-contract` covers static CSS, Wind manifest, compiled CSS, generated
+scripts, routes, declarations, browser-safe API graphs and other public artifacts.
+Run `pnpm check:package-wind-manifest` and
+`pnpm exec zfb wind audit --project-root . --fail-on error` for their distinct
+coverage. Native audit needs the error exit flag and does not establish emitted
+CSS completeness. Retain authored/emitted-rule tests and browser computed-style
+evidence. Historical 3.x source-resolution probes use
+`ZFB3_SOURCE_RESOLVE=1`; normal released consumers use the built/packed public
+exports and declaration graphs, never stale v2 dist or private source imports.
 
 ## Theme-pack nav `:hover` guard — pack-author contract (epic #4032)
 
@@ -488,7 +371,7 @@ it and four packs that did guard using the wrong attribute (see the trap below).
 **Why.** The active nav item carries the base inverted fill —
 `NAV_TOP_ACTIVE = ["bg-fg", "text-bg"]` (`src/header/nav-class-tokens.ts:28`). A pack
 selector like `html[data-theme-pack="x"] [data-nav-item]:hover` is unlayered at
-specificity `(0,3,1)`, which beats the base `@layer utilities` `text-bg` rule at
+specificity `(0,3,1)`, which beats the base Wind `text-bg` rule at
 `(0,1,0)`. An unguarded hover therefore repaints the active pill's ink or its
 background and collapses the contrast — measured as low as **1.00:1** (identical fg
 and bg, text literally invisible) across the packs that shipped this bug.
@@ -563,11 +446,11 @@ specifier end-to-end.
 
 1. **`tsconfig.base.json`** — exported as `@takazudo/zudo-doc/tsconfig.base.json`.
    A project extends it (`"extends": "@takazudo/zudo-doc/tsconfig.base.json"`)
-   and keeps only `include` (+ a tiny `paths` block — see the GOTCHA below).
+   and keeps `include` plus any required project-local aliases (see below).
    Carries every `compilerOptions` flag the pre-package-first project template
    (`packages/create-zudo-doc/templates/base/tsconfig.json`) hand-rolled
    (strict + `noImplicit*` set, `target`/`module`/`moduleResolution`, `jsx:
-   "react-jsx"` + `jsxImportSource: "preact"`, …), **plus** a top-level `files: ["./zfb-config-shim.d.ts",
+   "react-jsx"` + `jsxImportSource: "@takazudo/zfb/zudo-react"`, …), **plus** a top-level `files: ["./zfb-config-shim.d.ts",
    "./virtual-modules.d.ts"]` to pull in the two ambient shims below.
    - **MUST ship the shims via `files`, never `include`.** `files`/`include`/
      `exclude` are all **override-only across `extends`** (the inheriting
@@ -647,61 +530,66 @@ specifier end-to-end.
    of the nested-island props refresh with `data-zd-props-preserve` on the
    island or an ancestor inside the persisted root. The live side governs; the
    attribute on the persisted root is a blanket opt-out for every nested
-   island, and an opted-out island receives neither a props write nor a remount
+   island, and an opted-out island receives neither a props write nor a forced remount
    flag.
 
-### GOTCHA — preact/compat `paths` stay in the PROJECT tsconfig, not the base
+<span id="shipped-ambient-type-shims-tsconfig-base-2656-minimal-scaffold-epic-2651-gotcha-—-preact-compat-paths-stay-in-the-project-tsconfig-not-the-base" />
 
-The pre-package-first template mapped `react` / `react-dom` /
-`react/jsx-runtime` to `./node_modules/preact/compat/…` — a path relative to
-the **consumer project's** `node_modules`. TS resolves a relative `baseUrl`/
-`paths` value relative to the tsconfig FILE IT ORIGINATED IN, not the file
-that (transitively) extends it. So if that `paths` block lived in
-`tsconfig.base.json`, `./node_modules/preact/compat/` would resolve inside
-`node_modules/@takazudo/zudo-doc/node_modules/…` — wrong, and generally
-absent (preact is hoisted to the consumer's own top-level `node_modules`).
-This still matters under `jsx: "react-jsx"` + `jsxImportSource: "preact"`
-(flipped from `"preserve"` in #3182): the jsx-typing motivation for the
-mapping is gone — the automatic runtime resolves JSX-namespace types through
-`jsxImportSource`, not through the `"react"` specifier — but the mapping
-itself is still load-bearing for plain type-only imports. Some files
-genuinely `import type { ReactNode } from "react"` (e.g.
-`src/config/frontmatter-preview-renderers.tsx`), and without this mapping
-`zfb check` fails to resolve `"react"` on those files (there's no real
-`react` package installed; this is a preact-only project).
+### Owned JSX and project-local aliases
 
-**Resolution (locked, verified empirically against the base tsconfig in a
-scratch fixture): keep the `react*`/`@/*` `paths` block in the PROJECT's own
-tsconfig, alongside its OWN `baseUrl: "."`.** A project extending the base
-must declare both:
+The base owns `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove React→Preact
+compatibility paths and React/Preact type imports. Use `Child`, `Description`,
+`Component<P>` and `JSX.IntrinsicElements` from the owned runtime. Preact remains
+only as zdtp 0.8.6's own dependency (`^10.29.1`; a peer through 0.8.5) for its opaque subtree; zdtp's
+internal Tailwind browser dependency does not become a host engine dependency.
 
-```jsonc
+A host alias still needs a project-local `baseUrl` because inherited relative
+paths resolve against the file that declares them:
+
+```json
 {
   "extends": "@takazudo/zudo-doc/tsconfig.base.json",
   "include": ["src", "pages", "zfb.config.ts"],
   "compilerOptions": {
-    // Re-declaring baseUrl here is REQUIRED, not cosmetic: the inherited
-    // baseUrl from the base ("." resolved against the base file's own
-    // directory, i.e. inside node_modules) would otherwise anchor these
-    // paths in the wrong place. A project-local baseUrl makes "." resolve
-    // against THIS file's directory (the project root) instead.
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "react": ["./node_modules/preact/compat/"],
-      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
-      "react-dom": ["./node_modules/preact/compat/"]
-    }
+    "paths": { "@/*": ["src/*"] }
   }
 }
 ```
 
-The `#doc-history-meta` path alias is intentionally NOT part of this block —
-per spike Q6, nothing in the minimal floor imports `#doc-history-meta`
-(package-owned routes get `docHistoryMeta` via the optional
-`chromeBindingsModule` channel, defaulting to `{}`); a project that keeps a
-host `pages/lib/_chrome.ts` stub importing the alias adds its own `paths`
-entry pointing at `.zfb/doc-history-meta.json`, same as before.
+Do not override the base's top-level `files`: it owns the config and virtual
+module declarations. A showcase importing `#doc-history-meta` adds its own path
+to `.zfb/doc-history-meta.json`; the minimal floor has no such alias requirement.
+
+### Fixed-target host boundaries and browser imports
+
+`DocHistory` and `DesignTokenPanelBootstrap` overrides are server boundaries
+that statically import one named client target, own the Island mount and return
+a Fragment. Do not hand a dynamic raw client target to package code for wrapping.
+`BodyEndIslandsDeps.ThemePackSwitcher` follows the same rule. Package settings
+gates and override precedence remain; panel configuration belongs in
+`designTokenPanelConfigModule` unless replacing the actual island implementation.
+
+Use `DocHistoryBoundary` from `./doc-history-area` for the standard history slot.
+Its `ssrFallback` is extracted on the server and never becomes client JSON props.
+Existing fallback exports at `./image-enlarge` and `./mermaid-enlarge` remain
+public through ordinary facades. Island transport accepts finite JSON scalars,
+dense arrays and plain records; explicitly omit absent object members and use
+the same normalized props for SSR/client. Reject functions, signals, descriptions,
+dates/classes, cycles, getters, symbols and undefined array elements. Never use
+a JSON round trip or serializer-only omission to hide invalid props.
+
+Browser-safe defaults live internally in `settings-defaults.ts` and are re-exported
+by `./config`; the config/preset evaluation graph itself is not a browser-import
+recipe. `./settings` is types-only. Use `./route-context-payload` for browser-safe
+payload building and `./site-schema` for engine-free site semantics. The root
+barrel is type-only. Client entries must not import host virtual modules.
+
+Persisted island props are refreshed before native teardown at `zfb:before-swap`,
+writing only the detached incoming document. Unchanged identity/props preserve
+native scope state; changed identity/props recreate it. Live `data-zd-props-preserve`
+keeps exact old transport only when identities match. Unsafe structure/scheduling
+changes remove incoming persistence; do not reintroduce blanket remount flags.
 
 ### Doc-history self-seed (`.zfb/doc-history-meta.json`)
 

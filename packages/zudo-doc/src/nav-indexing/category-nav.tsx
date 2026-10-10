@@ -1,11 +1,9 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of src/components/category-nav.
 //
 // The original Astro template built the nav tree, found a category node by
 // slug, and rendered the immediate children as a two-column card grid. This
-// v2 port accepts the already-resolved children directly so the host keeps
+// Package renderer accepts the already-resolved children directly so the host keeps
 // full control of data preparation.
 //
 // Behaviour parity notes:
@@ -15,7 +13,7 @@
 //     filter, but the component also guards locally for safety).
 //   - The arrow SVG is identical to the one in the original template.
 
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 
 import type { NavNode } from "./types.js";
 
@@ -33,7 +31,6 @@ export interface CategoryNavProps {
 function ArrowIcon(): JSX.Element {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       viewBox="0 0 103.395 107.049"
       aria-hidden="true"
@@ -45,7 +42,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * CategoryNav — JSX port of `src/components/category-nav`.
+ * CategoryNav — server renderer for the category card list.
  *
  * Renders direct children of a category as a two-column grid of card links.
  * Each card shows the node's label (with an arrow icon) and an optional

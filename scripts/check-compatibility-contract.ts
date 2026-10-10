@@ -1,11 +1,13 @@
 #!/usr/bin/env tsx
 
+import ts from "typescript";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { execFileSync, spawnSync } from "node:child_process";
 import { extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   deletionMatrix,
+  textForAbsenceProof,
   survivorAllowlist,
   type TextAbsenceProof,
 } from "./compatibility-deletion-matrix.js";
@@ -90,7 +92,7 @@ function assertTextAbsent(proof: TextAbsenceProof): string[] {
   );
   for (const term of proof.terms) {
     for (const path of files) {
-      const content = readFileSync(resolve(root, path), "utf8");
+      const content = textForAbsenceProof(readFileSync(resolve(root, path), "utf8"), path, term, proof.ignoreComments);
       if (content.includes(term)) failures.push(`${term} survives in ${path}`);
     }
   }
@@ -135,6 +137,28 @@ for (const row of deletionMatrix) {
     }
   }
 }
+
+// Preact is dependency-owned by zdtp's opaque bundle/declarations only. No
+// owned runtime import may use it; lexical references in docs/tests are not imports.
+for (const path of ["src", "pages", "packages/zudo-doc/src"].flatMap(collectFiles)) {
+  if (!/\.[cm]?[jt]sx?$/.test(path) || /\.test\.[jt]sx?$/.test(path)) continue;
+  const source = ts.createSourceFile(path, readFileSync(resolve(root, path), "utf8"), ts.ScriptTarget.Latest, true);
+  const visit = (node: ts.Node) => {
+    let specifier: ts.Node | undefined;
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) specifier = node.moduleSpecifier;
+    if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) specifier = node.argument.literal;
+    if (ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) && node.expression.text === "require"))) specifier = node.arguments[0];
+    if (specifier && ts.isStringLiteralLike(specifier) &&
+      (specifier.text === "preact" || specifier.text.startsWith("preact/"))) {
+      failures.push(`#4470 dependency-owned Preact import ${specifier.text} survives in ${path}`);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+}
+proofCount += 1;
 
 // Runtime negative proofs for removed config/input behavior. Compile-time
 // negative imports and required fields remain covered by package typecheck.

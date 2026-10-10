@@ -1,12 +1,7 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX, VNode } from "preact";
-import { Island } from "@takazudo/zfb";
-import type { FactoryComponent } from "../factory-context/index.js";
-// Type-only — erased at build; the REAL component arrives through
-// `deps.ThemePackSwitcher` (statically imported by `chrome/derive.tsx`, the
-// scanner-reachability chain — see the note below).
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import { normalizeIslandData } from "../chrome/island-data.js";
+// Props are data; the dependency below is a server boundary, never an Island target.
 import type { ThemePackSwitcherProps } from "../theme-pack-switcher/index.js";
 
 type ThemePackSwitcherComponent = (props: ThemePackSwitcherProps) => JSX.Element | null;
@@ -28,16 +23,8 @@ export interface ThemePackSwitcherIslandDeps {
    * the settings gate is on.
    */
   themePackSwitcherProps: ThemePackSwitcherProps | null;
-  /**
-   * The real `ThemePackSwitcher` island component. Injected (not imported
-   * here) mirroring `design-token-panel-island.tsx`'s shape: the props above
-   * only exist on the chrome-derive path, so `chrome/derive.tsx` supplies the
-   * statically imported package component as the default for every
-   * `createChrome` consumer (route → chrome → derive → component is the
-   * island-scanner reachability chain — the #2480 lesson). Omitted means no
-   * island mounts even when the gate is on — a safe no-op, not a crash.
-   */
-  ThemePackSwitcher?: FactoryComponent;
+  /** Fixed-target server boundary. Omitted means no mount even when enabled. */
+  ThemePackSwitcher?: (props: ThemePackSwitcherProps) => JSX.Element | null;
 }
 
 /**
@@ -53,28 +40,24 @@ export function createThemePackSwitcherIsland(
   deps: ThemePackSwitcherIslandDeps,
 ): () => JSX.Element | null {
   const pendingUntilHydrated = deps.pendingUntilHydrated ?? true;
+  const transportProps = deps.themePackSwitcherProps === null
+    ? null
+    : normalizeIslandData(deps.themePackSwitcherProps);
   const ThemePackSwitcher = deps.ThemePackSwitcher as unknown as
     | ThemePackSwitcherComponent
     | undefined;
 
   function ThemePackSwitcherIsland(): JSX.Element | null {
-    if (!deps.themePackSwitcher || deps.themePackSwitcherProps === null || !ThemePackSwitcher) {
+    if (!deps.themePackSwitcher || transportProps === null || !ThemePackSwitcher) {
       return null;
     }
 
     return (
       <>
-        {
-          Island({
-            when: "load",
-            children: (
-              <ThemePackSwitcher
-                {...deps.themePackSwitcherProps}
-                pendingUntilHydrated={pendingUntilHydrated}
-              />
-            ),
-          }) as unknown as VNode
-        }
+        <ThemePackSwitcher
+          {...transportProps}
+          pendingUntilHydrated={pendingUntilHydrated}
+        />
       </>
     );
   }

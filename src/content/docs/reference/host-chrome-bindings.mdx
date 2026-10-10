@@ -137,7 +137,7 @@ The live DOM governs the opt-out; adding the attribute only to the incoming page
 | `tagVocabulary` | `[]` — no footer tag vocabulary |
 | `BodyEndIslands` | Package island subset derived from settings |
 | `DocHistory` | No-op stub — renders nothing |
-| `DesignTokenPanelBootstrap` | Real package bootstrap; it mounts when `designTokenPanel: true`, with no host wiring. This slot only replaces which builder mounts while the package panel is ON — it stays unmounted with `designTokenPanel: false` regardless of what you pass here. To mount your OWN panel with the package panel off, call `bootstrapDesignTokenPanel` from your own island (e.g. wired through the `BodyEndIslands` slot below) and set `bundleZdtp: true`, or the real loader stays shadowed by a throwing stub. See [Mounting your own panel](./design-token-panel.mdx#implementation-mounting-your-own-panel). |
+| `DesignTokenPanelBootstrap` | Package fixed-target server boundary; it mounts when `designTokenPanel: true`, with no host wiring. This slot only replaces which builder mounts while the package panel is ON — it stays unmounted with `designTokenPanel: false` regardless of what you pass here. To mount your OWN panel with the package panel off, call `runDesignTokenPanelBootstrapOnce` from your own island (e.g. wired through the `BodyEndIslands` slot below) and set `bundleZdtp: true`, or the real loader stays shadowed by a throwing stub. See [Mounting your own panel](./design-token-panel.mdx#implementation-mounting-your-own-panel). |
 | `mdxExtras` | Package SSR components (`Details`, `HtmlPreview`, `Island`) plus a no-op `PresetGenerator` |
 | `docContentHeaderExtras` | Absent — nothing renders |
 | `homeExtras` | Absent — nothing renders |
@@ -281,13 +281,44 @@ The routes plugin registers a third virtual module (`virtual:zudo-doc-design-tok
 
 </Note>
 
-Two differences from `chromeBindingsModule` are worth knowing:
+These differences from `chromeBindingsModule` matter:
 
 - **The default is the package builder, not an empty object.** When the setting is absent the loader re-exports the package default (a fully working panel) — there is no meaningful "empty" builder to fall back to.
-- **Scanner reachability is part of this contract.** The real `DesignTokenPanelBootstrap` island is statically imported by the package chrome (not carried through the config virtual module), so it is always reachable by zfb's island scanner. Only the panel-config *data* (the mode-scoped builder) travels through the channel — which is why a customized panel hydrates on injected routes where a chrome-bindings island would not.
-- **Self-contained `pages/` stubs mount no panel while this setting is set.** The setting only reaches pages rendered through the package-injected routes, and the panel is configured once per browser session — so a stub page mounting the package-default bootstrap used to decide the whole session's config whenever it was the hard-loaded entry page. With the setting present (and no explicit `chromeBindings.DesignTokenPanelBootstrap`), stub-rendered pages therefore mount no panel island (and no header panel button) at all; the injected routes still get your configured panel from any entry page. To get a panel on stub-rendered pages too, thread your builder through `chromeBindings.DesignTokenPanelBootstrap` — that binding wins everywhere.
+- **Scanner reachability is part of this contract.** Each server boundary statically imports its client target. The package default and routes-only configured boundary own separate fixed targets; the configured client imports the builder through the config virtual module. A host replacement follows the same boundary composition rule below, rather than passing a raw client target through a binding map.
+- **Self-contained `pages/` stubs mount no panel while this setting is set.** The setting only reaches pages rendered through the package-injected routes, and the panel is configured once per browser session — so a stub page mounting the package-default bootstrap used to decide the whole session's config whenever it was the hard-loaded entry page. With the setting present (and no explicit `chromeBindings.DesignTokenPanelBootstrap`), stub-rendered pages therefore mount no panel island (and no header panel button) at all; the injected routes still get your configured panel from any entry page. To get a panel on stub-rendered pages too, expose your client bootstrap through the server boundary described below — that binding wins everywhere.
 
 The same guard rules apply: an explicitly empty string, a missing file, or a directory path fails loudly at plugin setup, naming the resolved path. `storagePrefix: "zudo-doc-tweak"` is preserved by the package default so existing user saves carry over.
+
+## DocHistory boundary
+
+The `DocHistory` slot also accepts a server boundary. Import `DocHistoryBoundary` from `@takazudo/zudo-doc/doc-history-area` when using the package client, and bind it as `DocHistory`. It consumes the optional `ssrFallback` child on the server and mounts the fixed client target with `when="idle"` inside a Fragment. A custom boundary must likewise remove `ssrFallback` before passing the remaining serializable props to its client; never transport the fallback JSX as client data. The existing doc-history settings and exclusion gates still control whether the area renders.
+
+## Replacing the panel boundary
+
+In v6, `chromeBindings.DesignTokenPanelBootstrap` accepts a zero-prop **server boundary**, not a raw `"use client"` component. Import the client bootstrap statically and return its fixed-target `Island` inside a Fragment. Keep this server file separate from the client module. The client bootstrap should activate `runDesignTokenPanelBootstrapOnce` using `getScope().onActivate`, as shown in [Mounting your own panel](./design-token-panel.mdx#implementation-mounting-your-own-panel).
+
+```tsx title="src/panel-boundary.tsx"
+/** @jsxRuntime automatic */
+import { Island } from "@takazudo/zfb";
+import { HostPanelBootstrap } from "./host-panel-bootstrap";
+
+export function HostPanelBoundary() {
+  return <>{Island({ when: "load", children: <HostPanelBootstrap /> })}</>;
+}
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { HostPanelBoundary } from "./panel-boundary";
+
+export const chromeBindings = defineChromeBindings({
+  DesignTokenPanelBootstrap: HostPanelBoundary,
+});
+```
+
+Keep `designTokenPanel: true` for this replacement slot. The package still owns its settings gate and pre-hydration toggle shim: disabling the feature emits neither this boundary nor the shim. An explicit host boundary wins even when `designTokenPanelConfigModule` suppresses the package default, and injected routes preserve it over their configured default. To mount a separate host panel with the package feature disabled, use the independent `BodyEndIslands` path described in the linked guide instead.
+
+Direct `createBodyEndIslands` consumers follow the same composition rule for optional `DesignTokenPanelBootstrap` and `ThemePackSwitcher` dependencies: each supplied component owns a fixed-target Fragment-wrapped boundary; the factory only renders it behind the feature gate. Omitting either dependency remains a no-op for that island. Client functions never travel as island props.
 
 ## See also
 

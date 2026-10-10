@@ -126,35 +126,25 @@ check_pair_normalized() {
 }
 
 # ---------------------------------------------------------------------------
-# global.css legacy-token guard (#2621, rewritten for the ~29-line minimal
-# form by #2663)
+# global.css contract guard (#2621, expanded for zfb 3 / zudo-wind by #4463)
 # ---------------------------------------------------------------------------
 # packages/create-zudo-doc/templates/base/src/styles/global.css is allowlisted
-# in .template-drift-allowlist (the showcase's global.css carries ~300 lines
-# of its OWN @theme token block that the minimal template intentionally does
-# not — see the allowlist entry), so check_pair() above never inspects it.
+# in .template-drift-allowlist (the showcase's global.css has project-specific
+# CSS and token overrides that the minimal template intentionally does not —
+# see the allowlist entry), so check_pair() above never inspects it.
 # That blind spot originally let it drift to the pre-ramp-restructure legacy
 # 16-slot token set (--zd-sel-bg/fg, --color-p0..15, --zd-0..15) even after
 # the ramp-native engine stopped emitting those vars. This guard runs
 # UNCONDITIONALLY (the allowlist does not exempt it): it fails on any legacy-
 # token reference.
 #
-# Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2655/#2660):
-# the template's global.css no longer declares ANY `@theme` tokens itself —
-# it ships a fixed `@import` chain and pulls the full token set (including
-# the ramp-native --zd-selection-bg/-fg marker this guard used to grep for
-# directly) from `@takazudo/zudo-doc/theme.css`. So the "hasn't silently
-# regressed" marker is no longer the ramp-native CSS custom property itself
-# (the template file never contains it) — it is the `@import
-# "@takazudo/zudo-doc/theme.css";` line: if that import is ever removed, the
-# scaffolded project loses its entire default token set (not just the
-# selection-color pair), which is the failure this guard exists to catch.
-#
-# Pattern is deliberately exact — do NOT loosen to `--zd-sel` / `--zd-sel-`:
-# that substring false-positives on the correctly-migrated --zd-selection-bg/
-# -fg (which contain "--zd-sel" as a prefix). The surviving Tailwind token
-# --color-sel-bg (Tier 2, not a legacy raw-palette var) must also not match.
+# The template imports the package token set through its public CSS export,
+# while zudo-wind config owns reset and utility generation. Check the exact
+# layer and root override markers and reject the retired framework directives,
+# safelist imports, and legacy palette variables. Keep this guard independent
+# of the whole-file allowlist for global.css.
 GLOBAL_CSS_LEGACY_TOKEN_RE='--zd-sel-(bg|fg)|--color-p[0-9]|--zd-[0-9]'
+GLOBAL_CSS_FORBIDDEN_RE='(@import[[:space:]]+"tailwindcss/|@import[[:space:]]+"@takazudo/zudo-doc/(safelist|theme-no-reset)\.css"|@(source|theme))'
 
 check_global_css_legacy_tokens() {
   local global_css="$BASE_DIR/src/styles/global.css"
@@ -171,10 +161,33 @@ check_global_css_legacy_tokens() {
     DRIFTED+=("base/src/styles/global.css (legacy token)")
   fi
 
+  if grep -E -n -- "$GLOBAL_CSS_FORBIDDEN_RE" "$global_css" >/dev/null; then
+    echo "  [RETIRED CSS CONTRACT] base/src/styles/global.css contains removed CSS framework directives or imports:"
+    grep -E -n -- "$GLOBAL_CSS_FORBIDDEN_RE" "$global_css" | sed 's/^/    /'
+    DRIFTED+=("base/src/styles/global.css (retired CSS contract)")
+  fi
+
+  if ! grep -qF -- '@layer zw-reset, zd-flow;' "$global_css"; then
+    echo "  [MISSING MARKER] base/src/styles/global.css must declare the zudo-wind reset and flow layers"
+    DRIFTED+=("base/src/styles/global.css (missing zudo-wind layers)")
+  fi
+
+  if ! grep -Eq -- '^[[:space:]]*:root[[:space:]]*[{]' "$global_css"; then
+    echo "  [MISSING MARKER] base/src/styles/global.css must keep a :root custom-property override slot"
+    DRIFTED+=("base/src/styles/global.css (missing :root override slot)")
+  fi
+
   if ! grep -qF -- '@takazudo/zudo-doc/theme.css' "$global_css"; then
     echo "  [MISSING MARKER] base/src/styles/global.css does not import @takazudo/zudo-doc/theme.css (default token-set marker)"
     DRIFTED+=("base/src/styles/global.css (missing default token-set import)")
   fi
+
+  for css_export in content.css page-loading.css features.css; do
+    if ! grep -qF -- "@takazudo/zudo-doc/$css_export" "$global_css"; then
+      echo "  [MISSING MARKER] base/src/styles/global.css does not import @takazudo/zudo-doc/$css_export"
+      DRIFTED+=("base/src/styles/global.css (missing $css_export import)")
+    fi
+  done
 }
 
 check_pair() {
@@ -265,7 +278,7 @@ while IFS= read -r -d '' template_file; do
   check_directive_parity "$template_file" "$prod_path"
 done < <(find "$BASE_DIR" -type f -print0 | sort -z)
 
-echo "Checking global.css legacy-token guard..."
+echo "Checking global.css contract guard..."
 check_global_css_legacy_tokens
 
 echo "Checking feature template files..."

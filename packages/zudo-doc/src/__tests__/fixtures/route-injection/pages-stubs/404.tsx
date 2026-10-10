@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Precedence stub for A2 route-injection build proof (A2 #2363).
 // This pages/404.tsx stub INTENTIONALLY collides with the package's injected
 // /404 route. Per Decision 6 (ADR route-injection-seam.md), the user's
@@ -13,7 +12,7 @@ export default function StubNotFound() {
   return (
     <html lang="en">
       <head>
-        <meta charSet="utf-8" />
+        <meta charset="utf-8" />
         <title>404 — STUB-WINS-UNIQUE-MARKER</title>
       </head>
       <body>

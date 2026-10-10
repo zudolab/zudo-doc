@@ -5,9 +5,6 @@
     "paths": {
       "@/*": ["src/*"],
       "#doc-history-meta": [".zfb/doc-history-meta.json"],
-      "react": ["./node_modules/preact/compat/"],
-      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
-      "react-dom": ["./node_modules/preact/compat/"],
       "zfb": ["./node_modules/@takazudo/zfb/dist/index.d.ts"],
       "zfb/content": ["./node_modules/@takazudo/zfb/dist/content.d.ts"],
       "zfb/runtime": ["./node_modules/@takazudo/zfb-runtime/dist/index.d.ts"],

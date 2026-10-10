@@ -1,9 +1,8 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // katex is an optional peer (#4209): math-block must evaluate without it and
 // only fail — clearly — when a <MathBlock> is actually rendered.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { renderToString } from "preact-render-to-string";
+import { renderSsr as renderToString } from "../../__tests__/helpers/zudo-react.js";
 
 afterEach(() => {
   vi.doUnmock("katex");

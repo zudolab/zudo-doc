@@ -1,8 +1,8 @@
 "use client";
 
-import type { ComponentChildren, JSX } from "preact";
-import { useState, useCallback, useMemo, useRef, useEffect } from "preact/hooks";
-import { useModalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
+import type { Child } from "@takazudo/zfb/zudo-react";
+import { computed, For, getScope, Show, signal, type ReadonlySignal, type Signal } from "@takazudo/zfb/zudo-react";
+import { modalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
 import {
   FEATURES,
   buildJson,
@@ -38,49 +38,68 @@ function headerRightItemKey(item: HeaderRightItemSpec): string {
 
 // ── Sub-components ──
 
-function SectionHeading({ children }: { children: ComponentChildren }) {
+function SectionHeading({ children }: { children: Child }) {
   return (
-    <HeadingH3 className="mb-vsp-xs">
+    <HeadingH3 class="mb-vsp-xs">
       {children}
     </HeadingH3>
   );
 }
 
-function HeaderRightItemRow({
-  spec,
-  checked,
-  onToggle,
-  moveControls,
-}: {
+function FeatureRow({ feature, features }: { feature: FeatureEntry; features: Signal<string[]> }) {
+  const scope = getScope();
+  const checked = signal(features.value.includes(feature.value));
+  scope.onActivate(() => {
+    // Model hydration may take the DOM value. Reconcile before the effect below.
+    const next = checked.value;
+    if (features.value.includes(feature.value) !== next) {
+      features.value = next ? [...features.value, feature.value] : features.value.filter((value) => value !== feature.value);
+    }
+  });
+  scope.effect(() => {
+    const next = features.value.includes(feature.value);
+    if (checked.value !== next) checked.value = next;
+  });
+  return <label class="flex items-center gap-x-hsp-xs text-small text-fg">
+    <input type="checkbox" modelChecked={checked} on:change={(event) => {
+      const next = (event.currentTarget as HTMLInputElement).checked;
+      features.value = next ? [...new Set([...features.value, ...(feature.value === "mcp" ? ["agentExport"] : []), feature.value])] : features.value.filter((value) => value !== feature.value);
+    }} class="accent-accent" />
+    <span class="flex items-center gap-x-hsp-xs">{feature.label}
+      {feature.docPath && <a href={feature.docPath} target="_blank" rel="noopener" aria-label={`${feature.label} documentation`} on:click={(event) => event.stopPropagation()} class="text-caption text-muted hover:text-accent">docs ↗</a>}
+    </span>
+  </label>;
+}
+
+function HeaderRightItemRow({ spec, items, index, move }: {
   spec: HeaderRightItemSpec;
-  checked: boolean;
-  onToggle: () => void;
-  moveControls?: ComponentChildren;
+  items: Signal<HeaderRightItemSpec[]>;
+  index?: ReadonlySignal<number>;
+  move: (spec: HeaderRightItemSpec, direction: -1 | 1) => void;
 }) {
+  const scope = getScope();
+  const key = headerRightItemKey(spec);
   const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
-  const isAiChat = spec.name === "ai-chat";
-  return (
-    <li
-      className={`flex items-center gap-x-hsp-xs text-small ${checked ? "text-fg" : "text-muted"}`}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onToggle}
-        aria-label={`Include ${label}`}
-        className="accent-accent"
-      />
-      <span className="flex-1">
-        {label}
-        {isAiChat && (
-          <span className="ml-hsp-xs text-caption text-muted">
-            (requires aiAssistant — disabled in scaffold)
-          </span>
-        )}
-      </span>
-      {moveControls}
-    </li>
-  );
+  const checked = signal(items.value.some((item) => headerRightItemKey(item) === key));
+  scope.onActivate(() => {
+    const present = items.value.some((item) => headerRightItemKey(item) === key);
+    if (present !== checked.value) items.value = checked.value ? [...items.value, spec] : items.value.filter((item) => headerRightItemKey(item) !== key);
+  });
+  scope.effect(() => {
+    const next = items.value.some((item) => headerRightItemKey(item) === key);
+    if (checked.value !== next) checked.value = next;
+  });
+  return <li class={computed(() => `flex items-center gap-x-hsp-xs text-small ${checked.value ? "text-fg" : "text-muted"}`)}>
+    <input type="checkbox" modelChecked={checked} on:change={(event) => {
+      const next = (event.currentTarget as HTMLInputElement).checked;
+      items.value = next ? [...items.value.filter((item) => headerRightItemKey(item) !== key), spec] : items.value.filter((item) => headerRightItemKey(item) !== key);
+    }} aria-label={`Include ${label}`} class="accent-accent" />
+    <span class="flex-1">{label}{spec.name === "ai-chat" && <span class="ml-hsp-xs text-caption text-muted">(requires aiAssistant — disabled in scaffold)</span>}</span>
+    {index && <>
+      <button type="button" on:click={() => move(spec, -1)} disabled={computed(() => index.value === 0)} aria-label={`Move ${label} up`} class="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50">↑</button>
+      <button type="button" on:click={() => move(spec, 1)} disabled={computed(() => index.value === items.value.length - 1)} aria-label={`Move ${label} down`} class="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50">↓</button>
+    </>}
+  </li>;
 }
 
 const inputClass =
@@ -93,112 +112,93 @@ function PresetModal({
   state: FormState;
   onClose: () => void;
 }) {
-  const [showCli, setShowCli] = useState(false);
-  const [copyLabel, setCopyLabel] = useState("Copy");
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const scope = getScope();
+  const showCli = signal(false);
+  const copyLabel = signal("Copy");
+  let copyTimer: ReturnType<typeof setTimeout> | undefined;
+  scope.onCleanup(() => { if (copyTimer) clearTimeout(copyTimer); });
 
-  const output = useMemo(
-    () =>
-      showCli
-        ? buildCliCommand(state)
-        : JSON.stringify(buildJson(state), null, 2),
-    [showCli, state],
-  );
+  const output = computed(() => showCli.value ? buildCliCommand(state) : JSON.stringify(buildJson(state), null, 2));
 
-  // PresetModal opens immediately on mount and stays open until the parent
-  // unmounts it (modalState === null). isOpen is always true here — the
-  // parent mounts/unmounts to control visibility. useModalDialog handles
-  // the native showModal() call, the close-event callback, and backdrop click.
-  const { dialogRef, handleBackdropClick } = useModalDialog({
-    isOpen: true,
-    onClose,
-    backdropClickClose: true,
+  const { dialogRef, handleBackdropClick } = modalDialog(scope, {
+    isOpen: signal(true), onClose, backdropClickClose: true,
   });
-  // The package hook's handler is typed via preact/compat (React-flavored
-  // MouseEvent); this file compiles preact-native under tsconfig.pages.json.
-  // Same runtime event either way — bridge the two typing flavors here.
-  const onDialogClick = handleBackdropClick as unknown as JSX.MouseEventHandler<HTMLDialogElement>;
-
-  useEffect(() => {
-    return () => {
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    };
-  }, []);
 
   async function handleCopy() {
     let ok = false;
     // Prefer the modern async Clipboard API when available; fall back to the
     // legacy execCommand path for environments that lack it (#2136 L4).
     try {
-      await navigator.clipboard.writeText(output);
+      await navigator.clipboard.writeText(output.value);
+      if (scope.abortSignal.aborted) return;
       ok = true;
     } catch {
       /* ignore — fall through to execCommand */
     }
+    if (scope.abortSignal.aborted) return;
     if (!ok) {
       const dialog = dialogRef.current;
       if (dialog) {
         try {
           const textarea = document.createElement("textarea");
-          textarea.value = output;
+          textarea.value = output.value;
           textarea.style.cssText = "position:fixed;opacity:0;left:-9999px";
           dialog.appendChild(textarea);
           textarea.focus();
           textarea.select();
-          ok = document.execCommand("copy");
-          dialog.removeChild(textarea);
+          try { ok = document.execCommand("copy"); } finally { textarea.remove(); }
         } catch {
           /* ignore */
         }
       }
     }
-    setCopyLabel(ok ? "Copied!" : "Failed");
-    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    copyTimerRef.current = setTimeout(() => setCopyLabel("Copy"), 2000);
+    if (scope.abortSignal.aborted) return;
+    copyLabel.value = ok ? "Copied!" : "Failed";
+    if (copyTimer) clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { if (!scope.abortSignal.aborted) copyLabel.value = "Copy"; }, 2000);
   }
 
   return (
     <dialog
       ref={dialogRef}
-      onClick={onDialogClick}
-      className="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
+      on:click={handleBackdropClick}
+      class="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
       style={{
         color: "var(--color-fg)",
         position: "fixed",
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        userSelect: "text",
+        "user-select": "text",
       }}
     >
-      <div className="mb-vsp-sm text-title font-bold text-fg">
+      <div class="mb-vsp-sm text-title font-bold text-fg">
         Generated Preset
       </div>
 
-      <label className="mb-vsp-sm flex items-center gap-x-hsp-sm text-small text-fg">
+      <label class="mb-vsp-sm flex items-center gap-x-hsp-sm text-small text-fg">
         <input
           type="checkbox"
-          checked={showCli}
-          onChange={(e) => setShowCli((e.target as HTMLInputElement).checked)}
-          className="accent-accent"
+          modelChecked={showCli}
+          class="accent-accent"
         />
         as CLI command
       </label>
 
-      <pre className="overflow-x-auto border border-muted bg-code-bg p-hsp-lg text-small text-code-fg whitespace-pre-wrap break-all">
+      <pre class="overflow-x-auto border border-muted bg-code-bg p-hsp-lg text-small text-code-fg whitespace-pre-wrap break-all">
         <code>{output}</code>
       </pre>
 
-      <div className="mt-vsp-sm flex items-center gap-x-hsp-md">
+      <div class="mt-vsp-sm flex items-center gap-x-hsp-md">
         <button
-          onClick={handleCopy}
-          className="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-fg transition-colors hover:border-accent hover:text-accent"
+          on:click={handleCopy}
+          class="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-fg transition-colors hover:border-accent hover:text-accent"
         >
           {copyLabel}
         </button>
         <button
-          onClick={() => dialogRef.current?.close()}
-          className="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
+          on:click={() => dialogRef.current?.close()}
+          class="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
         >
           Close
         </button>
@@ -210,141 +210,88 @@ function PresetModal({
 // ── Main Component ──
 
 export default function PresetGenerator() {
-  const [state, setState] = useState<FormState>({
-    projectName: "my-docs",
-    defaultLang: "en",
-    additionalLangs: "",
-    colorSchemeMode: "light-dark",
-    singleScheme: "Default Dark",
-    lightScheme: "Default Light",
-    darkScheme: "Default Dark",
-    defaultMode: "dark",
-    respectPrefersColorScheme: true,
-    themePack: "default",
-    features: FEATURES.filter((f) => f.default).map((f) => f.value),
-    cjkFriendly: true,
-    packageManager: "pnpm",
-    headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
-    metaTags: { ...DEFAULT_META_TAGS, ogImageEnabled: true },
+  const projectName = signal("my-docs");
+  const defaultLang = signal("en");
+  const additionalLangs = signal("");
+  const colorSchemeMode = signal<FormState["colorSchemeMode"]>("light-dark");
+  const singleScheme = signal("Default Dark");
+  const lightScheme = signal("Default Light");
+  const darkScheme = signal("Default Dark");
+  const defaultMode = signal<FormState["defaultMode"]>("dark");
+  const respectPrefersColorScheme = signal(true);
+  const themePack = signal("default");
+  const features = signal(FEATURES.filter((feature) => feature.default).map((feature) => feature.value));
+  const cjkFriendly = signal(true);
+  const packageManager = signal("pnpm");
+  const headerRightItems = signal<HeaderRightItemSpec[]>([...INITIAL_HEADER_RIGHT_ITEMS]);
+  const description = signal(DEFAULT_META_TAGS.description);
+  const keywordsEnabled = signal(DEFAULT_META_TAGS.keywordsEnabled);
+  const keywords = signal(DEFAULT_META_TAGS.keywords);
+  const ogImageEnabled = signal(true);
+  const ogImage = signal(DEFAULT_META_TAGS.ogImage);
+  const ogSiteName = signal(DEFAULT_META_TAGS.ogSiteName);
+  const twitterCardEnabled = signal(DEFAULT_META_TAGS.twitterCardEnabled);
+  const twitterCard = signal<FormState["metaTags"]["twitterCard"]>(DEFAULT_META_TAGS.twitterCard);
+  const twitterSite = signal(DEFAULT_META_TAGS.twitterSite);
+  const twitterCreator = signal(DEFAULT_META_TAGS.twitterCreator);
+  const modalState = signal<FormState | null>(null);
+
+  const additionalLangsError = computed(() => validateAdditionalLangs(additionalLangs.value, defaultLang.value));
+  const currentState = computed<FormState>(() => ({
+    projectName: projectName.value, defaultLang: defaultLang.value, additionalLangs: additionalLangs.value,
+    colorSchemeMode: colorSchemeMode.value, singleScheme: singleScheme.value,
+    lightScheme: lightScheme.value, darkScheme: darkScheme.value, defaultMode: defaultMode.value,
+    respectPrefersColorScheme: respectPrefersColorScheme.value, themePack: themePack.value,
+    features: features.value, cjkFriendly: cjkFriendly.value, packageManager: packageManager.value,
+    headerRightItems: headerRightItems.value,
+    metaTags: { description: description.value, keywordsEnabled: keywordsEnabled.value,
+      keywords: keywords.value, ogImageEnabled: ogImageEnabled.value, ogImage: ogImage.value,
+      ogSiteName: ogSiteName.value, twitterCardEnabled: twitterCardEnabled.value,
+      twitterCard: twitterCard.value, twitterSite: twitterSite.value, twitterCreator: twitterCreator.value },
+  }));
+  const jsonOutput = computed(() => additionalLangsError.value === null ? buildJson(currentState.value) : null);
+  const missingItems = computed(() => {
+    const present = new Set(headerRightItems.value.map(headerRightItemKey));
+    return DEFAULT_HEADER_RIGHT_ITEMS.filter((item) => !present.has(headerRightItemKey(item)));
   });
-
-  const [modalState, setModalState] = useState<FormState | null>(null);
-
-  const additionalLangsError = useMemo(
-    () => validateAdditionalLangs(state.additionalLangs, state.defaultLang),
-    [state.additionalLangs, state.defaultLang],
-  );
-
-  const update = useCallback(
-    <K extends keyof FormState>(key: K, value: FormState[K]) => {
-      setState((prev) => ({ ...prev, [key]: value }));
-    },
-    [],
-  );
-
-  const toggleFeature = useCallback((value: string) => {
-    setState((prev) => {
-      const features = prev.features.includes(value)
-        ? prev.features.filter((f) => f !== value)
-        : [...prev.features, value];
-      return { ...prev, features };
-    });
-  }, []);
-
-  // Header-right items: present rows in user-chosen order, support per-row
-  // checkbox (off removes the item entirely from state), arrow buttons to
-  // reorder, and a Reset-to-default button. The presence/absence of an item is
-  // the single source of truth — there is no "shadow off-list" to merge back.
-  const toggleHeaderRightItem = useCallback((spec: HeaderRightItemSpec) => {
-    setState((prev) => {
-      const key = headerRightItemKey(spec);
-      const existsAt = prev.headerRightItems.findIndex(
-        (item) => headerRightItemKey(item) === key,
-      );
-      if (existsAt >= 0) {
-        return {
-          ...prev,
-          headerRightItems: prev.headerRightItems.filter((_, i) => i !== existsAt),
-        };
-      }
-      // Re-adding: append at the end. Users can reorder afterwards.
-      return {
-        ...prev,
-        headerRightItems: [...prev.headerRightItems, spec],
-      };
-    });
-  }, []);
-
-  const moveHeaderRightItem = useCallback(
-    (index: number, direction: -1 | 1) => {
-      setState((prev) => {
-        const target = index + direction;
-        if (target < 0 || target >= prev.headerRightItems.length) return prev;
-        const next = [...prev.headerRightItems];
-        const tmp = next[index]!;
-        next[index] = next[target]!;
-        next[target] = tmp;
-        return { ...prev, headerRightItems: next };
-      });
-    },
-    [],
-  );
-
-  const resetHeaderRightItems = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
-    }));
-  }, []);
-
-  const { orderedItems, missingItems } = useMemo(() => {
-    const allSpecs: HeaderRightItemSpec[] = [...DEFAULT_HEADER_RIGHT_ITEMS];
-    const presentKeys = new Set(
-      state.headerRightItems.map(headerRightItemKey),
-    );
-    const missingItems = allSpecs.filter(
-      (spec) => !presentKeys.has(headerRightItemKey(spec)),
-    );
-    const orderedItems: Array<{ spec: HeaderRightItemSpec; index: number }> =
-      state.headerRightItems.map((spec, index) => ({ spec, index }));
-    return { orderedItems, missingItems };
-  }, [state.headerRightItems]);
+  function moveHeaderRightItem(spec: HeaderRightItemSpec, direction: -1 | 1) {
+    const index = headerRightItems.value.findIndex((item) => headerRightItemKey(item) === headerRightItemKey(spec));
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= headerRightItems.value.length) return;
+    const next = [...headerRightItems.value];
+    [next[index], next[target]] = [next[target]!, next[index]!];
+    headerRightItems.value = next;
+  }
 
   return (
-    <div className="zd-preset-gen flex flex-col gap-y-vsp-xl">
+    <div class="zd-preset-gen flex flex-col gap-y-vsp-xl">
       {/* Project Name */}
       <section>
         <SectionHeading>Project Name</SectionHeading>
         <input
           type="text"
-          value={state.projectName}
+          modelValue={projectName}
           placeholder="my-docs"
           aria-label="Project name"
-          onChange={(e) =>
-            update("projectName", (e.target as HTMLInputElement).value)
-          }
-          className={inputClass}
+          class={inputClass}
         />
       </section>
 
       {/* Languages */}
       <section>
         <SectionHeading>Languages</SectionHeading>
-        <div className="flex flex-col gap-y-vsp-xs">
+        <div class="flex flex-col gap-y-vsp-xs">
           <label
-            htmlFor="preset-default-language"
-            className="text-caption text-muted"
+            for="preset-default-language"
+            class="text-caption text-muted"
           >
             Default language
           </label>
           <select
             id="preset-default-language"
-            value={state.defaultLang}
+            modelValue={defaultLang}
             aria-label="Default language"
-            onChange={(e) =>
-              update("defaultLang", (e.target as HTMLSelectElement).value)
-            }
-            className={inputClass}
+            class={inputClass}
           >
             {SUPPORTED_LANGS.map((lang) => (
               <option key={lang.value} value={lang.value}>
@@ -353,67 +300,57 @@ export default function PresetGenerator() {
             ))}
           </select>
           <label
-            htmlFor="preset-additional-languages"
-            className="text-caption text-muted"
+            for="preset-additional-languages"
+            class="text-caption text-muted"
           >
             Additional language codes
           </label>
           <input
             id="preset-additional-languages"
             type="text"
-            value={state.additionalLangs}
+            modelValue={additionalLangs}
             placeholder="ja, de"
             aria-label="Additional language codes"
-            aria-invalid={additionalLangsError !== null}
-            aria-describedby={
-              additionalLangsError ? "additional-langs-error" : undefined
-            }
-            onChange={(e) =>
-              update(
-                "additionalLangs",
-                (e.target as HTMLInputElement).value,
-              )
-            }
-            className={inputClass}
+            aria-invalid={computed(() => additionalLangsError.value !== null)}
+            aria-describedby={computed(() => additionalLangsError.value ? "additional-langs-error" : undefined)}
+            class={inputClass}
           />
-          <p className="text-caption text-muted">
+          <p class="text-caption text-muted">
             Comma-separated additional locale codes (for example, ja, de).
           </p>
-          {additionalLangsError && (
+          <Show when={computed(() => additionalLangsError.value !== null)}>{() => (
             <p
               id="additional-langs-error"
               role="alert"
-              className="text-caption text-danger"
+              class="text-caption text-danger"
             >
               {additionalLangsError}
             </p>
-          )}
+          )}</Show>
         </div>
       </section>
 
       {/* Color Scheme Mode */}
       <section>
         <SectionHeading>Color Scheme Mode</SectionHeading>
-        <div className="flex gap-x-hsp-lg">
-          <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+        <div class="flex gap-x-hsp-lg">
+          <label class="flex items-center gap-x-hsp-xs text-small text-fg">
             <input
               type="radio"
               name="colorSchemeMode"
               value="single"
-              checked={state.colorSchemeMode === "single"}
-              onChange={() => update("colorSchemeMode", "single")}
-              className="accent-accent"
+              modelValue={colorSchemeMode}
+              class="accent-accent"
             />
             Single scheme
           </label>
-          <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+          <label class="flex items-center gap-x-hsp-xs text-small text-fg">
             <input
               type="radio"
               name="colorSchemeMode"
               value="light-dark"
-              checked={state.colorSchemeMode === "light-dark"}
-              onChange={() => update("colorSchemeMode", "light-dark")}
-              className="accent-accent"
+              modelValue={colorSchemeMode}
+              class="accent-accent"
             />
             Light &amp; Dark (toggle)
           </label>
@@ -423,82 +360,61 @@ export default function PresetGenerator() {
       {/* Color Scheme Selection */}
       <section>
         <SectionHeading>Color Scheme</SectionHeading>
-        {state.colorSchemeMode === "single" ? (
-          <select
-            value={state.singleScheme}
-            aria-label="Color scheme"
-            onChange={(e) =>
-              update("singleScheme", (e.target as HTMLSelectElement).value)
-            }
-            className={inputClass}
-          >
-            {SINGLE_SCHEMES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+        <Show when={computed(() => colorSchemeMode.value === "single")}>{() => (
+          <select modelValue={singleScheme} aria-label="Color scheme" class={inputClass}>
+            {SINGLE_SCHEMES.map((scheme) => <option value={scheme}>{scheme}</option>)}
           </select>
-        ) : (
-          <div className="flex flex-col gap-y-vsp-xs">
-            <div className="flex flex-wrap gap-x-hsp-lg gap-y-vsp-2xs">
+        )}</Show>
+        <Show when={computed(() => colorSchemeMode.value !== "single")}>{() => (
+          <div class="flex flex-col gap-y-vsp-xs">
+            <div class="flex flex-wrap gap-x-hsp-lg gap-y-vsp-2xs">
               <div>
-                <label className="mb-vsp-2xs block text-caption text-muted">
+                <label class="mb-vsp-2xs block text-caption text-muted">
                   Default mode
                 </label>
-                <div className="flex gap-x-hsp-md">
-                  <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+                <div class="flex gap-x-hsp-md">
+                  <label class="flex items-center gap-x-hsp-xs text-small text-fg">
                     <input
                       type="radio"
                       name="defaultMode"
                       value="light"
-                      checked={state.defaultMode === "light"}
-                      onChange={() => update("defaultMode", "light")}
-                      className="accent-accent"
+                      modelValue={defaultMode}
+                              class="accent-accent"
                     />
                     Light
                   </label>
-                  <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+                  <label class="flex items-center gap-x-hsp-xs text-small text-fg">
                     <input
                       type="radio"
                       name="defaultMode"
                       value="dark"
-                      checked={state.defaultMode === "dark"}
-                      onChange={() => update("defaultMode", "dark")}
-                      className="accent-accent"
+                      modelValue={defaultMode}
+                              class="accent-accent"
                     />
                     Dark
                   </label>
                 </div>
               </div>
-              <label className="flex items-center gap-x-hsp-xs text-small text-fg self-end">
+              <label class="flex items-center gap-x-hsp-xs text-small text-fg self-end">
                 <input
                   type="checkbox"
-                  checked={state.respectPrefersColorScheme}
-                  onChange={(e) =>
-                    update(
-                      "respectPrefersColorScheme",
-                      (e.target as HTMLInputElement).checked,
-                    )
-                  }
-                  className="accent-accent"
+                  modelChecked={respectPrefersColorScheme}
+                  class="accent-accent"
                 />
                 Respect system preference
               </label>
             </div>
           </div>
-        )}
+        )}</Show>
       </section>
 
       {/* Theme Pack (ADR #2818 Decision 7) */}
       <section>
         <SectionHeading>Theme Pack</SectionHeading>
         <select
-          value={state.themePack}
+          modelValue={themePack}
           aria-label="Theme pack"
-          onChange={(e) =>
-            update("themePack", (e.target as HTMLSelectElement).value)
-          }
-          className={inputClass}
+          class={inputClass}
         >
           {THEME_PACKS.map((t) => (
             <option key={t.slug} value={t.slug}>
@@ -506,48 +422,25 @@ export default function PresetGenerator() {
             </option>
           ))}
         </select>
-        <p className="mt-vsp-2xs text-caption text-muted">
-          {THEME_PACKS.find((t) => t.slug === state.themePack)?.hint}
+        <p class="mt-vsp-2xs text-caption text-muted">
+          {computed(() => THEME_PACKS.find((pack) => pack.slug === themePack.value)?.hint ?? "")}
         </p>
       </section>
 
       {/* Features */}
       <section>
         <SectionHeading>Features</SectionHeading>
-        <div className="flex flex-col gap-y-vsp-xs">
-          {(VISIBLE_FEATURES as readonly FeatureEntry[]).map((feat) => (
-            <label
-              key={feat.value}
-              className="flex items-center gap-x-hsp-xs text-small text-fg"
-            >
-              <input
-                type="checkbox"
-                checked={state.features.includes(feat.value)}
-                onChange={() => toggleFeature(feat.value)}
-                className="accent-accent"
-              />
-              <span className="flex items-center gap-x-hsp-xs">
-                {feat.label}
-                {feat.docPath && (
-                  <a
-                    href={feat.docPath}
-                    target="_blank"
-                    rel="noopener"
-                    aria-label={`${feat.label} documentation`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-caption text-muted hover:text-accent"
-                  >
-                    docs ↗
-                  </a>
-                )}
-              </span>
-            </label>
-          ))}
-          <label className="flex items-center gap-x-hsp-xs text-small text-muted cursor-not-allowed opacity-50">
+        <p class="mb-vsp-xs text-caption text-muted">
+          The read-only MCP option uses Cloudflare Workers, enables the static
+          agent-readable export, and adds the deployment preset to the output.
+        </p>
+        <div class="flex flex-col gap-y-vsp-xs">
+          {VISIBLE_FEATURES.map((feature) => <FeatureRow feature={feature} features={features} />)}
+          <label class="flex items-center gap-x-hsp-xs text-small text-muted cursor-not-allowed opacity-50">
             <input
               type="checkbox"
               disabled
-              className="accent-accent"
+              class="accent-accent"
             />
             AI Assistant (under development)
           </label>
@@ -557,7 +450,7 @@ export default function PresetGenerator() {
       {/* Header right items */}
       <section>
         <SectionHeading>Header right items</SectionHeading>
-        <p className="mb-vsp-xs text-caption text-muted">
+        <p class="mb-vsp-xs text-caption text-muted">
           Choose which items appear in the header right cluster and in what
           order. Disabled items are dropped from the preset entirely. The
           ai-chat trigger is shown for forward-compatibility but the scaffold
@@ -565,54 +458,15 @@ export default function PresetGenerator() {
         </p>
         {/* Show items in current state order first, then any default items
             that the user has removed (so they can be re-enabled). */}
-        <ul className="flex flex-col gap-y-vsp-2xs">
-          {orderedItems.map(({ spec, index }) => {
-            const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
-            return (
-              <HeaderRightItemRow
-                key={headerRightItemKey(spec)}
-                spec={spec}
-                checked={true}
-                onToggle={() => toggleHeaderRightItem(spec)}
-                moveControls={
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => moveHeaderRightItem(index, -1)}
-                      disabled={index === 0}
-                      aria-label={`Move ${label} up`}
-                      className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveHeaderRightItem(index, 1)}
-                      disabled={index === orderedItems.length - 1}
-                      aria-label={`Move ${label} down`}
-                      className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      ↓
-                    </button>
-                  </>
-                }
-              />
-            );
-          })}
-          {missingItems.map((spec) => (
-            <HeaderRightItemRow
-              key={headerRightItemKey(spec)}
-              spec={spec}
-              checked={false}
-              onToggle={() => toggleHeaderRightItem(spec)}
-            />
-          ))}
+        <ul class="flex flex-col gap-y-vsp-2xs">
+          <For each={headerRightItems} by={headerRightItemKey}>{(item, index) => <HeaderRightItemRow spec={item.value} items={headerRightItems} index={index} move={moveHeaderRightItem} />}</For>
+          <For each={missingItems} by={headerRightItemKey}>{(item) => <HeaderRightItemRow spec={item.value} items={headerRightItems} move={moveHeaderRightItem} />}</For>
         </ul>
-        <div className="mt-vsp-xs">
+        <div class="mt-vsp-xs">
           <button
             type="button"
-            onClick={resetHeaderRightItems}
-            className="border border-muted bg-surface px-hsp-md py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
+            on:click={() => { headerRightItems.value = [...INITIAL_HEADER_RIGHT_ITEMS]; }}
+            class="border border-muted bg-surface px-hsp-md py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
           >
             Reset to default
           </button>
@@ -622,172 +476,109 @@ export default function PresetGenerator() {
       {/* Meta tags */}
       <section>
         <SectionHeading>Meta tags</SectionHeading>
-        <p className="mb-vsp-xs text-caption text-muted">
+        <p class="mb-vsp-xs text-caption text-muted">
           Configure which meta tags are emitted in the document head.
           og:title is always emitted (DocHead contract) and is not listed here.
         </p>
-        <ul className="flex flex-col gap-y-vsp-xs">
+        <ul class="flex flex-col gap-y-vsp-xs">
           {/* description */}
-          <li className={`text-small ${state.metaTags.description ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={computed(() => `text-small ${description.value ? "text-fg" : "text-muted"}`)}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
-                checked={state.metaTags.description}
-                onChange={(e) =>
-                  setState((prev) => ({
-                    ...prev,
-                    metaTags: { ...prev.metaTags, description: (e.target as HTMLInputElement).checked },
-                  }))
-                }
-                className="accent-accent"
+                modelChecked={description}
+                  class="accent-accent"
               />
               SEO description meta
             </label>
           </li>
           {/* keywords */}
-          <li className={`text-small ${state.metaTags.keywordsEnabled ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={computed(() => `text-small ${keywordsEnabled.value ? "text-fg" : "text-muted"}`)}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
-                checked={state.metaTags.keywordsEnabled}
-                onChange={(e) =>
-                  setState((prev) => ({
-                    ...prev,
-                    metaTags: { ...prev.metaTags, keywordsEnabled: (e.target as HTMLInputElement).checked },
-                  }))
-                }
-                className="accent-accent"
+                modelChecked={keywordsEnabled}
+                  class="accent-accent"
               />
               Keywords (comma-separated)
             </label>
-            {state.metaTags.keywordsEnabled && (
+            <Show when={keywordsEnabled}>{() => (
               <input
                 type="text"
-                value={state.metaTags.keywords}
+                modelValue={keywords}
                 placeholder="docs, guide, reference"
                 aria-label="Keywords (comma-separated)"
-                onChange={(e) =>
-                  setState((prev) => ({
-                    ...prev,
-                    metaTags: { ...prev.metaTags, keywords: (e.target as HTMLInputElement).value },
-                  }))
-                }
-                className={`mt-vsp-2xs ${inputClass}`}
+                  class={`mt-vsp-2xs ${inputClass}`}
               />
-            )}
+            )}</Show>
           </li>
           {/* og:image */}
-          <li className={`text-small ${state.metaTags.ogImageEnabled ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={computed(() => `text-small ${ogImageEnabled.value ? "text-fg" : "text-muted"}`)}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
-                checked={state.metaTags.ogImageEnabled}
-                onChange={(e) =>
-                  setState((prev) => ({
-                    ...prev,
-                    metaTags: { ...prev.metaTags, ogImageEnabled: (e.target as HTMLInputElement).checked },
-                  }))
-                }
-                className="accent-accent"
+                modelChecked={ogImageEnabled}
+                  class="accent-accent"
               />
               OGP image (og:image)
             </label>
-            {state.metaTags.ogImageEnabled && (
+            <Show when={ogImageEnabled}>{() => (
               <input
                 type="text"
-                value={state.metaTags.ogImage}
+                modelValue={ogImage}
                 placeholder="/img/ogp.png"
                 aria-label="OGP image path"
-                onChange={(e) =>
-                  setState((prev) => ({
-                    ...prev,
-                    metaTags: { ...prev.metaTags, ogImage: (e.target as HTMLInputElement).value },
-                  }))
-                }
-                className={`mt-vsp-2xs ${inputClass}`}
+                  class={`mt-vsp-2xs ${inputClass}`}
               />
-            )}
+            )}</Show>
           </li>
           {/* og:site_name */}
-          <li className={`text-small ${state.metaTags.ogSiteName ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={computed(() => `text-small ${ogSiteName.value ? "text-fg" : "text-muted"}`)}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
-                checked={state.metaTags.ogSiteName}
-                onChange={(e) =>
-                  setState((prev) => ({
-                    ...prev,
-                    metaTags: { ...prev.metaTags, ogSiteName: (e.target as HTMLInputElement).checked },
-                  }))
-                }
-                className="accent-accent"
+                modelChecked={ogSiteName}
+                  class="accent-accent"
               />
               og:site_name
             </label>
           </li>
           {/* Twitter card */}
-          <li className={`text-small ${state.metaTags.twitterCardEnabled ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={computed(() => `text-small ${twitterCardEnabled.value ? "text-fg" : "text-muted"}`)}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
-                checked={state.metaTags.twitterCardEnabled}
-                onChange={(e) =>
-                  setState((prev) => ({
-                    ...prev,
-                    metaTags: { ...prev.metaTags, twitterCardEnabled: (e.target as HTMLInputElement).checked },
-                  }))
-                }
-                className="accent-accent"
+                modelChecked={twitterCardEnabled}
+                  class="accent-accent"
               />
               Twitter card
             </label>
-            {state.metaTags.twitterCardEnabled && (
-              <div className="mt-vsp-2xs flex flex-col gap-y-vsp-2xs">
+            <Show when={twitterCardEnabled}>{() => (
+              <div class="mt-vsp-2xs flex flex-col gap-y-vsp-2xs">
                 <select
-                  value={state.metaTags.twitterCard}
+                  modelValue={twitterCard}
                   aria-label="Twitter card type"
-                  onChange={(e) =>
-                    setState((prev) => ({
-                      ...prev,
-                      metaTags: {
-                        ...prev.metaTags,
-                        twitterCard: (e.target as HTMLSelectElement).value as "summary" | "summary_large_image",
-                      },
-                    }))
-                  }
-                  className={inputClass}
+                      class={inputClass}
                 >
                   <option value="summary">summary</option>
                   <option value="summary_large_image">summary_large_image</option>
                 </select>
                 <input
                   type="text"
-                  value={state.metaTags.twitterSite}
+                  modelValue={twitterSite}
                   placeholder="@yourbrand (optional)"
                   aria-label="twitter:site handle"
-                  onChange={(e) =>
-                    setState((prev) => ({
-                      ...prev,
-                      metaTags: { ...prev.metaTags, twitterSite: (e.target as HTMLInputElement).value },
-                    }))
-                  }
-                  className={inputClass}
+                      class={inputClass}
                 />
                 <input
                   type="text"
-                  value={state.metaTags.twitterCreator}
+                  modelValue={twitterCreator}
                   placeholder="@author (optional)"
                   aria-label="twitter:creator handle"
-                  onChange={(e) =>
-                    setState((prev) => ({
-                      ...prev,
-                      metaTags: { ...prev.metaTags, twitterCreator: (e.target as HTMLInputElement).value },
-                    }))
-                  }
-                  className={inputClass}
+                      class={inputClass}
                 />
               </div>
-            )}
+            )}</Show>
           </li>
         </ul>
       </section>
@@ -795,14 +586,11 @@ export default function PresetGenerator() {
       {/* CJK Friendly */}
       <section>
         <SectionHeading>Markdown Options</SectionHeading>
-        <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+        <label class="flex items-center gap-x-hsp-xs text-small text-fg">
           <input
             type="checkbox"
-            checked={state.cjkFriendly}
-            onChange={(e) =>
-              update("cjkFriendly", (e.target as HTMLInputElement).checked)
-            }
-            className="accent-accent"
+            modelChecked={cjkFriendly}
+            class="accent-accent"
           />
           CJK-friendly bold/italic (for Japanese, Chinese, Korean content)
         </label>
@@ -812,12 +600,9 @@ export default function PresetGenerator() {
       <section>
         <SectionHeading>Package Manager</SectionHeading>
         <select
-          value={state.packageManager}
+          modelValue={packageManager}
           aria-label="Package manager"
-          onChange={(e) =>
-            update("packageManager", (e.target as HTMLSelectElement).value)
-          }
-          className={inputClass}
+          class={inputClass}
         >
           {PACKAGE_MANAGERS.map((pm) => (
             <option key={pm} value={pm}>
@@ -828,23 +613,23 @@ export default function PresetGenerator() {
       </section>
 
       {/* Generate Button */}
-      <div className="mt-vsp-xs">
+      <div class="mt-vsp-xs">
         <button
-          disabled={additionalLangsError !== null}
-          onClick={() => {
-            if (additionalLangsError !== null) return;
-            setModalState({ ...state });
+          disabled={computed(() => additionalLangsError.value !== null)}
+          on:click={() => {
+            if (additionalLangsError.value !== null || jsonOutput.value === null) return;
+            modalState.value = currentState.value;
           }}
-          className="border border-accent bg-surface px-hsp-xl py-vsp-2xs text-small font-semibold text-accent transition-colors hover:bg-bg hover:text-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          class="border border-accent bg-surface px-hsp-xl py-vsp-2xs text-small font-semibold text-accent transition-colors hover:bg-bg hover:text-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           Generate Preset
         </button>
       </div>
 
       {/* Modal */}
-      {modalState && (
-        <PresetModal state={modalState} onClose={() => setModalState(null)} />
-      )}
+      <Show when={computed(() => modalState.value !== null)}>{() => (
+        <PresetModal state={modalState.value!} onClose={() => { modalState.value = null; }} />
+      )}</Show>
     </div>
   );
 }

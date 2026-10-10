@@ -22,6 +22,7 @@ export type { SidebarProps } from "./sidebar.js";
 export type {
   SidebarLocaleLink,
   SidebarNavNode,
+  SidebarNavigationContext,
   SidebarRootMenuItem,
   SidebarTreeIslandProps,
 } from "./types.js";

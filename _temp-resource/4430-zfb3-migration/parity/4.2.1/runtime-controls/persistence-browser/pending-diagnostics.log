@@ -1,0 +1,62 @@
+@takazudo/zfb=4.2.1
+@takazudo/zfb-runtime=4.2.1
+[2m[WebServer] [22m(node:404554) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 9 tests using 1 worker
+
+(node:404612) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:404612) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: unchanged (1.2s)
+  ✓  2 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: changed (810ms)
+  ✓  3 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: preserve (755ms)
+  ✓  4 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: structural (725ms)
+  ✓  5 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:10:7 › real navigation: identity (768ms)
+  ✘  6 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:80:5 › pending skip-SSR navigation cancels old scheduling before activation (10.3s)
+(node:405014) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:405014) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  7 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:146:5 › diagnostic control: direct pending-b remains below viewport until explicit visibility (437ms)
+  ✓  8 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:160:7 › diagnostic control: fresh pending navigation geometry and lifecycle (586ms)
+  ✓  9 ../../tmp/zudo421-persistence-browser/persistence.spec.ts:160:7 › diagnostic control: native pending navigation geometry and lifecycle (452ms)
+
+
+  1) ../../tmp/zudo421-persistence-browser/persistence.spec.ts:80:5 › pending skip-SSR navigation cancels old scheduling before activation 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 1[39m
+
+    [2m  Object {[22m
+    [32m-   "activations": 0,[39m
+    [31m+   "activations": 1,[39m
+    [2m    "cleanups": 0,[22m
+    [2m    "helperReady": true,[22m
+    [2m  }[22m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      113 |   const postSwapRaw = await pendingSnapshot(page);
+      114 |   await testInfo.attach("pending-after-navigation-before-assertion", { body: JSON.stringify(postSwapRaw, null, 2), contentType: "application/json" });
+    > 115 |   await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 0, cleanups: 0, helperReady: true });
+          |   ^
+      116 |   expect(await ancestor!.evaluate(node => node === document.querySelector("#persisted"))).toBe(true);
+      117 |   await expect(page.locator("#counter")).toHaveCount(0);
+      118 |   const beforeVisibility = await page.evaluate(() => (window as any).persistenceControl);
+        at /tmp/zudo421-persistence-browser/persistence.spec.ts:115:3
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../tmp/zudo421-persistence-browser/test-results/persistence-pending-skip-S-bf56f-cheduling-before-activation/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../tmp/zudo421-persistence-browser/test-results/persistence-pending-skip-S-bf56f-cheduling-before-activation/error-context.md
+
+  1 failed
+    ../../tmp/zudo421-persistence-browser/persistence.spec.ts:80:5 › pending skip-SSR navigation cancels old scheduling before activation 
+  8 passed (19.6s)
+heavy-guard: verdict=FAIL exit=1 secs=21 min_mem_mb=12921 reason=-

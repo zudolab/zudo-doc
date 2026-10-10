@@ -1,6 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
 // JSX port of the legacy `tabs` component.
 //
 // The original component rendered:
@@ -11,7 +9,7 @@
 //      panels.
 //
 // This JSX port takes a different (more SSR-friendly) approach:
-//   - It uses Preact's `toChildArray` to discover `<TabItem>` children
+//   - It uses zudo-react's `flattenChildren` to discover `<TabItem>` children
 //     server-side and renders the nav buttons statically in the HTML.
 //   - The companion `<TabsInit>` component (see tabs-init.tsx) still needs
 //     to be included in the layout; its script activates the correct tab
@@ -20,13 +18,14 @@
 // Children that are NOT `<TabItem>` elements are rendered into the content
 // area unchanged, so mixed content (e.g. a heading above a tab set) works.
 
-import { cloneElement, toChildArray } from "preact";
-import type { ComponentChildren, JSX, VNode } from "preact";
+import { h, flattenChildren } from "@takazudo/zfb/zudo-react";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { TabItem } from "../tab-item/tab-item.js";
 import type { TabItemProps } from "../tab-item/tab-item.js";
 
 const BASE_BTN_CLASS =
-  "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors";
+  "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors duration-0";
 /**
  * Wave 11 (zudolab/zudo-doc#1355): the default tab's button now ships
  * with active styles and `aria-selected="true"` straight from SSR — see
@@ -47,16 +46,16 @@ export interface TabsProps {
    */
   groupId?: string;
   /** `<TabItem>` children (and any other content). */
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 /**
  * Server-rendered tab container — JSX port of the legacy `tabs` component.
  *
- * Iterates `children` via `toChildArray` to discover `<TabItem>` elements
+ * Iterates `children` via `flattenChildren` to discover `<TabItem>` elements
  * and renders their labels as `<button>` elements in the tab nav bar.
- * All panels remain `hidden` on first paint; `<TabsInit>` (the companion
- * script component) activates the default/stored tab after hydration.
+ * The default panel is visible on first paint; `<TabsInit>` (the companion
+ * script component) activates a stored tab after hydration.
  *
  * Place `<TabsInit>` once in the layout — NOT inside each `<Tabs>`.
  *
@@ -69,27 +68,23 @@ export interface TabsProps {
  * ```
  */
 export function Tabs({ groupId, children }: TabsProps): JSX.Element {
-  // Flatten children and locate TabItem VNodes so we can build nav buttons.
+  // Flatten children and locate TabItem descriptions so we can build nav buttons.
   //
-  // TypeScript note: `toChildArray` returns `(string | number | VNode<{}>)[]`.
-  // We cannot use a type predicate of the form `child is VNode<TabItemProps>`
-  // because TypeScript treats VNode generics invariantly — `VNode<TabItemProps>`
-  // is not assignable to `VNode<{}>`. The two-step approach below narrows to
-  // the opaque `VNode` type first, then casts the props to `TabItemProps`.
-  const childArray = toChildArray(children);
+  // Flatten arrays while preserving each child description for inspection.
+  const childArray = flattenChildren(children);
 
-  // Step 1 — keep only VNodes whose `type` is the TabItem function.
+  // Step 1 — keep only descriptions whose `type` is the TabItem function.
   const tabItemNodes = childArray.filter(
-    (child): child is VNode =>
+    (child): child is Description =>
       typeof child === "object" &&
       child !== null &&
-      (child as VNode).type === TabItem,
+      (child as Description).type === TabItem,
   );
 
   // Step 2 — cast props to the known shape so the JSX below is type-safe.
   const tabItems = tabItemNodes.map((n) => ({
     ...n,
-    props: n.props as TabItemProps,
+    props: n.props as unknown as TabItemProps,
   }));
 
   // Wave 11: pre-resolve the default tab's `value` so the SSR HTML can
@@ -114,24 +109,24 @@ export function Tabs({ groupId, children }: TabsProps): JSX.Element {
     if (
       typeof child === "object" &&
       child !== null &&
-      (child as VNode).type === TabItem
+      (child as Description).type === TabItem
     ) {
-      const node = child as VNode;
-      const props = node.props as TabItemProps;
+      const node = child as Description;
+      const props = node.props as unknown as TabItemProps;
       const value = props.value ?? props.label;
       const isDefault = value === defaultValue;
-      return cloneElement(node, { default: isDefault });
+      return h(node.type, { ...node.props, default: isDefault, key: node.key });
     }
     return child;
   });
 
   return (
     <div
-      class="tabs-container my-vsp-md"
+      class="my-vsp-md"
       data-tabs
       data-group-id={groupId}
     >
-      <div class="tabs-nav flex border-b border-muted" role="tablist">
+      <div class="flex border-b border-muted" role="tablist" data-tabs-nav>
         {tabItems.map((item) => {
           const value = item.props.value ?? item.props.label;
           const isActive = value === defaultValue;
@@ -149,7 +144,7 @@ export function Tabs({ groupId, children }: TabsProps): JSX.Element {
           );
         })}
       </div>
-      <div class="tabs-content">{renderedChildren}</div>
+      <div data-tabs-content>{renderedChildren}</div>
     </div>
   );
 }

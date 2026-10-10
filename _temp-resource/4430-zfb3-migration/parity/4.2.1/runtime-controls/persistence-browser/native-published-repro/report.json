@@ -1,0 +1,259 @@
+{
+  "config": {
+    "configFile": "/tmp/zudo421-pending-native/playwright.config.mjs",
+    "rootDir": "/tmp/zudo421-pending-native",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/zudo421-pending-native/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/tmp/zudo421-pending-native",
+        "testIgnore": [],
+        "testMatch": [
+          "native-pending.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/tmp/zudo421-pending-native/report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": {
+      "command": "./node_modules/.bin/zfb dev --port 44294",
+      "cwd": "/tmp/zudo421-pending-native",
+      "url": "http://127.0.0.1:44294/pending-a/",
+      "reuseExistingServer": false,
+      "timeout": 120000,
+      "gracefulShutdown": {
+        "signal": "SIGTERM",
+        "timeout": 5000
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "native-pending.spec.ts",
+      "file": "native-pending.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "direct first-time visible island waits for explicit visibility",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 375,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:21:03.636Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "direct-before",
+                      "contentType": "application/json",
+                      "body": "ewogICJsaWZlY3ljbGUiOiB7CiAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgImNsZWFudXBzIjogMAogIH0sCiAgInNjcm9sbFkiOiAwLAogICJ2aWV3cG9ydEhlaWdodCI6IDcyMCwKICAiYm91bmRzIjogewogICAgInRvcCI6IDIwOTcuODc1LAogICAgImJvdHRvbSI6IDIxMTUuODc1LAogICAgImhlaWdodCI6IDE4CiAgfSwKICAiYXR0cmlidXRlcyI6IHsKICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlciIsCiAgICAiZGF0YS13aGVuIjogInZpc2libGUiLAogICAgImRhdGEtemZiLXRyYW5zcG9ydCI6ICJqc29uLzEiLAogICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAiZGF0YS16ZmItYnVpbGQiOiAiMTkwOTc2OWM5OTk3MTA0YSIsCiAgICAiZGF0YS1wcm9wcyI6ICJ7XCJsYWJlbFwiOlwiaW5jb21pbmdcIn0iCiAgfSwKICAicmVzZXJ2YXRpb25Db3VudCI6IDEsCiAgImNvdW50ZXJDb3VudCI6IDAsCiAgImxhYmVsIjogbnVsbAp9"
+                    },
+                    {
+                      "name": "direct-after-scroll",
+                      "contentType": "application/json",
+                      "body": "ewogICJsaWZlY3ljbGUiOiB7CiAgICAiYWN0aXZhdGlvbnMiOiAxLAogICAgImNsZWFudXBzIjogMAogIH0sCiAgInNjcm9sbFkiOiAxNDA0LAogICJ2aWV3cG9ydEhlaWdodCI6IDcyMCwKICAiYm91bmRzIjogewogICAgInRvcCI6IDY5My44NzUsCiAgICAiYm90dG9tIjogNzE0Ljg3NSwKICAgICJoZWlnaHQiOiAyMQogIH0sCiAgImF0dHJpYnV0ZXMiOiB7CiAgICAiZGF0YS16ZmItaXNsYW5kLXNraXAtc3NyIjogIkNvdW50ZXIiLAogICAgImRhdGEtd2hlbiI6ICJ2aXNpYmxlIiwKICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICJkYXRhLXpmYi1wcm90b2NvbCI6ICJ6dWRvLXJlYWN0LzEiLAogICAgImRhdGEtemZiLWJ1aWxkIjogIjE5MDk3NjljOTk5NzEwNGEiLAogICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcImluY29taW5nXCJ9IiwKICAgICJkYXRhLXpmYi1pc2xhbmQtbW91bnRlZCI6ICIiCiAgfSwKICAicmVzZXJ2YXRpb25Db3VudCI6IDAsCiAgImNvdW50ZXJDb3VudCI6IDEsCiAgImxhYmVsIjogImluY29taW5nIgp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e43fa121e29fc4a91c44-a52faa6e493db367aa44",
+          "file": "native-pending.spec.ts",
+          "line": 24,
+          "column": 1
+        },
+        {
+          "title": "fresh changed-props navigation before activation keeps first mount deferred",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 446,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:21:04.228Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "before-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJsaWZlY3ljbGUiOiB7CiAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgImNsZWFudXBzIjogMAogIH0sCiAgInNjcm9sbFkiOiAwLAogICJ2aWV3cG9ydEhlaWdodCI6IDcyMCwKICAiYm91bmRzIjogewogICAgInRvcCI6IDIwOTcuODc1LAogICAgImJvdHRvbSI6IDIxMTUuODc1LAogICAgImhlaWdodCI6IDE4CiAgfSwKICAiYXR0cmlidXRlcyI6IHsKICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlciIsCiAgICAiZGF0YS13aGVuIjogInZpc2libGUiLAogICAgImRhdGEtemZiLXRyYW5zcG9ydCI6ICJqc29uLzEiLAogICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAiZGF0YS16ZmItYnVpbGQiOiAiMTkwOTc2OWM5OTk3MTA0YSIsCiAgICAiZGF0YS1wcm9wcyI6ICJ7XCJsYWJlbFwiOlwib3JpZ2luYWxcIn0iCiAgfSwKICAicmVzZXJ2YXRpb25Db3VudCI6IDEsCiAgImNvdW50ZXJDb3VudCI6IDAsCiAgImxhYmVsIjogbnVsbAp9"
+                    },
+                    {
+                      "name": "after-navigation-before-assertion",
+                      "contentType": "application/json",
+                      "body": "ewogICJhZnRlciI6IHsKICAgICJsaWZlY3ljbGUiOiB7CiAgICAgICJhY3RpdmF0aW9ucyI6IDAsCiAgICAgICJjbGVhbnVwcyI6IDAKICAgIH0sCiAgICAic2Nyb2xsWSI6IDAsCiAgICAidmlld3BvcnRIZWlnaHQiOiA3MjAsCiAgICAiYm91bmRzIjogewogICAgICAidG9wIjogMjA5Ny44NzUsCiAgICAgICJib3R0b20iOiAyMTE1Ljg3NSwKICAgICAgImhlaWdodCI6IDE4CiAgICB9LAogICAgImF0dHJpYnV0ZXMiOiB7CiAgICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlciIsCiAgICAgICJkYXRhLXdoZW4iOiAidmlzaWJsZSIsCiAgICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAgICJkYXRhLXpmYi1idWlsZCI6ICIxOTA5NzY5Yzk5OTcxMDRhIiwKICAgICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcImluY29taW5nXCJ9IgogICAgfSwKICAgICJyZXNlcnZhdGlvbkNvdW50IjogMSwKICAgICJjb3VudGVyQ291bnQiOiAwLAogICAgImxhYmVsIjogbnVsbAogIH0sCiAgImRvY3VtZW50UmVxdWVzdHMiOiAxLAogICJlcnJvcnMiOiBbXSwKICAiZmFpbGVkUmVzcG9uc2VzIjogW10KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e43fa121e29fc4a91c44-66564f871dd1594f2749",
+          "file": "native-pending.spec.ts",
+          "line": 37,
+          "column": 3
+        },
+        {
+          "title": "pending changed-props navigation before activation keeps first mount deferred",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 425,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"activations\": 0,\u001b[39m\n\u001b[31m+   \"activations\": 1,\u001b[39m\n\u001b[2m    \"cleanups\": 0,\u001b[22m\n\u001b[2m  }\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"activations\": 0,\u001b[39m\n\u001b[31m+   \"activations\": 1,\u001b[39m\n\u001b[2m    \"cleanups\": 0,\u001b[22m\n\u001b[2m  }\u001b[22m\n    at /tmp/zudo421-pending-native/native-pending.spec.ts:67:29",
+                    "location": {
+                      "file": "/tmp/zudo421-pending-native/native-pending.spec.ts",
+                      "column": 29,
+                      "line": 67
+                    },
+                    "snippet": "  65 |     expect(failedResponses).toEqual([]);\n  66 |     // FAILS on published4.2.1 only for the persisted-ancestor case.\n> 67 |     expect(after.lifecycle).toEqual({ activations: 0, cleanups: 0 });\n     |                             ^\n  68 |     expect(after.reservationCount).toBe(1);\n  69 |     expect(after.counterCount).toBe(0);\n  70 |     await makeVisible(page);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/tmp/zudo421-pending-native/native-pending.spec.ts",
+                        "column": 29,
+                        "line": 67
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"activations\": 0,\u001b[39m\n\u001b[31m+   \"activations\": 1,\u001b[39m\n\u001b[2m    \"cleanups\": 0,\u001b[22m\n\u001b[2m  }\u001b[22m\n\n  65 |     expect(failedResponses).toEqual([]);\n  66 |     // FAILS on published4.2.1 only for the persisted-ancestor case.\n> 67 |     expect(after.lifecycle).toEqual({ activations: 0, cleanups: 0 });\n     |                             ^\n  68 |     expect(after.reservationCount).toBe(1);\n  69 |     expect(after.counterCount).toBe(0);\n  70 |     await makeVisible(page);\n    at /tmp/zudo421-pending-native/native-pending.spec.ts:67:29"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:21:04.691Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "before-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJsaWZlY3ljbGUiOiB7CiAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgImNsZWFudXBzIjogMAogIH0sCiAgInNjcm9sbFkiOiAwLAogICJ2aWV3cG9ydEhlaWdodCI6IDcyMCwKICAiYm91bmRzIjogewogICAgInRvcCI6IDIwOTcuODc1LAogICAgImJvdHRvbSI6IDIxMTUuODc1LAogICAgImhlaWdodCI6IDE4CiAgfSwKICAiYXR0cmlidXRlcyI6IHsKICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlciIsCiAgICAiZGF0YS13aGVuIjogInZpc2libGUiLAogICAgImRhdGEtemZiLXRyYW5zcG9ydCI6ICJqc29uLzEiLAogICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAiZGF0YS16ZmItYnVpbGQiOiAiMTkwOTc2OWM5OTk3MTA0YSIsCiAgICAiZGF0YS1wcm9wcyI6ICJ7XCJsYWJlbFwiOlwib3JpZ2luYWxcIn0iCiAgfSwKICAicmVzZXJ2YXRpb25Db3VudCI6IDEsCiAgImNvdW50ZXJDb3VudCI6IDAsCiAgImxhYmVsIjogbnVsbAp9"
+                    },
+                    {
+                      "name": "after-navigation-before-assertion",
+                      "contentType": "application/json",
+                      "body": "ewogICJhZnRlciI6IHsKICAgICJsaWZlY3ljbGUiOiB7CiAgICAgICJhY3RpdmF0aW9ucyI6IDEsCiAgICAgICJjbGVhbnVwcyI6IDAKICAgIH0sCiAgICAic2Nyb2xsWSI6IDAsCiAgICAidmlld3BvcnRIZWlnaHQiOiA3MjAsCiAgICAiYm91bmRzIjogewogICAgICAidG9wIjogMjA5Ny44NzUsCiAgICAgICJib3R0b20iOiAyMTE4Ljg3NSwKICAgICAgImhlaWdodCI6IDIxCiAgICB9LAogICAgImF0dHJpYnV0ZXMiOiB7CiAgICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlciIsCiAgICAgICJkYXRhLXdoZW4iOiAidmlzaWJsZSIsCiAgICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAgICJkYXRhLXpmYi1idWlsZCI6ICIxOTA5NzY5Yzk5OTcxMDRhIiwKICAgICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcImluY29taW5nXCJ9IiwKICAgICAgImRhdGEtemZiLWlzbGFuZC1tb3VudGVkIjogIiIKICAgIH0sCiAgICAicmVzZXJ2YXRpb25Db3VudCI6IDAsCiAgICAiY291bnRlckNvdW50IjogMSwKICAgICJsYWJlbCI6ICJpbmNvbWluZyIKICB9LAogICJkb2N1bWVudFJlcXVlc3RzIjogMSwKICAiZXJyb3JzIjogW10sCiAgImZhaWxlZFJlc3BvbnNlcyI6IFtdCn0="
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/tmp/zudo421-pending-native/test-results/native-pending-pending-cha-8c043--keeps-first-mount-deferred/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/zudo421-pending-native/test-results/native-pending-pending-cha-8c043--keeps-first-mount-deferred/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/tmp/zudo421-pending-native/native-pending.spec.ts",
+                    "column": 29,
+                    "line": 67
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e43fa121e29fc4a91c44-8f623981a8273c3d3ba4",
+          "file": "native-pending.spec.ts",
+          "line": 37,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T09:21:01.787Z",
+    "duration": 3454.095,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

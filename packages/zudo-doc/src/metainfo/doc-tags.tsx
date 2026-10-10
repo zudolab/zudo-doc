@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 /**
  * A single resolved tag with its navigation href. The legacy
@@ -65,7 +63,7 @@ export const DEFAULT_TAGGED_WITH_LABEL = "Tagged with";
  * The pointed-chip shape is reproduced verbatim from the page-variant
  * branch of `tag-nav` using the same `clip-path` values.
  */
-export function DocTags(props: DocTagsProps): VNode | null {
+export function DocTags(props: DocTagsProps): Child {
   const {
     tags = [],
     placement,

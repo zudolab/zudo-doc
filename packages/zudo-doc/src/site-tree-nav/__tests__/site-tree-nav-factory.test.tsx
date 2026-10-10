@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
+import "../../__tests__/fixtures/install-island-metadata.js";
 /**
  * Factory + island-marker tests for the SiteTreeNavWrapper factory (epic #2344, S8).
  *
@@ -13,6 +13,8 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
+import { Window } from "happy-dom";
+import { renderSsr } from "../../__tests__/helpers/zudo-react.js";
 import { SiteTreeNav } from "../../site-tree-nav-island/index.js";
 import type { SiteTreeNavProps } from "../../site-tree-nav-island/index.js";
 import { createSiteTreeNavWrapper } from "../index.js";
@@ -155,21 +157,18 @@ describe("createSiteTreeNavWrapper — Island(when:idle) preserved (epic #2344 S
 // createSiteTreeNavWrapper — version threading (#3218)
 // ---------------------------------------------------------------------------
 
-// The wrapper previously hard-coded `resolveNavSource(locale, undefined, ...)`
-// and never remapped hrefs, so the site tree under `/v/{version}` silently
-// linked to the latest-version pages instead of staying inside the version
-// (source issue #3194). `react/jsx-runtime` is aliased to `preact/jsx-runtime`
-// in this vitest config (vitest.config.ts), so the Island(...) wrapper's
-// returned vnode is a real Preact element and `.props.children.props.tree`
-// reaches the exact tree passed to <SiteTreeNav>.
-function treeOf(result: unknown): SidebarNavNode[] {
-  const el = result as { props: { children: { props: { tree: SidebarNavNode[] } } } };
-  return el.props.children.props.tree;
-}
-
+// The v3 Island() boundary returns a wrapper description. Read its public
+// transport payload so this checks the same tree and own keys hydration gets.
 function siteTreeNavProps(result: unknown): SiteTreeNavProps {
-  const el = result as { props: { children: { props: SiteTreeNavProps } } };
-  return el.props.children.props;
+  const html = renderSsr(result as import("@takazudo/zfb/zudo-react").Child);
+  const host = new Window().document.createElement("div");
+  host.innerHTML = html;
+  const encoded = host.querySelector("[data-zfb-island]")?.getAttribute("data-props");
+  expect(encoded).toBeDefined();
+  return JSON.parse(encoded ?? "") as SiteTreeNavProps;
+}
+function treeOf(result: unknown): SidebarNavNode[] {
+  return siteTreeNavProps(result).tree;
 }
 
 describe("createSiteTreeNavWrapper — version threading (#3218)", () => {

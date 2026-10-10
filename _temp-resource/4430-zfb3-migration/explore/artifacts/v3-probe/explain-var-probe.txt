@@ -1,0 +1,14 @@
+## bg-[color-mix(in_srgb,var(--x)_50%,transparent)]: outcome: resolved utility declaration: background-color: color-mix(in srgb,var(--x) 50%,transparent) 
+## shadow-[var(--x)]: outcome: recognized invalid or malformed diagnostic: ZW005 error at value is not valid for box-shadow 
+## shadow-[0_1px_3px_rgb(var(--x))]: outcome: recognized invalid or malformed diagnostic: ZW005 error at value is not valid for box-shadow 
+## border-[var(--x)]: outcome: resolved utility declaration: border-top-width: var(--x) 
+## p-[var(--x)]: outcome: resolved utility declaration: padding-top: var(--x) 
+## w-[var(--zd-sidebar-w)]: outcome: resolved utility declaration: width: var(--zd-sidebar-w) 
+## w-[calc(var(--x)*2)]: outcome: resolved utility declaration: width: calc(var(--x)*2) 
+## grid-cols-[var(--x)_1fr]: outcome: resolved utility declaration: grid-template-columns: var(--x) 1fr 
+## m-[var(--a)_var(--b)]: outcome: recognized invalid or malformed diagnostic: ZW005 error at value is not valid for margin-top 
+## wrap-anywhere: outcome: ordinary class 
+## decoration-muted: outcome: ordinary class 
+## transition-[max-width]: outcome: resolved utility declaration: transition-property: max-width 
+## min-h-[calc(100vh-3.5rem)]: outcome: recognized invalid or malformed diagnostic: ZW005 error at value is not valid for width 
+## max-w-[calc(100vw-var(--spacing-hsp-xl))]: outcome: recognized invalid or malformed diagnostic: ZW005 error at value is not valid for width 

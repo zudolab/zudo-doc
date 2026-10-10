@@ -101,12 +101,16 @@ function verifyRoundtrip(state: FormState) {
   for (const f of FEATURES) {
     const expected = f.value === "i18n"
       ? expectedI18n
-      : state.features.includes(f.value);
+      : state.features.includes(f.value) ||
+        (f.value === "agentExport" && state.features.includes("mcp"));
     expect(
       parsed[f.value as keyof typeof parsed],
       `Feature ${f.value} (--${f.cliFlag}): expected ${expected}`,
     ).toBe(expected);
   }
+  expect(parsed.mcpDeploy).toBe(
+    state.features.includes("mcp") ? "cloudflare" : undefined,
+  );
 }
 
 describe("roundtrip: buildCliCommand → parseArgs", () => {
@@ -135,6 +139,10 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
   it("mixed features", () => {
     const half = FEATURES.slice(0, 7).map((f) => f.value);
     verifyRoundtrip(makeState({ features: half }));
+  });
+
+  it("MCP selection adds agent export and the Cloudflare target", () => {
+    verifyRoundtrip(makeState({ features: ["mcp"] }));
   });
 
   it("project name with spaces", () => {

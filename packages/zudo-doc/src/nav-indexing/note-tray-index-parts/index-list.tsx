@@ -1,7 +1,5 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { rankWidth } from "../../note-tray-model/index.js";
 import type { NoteTrayIndexProps } from "../note-tray-index.js";
 import { DateLine } from "./date-line.js";
@@ -9,7 +7,7 @@ import { DateLine } from "./date-line.js";
 export function IndexList(props: NoteTrayIndexProps): JSX.Element {
   const width = rankWidth(props.items);
   return (
-    <ol class="[&_li]:mb-0">
+    <ol class="zd-list-items-no-margin">
       {props.items.map((item) => {
         const rowClass = item.href
           ? "relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent"

@@ -1,0 +1,276 @@
+{
+  "/docs/components/html-preview/": {
+    ".zd-content pre": {
+      "html": "<pre class=\"hi-root\" data-enhanced=\"true\" data-code-overflow=\"0\"><code><span class=\"line\"><span>&lt;HtmlPreview\n</span></span><span class=\"line\"><span>  html=\"&lt;<span class=\"hi-tag\">p</span>&gt;One preview&lt;/<span class=\"hi-tag\">p</span>&gt;\"\n</span></span><span class=\"line\"><span>  labels={{\n</span></span><span class=\"line\"><span>    mobile: \"Phone\",\n</span></span><span class=\"line\"><span>    preview: \"Live preview\",\n</span></span><span class=\"line\"><span>  }}\n</span></span><span class=\"line\"><span>/&gt;</span></span></code></pre>",
+      "rect": {
+        "x": 320,
+        "y": 2102.03125,
+        "width": 577.609375,
+        "height": 231,
+        "top": 2102.03125,
+        "right": 897.609375,
+        "bottom": 2333.03125,
+        "left": 320
+      },
+      "font": "16px / 26px ui-monospace, monospace",
+      "fontFamily": "ui-monospace, monospace",
+      "lineHeight": "26px",
+      "verticalAlign": "baseline",
+      "display": "block",
+      "margin": "0px",
+      "padding": "20px 16px",
+      "border": "1px solid oklch(0.48 0.008 65)",
+      "after": "none"
+    },
+    ".zd-content pre code": {
+      "html": "<code><span class=\"line\"><span>&lt;HtmlPreview\n</span></span><span class=\"line\"><span>  html=\"&lt;<span class=\"hi-tag\">p</span>&gt;One preview&lt;/<span class=\"hi-tag\">p</span>&gt;\"\n</span></span><span class=\"line\"><span>  labels={{\n</span></span><span class=\"line\"><span>    mobile: \"Phone\",\n</span></span><span class=\"line\"><span>    preview: \"Live preview\",\n</span></span><span class=\"line\"><span>  }}\n</span></span><span class=\"line\"><span>/&gt;</span></span></code>",
+      "rect": {
+        "x": 337,
+        "y": 2128.03125,
+        "width": 268.84375,
+        "height": 180,
+        "top": 2128.03125,
+        "right": 605.84375,
+        "bottom": 2308.03125,
+        "left": 337
+      },
+      "font": "16px / 26px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "lineHeight": "26px",
+      "verticalAlign": "baseline",
+      "display": "inline",
+      "margin": "0px",
+      "padding": "0px",
+      "border": "0px none oklch(0.185 0.005 65)",
+      "after": "none"
+    },
+    ".zd-content pre .line": {
+      "html": "<span class=\"line\"><span>&lt;HtmlPreview\n</span></span>",
+      "rect": {
+        "x": 337,
+        "y": 2128.03125,
+        "width": 115.21875,
+        "height": 18,
+        "top": 2128.03125,
+        "right": 452.21875,
+        "bottom": 2146.03125,
+        "left": 337
+      },
+      "font": "16px / 26px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "lineHeight": "26px",
+      "verticalAlign": "baseline",
+      "display": "inline",
+      "margin": "0px",
+      "padding": "0px",
+      "border": "0px solid oklch(0.185 0.005 65)",
+      "after": "none"
+    },
+    ".zd-content pre .line > span": {
+      "html": "<span>&lt;HtmlPreview\n</span>",
+      "rect": {
+        "x": 337,
+        "y": 2128.03125,
+        "width": 115.21875,
+        "height": 18,
+        "top": 2128.03125,
+        "right": 452.21875,
+        "bottom": 2146.03125,
+        "left": 337
+      },
+      "font": "16px / 26px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "lineHeight": "26px",
+      "verticalAlign": "baseline",
+      "display": "inline",
+      "margin": "0px",
+      "padding": "0px",
+      "border": "0px solid oklch(0.185 0.005 65)",
+      "after": "none"
+    },
+    ".zd-content a": {
+      "html": "<a aria-label=\"Direct link to Localized Controls\" class=\"hash-link\" href=\"#localized-controls\"></a>",
+      "rect": {
+        "x": 531.453125,
+        "y": 725.984375,
+        "width": 14.46875,
+        "height": 31,
+        "top": 725.984375,
+        "right": 545.921875,
+        "bottom": 756.984375,
+        "left": 531.453125
+      },
+      "font": "700 22.4px / 28px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "28px",
+      "verticalAlign": "baseline",
+      "display": "inline",
+      "margin": "0px 0px 0px 8px",
+      "padding": "0px",
+      "border": "0px solid oklch(0.185 0.005 65)",
+      "after": "\"#\""
+    },
+    ".zd-content table": {
+      "html": "<table class=\"w-full border-collapse text-small\"><thead><tr><th>Translation key</th><th>UI value</th></tr></thead><tbody><tr><td><code>htmlPreview.viewport.mobile</code></td><td>Mobile viewport button</td></tr><tr><td><code>htmlPreview.viewport.tablet</code></td><td>Tablet viewport button</td></tr><tr><td><code>htmlPreview.viewport.full</code></td><td>Full-width viewport button</td></tr><tr><td><code>htmlPreview.viewport.label</code></td><td>Viewport preset group <code>aria-label</code></td></tr><tr><td><code>htmlPreview.source.show</code></td><td>Collapsed source toggle label</td></tr><tr><td><code>htmlPreview.source.hide</code></td><td>Expanded source toggle label</td></tr><tr><td><code>htmlPreview.iframe.title</code></td><td>Outer iframe title when the visible <code>title</code> is omitted; also the generated document-title fallback when neither an author <code>&lt;title&gt;</code> nor a nonblank <code>title</code> is supplied</td></tr></tbody></table>",
+      "rect": {
+        "x": 320,
+        "y": 887.59375,
+        "width": 577.609375,
+        "height": 744,
+        "top": 887.59375,
+        "right": 897.609375,
+        "bottom": 1631.59375,
+        "left": 320
+      },
+      "font": "16px / 26px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "26px",
+      "verticalAlign": "baseline",
+      "display": "table",
+      "margin": "0px",
+      "padding": "0px",
+      "border": "0px solid oklch(0.185 0.005 65)",
+      "after": "none",
+      "tableText": "Translation keyUI valuehtmlPreview.viewport.mobileMobile viewport buttonhtmlPreview.viewport.tabletTablet viewport buttonhtmlPreview.viewport.fullFull-width viewport buttonhtmlPreview.viewport.labelViewport preset group aria-labelhtmlPreview.source.showCollapsed source toggle labelhtmlPreview.source.hideExpanded source toggle labelhtmlPreview.iframe.titleOuter iframe title when the visible title is omitted; also the generated document-title fallback when neither an author <title> nor a nonblank title is supplied"
+    },
+    ".zd-content th": {
+      "html": "<th>Translation key</th>",
+      "rect": {
+        "x": 320,
+        "y": 887.59375,
+        "width": 162.15625,
+        "height": 55,
+        "top": 887.59375,
+        "right": 482.15625,
+        "bottom": 942.59375,
+        "left": 320
+      },
+      "font": "600 16px / 26px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "26px",
+      "verticalAlign": "middle",
+      "display": "table-cell",
+      "margin": "0px",
+      "padding": "14px 12px",
+      "border": "",
+      "after": "none"
+    },
+    ".zd-content td": {
+      "html": "<td><code>htmlPreview.viewport.mobile</code></td>",
+      "rect": {
+        "x": 320,
+        "y": 942.59375,
+        "width": 162.15625,
+        "height": 110.5,
+        "top": 942.59375,
+        "right": 482.15625,
+        "bottom": 1053.09375,
+        "left": 320
+      },
+      "font": "16px / 26px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "26px",
+      "verticalAlign": "middle",
+      "display": "table-cell",
+      "margin": "0px",
+      "padding": "14px 12px",
+      "border": "",
+      "after": "none"
+    }
+  },
+  "/docs/versions/": {
+    ".zd-content pre": null,
+    ".zd-content pre code": null,
+    ".zd-content pre .line": null,
+    ".zd-content pre .line > span": null,
+    ".zd-content a": {
+      "html": "<a class=\"inline-flex items-center gap-hsp-xs text-small text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline\" href=\"/docs/getting-started/\">View latest docs<svg class=\"h-[0.875rem] w-[0.875rem]\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M9 5l7 7-7 7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg></a>",
+      "rect": {
+        "x": 32,
+        "y": 318.40625,
+        "width": 139.546875,
+        "height": 26,
+        "top": 318.40625,
+        "right": 171.546875,
+        "bottom": 344.40625,
+        "left": 32
+      },
+      "font": "16px / 26px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "26px",
+      "verticalAlign": "baseline",
+      "display": "inline-flex",
+      "margin": "0px",
+      "padding": "0px",
+      "border": "0px solid oklch(0.185 0.005 65)",
+      "after": "none"
+    },
+    ".zd-content table": {
+      "html": "<table class=\"w-full text-small\"><thead><tr class=\"border-b border-muted bg-surface\"><th class=\"px-hsp-md py-vsp-xs text-left font-semibold text-muted\">Version</th><th class=\"px-hsp-md py-vsp-xs text-left font-semibold text-muted\">Status</th><th class=\"px-hsp-md py-vsp-xs text-left font-semibold text-muted\">Docs</th></tr></thead><tbody><tr class=\"border-b border-muted last:border-b-0\"><td class=\"px-hsp-md py-vsp-xs font-medium text-fg\">1.0.0</td><td class=\"px-hsp-md py-vsp-xs\"><span class=\"inline-block rounded px-hsp-xs py-vsp-3xs text-caption bg-warning/10 text-warning\">Unmaintained</span></td><td class=\"px-hsp-md py-vsp-xs\"><a class=\"text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline\" href=\"/v/1.0/docs/getting-started/\">Docs</a></td></tr></tbody></table>",
+      "rect": {
+        "x": 33,
+        "y": 487.015625,
+        "width": 1214,
+        "height": 115.75,
+        "top": 487.015625,
+        "right": 1247,
+        "bottom": 602.765625,
+        "left": 33
+      },
+      "font": "16px / 26px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "26px",
+      "verticalAlign": "baseline",
+      "display": "table",
+      "margin": "0px",
+      "padding": "0px",
+      "border": "0px solid oklch(0.48 0.008 65)",
+      "after": "none",
+      "tableText": "VersionStatusDocs1.0.0UnmaintainedDocs"
+    },
+    ".zd-content th": {
+      "html": "<th class=\"px-hsp-md py-vsp-xs text-left font-semibold text-muted\">Version</th>",
+      "rect": {
+        "x": 33,
+        "y": 487.015625,
+        "width": 370.0625,
+        "height": 55,
+        "top": 487.015625,
+        "right": 403.0625,
+        "bottom": 542.015625,
+        "left": 33
+      },
+      "font": "600 16px / 26px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "26px",
+      "verticalAlign": "middle",
+      "display": "table-cell",
+      "margin": "0px",
+      "padding": "14px 12px",
+      "border": "",
+      "after": "none"
+    },
+    ".zd-content td": {
+      "html": "<td class=\"px-hsp-md py-vsp-xs font-medium text-fg\">1.0.0</td>",
+      "rect": {
+        "x": 33,
+        "y": 542.015625,
+        "width": 370.0625,
+        "height": 60.25,
+        "top": 542.015625,
+        "right": 403.0625,
+        "bottom": 602.265625,
+        "left": 33
+      },
+      "font": "500 16px / 26px system-ui, sans-serif",
+      "fontFamily": "system-ui, sans-serif",
+      "lineHeight": "26px",
+      "verticalAlign": "middle",
+      "display": "table-cell",
+      "margin": "0px",
+      "padding": "14px 12px",
+      "border": "",
+      "after": "none"
+    }
+  }
+}

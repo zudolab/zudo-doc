@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // FIXTURE-OWNED chrome bindings for the `hostpanel` e2e fixture (#4310, epic
 // #4309). `e2e/setup-fixtures.sh` materializes THIS file as the fixture's
 // `src/chrome-bindings.tsx` (the `chromeBindingsModule` target) instead of
@@ -17,7 +16,8 @@
 // scripts/check-chrome-bindings-fixture-drift.mjs (`pnpm check:chrome-bindings-fixture-drift`),
 // which fails if a root change goes unported here.
 
-import type { ComponentChildren, JSX, VNode } from "preact";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
@@ -42,7 +42,7 @@ import {
 } from "../pages/lib/_body-end-islands";
 import { DetailsWrapper } from "../pages/lib/_details";
 import { PresetGeneratorFallback } from "../pages/lib/_preset-generator";
-import { DocHistory } from "@takazudo/zudo-doc/doc-history";
+import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area";
 // SSR author + date metadata — `#doc-history-meta` is the build-time manifest
 // alias (esbuild-inlined, no fs). Static import is load-bearing for the island
 // scanner chain noted below.
@@ -53,6 +53,7 @@ import docHistoryMeta from "#doc-history-meta";
 // dynamic or type-only import silently kills island registration.
 import { HostPanelBootstrap } from "./host-panel/bootstrap-island.js";
 import { HostTokenTrigger } from "./host-panel/trigger.js";
+import { MediaProbe } from "./host-panel/media-probe-island.js";
 
 // ---------------------------------------------------------------------------
 // Frontmatter-preview entry builder (moved verbatim from the former
@@ -116,8 +117,8 @@ const MdxStub = (_props: unknown) => null;
 /** SSR pass-through for `<Island when=…>` — renders children, ignores `when`. */
 function IslandWrapper(props: {
   when?: "load" | "idle" | "visible" | "media";
-  children?: ComponentChildren;
-}): ComponentChildren {
+  children?: Child;
+}): Child {
   return props.children ?? null;
 }
 
@@ -147,9 +148,16 @@ function BodyEndIslandsWithHostPanel(props: BodyEndIslandsProps): JSX.Element {
       <BodyEndIslandsSeam {...props} />
       {
         Island({
+          when: "media",
+          media: "(max-width: 640px)",
+          children: <MediaProbe />,
+        }) as unknown as Description
+      }
+      {
+        Island({
           when: "load",
           children: <HostPanelBootstrap />,
-        }) as unknown as VNode
+        }) as unknown as Description
       }
     </>
   );

@@ -108,9 +108,12 @@ test.describe("Design token panel compact UI regressions", () => {
     const input = row.getByLabel(`${TOKEN} value`, { exact: true });
     const originalInput = await input.inputValue();
     const originalCss = await page.evaluate((token) => getComputedStyle(document.documentElement).getPropertyValue(token).trim(), TOKEN);
+    // CSS serialization can shorten 0.5rem to .5rem; the numeric input
+    // supplies the canonical displayed default without changing its value.
+    expect(Number(originalInput)).toBe(Number.parseFloat(originalCss));
     await input.fill("1.23456789");
     await expect(row).toHaveClass(/\bis-changed\b/);
-    await expect(row.getByTestId("tokenpanel-changed-tail")).toHaveAttribute("title", `default ${originalCss} → 1.23456789rem`);
+    await expect(row.getByTestId("tokenpanel-changed-tail")).toHaveAttribute("title", `default ${originalInput}rem → 1.23456789rem`);
     await expect.poll(() => page.evaluate((token) => getComputedStyle(document.documentElement).getPropertyValue(token).trim(), TOKEN)).toBe("1.23456789rem");
     const after = await rowGeometry(row);
     expect(after.prefixVisible).toBe(true);

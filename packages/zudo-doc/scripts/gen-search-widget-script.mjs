@@ -327,6 +327,7 @@ export function buildSearchWidgetScript() {
       // without re-querying the DOM (the placeholder node is replaced once
       // search results are rendered).
       this._placeholderHtml = "";
+      this._placeholderHtmlCaptured = false;
       // Held so we can remove the document-level after-navigate listener
       // in disconnectedCallback. zudolab/zudo-doc#1523 — under Strategy B
       // SPA navigation a non-persisted <site-search> element would leak
@@ -346,17 +347,23 @@ export function buildSearchWidgetScript() {
       this._searchUnavailable = this.dataset.searchUnavailable || "Search unavailable";
       this._loadingIndex = this.dataset.loadingIndex || "Loading search index\\u2026";
       this._noResults = this.dataset.noResults || "No results found.";
-      // Snapshot the placeholder HTML before any search renders overwrite it.
-      this._placeholderHtml = this._results ? this._results.innerHTML : "";
-
       // Platform keyboard-shortcut label — injected into [data-kbd-shortcut]
       var nav = navigator;
-      var isMac = /Mac|iPhone|iPad|iPod/.test(
+      var isMac = /Mac|iPhone|iPad|iPod/i.test(
         (nav.userAgentData && nav.userAgentData.platform) || nav.userAgent
       );
       this._shortcut = isMac ? "\\u2318K" : "Ctrl+K";
       var kbdEl = this.querySelector("[data-kbd-shortcut]");
       if (kbdEl) kbdEl.textContent = this._shortcut;
+
+      // Snapshot the placeholder after its platform shortcut is populated so
+      // every empty-query restore keeps the same label shown on first open. Keep
+      // that first snapshot across SPA disconnect/reconnects, which can happen
+      // while the results container contains rendered results.
+      if (!this._placeholderHtmlCaptured && this._results) {
+        this._placeholderHtml = this._results.innerHTML;
+        this._placeholderHtmlCaptured = true;
+      }
 
       // Wire open/close handlers
       var self = this;
@@ -641,7 +648,7 @@ export function buildSearchWidgetScript() {
       if (text) {
         var excerpt = document.createElement("p");
         excerpt.className =
-          "mt-vsp-2xs text-caption text-muted leading-relaxed group-hover:underline group-focus-visible:underline decoration-muted";
+          "mt-vsp-2xs text-caption text-muted leading-relaxed group-hover:underline group-focus-visible:underline zd-search-excerpt-decoration";
         var truncated = truncate(text, this._currentQuery, 200);
         excerpt.innerHTML = highlightTerms(truncated, terms);
         link.appendChild(excerpt);

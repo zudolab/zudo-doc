@@ -6,55 +6,63 @@ tags:
   - design-system
 ---
 
-zudo-docは**タイトトークン戦略**を採用しています。Tailwindフレームワーク全体をインポートするのではなく、`preflight`と`utilities`のみを読み込み、デフォルトテーマ層を完全にスキップします。その後パッケージが、小さく意図的なデザイントークンのセットを提供します。このページでは、スペーシング、タイポグラフィ、カラー、角丸、ブレークポイント、レイヤリングの全体像を解説します。
+zudo-docはzfbのzudo-windコンパイラーと**緻密なトークン戦略**を使用します。値は通常のCSSカスタムプロパティで定義し、パッケージのプリセットで対応するユーティリティトークンを登録します。このリファレンスの対象は整合したzfb 4.3.0ファミリーです。
 
-## タイトトークン戦略
+<span id="タイトトークン戦略" />
 
-Tailwind CSSには数百の組み込み値（カラー、スペーシングスケール、フォントサイズなど）が用意されています。テーマ切り替え可能なプロジェクトでは、これらのデフォルト値が問題を引き起こします。ハードコードされた値はテーマ変更を無視し、一貫性を崩します。
+## 緻密なトークン戦略
 
-scaffold の `src/styles/global.css` は、Tailwind の `preflight`（リセット）と `utilities`（ユーティリティクラス）のみをインポートした後、パッケージのトークンスタイルシートをインポートします。デフォルトの Tailwind テーマ層は意図的にスキップされます:
+スキャフォールドは公開パッケージCSSをインポートし、通常のCSSで値を上書きします。
 
-```css
-@layer zd-preflight, zd-flow;
-@import "tailwindcss/preflight" layer(zd-preflight);
-@import "tailwindcss/utilities";
+```css title="src/styles/global.css"
+@layer zw-reset, zd-flow;
 @import "@takazudo/zudo-doc/theme.css";
-@import "@takazudo/zudo-doc/safelist.css";
 @import "@takazudo/zudo-doc/content.css";
 @import "@takazudo/zudo-doc/page-loading.css";
 @import "@takazudo/zudo-doc/features.css";
 
-/* Override package defaults here when the project needs to. */
-@theme {
-  /* e.g. --color-accent: oklch(0.6 0.2 250); */
+:root {
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 ```
 
-`@takazudo/zudo-doc/theme.css` がデフォルトの `@theme` トークンを提供します。パッケージのソースである `packages/zudo-doc/src/theme.css` が唯一の情報源であり、scaffold の後続の空の `@theme` ブロックは上書きポイントです。出荷されるブロックは `--color-*: initial` で始まり、プロジェクトのカラートークンを再追加する前に Tailwind のデフォルトパレットを消去します。
+`theme.css`はカスタムプロパティと、手書きの`@layer base`リセット補正を提供します。プリセットは`reset: "owned-v1"`を選択します。zudo-windのリセットにパッケージの補正を加える構成であり、Tailwindのリセットとバイト単位で同一ではありません。このCSSエントリーではTailwindのインポート、`@source`、safelist CSS、`@theme`による登録を使いません。
 
-<Info>
+<span id="利用できるtailwindの語彙" />
 
-これが核となる設計思想です。プロジェクトに必要なものだけを定義する。システム内のすべての値は意図的であり、Tailwindデフォルトの誤使用はすぐに判明します。
+## 使用できるユーティリティの語彙
 
-</Info>
+`text-caption`、`bg-accent`、`px-hsp-md`、`w-icon-sm`、`z-modal`など、プロジェクトの名前付きトークンを使用します。`flex`、`hidden`、`grid-cols-3`などの構造ユーティリティや、対応する明示的な長さ`m-[13px]`も利用できます。Tailwindのすべての綴りに対応しているわけではありません。
 
-## 利用できるTailwindの語彙
+プリセットは`spacingUnit`を指定しません。`p-4`などゼロ以外の数値スペーシングに暗黙の0.25remスケールはありません。名前付きスペーシングか角括弧内の明示的な長さを使います。ゼロと`px`は利用できます。`bg-blue-500`などのデフォルトパレット名は登録されません。名前付きgroup/peer、peer-checked、ring、animationには通常のCSSを記述します。
 
-タイトトークン戦略は Tailwind のユーティリティ構文を取り除くものではありません。トークンを持つユーティリティを絞り込みます。MDX やコンポーネントでは以下のプロジェクト語彙を使ってください。
+パッケージのクラスは公開`@takazudo/zudo-doc/wind.json`マニフェストで宣言されます。プロジェクトのクラスはzfbのスキャナーが検出できる形で記述します。新しいセマンティックユーティリティは`zudoDoc({ wind })`で登録します。カスタムプロパティの定義だけではユーティリティは増えません。
 
-| 機能するもの | 機能しないもの（スタイルなし） |
-|-------|--------------------------|
-| プロジェクトトークン: `text-caption`、`bg-accent`、`px-hsp-*`、`py-vsp-*`、`w-icon-*`、`z-modal` などの z-index tier | 数値スペーシング: `p-4`、`mt-8`、`w-64` |
-| `tracking-tight`、`tracking-normal`、`tracking-wide`、`tracking-wider` | `tracking-tighter`、`tracking-widest` |
-| `rounded`、`rounded-lg`、`rounded-full` | デフォルトの文字サイズ: `text-sm`、`text-lg` |
-| 静的ユーティリティ: `flex`、`grid-cols-3`、`hidden`、... | デフォルトパレット: `bg-blue-500`（設計上リセットされる） |
-| 任意値: `m-[13.37px]`、`w-[42%]` — 完全なエスケープハッチ | `shadow-md`（存在するのは `shadow-lg` のみ） |
+```ts title="zfb.config.ts"
+import { defineConfig } from "@takazudo/zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
 
-scaffold は `@source` のカバレッジと Tailwind の自動検出によって、MDX コンテンツ、`src/components/`、`src/chrome-bindings.tsx`、`pages/` を走査します。走査対象外の場所で使ったクラスはスタイルなしのマークアップとして出力されるため、新しいソース位置を導入するときは `@source` ディレクティブを追加してください。
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    wind: {
+      tokens: {
+        colors: { brand: "var(--project-brand)" },
+      },
+    },
+  }),
+);
+```
 
-Tailwind のデフォルト語彙を再有効化するには、`tailwindcss/theme` をインポートするか、プロジェクトの `@theme` 上書きブロックに必要なトークンを定義します。値がプロジェクトのデザイン言語の一部なら、ローカルのセマンティックトークンを優先してください。
+```css title="src/styles/global.css (after package imports)"
+:root {
+  --project-brand: var(--zd-accent);
+}
+```
 
-この語彙を MDX コンポーネントで使う例は、[カスタムコンポーネント](../guides/custom-components.mdx)を参照してください。
+zfbはこの上書きをプリセットへ深くマージし、ほかのパッケージトークンを保持します。`wind: false`は生成を明示的に無効にします。外観の切り替えには引き続き`html[data-theme]`とカスタムプロパティを使い、`dark: false`のため別のdarkユーティリティテーマは作りません。
+
+`pnpm exec zfb wind audit --project-root . --fail-on error`を実行します。このフラグによりerror診断がコマンド失敗になります。ただし成功しても条件式内のすべてのクラスの検出や、必要なCSSルールの生成を保証しません。このリポジトリでは`pnpm check:package-wind-manifest`も実行し、代表的なページの生成CSSとcomputed valueを確認します。
 
 ## スペーシング
 
@@ -198,13 +206,15 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 |-------|-------|---------|
 | `sm` | `640px` | `sm:flex` |
 | `lg` | `1024px` | `lg:grid-cols-2` |
-| `xl` | `1280px` | `xl:max-w-5xl` |
+| `xl` | `1280px` | `xl:max-w-[80rem]` |
 
 ```html
 <div class="px-hsp-sm sm:px-hsp-md lg:px-hsp-lg xl:px-hsp-xl">
   Responsive horizontal padding
 </div>
 ```
+
+`max-sm`、`max-lg`、`max-xl`は設定したピクセル値未満の幅に適用されます。`md`や`2xl`は設定されていません。
 
 ## Z-index Tier
 
@@ -234,61 +244,15 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 
 ## 別の `@theme` との共存
 
-Tailwind v4 は、スタイルシートのエントリーから読み込まれるすべての `@theme` ブロックを、ひとつの変数集合にまとめます。同じキーが複数回現れた場合は、最後の宣言が優先されます。重複や上書きがあっても、CSS はエラーを出しません。
+ホスト側の別のTailwindビルドが`@theme`を使う場合も、zudo-docのエントリーでは通常の`:root`プロパティとzudo-windのトークン設定を使用します。ホスト側は別の名前空間を使ってください。zudo-docは23個の名前空間なし`--color-*`エイリアスと`--color-zd-*`接頭辞を予約しています。これらを再定義すると、CSSの生成元にかかわらずパッケージのクロームに影響します。
 
-zudo-doc は **23 個の名前空間なしの `--color-*` エイリアス名と、`--color-zd-*` プレフィックスを予約**しています。名前空間なしのエイリアスの接尾辞は次のとおりです。
-
-`bg`, `fg`, `sel-bg`, `sel-fg`, `surface`, `muted`, `accent`, `accent-hover`, `code-bg`, `code-fg`, `success`, `danger`, `warning`, `info`, `overlay`, `image-overlay-bg`, `image-overlay-fg`, `chat-user-bg`, `chat-user-text`, `chat-assistant-bg`, `chat-assistant-text`, `matched-keyword-bg`, `matched-keyword-fg`。
-
-`--color-acme-*` など、それ以外の名前は自由に使えます。パッケージの共通 UI は、`bg-bg`、`text-fg`、`border-muted`、`var(--color-muted)` などを通じて名前空間なしのエイリアスを参照します。別のデザインシステムの `@theme` でこれらの予約名を定義する構成は**サポート対象外**です。最後にインポートされた宣言が、警告なしに優先されます。これは、プロジェクトに合わせて zudo-doc 自体のテーマを意図的に上書きする操作とは別の話です。
-
-`--color-*: initial` は、Tailwind のデフォルト値に限らず、どのファイルから来た宣言でも、その**前**にあるすべての `--color-*` 宣言を消去します。スキャフォールドと同様に、**独自の `@theme` ブロックより前に `@takazudo/zudo-doc/theme.css` をインポートしてください**。
-
-ホストのスタイルシートを zudo-doc のインポートより後に移動できない場合は、`theme.css` の代わりに `@takazudo/zudo-doc/theme-no-reset.css` を使います。カラートークンのリセットを除き、トークンもルールも同一です。zfb の分割インポート（`tailwindcss/preflight` + `tailwindcss/utilities`）では、そもそもデフォルトパレットが存在しません。そのため、この構成ではリセットなしの版を選んでも失うものはなく、`theme.css` のリセットは予防的な保護です。一方、ホストが `tailwindcss/theme` をインポートする場合（または zfb 以外で `@import "tailwindcss"` を使う場合）、リセットなしの版ではデフォルトパレット全体が残ります。`theme.css` では、リセットより前に宣言されたそのパレットが消去されます。
-
-`--color-zd-*` は、名前空間なしの各エイリアスと同じデフォルト値を持つ、1 対 1 の名前空間付きエイリアスです。別のデザインシステムは、名前空間なしの層を使わずに、`bg-zd-*`、`text-zd-*`、`border-zd-*` ユーティリティを通じて zudo-doc の色を参照できます。エイリアスは `@theme static` で宣言されているため、Tailwind のスキャンでひとつも使われていなくても、変数は常に `:root` に出力されます。ただし、ユーティリティ自体が生成されるのは、自分の Tailwind スキャンで検出されたクラスだけです。
-
-たとえば、ホストのデザインシステムに `acme` 名前空間を与え、そのトークンを zudo-doc より後にインポートします。
-
-```css title="consumer.css"
-@theme {
-  --color-acme-bg: oklch(0.97 0.01 250);
-  --color-acme-fg: oklch(0.25 0.02 250);
-}
-```
-
-```css title="src/styles/global.css"
-@layer zd-preflight, zd-flow;
-@import "tailwindcss/preflight" layer(zd-preflight);
-@import "tailwindcss/utilities";
-@import "@takazudo/zudo-doc/theme.css";
-@import "./consumer.css";
-@import "@takazudo/zudo-doc/safelist.css";
-@import "@takazudo/zudo-doc/content.css";
-@import "@takazudo/zudo-doc/page-loading.css";
-@import "@takazudo/zudo-doc/features.css";
-```
-
-このエントリーで得られる結果は次のとおりです。
-
-| 対象 | 結果 |
-| --- | --- |
-| `--color-acme-bg`、`--color-acme-fg` | リセットより後に宣言されるため残る |
-| zudo-doc の名前空間なしのエイリアス | `acme` が予約名を定義しないため、そのまま維持される |
-| `bg-zd-accent` | 自分の Tailwind スキャンでクラスが検出されれば、`acme` コンポーネントで使える |
-| Tailwind のデフォルトパレット | 分割インポートだけを使うため存在しない |
-
-2 つの命名順序を区別してください。生の `--zd-*` 層は**プレフィックスが先**で、`@theme` の外にあり、`ColorSchemeProvider` が注入します。セマンティックな `--color-zd-*` 層は**カテゴリが先**で、`@theme` の中にあります。生の `--zd-` プレフィックスの後ろに `color-` を挿入してはいけません。その第 3 の綴りは、どちらの層にもつながりません。ソースだけでなくビルド後の CSS も確認し、使用するユーティリティが出力され、意図したトークンを参照していることを確かめてください。
-
-パッケージの共通 UI を名前空間付きの層へ移行することは、この契約の対象外です。パッケージとショーケースのコードは、引き続き名前空間なしの層を使います。ホスト側のデザインシステムが同じ名前空間なしの名前を定義する構成は、`theme-no-reset.css` を使ってもサポート対象外です。
+プロジェクトの上書きより前に`@takazudo/zudo-doc/theme.css`をインポートします。パレットリセットや`theme-no-reset.css`の選択肢はありません。既存の`--color-zd-*`エイリアスはwindのカラートークンとして登録されています。生の`--zd-*`プロパティはカラースキームプロバイダーが所有します。複数のCSSを共有するページでは生成ルールと最終的に適用される宣言を確認してください。
 
 ## 使用ルール
 
-<Warning title="Tailwindのデフォルトテーマは無効">
+<Warning title="登録済みトークンを使用する">
 
-Tailwindのデフォルトテーマはインポートされていません。プロジェクトトークンは `@takazudo/zudo-doc/theme.css` から来て、その後にプロジェクトの `@theme` 上書きブロックが適用されます。定義されていないトークンはスタイルなしのマークアップになります。
-
-別のデザインシステムとエントリーを共有する場合は、[別の `@theme` との共存](#別の-theme-との共存)にあるインポート順と予約名のルールに従ってください。
+カスタムプロパティは値を供給し、wind設定はユーティリティ名を登録します。トークンや手書きクラスを追加したときは生成CSSを確認してください。
 
 </Warning>
 

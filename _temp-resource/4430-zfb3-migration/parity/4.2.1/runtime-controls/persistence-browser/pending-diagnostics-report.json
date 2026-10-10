@@ -1,0 +1,489 @@
+{
+  "config": {
+    "configFile": "/tmp/zudo421-persistence-browser/playwright.config.mjs",
+    "rootDir": "/tmp/zudo421-persistence-browser",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/zudo421-persistence-browser/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/tmp/zudo421-persistence-browser",
+        "testIgnore": [],
+        "testMatch": [
+          "persistence.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/tmp/zudo421-persistence-browser/report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": {
+      "command": "./node_modules/.bin/zfb dev --port 44293",
+      "cwd": "/tmp/zudo421-persistence-browser/project",
+      "url": "http://127.0.0.1:44293/same-a/",
+      "reuseExistingServer": false,
+      "timeout": 120000,
+      "gracefulShutdown": {
+        "signal": "SIGTERM",
+        "timeout": 5000
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "persistence.spec.ts",
+      "file": "persistence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real navigation: unchanged",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1164,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:16:46.763Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "lifecycle-and-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJjYXB0dXJlcyI6IFsKICAgIHsKICAgICAgInRhcmdldCI6ICJzYW1lLWIiLAogICAgICAibGlmZWN5Y2xlIjogewogICAgICAgICJhY3RpdmF0aW9ucyI6IDEsCiAgICAgICAgImNsZWFudXBzIjogMCwKICAgICAgICAiaGVscGVyUmVhZHkiOiB0cnVlCiAgICAgIH0sCiAgICAgICJkb2N1bWVudFJlcXVlc3RzIjogMSwKICAgICAgIm9yaWdpbiI6IDE3OTE1Mzc0MDcwNzguOQogICAgfSwKICAgIHsKICAgICAgInRhcmdldCI6ICJzYW1lLWEiLAogICAgICAibGlmZWN5Y2xlIjogewogICAgICAgICJhY3RpdmF0aW9ucyI6IDEsCiAgICAgICAgImNsZWFudXBzIjogMCwKICAgICAgICAiaGVscGVyUmVhZHkiOiB0cnVlCiAgICAgIH0sCiAgICAgICJkb2N1bWVudFJlcXVlc3RzIjogMSwKICAgICAgIm9yaWdpbiI6IDE3OTE1Mzc0MDcwNzguOQogICAgfQogIF0sCiAgImVycm9ycyI6IFtdLAogICJmYWlsZWRSZXNwb25zZXMiOiBbXQp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-c752b0a48538d6f61cea",
+          "file": "persistence.spec.ts",
+          "line": 10,
+          "column": 7
+        },
+        {
+          "title": "real navigation: changed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 810,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:16:48.126Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "lifecycle-and-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJjYXB0dXJlcyI6IFsKICAgIHsKICAgICAgInRhcmdldCI6ICJjaGFuZ2VkIiwKICAgICAgImxpZmVjeWNsZSI6IHsKICAgICAgICAiYWN0aXZhdGlvbnMiOiAyLAogICAgICAgICJjbGVhbnVwcyI6IDEsCiAgICAgICAgImhlbHBlclJlYWR5IjogdHJ1ZQogICAgICB9LAogICAgICAiZG9jdW1lbnRSZXF1ZXN0cyI6IDEsCiAgICAgICJvcmlnaW4iOiAxNzkxNTM3NDA4MjU1LjIKICAgIH0KICBdLAogICJlcnJvcnMiOiBbXSwKICAiZmFpbGVkUmVzcG9uc2VzIjogW10KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-8cb153d748473f3da4c8",
+          "file": "persistence.spec.ts",
+          "line": 10,
+          "column": 7
+        },
+        {
+          "title": "real navigation: preserve",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 755,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:16:48.951Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "lifecycle-and-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJjYXB0dXJlcyI6IFsKICAgIHsKICAgICAgInRhcmdldCI6ICJwcmVzZXJ2ZS1iIiwKICAgICAgImxpZmVjeWNsZSI6IHsKICAgICAgICAiYWN0aXZhdGlvbnMiOiAxLAogICAgICAgICJjbGVhbnVwcyI6IDAsCiAgICAgICAgImhlbHBlclJlYWR5IjogdHJ1ZQogICAgICB9LAogICAgICAiZG9jdW1lbnRSZXF1ZXN0cyI6IDEsCiAgICAgICJvcmlnaW4iOiAxNzkxNTM3NDA5MDYwCiAgICB9CiAgXSwKICAiZXJyb3JzIjogW10sCiAgImZhaWxlZFJlc3BvbnNlcyI6IFtdCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-75760b42574c1efdeb70",
+          "file": "persistence.spec.ts",
+          "line": 10,
+          "column": 7
+        },
+        {
+          "title": "real navigation: structural",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 725,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:16:49.717Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "lifecycle-and-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJjYXB0dXJlcyI6IFsKICAgIHsKICAgICAgInRhcmdldCI6ICJzdHJ1Y3R1cmFsIiwKICAgICAgImxpZmVjeWNsZSI6IHsKICAgICAgICAiYWN0aXZhdGlvbnMiOiAyLAogICAgICAgICJjbGVhbnVwcyI6IDEsCiAgICAgICAgImhlbHBlclJlYWR5IjogdHJ1ZQogICAgICB9LAogICAgICAiZG9jdW1lbnRSZXF1ZXN0cyI6IDEsCiAgICAgICJvcmlnaW4iOiAxNzkxNTM3NDA5ODE1LjIKICAgIH0KICBdLAogICJlcnJvcnMiOiBbXSwKICAiZmFpbGVkUmVzcG9uc2VzIjogW10KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-6e003e1075234d7f05d2",
+          "file": "persistence.spec.ts",
+          "line": 10,
+          "column": 7
+        },
+        {
+          "title": "real navigation: identity",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 768,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:16:50.454Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "lifecycle-and-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJjYXB0dXJlcyI6IFsKICAgIHsKICAgICAgInRhcmdldCI6ICJpZGVudGl0eSIsCiAgICAgICJsaWZlY3ljbGUiOiB7CiAgICAgICAgImFjdGl2YXRpb25zIjogMiwKICAgICAgICAiY2xlYW51cHMiOiAxLAogICAgICAgICJoZWxwZXJSZWFkeSI6IHRydWUKICAgICAgfSwKICAgICAgImRvY3VtZW50UmVxdWVzdHMiOiAxLAogICAgICAib3JpZ2luIjogMTc5MTUzNzQxMDU2NS41CiAgICB9CiAgXSwKICAiZXJyb3JzIjogW10sCiAgImZhaWxlZFJlc3BvbnNlcyI6IFtdCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-616eb0241db51543ab57",
+          "file": "persistence.spec.ts",
+          "line": 10,
+          "column": 7
+        },
+        {
+          "title": "pending skip-SSR navigation cancels old scheduling before activation",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 10282,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"activations\": 0,\u001b[39m\n\u001b[31m+   \"activations\": 1,\u001b[39m\n\u001b[2m    \"cleanups\": 0,\u001b[22m\n\u001b[2m    \"helperReady\": true,\u001b[22m\n\u001b[2m  }\u001b[22m\n\nCall Log:\n- Timeout 10000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"activations\": 0,\u001b[39m\n\u001b[31m+   \"activations\": 1,\u001b[39m\n\u001b[2m    \"cleanups\": 0,\u001b[22m\n\u001b[2m    \"helperReady\": true,\u001b[22m\n\u001b[2m  }\u001b[22m\n\nCall Log:\n- Timeout 10000ms exceeded while waiting on the predicate\n    at /tmp/zudo421-persistence-browser/persistence.spec.ts:115:3",
+                    "location": {
+                      "file": "/tmp/zudo421-persistence-browser/persistence.spec.ts",
+                      "column": 3,
+                      "line": 115
+                    },
+                    "snippet": "  113 |   const postSwapRaw = await pendingSnapshot(page);\n  114 |   await testInfo.attach(\"pending-after-navigation-before-assertion\", { body: JSON.stringify(postSwapRaw, null, 2), contentType: \"application/json\" });\n> 115 |   await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 0, cleanups: 0, helperReady: true });\n      |   ^\n  116 |   expect(await ancestor!.evaluate(node => node === document.querySelector(\"#persisted\"))).toBe(true);\n  117 |   await expect(page.locator(\"#counter\")).toHaveCount(0);\n  118 |   const beforeVisibility = await page.evaluate(() => (window as any).persistenceControl);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/tmp/zudo421-persistence-browser/persistence.spec.ts",
+                        "column": 3,
+                        "line": 115
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"activations\": 0,\u001b[39m\n\u001b[31m+   \"activations\": 1,\u001b[39m\n\u001b[2m    \"cleanups\": 0,\u001b[22m\n\u001b[2m    \"helperReady\": true,\u001b[22m\n\u001b[2m  }\u001b[22m\n\nCall Log:\n- Timeout 10000ms exceeded while waiting on the predicate\n\n  113 |   const postSwapRaw = await pendingSnapshot(page);\n  114 |   await testInfo.attach(\"pending-after-navigation-before-assertion\", { body: JSON.stringify(postSwapRaw, null, 2), contentType: \"application/json\" });\n> 115 |   await expect.poll(() => page.evaluate(() => (window as any).persistenceControl)).toEqual({ activations: 0, cleanups: 0, helperReady: true });\n      |   ^\n  116 |   expect(await ancestor!.evaluate(node => node === document.querySelector(\"#persisted\"))).toBe(true);\n  117 |   await expect(page.locator(\"#counter\")).toHaveCount(0);\n  118 |   const beforeVisibility = await page.evaluate(() => (window as any).persistenceControl);\n    at /tmp/zudo421-persistence-browser/persistence.spec.ts:115:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:16:51.235Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "pending-before-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJsaWZlY3ljbGUiOiB7CiAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgImNsZWFudXBzIjogMCwKICAgICJoZWxwZXJSZWFkeSI6IHRydWUKICB9LAogICJzY3JvbGxZIjogMCwKICAidmlld3BvcnRIZWlnaHQiOiA3MjAsCiAgIm1hcmtlckF0dHJpYnV0ZXMiOiB7CiAgICAiZGF0YS16ZmItaXNsYW5kLXNraXAtc3NyIjogIkNvdW50ZXJJc2xhbmQiLAogICAgImRhdGEtd2hlbiI6ICJ2aXNpYmxlIiwKICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICJkYXRhLXpmYi1wcm90b2NvbCI6ICJ6dWRvLXJlYWN0LzEiLAogICAgImRhdGEtemZiLWJ1aWxkIjogIjg3ZWQ2ZWJhNzhjYzI4ZTMiLAogICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcIm9yaWdpbmFsXCJ9IgogIH0sCiAgImJvdW5kcyI6IHsKICAgICJ0b3AiOiAyMDk3Ljg3NSwKICAgICJib3R0b20iOiAyMTE1Ljg3NSwKICAgICJ3aWR0aCI6IDEyNjQsCiAgICAiaGVpZ2h0IjogMTgKICB9LAogICJyZXNlcnZhdGlvbkNvdW50IjogMSwKICAiY291bnRlckNvdW50IjogMCwKICAibGFiZWwiOiBudWxsLAogICJhY3RpdmVFbGVtZW50IjogIjxib2R5PjxtYWluPjxoMSBpZD1cInJvdXRlXCI+cGVuZGluZy1hPC9oMT48bmF2PjxhIGhyZWY9XCIvcGVuZGluZy1iL1wiPnBlbmRpbmctYjwvYT4gPGEgaHJlZj1cIi9zYW1lLWEvXCI+c2FtZS1hPC9hPjwvbmF2PjwvbWFpbj48aGVhZGVyIGlkPVwicGVyc2lzdGVkXCIgZGF0YS16ZmItdHJhbnNpdGlvbi1wZXJzaXN0PVwiY291bnRlci1oZWFkZXJcIj48ZGl2IGlkPVwic3BhY2VyXCIgc3R5bGU9XCJoZWlnaHQ6MjAwMHB4O1wiPkJlbG93LXZpZXdwb3J0IGNvdW50ZXIgZm9sbG93czwvZGl2PjxkaXYgZGF0YS16ZmItaXNsYW5kLXNraXAtc3NyPVwiQ291bnRlcklzbGFuZFwiIGRhdGEtd2hlbj1cInZpc2libGVcIiBkYXRhLXpmYi10cmFuc3BvcnQ9XCJqc29uLzFcIiBkYXRhLXpmYi1wcm90b2NvbD1cInp1ZG8tcmVhY3QvMVwiIGRhdGEtemZiLWJ1aWxkPVwiODdlZDZlYmE3OGNjMjhlM1wiIGRhdGEtcHJvcHM9XCJ7JnF1b3Q7bGFiZWwmcXVvdDs6JnF1b3Q7b3JpZ2luYWwmcXVvdDt9XCI+PGRpdiBpZD1cInJlc2VydmF0aW9uXCI+QXdhaXQgdmlzaWJpbGl0eTwvZGl2PjwvZGl2PjwvaGVhZGVyPjxkaXYgZGF0YS16ZmItaXNsYW5kPVwiUG9saWN5Qm9vdHN0cmFwXCIgZGF0YS13aGVuPVwibG9hZFwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInt9XCIgZGF0YS16ZmItaXNsYW5kLW1vdW50ZWQ9XCJcIj48IS0tenI6MTowOmMtLT48IS0tL3pyOjE6MC0tPjwvZGl2PjxzY3JpcHQgc3JjPVwiL19femZiL2xpdmVyZWxvYWQuanNcIiBkYXRhLXpmYi1leGVjPVwiXCI+PC9zY3JpcHQ+PC9ib2R5PiIsCiAgImFuY2VzdG9yUGVyc2lzdCI6ICJjb3VudGVyLWhlYWRlciIKfQ=="
+                    },
+                    {
+                      "name": "pending-after-navigation-before-assertion",
+                      "contentType": "application/json",
+                      "body": "ewogICJsaWZlY3ljbGUiOiB7CiAgICAiYWN0aXZhdGlvbnMiOiAxLAogICAgImNsZWFudXBzIjogMCwKICAgICJoZWxwZXJSZWFkeSI6IHRydWUKICB9LAogICJzY3JvbGxZIjogMCwKICAidmlld3BvcnRIZWlnaHQiOiA3MjAsCiAgIm1hcmtlckF0dHJpYnV0ZXMiOiB7CiAgICAiZGF0YS16ZmItaXNsYW5kLXNraXAtc3NyIjogIkNvdW50ZXJJc2xhbmQiLAogICAgImRhdGEtd2hlbiI6ICJ2aXNpYmxlIiwKICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICJkYXRhLXpmYi1wcm90b2NvbCI6ICJ6dWRvLXJlYWN0LzEiLAogICAgImRhdGEtemZiLWJ1aWxkIjogIjg3ZWQ2ZWJhNzhjYzI4ZTMiLAogICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcImluY29taW5nXCJ9IiwKICAgICJkYXRhLXpmYi1pc2xhbmQtbW91bnRlZCI6ICIiCiAgfSwKICAiYm91bmRzIjogewogICAgInRvcCI6IDIwOTcuODc1LAogICAgImJvdHRvbSI6IDIxMTguODc1LAogICAgIndpZHRoIjogMTI2NCwKICAgICJoZWlnaHQiOiAyMQogIH0sCiAgInJlc2VydmF0aW9uQ291bnQiOiAwLAogICJjb3VudGVyQ291bnQiOiAxLAogICJsYWJlbCI6ICJpbmNvbWluZyIsCiAgImFjdGl2ZUVsZW1lbnQiOiAiPGJvZHk+PG1haW4+PGgxIGlkPVwicm91dGVcIj5wZW5kaW5nLWI8L2gxPjxuYXY+PGEgaHJlZj1cIi9wZW5kaW5nLWIvXCI+cGVuZGluZy1iPC9hPiA8YSBocmVmPVwiL3NhbWUtYS9cIj5zYW1lLWE8L2E+PC9uYXY+PC9tYWluPjxoZWFkZXIgaWQ9XCJwZXJzaXN0ZWRcIiBkYXRhLXpmYi10cmFuc2l0aW9uLXBlcnNpc3Q9XCJjb3VudGVyLWhlYWRlclwiPjxkaXYgaWQ9XCJzcGFjZXJcIiBzdHlsZT1cImhlaWdodDoyMDAwcHg7XCI+QmVsb3ctdmlld3BvcnQgY291bnRlciBmb2xsb3dzPC9kaXY+PGRpdiBkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3I9XCJDb3VudGVySXNsYW5kXCIgZGF0YS13aGVuPVwidmlzaWJsZVwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInsmcXVvdDtsYWJlbCZxdW90OzomcXVvdDtpbmNvbWluZyZxdW90O31cIiBkYXRhLXpmYi1pc2xhbmQtbW91bnRlZD1cIlwiPjwhLS16cjoxOjA6Yy0tPjxkaXYgaWQ9XCJjb3VudGVyXCI+PHNwYW4gaWQ9XCJsYWJlbFwiPmluY29taW5nPC9zcGFuPjxidXR0b24gaWQ9XCJpbmNyZW1lbnRcIj5JbmNyZW1lbnQ8L2J1dHRvbj48b3V0cHV0IGlkPVwiY291bnRcIj48IS0tenI6MToxOnQtLT4wPCEtLS96cjoxOjEtLT48L291dHB1dD48L2Rpdj48IS0tL3pyOjE6MC0tPjwvZGl2PjwvaGVhZGVyPjxkaXYgZGF0YS16ZmItaXNsYW5kPVwiUG9saWN5Qm9vdHN0cmFwXCIgZGF0YS13aGVuPVwibG9hZFwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInt9XCIgZGF0YS16ZmItaXNsYW5kLW1vdW50ZWQ9XCJcIj48IS0tenI6MTowOmMtLT48IS0tL3pyOjE6MC0tPjwvZGl2PjxzY3JpcHQgc3JjPVwiL19femZiL2xpdmVyZWxvYWQuanNcIiBkYXRhLXpmYi1leGVjPVwiXCI+PC9zY3JpcHQ+PGRpdiBhcmlhLWxpdmU9XCJhc3NlcnRpdmVcIiBhcmlhLWF0b21pYz1cInRydWVcIiBjbGFzcz1cInpmYi1yb3V0ZS1hbm5vdW5jZXJcIj48L2Rpdj48L2JvZHk+IiwKICAiYW5jZXN0b3JQZXJzaXN0IjogImNvdW50ZXItaGVhZGVyIgp9"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/tmp/zudo421-persistence-browser/test-results/persistence-pending-skip-S-bf56f-cheduling-before-activation/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/zudo421-persistence-browser/test-results/persistence-pending-skip-S-bf56f-cheduling-before-activation/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/tmp/zudo421-persistence-browser/persistence.spec.ts",
+                    "column": 3,
+                    "line": 115
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-927d7d1395f5cd38c398",
+          "file": "persistence.spec.ts",
+          "line": 80,
+          "column": 5
+        },
+        {
+          "title": "diagnostic control: direct pending-b remains below viewport until explicit visibility",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 437,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:17:02.573Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "direct-pending-control",
+                      "contentType": "application/json",
+                      "body": "ewogICJiZWZvcmUiOiB7CiAgICAibGlmZWN5Y2xlIjogewogICAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgICAiY2xlYW51cHMiOiAwLAogICAgICAiaGVscGVyUmVhZHkiOiB0cnVlCiAgICB9LAogICAgInNjcm9sbFkiOiAwLAogICAgInZpZXdwb3J0SGVpZ2h0IjogNzIwLAogICAgIm1hcmtlckF0dHJpYnV0ZXMiOiB7CiAgICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlcklzbGFuZCIsCiAgICAgICJkYXRhLXdoZW4iOiAidmlzaWJsZSIsCiAgICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAgICJkYXRhLXpmYi1idWlsZCI6ICI4N2VkNmViYTc4Y2MyOGUzIiwKICAgICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcImluY29taW5nXCJ9IgogICAgfSwKICAgICJib3VuZHMiOiB7CiAgICAgICJ0b3AiOiAyMDk3Ljg3NSwKICAgICAgImJvdHRvbSI6IDIxMTUuODc1LAogICAgICAid2lkdGgiOiAxMjY0LAogICAgICAiaGVpZ2h0IjogMTgKICAgIH0sCiAgICAicmVzZXJ2YXRpb25Db3VudCI6IDEsCiAgICAiY291bnRlckNvdW50IjogMCwKICAgICJsYWJlbCI6IG51bGwsCiAgICAiYWN0aXZlRWxlbWVudCI6ICI8Ym9keT48bWFpbj48aDEgaWQ9XCJyb3V0ZVwiPnBlbmRpbmctYjwvaDE+PG5hdj48YSBocmVmPVwiL3BlbmRpbmctYi9cIj5wZW5kaW5nLWI8L2E+IDxhIGhyZWY9XCIvc2FtZS1hL1wiPnNhbWUtYTwvYT48L25hdj48L21haW4+PGhlYWRlciBpZD1cInBlcnNpc3RlZFwiIGRhdGEtemZiLXRyYW5zaXRpb24tcGVyc2lzdD1cImNvdW50ZXItaGVhZGVyXCI+PGRpdiBpZD1cInNwYWNlclwiIHN0eWxlPVwiaGVpZ2h0OjIwMDBweDtcIj5CZWxvdy12aWV3cG9ydCBjb3VudGVyIGZvbGxvd3M8L2Rpdj48ZGl2IGRhdGEtemZiLWlzbGFuZC1za2lwLXNzcj1cIkNvdW50ZXJJc2xhbmRcIiBkYXRhLXdoZW49XCJ2aXNpYmxlXCIgZGF0YS16ZmItdHJhbnNwb3J0PVwianNvbi8xXCIgZGF0YS16ZmItcHJvdG9jb2w9XCJ6dWRvLXJlYWN0LzFcIiBkYXRhLXpmYi1idWlsZD1cIjg3ZWQ2ZWJhNzhjYzI4ZTNcIiBkYXRhLXByb3BzPVwieyZxdW90O2xhYmVsJnF1b3Q7OiZxdW90O2luY29taW5nJnF1b3Q7fVwiPjxkaXYgaWQ9XCJyZXNlcnZhdGlvblwiPkF3YWl0IHZpc2liaWxpdHk8L2Rpdj48L2Rpdj48L2hlYWRlcj48ZGl2IGRhdGEtemZiLWlzbGFuZD1cIlBvbGljeUJvb3RzdHJhcFwiIGRhdGEtd2hlbj1cImxvYWRcIiBkYXRhLXpmYi10cmFuc3BvcnQ9XCJqc29uLzFcIiBkYXRhLXpmYi1wcm90b2NvbD1cInp1ZG8tcmVhY3QvMVwiIGRhdGEtemZiLWJ1aWxkPVwiODdlZDZlYmE3OGNjMjhlM1wiIGRhdGEtcHJvcHM9XCJ7fVwiIGRhdGEtemZiLWlzbGFuZC1tb3VudGVkPVwiXCI+PCEtLXpyOjE6MDpjLS0+PCEtLS96cjoxOjAtLT48L2Rpdj48c2NyaXB0IHNyYz1cIi9fX3pmYi9saXZlcmVsb2FkLmpzXCIgZGF0YS16ZmItZXhlYz1cIlwiPjwvc2NyaXB0PjwvYm9keT4iLAogICAgImFuY2VzdG9yUGVyc2lzdCI6ICJjb3VudGVyLWhlYWRlciIKICB9LAogICJhZnRlciI6IHsKICAgICJsaWZlY3ljbGUiOiB7CiAgICAgICJhY3RpdmF0aW9ucyI6IDEsCiAgICAgICJjbGVhbnVwcyI6IDAsCiAgICAgICJoZWxwZXJSZWFkeSI6IHRydWUKICAgIH0sCiAgICAic2Nyb2xsWSI6IDE0MDQsCiAgICAidmlld3BvcnRIZWlnaHQiOiA3MjAsCiAgICAibWFya2VyQXR0cmlidXRlcyI6IHsKICAgICAgImRhdGEtemZiLWlzbGFuZC1za2lwLXNzciI6ICJDb3VudGVySXNsYW5kIiwKICAgICAgImRhdGEtd2hlbiI6ICJ2aXNpYmxlIiwKICAgICAgImRhdGEtemZiLXRyYW5zcG9ydCI6ICJqc29uLzEiLAogICAgICAiZGF0YS16ZmItcHJvdG9jb2wiOiAienVkby1yZWFjdC8xIiwKICAgICAgImRhdGEtemZiLWJ1aWxkIjogIjg3ZWQ2ZWJhNzhjYzI4ZTMiLAogICAgICAiZGF0YS1wcm9wcyI6ICJ7XCJsYWJlbFwiOlwiaW5jb21pbmdcIn0iLAogICAgICAiZGF0YS16ZmItaXNsYW5kLW1vdW50ZWQiOiAiIgogICAgfSwKICAgICJib3VuZHMiOiB7CiAgICAgICJ0b3AiOiA2OTMuODc1LAogICAgICAiYm90dG9tIjogNzE0Ljg3NSwKICAgICAgIndpZHRoIjogMTI2NCwKICAgICAgImhlaWdodCI6IDIxCiAgICB9LAogICAgInJlc2VydmF0aW9uQ291bnQiOiAwLAogICAgImNvdW50ZXJDb3VudCI6IDEsCiAgICAibGFiZWwiOiAiaW5jb21pbmciLAogICAgImFjdGl2ZUVsZW1lbnQiOiAiPGJvZHk+PG1haW4+PGgxIGlkPVwicm91dGVcIj5wZW5kaW5nLWI8L2gxPjxuYXY+PGEgaHJlZj1cIi9wZW5kaW5nLWIvXCI+cGVuZGluZy1iPC9hPiA8YSBocmVmPVwiL3NhbWUtYS9cIj5zYW1lLWE8L2E+PC9uYXY+PC9tYWluPjxoZWFkZXIgaWQ9XCJwZXJzaXN0ZWRcIiBkYXRhLXpmYi10cmFuc2l0aW9uLXBlcnNpc3Q9XCJjb3VudGVyLWhlYWRlclwiPjxkaXYgaWQ9XCJzcGFjZXJcIiBzdHlsZT1cImhlaWdodDoyMDAwcHg7XCI+QmVsb3ctdmlld3BvcnQgY291bnRlciBmb2xsb3dzPC9kaXY+PGRpdiBkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3I9XCJDb3VudGVySXNsYW5kXCIgZGF0YS13aGVuPVwidmlzaWJsZVwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInsmcXVvdDtsYWJlbCZxdW90OzomcXVvdDtpbmNvbWluZyZxdW90O31cIiBkYXRhLXpmYi1pc2xhbmQtbW91bnRlZD1cIlwiPjwhLS16cjoxOjA6Yy0tPjxkaXYgaWQ9XCJjb3VudGVyXCI+PHNwYW4gaWQ9XCJsYWJlbFwiPmluY29taW5nPC9zcGFuPjxidXR0b24gaWQ9XCJpbmNyZW1lbnRcIj5JbmNyZW1lbnQ8L2J1dHRvbj48b3V0cHV0IGlkPVwiY291bnRcIj48IS0tenI6MToxOnQtLT4wPCEtLS96cjoxOjEtLT48L291dHB1dD48L2Rpdj48IS0tL3pyOjE6MC0tPjwvZGl2PjwvaGVhZGVyPjxkaXYgZGF0YS16ZmItaXNsYW5kPVwiUG9saWN5Qm9vdHN0cmFwXCIgZGF0YS13aGVuPVwibG9hZFwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInt9XCIgZGF0YS16ZmItaXNsYW5kLW1vdW50ZWQ9XCJcIj48IS0tenI6MTowOmMtLT48IS0tL3pyOjE6MC0tPjwvZGl2PjxzY3JpcHQgc3JjPVwiL19femZiL2xpdmVyZWxvYWQuanNcIiBkYXRhLXpmYi1leGVjPVwiXCI+PC9zY3JpcHQ+PC9ib2R5PiIsCiAgICAiYW5jZXN0b3JQZXJzaXN0IjogImNvdW50ZXItaGVhZGVyIgogIH0KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-4b67e516db5cb0b90321",
+          "file": "persistence.spec.ts",
+          "line": 146,
+          "column": 5
+        },
+        {
+          "title": "diagnostic control: fresh pending navigation geometry and lifecycle",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 586,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:17:03.227Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "fresh-pending-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJiZWZvcmUiOiB7CiAgICAibGlmZWN5Y2xlIjogewogICAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgICAiY2xlYW51cHMiOiAwLAogICAgICAiaGVscGVyUmVhZHkiOiB0cnVlCiAgICB9LAogICAgInNjcm9sbFkiOiAwLAogICAgInZpZXdwb3J0SGVpZ2h0IjogNzIwLAogICAgIm1hcmtlckF0dHJpYnV0ZXMiOiB7CiAgICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlcklzbGFuZCIsCiAgICAgICJkYXRhLXdoZW4iOiAidmlzaWJsZSIsCiAgICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAgICJkYXRhLXpmYi1idWlsZCI6ICI4N2VkNmViYTc4Y2MyOGUzIiwKICAgICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcIm9yaWdpbmFsXCJ9IgogICAgfSwKICAgICJib3VuZHMiOiB7CiAgICAgICJ0b3AiOiAyMDk3Ljg3NSwKICAgICAgImJvdHRvbSI6IDIxMTUuODc1LAogICAgICAid2lkdGgiOiAxMjY0LAogICAgICAiaGVpZ2h0IjogMTgKICAgIH0sCiAgICAicmVzZXJ2YXRpb25Db3VudCI6IDEsCiAgICAiY291bnRlckNvdW50IjogMCwKICAgICJsYWJlbCI6IG51bGwsCiAgICAiYWN0aXZlRWxlbWVudCI6ICI8Ym9keT48bWFpbj48aDEgaWQ9XCJyb3V0ZVwiPmZyZXNoLXBlbmRpbmctYTwvaDE+PG5hdj48YSBocmVmPVwiL2ZyZXNoLXBlbmRpbmctYi9cIj5mcmVzaC1wZW5kaW5nLWI8L2E+IDxhIGhyZWY9XCIvc2FtZS1hL1wiPnNhbWUtYTwvYT48L25hdj48L21haW4+PGhlYWRlciBpZD1cInBlcnNpc3RlZFwiPjxkaXYgaWQ9XCJzcGFjZXJcIiBzdHlsZT1cImhlaWdodDoyMDAwcHg7XCI+QmVsb3ctdmlld3BvcnQgY291bnRlciBmb2xsb3dzPC9kaXY+PGRpdiBkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3I9XCJDb3VudGVySXNsYW5kXCIgZGF0YS13aGVuPVwidmlzaWJsZVwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInsmcXVvdDtsYWJlbCZxdW90OzomcXVvdDtvcmlnaW5hbCZxdW90O31cIj48ZGl2IGlkPVwicmVzZXJ2YXRpb25cIj5Bd2FpdCB2aXNpYmlsaXR5PC9kaXY+PC9kaXY+PC9oZWFkZXI+PGRpdiBkYXRhLXpmYi1pc2xhbmQ9XCJQb2xpY3lCb290c3RyYXBcIiBkYXRhLXdoZW49XCJsb2FkXCIgZGF0YS16ZmItdHJhbnNwb3J0PVwianNvbi8xXCIgZGF0YS16ZmItcHJvdG9jb2w9XCJ6dWRvLXJlYWN0LzFcIiBkYXRhLXpmYi1idWlsZD1cIjg3ZWQ2ZWJhNzhjYzI4ZTNcIiBkYXRhLXByb3BzPVwie31cIiBkYXRhLXpmYi1pc2xhbmQtbW91bnRlZD1cIlwiPjwhLS16cjoxOjA6Yy0tPjwhLS0venI6MTowLS0+PC9kaXY+PHNjcmlwdCBzcmM9XCIvX196ZmIvbGl2ZXJlbG9hZC5qc1wiIGRhdGEtemZiLWV4ZWM9XCJcIj48L3NjcmlwdD48L2JvZHk+IiwKICAgICJhbmNlc3RvclBlcnNpc3QiOiBudWxsCiAgfSwKICAiYWZ0ZXIiOiB7CiAgICAibGlmZWN5Y2xlIjogewogICAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgICAiY2xlYW51cHMiOiAwLAogICAgICAiaGVscGVyUmVhZHkiOiB0cnVlCiAgICB9LAogICAgInNjcm9sbFkiOiAwLAogICAgInZpZXdwb3J0SGVpZ2h0IjogNzIwLAogICAgIm1hcmtlckF0dHJpYnV0ZXMiOiB7CiAgICAgICJkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3IiOiAiQ291bnRlcklzbGFuZCIsCiAgICAgICJkYXRhLXdoZW4iOiAidmlzaWJsZSIsCiAgICAgICJkYXRhLXpmYi10cmFuc3BvcnQiOiAianNvbi8xIiwKICAgICAgImRhdGEtemZiLXByb3RvY29sIjogInp1ZG8tcmVhY3QvMSIsCiAgICAgICJkYXRhLXpmYi1idWlsZCI6ICI4N2VkNmViYTc4Y2MyOGUzIiwKICAgICAgImRhdGEtcHJvcHMiOiAie1wibGFiZWxcIjpcImluY29taW5nXCJ9IgogICAgfSwKICAgICJib3VuZHMiOiB7CiAgICAgICJ0b3AiOiAyMDk3Ljg3NSwKICAgICAgImJvdHRvbSI6IDIxMTUuODc1LAogICAgICAid2lkdGgiOiAxMjY0LAogICAgICAiaGVpZ2h0IjogMTgKICAgIH0sCiAgICAicmVzZXJ2YXRpb25Db3VudCI6IDEsCiAgICAiY291bnRlckNvdW50IjogMCwKICAgICJsYWJlbCI6IG51bGwsCiAgICAiYWN0aXZlRWxlbWVudCI6ICI8Ym9keT48bWFpbj48aDEgaWQ9XCJyb3V0ZVwiPmZyZXNoLXBlbmRpbmctYjwvaDE+PG5hdj48YSBocmVmPVwiL2ZyZXNoLXBlbmRpbmctYi9cIj5mcmVzaC1wZW5kaW5nLWI8L2E+IDxhIGhyZWY9XCIvc2FtZS1hL1wiPnNhbWUtYTwvYT48L25hdj48L21haW4+PGhlYWRlciBpZD1cInBlcnNpc3RlZFwiPjxkaXYgaWQ9XCJzcGFjZXJcIiBzdHlsZT1cImhlaWdodDoyMDAwcHg7XCI+QmVsb3ctdmlld3BvcnQgY291bnRlciBmb2xsb3dzPC9kaXY+PGRpdiBkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3I9XCJDb3VudGVySXNsYW5kXCIgZGF0YS13aGVuPVwidmlzaWJsZVwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInsmcXVvdDtsYWJlbCZxdW90OzomcXVvdDtpbmNvbWluZyZxdW90O31cIj48ZGl2IGlkPVwicmVzZXJ2YXRpb25cIj5Bd2FpdCB2aXNpYmlsaXR5PC9kaXY+PC9kaXY+PC9oZWFkZXI+PGRpdiBkYXRhLXpmYi1pc2xhbmQ9XCJQb2xpY3lCb290c3RyYXBcIiBkYXRhLXdoZW49XCJsb2FkXCIgZGF0YS16ZmItdHJhbnNwb3J0PVwianNvbi8xXCIgZGF0YS16ZmItcHJvdG9jb2w9XCJ6dWRvLXJlYWN0LzFcIiBkYXRhLXpmYi1idWlsZD1cIjg3ZWQ2ZWJhNzhjYzI4ZTNcIiBkYXRhLXByb3BzPVwie31cIiBkYXRhLXpmYi1pc2xhbmQtbW91bnRlZD1cIlwiPjwhLS16cjoxOjA6Yy0tPjwhLS0venI6MTowLS0+PC9kaXY+PHNjcmlwdCBzcmM9XCIvX196ZmIvbGl2ZXJlbG9hZC5qc1wiIGRhdGEtemZiLWV4ZWM9XCJcIj48L3NjcmlwdD48ZGl2IGFyaWEtbGl2ZT1cImFzc2VydGl2ZVwiIGFyaWEtYXRvbWljPVwidHJ1ZVwiIGNsYXNzPVwiemZiLXJvdXRlLWFubm91bmNlclwiPjwvZGl2PjwvYm9keT4iLAogICAgImFuY2VzdG9yUGVyc2lzdCI6IG51bGwKICB9LAogICJlcnJvcnMiOiBbXQp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-06b5f0d976a8d77811d2",
+          "file": "persistence.spec.ts",
+          "line": 160,
+          "column": 7
+        },
+        {
+          "title": "diagnostic control: native pending navigation geometry and lifecycle",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 452,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T09:17:03.840Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "native-pending-navigation",
+                      "contentType": "application/json",
+                      "body": "ewogICJiZWZvcmUiOiB7CiAgICAibGlmZWN5Y2xlIjogewogICAgICAiYWN0aXZhdGlvbnMiOiAwLAogICAgICAiY2xlYW51cHMiOiAwLAogICAgICAiaGVscGVyUmVhZHkiOiBmYWxzZQogICAgfSwKICAgICJzY3JvbGxZIjogMCwKICAgICJ2aWV3cG9ydEhlaWdodCI6IDcyMCwKICAgICJtYXJrZXJBdHRyaWJ1dGVzIjogewogICAgICAiZGF0YS16ZmItaXNsYW5kLXNraXAtc3NyIjogIkNvdW50ZXJJc2xhbmQiLAogICAgICAiZGF0YS13aGVuIjogInZpc2libGUiLAogICAgICAiZGF0YS16ZmItdHJhbnNwb3J0IjogImpzb24vMSIsCiAgICAgICJkYXRhLXpmYi1wcm90b2NvbCI6ICJ6dWRvLXJlYWN0LzEiLAogICAgICAiZGF0YS16ZmItYnVpbGQiOiAiODdlZDZlYmE3OGNjMjhlMyIsCiAgICAgICJkYXRhLXByb3BzIjogIntcImxhYmVsXCI6XCJvcmlnaW5hbFwifSIKICAgIH0sCiAgICAiYm91bmRzIjogewogICAgICAidG9wIjogMjA5Ny44NzUsCiAgICAgICJib3R0b20iOiAyMTE1Ljg3NSwKICAgICAgIndpZHRoIjogMTI2NCwKICAgICAgImhlaWdodCI6IDE4CiAgICB9LAogICAgInJlc2VydmF0aW9uQ291bnQiOiAxLAogICAgImNvdW50ZXJDb3VudCI6IDAsCiAgICAibGFiZWwiOiBudWxsLAogICAgImFjdGl2ZUVsZW1lbnQiOiAiPGJvZHk+PG1haW4+PGgxIGlkPVwicm91dGVcIj5uYXRpdmUtcGVuZGluZy1hPC9oMT48bmF2PjxhIGhyZWY9XCIvbmF0aXZlLXBlbmRpbmctYi9cIj5uYXRpdmUtcGVuZGluZy1iPC9hPiA8YSBocmVmPVwiL3NhbWUtYS9cIj5zYW1lLWE8L2E+PC9uYXY+PC9tYWluPjxoZWFkZXIgaWQ9XCJwZXJzaXN0ZWRcIiBkYXRhLXpmYi10cmFuc2l0aW9uLXBlcnNpc3Q9XCJjb3VudGVyLWhlYWRlclwiPjxkaXYgaWQ9XCJzcGFjZXJcIiBzdHlsZT1cImhlaWdodDoyMDAwcHg7XCI+QmVsb3ctdmlld3BvcnQgY291bnRlciBmb2xsb3dzPC9kaXY+PGRpdiBkYXRhLXpmYi1pc2xhbmQtc2tpcC1zc3I9XCJDb3VudGVySXNsYW5kXCIgZGF0YS13aGVuPVwidmlzaWJsZVwiIGRhdGEtemZiLXRyYW5zcG9ydD1cImpzb24vMVwiIGRhdGEtemZiLXByb3RvY29sPVwienVkby1yZWFjdC8xXCIgZGF0YS16ZmItYnVpbGQ9XCI4N2VkNmViYTc4Y2MyOGUzXCIgZGF0YS1wcm9wcz1cInsmcXVvdDtsYWJlbCZxdW90OzomcXVvdDtvcmlnaW5hbCZxdW90O31cIj48ZGl2IGlkPVwicmVzZXJ2YXRpb25cIj5Bd2FpdCB2aXNpYmlsaXR5PC9kaXY+PC9kaXY+PC9oZWFkZXI+PHNjcmlwdCBzcmM9XCIvX196ZmIvbGl2ZXJlbG9hZC5qc1wiIGRhdGEtemZiLWV4ZWM9XCJcIj48L3NjcmlwdD48L2JvZHk+IiwKICAgICJhbmNlc3RvclBlcnNpc3QiOiAiY291bnRlci1oZWFkZXIiCiAgfSwKICAiYWZ0ZXIiOiB7CiAgICAibGlmZWN5Y2xlIjogewogICAgICAiYWN0aXZhdGlvbnMiOiAxLAogICAgICAiY2xlYW51cHMiOiAwLAogICAgICAiaGVscGVyUmVhZHkiOiBmYWxzZQogICAgfSwKICAgICJzY3JvbGxZIjogMCwKICAgICJ2aWV3cG9ydEhlaWdodCI6IDcyMCwKICAgICJtYXJrZXJBdHRyaWJ1dGVzIjogewogICAgICAiZGF0YS16ZmItaXNsYW5kLXNraXAtc3NyIjogIkNvdW50ZXJJc2xhbmQiLAogICAgICAiZGF0YS13aGVuIjogInZpc2libGUiLAogICAgICAiZGF0YS16ZmItdHJhbnNwb3J0IjogImpzb24vMSIsCiAgICAgICJkYXRhLXpmYi1wcm90b2NvbCI6ICJ6dWRvLXJlYWN0LzEiLAogICAgICAiZGF0YS16ZmItYnVpbGQiOiAiODdlZDZlYmE3OGNjMjhlMyIsCiAgICAgICJkYXRhLXByb3BzIjogIntcImxhYmVsXCI6XCJpbmNvbWluZ1wifSIsCiAgICAgICJkYXRhLXpmYi1pc2xhbmQtbW91bnRlZCI6ICIiCiAgICB9LAogICAgImJvdW5kcyI6IHsKICAgICAgInRvcCI6IDIwOTcuODc1LAogICAgICAiYm90dG9tIjogMjExOC44NzUsCiAgICAgICJ3aWR0aCI6IDEyNjQsCiAgICAgICJoZWlnaHQiOiAyMQogICAgfSwKICAgICJyZXNlcnZhdGlvbkNvdW50IjogMCwKICAgICJjb3VudGVyQ291bnQiOiAxLAogICAgImxhYmVsIjogImluY29taW5nIiwKICAgICJhY3RpdmVFbGVtZW50IjogIjxib2R5PjxtYWluPjxoMSBpZD1cInJvdXRlXCI+bmF0aXZlLXBlbmRpbmctYjwvaDE+PG5hdj48YSBocmVmPVwiL25hdGl2ZS1wZW5kaW5nLWIvXCI+bmF0aXZlLXBlbmRpbmctYjwvYT4gPGEgaHJlZj1cIi9zYW1lLWEvXCI+c2FtZS1hPC9hPjwvbmF2PjwvbWFpbj48aGVhZGVyIGlkPVwicGVyc2lzdGVkXCIgZGF0YS16ZmItdHJhbnNpdGlvbi1wZXJzaXN0PVwiY291bnRlci1oZWFkZXJcIj48ZGl2IGlkPVwic3BhY2VyXCIgc3R5bGU9XCJoZWlnaHQ6MjAwMHB4O1wiPkJlbG93LXZpZXdwb3J0IGNvdW50ZXIgZm9sbG93czwvZGl2PjxkaXYgZGF0YS16ZmItaXNsYW5kLXNraXAtc3NyPVwiQ291bnRlcklzbGFuZFwiIGRhdGEtd2hlbj1cInZpc2libGVcIiBkYXRhLXpmYi10cmFuc3BvcnQ9XCJqc29uLzFcIiBkYXRhLXpmYi1wcm90b2NvbD1cInp1ZG8tcmVhY3QvMVwiIGRhdGEtemZiLWJ1aWxkPVwiODdlZDZlYmE3OGNjMjhlM1wiIGRhdGEtcHJvcHM9XCJ7JnF1b3Q7bGFiZWwmcXVvdDs6JnF1b3Q7aW5jb21pbmcmcXVvdDt9XCIgZGF0YS16ZmItaXNsYW5kLW1vdW50ZWQ9XCJcIj48IS0tenI6MTowOmMtLT48ZGl2IGlkPVwiY291bnRlclwiPjxzcGFuIGlkPVwibGFiZWxcIj5pbmNvbWluZzwvc3Bhbj48YnV0dG9uIGlkPVwiaW5jcmVtZW50XCI+SW5jcmVtZW50PC9idXR0b24+PG91dHB1dCBpZD1cImNvdW50XCI+PCEtLXpyOjE6MTp0LS0+MDwhLS0venI6MToxLS0+PC9vdXRwdXQ+PC9kaXY+PCEtLS96cjoxOjAtLT48L2Rpdj48L2hlYWRlcj48c2NyaXB0IHNyYz1cIi9fX3pmYi9saXZlcmVsb2FkLmpzXCIgZGF0YS16ZmItZXhlYz1cIlwiPjwvc2NyaXB0PjxkaXYgYXJpYS1saXZlPVwiYXNzZXJ0aXZlXCIgYXJpYS1hdG9taWM9XCJ0cnVlXCIgY2xhc3M9XCJ6ZmItcm91dGUtYW5ub3VuY2VyXCI+PC9kaXY+PC9ib2R5PiIsCiAgICAiYW5jZXN0b3JQZXJzaXN0IjogImNvdW50ZXItaGVhZGVyIgogIH0sCiAgImVycm9ycyI6IFtdCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a5ef73a4e2a1baaea746-f46f92ad955ab634c7a5",
+          "file": "persistence.spec.ts",
+          "line": 160,
+          "column": 7
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T09:16:44.781Z",
+    "duration": 19622.565000000002,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

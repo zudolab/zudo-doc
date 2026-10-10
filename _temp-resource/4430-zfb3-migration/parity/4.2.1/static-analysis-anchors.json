@@ -1,0 +1,80 @@
+{
+  "localFragmentTargetChanges": [],
+  "idChanges": [
+    {
+      "file": "docs/guides/configuration/index.html",
+      "added": [
+        "generation-and-integrations-agentexport",
+        "generation-and-integrations-mcp"
+      ],
+      "removed": []
+    },
+    {
+      "file": "docs/guides/llms-txt/index.html",
+      "added": [
+        "agent-export-and-mcp-links"
+      ],
+      "removed": []
+    },
+    {
+      "file": "docs/guides/search/index.html",
+      "added": [
+        "agent-retrieval-is-separate"
+      ],
+      "removed": []
+    },
+    {
+      "file": "docs/reference/create-zudo-doc/index.html",
+      "added": [
+        "options-agent-export-and-mcp-choices"
+      ],
+      "removed": []
+    },
+    {
+      "file": "docs/reference/host-chrome-bindings/index.html",
+      "added": [
+        "dochistory-boundary",
+        "replacing-the-panel-boundary"
+      ],
+      "removed": []
+    },
+    {
+      "file": "ja/docs/guides/configuration/index.html",
+      "added": [
+        "\u751f\u6210\u3068\u30a4\u30f3\u30c6\u30b0\u30ec\u30fc\u30b7\u30e7\u30f3-agentexport",
+        "\u751f\u6210\u3068\u30a4\u30f3\u30c6\u30b0\u30ec\u30fc\u30b7\u30e7\u30f3-mcp"
+      ],
+      "removed": []
+    },
+    {
+      "file": "ja/docs/guides/llms-txt/index.html",
+      "added": [
+        "\u30a8\u30fc\u30b8\u30a7\u30f3\u30c8\u5411\u3051\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u3068mcp\u306e\u30ea\u30f3\u30af"
+      ],
+      "removed": []
+    },
+    {
+      "file": "ja/docs/guides/search/index.html",
+      "added": [
+        "\u30a8\u30fc\u30b8\u30a7\u30f3\u30c8\u5411\u3051\u306e\u53d6\u5f97\u306f\u5225\u6a5f\u80fd"
+      ],
+      "removed": []
+    },
+    {
+      "file": "ja/docs/reference/create-zudo-doc/index.html",
+      "added": [
+        "\u30aa\u30d7\u30b7\u30e7\u30f3-\u30a8\u30fc\u30b8\u30a7\u30f3\u30c8\u5411\u3051\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u3068mcp\u306e\u9078\u629e\u80a2"
+      ],
+      "removed": []
+    },
+    {
+      "file": "ja/docs/reference/host-chrome-bindings/index.html",
+      "added": [
+        "dochistory-\u306e\u5883\u754c",
+        "\u30d1\u30cd\u30eb\u5883\u754c\u306e\u5dee\u3057\u66ff\u3048"
+      ],
+      "removed": []
+    }
+  ],
+  "newExternalBlankWithoutNoopenerNoreferrer": []
+}

@@ -1,34 +1,20 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
+// Shared server-rendered icons. All are decorative and need a nearby text label.
 
-// Shared icon module — thin server-rendered Preact components.
-//
-// All icons accept an optional `className` prop for sizing and colour
-// classes; callers in Preact (`class`) and React-compat (`className`)
-// contexts both work because the prop name here is `className` (the
-// React/compat convention), which Preact's compat layer also passes
-// through transparently.
-//
-// The SVG elements inside use `class=` (Preact JSX attribute name for
-// the DOM `class` attribute). `aria-hidden="true"` is set on all icons
-// so screen-readers skip them; callers should pair them with visible or
-// sr-only text labels.
-
-import type { VNode } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export interface IconProps {
   /** CSS class string forwarded to the root `<svg>` element. */
-  className?: string;
+  class?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Chevron — right-pointing (d="M9 5l7 7-7 7")
 // ---------------------------------------------------------------------------
 
-export function ChevronRight({ className }: IconProps): VNode {
+export function ChevronRight({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -45,10 +31,9 @@ export function ChevronRight({ className }: IconProps): VNode {
 // Chevron — left-pointing (d="M15 19l-7-7 7-7")
 // ---------------------------------------------------------------------------
 
-export function ChevronLeft({ className }: IconProps): VNode {
+export function ChevronLeft({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -65,10 +50,9 @@ export function ChevronLeft({ className }: IconProps): VNode {
 // Search (magnifying glass)
 // ---------------------------------------------------------------------------
 
-export function Search({ className }: IconProps): VNode {
+export function Search({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -85,10 +69,9 @@ export function Search({ className }: IconProps): VNode {
 // History (clock with a circular arrow)
 // ---------------------------------------------------------------------------
 
-export function History({ className }: IconProps): VNode {
+export function History({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       viewBox="0 0 24 24"
       fill="none"
@@ -108,10 +91,9 @@ export function History({ className }: IconProps): VNode {
 // Close (×)
 // ---------------------------------------------------------------------------
 
-export function Close({ className }: IconProps): VNode {
+export function Close({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       viewBox="0 0 24 24"
       fill="none"
@@ -130,10 +112,9 @@ export function Close({ className }: IconProps): VNode {
 // ArrowLeft (← with horizontal bar)
 // ---------------------------------------------------------------------------
 
-export function ArrowLeft({ className }: IconProps): VNode {
+export function ArrowLeft({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       viewBox="0 0 24 24"
       fill="none"
@@ -154,10 +135,9 @@ export function ArrowLeft({ className }: IconProps): VNode {
 // The path is the canonical mark used throughout this project.
 // ---------------------------------------------------------------------------
 
-export function GitHub({ className }: IconProps): VNode {
+export function GitHub({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       width="20"
       height="20"
       viewBox="0 0 24 24"
@@ -174,10 +154,9 @@ export function GitHub({ className }: IconProps): VNode {
 // Folder (closed)
 // ---------------------------------------------------------------------------
 
-export function Folder({ className }: IconProps): VNode {
+export function Folder({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -198,10 +177,9 @@ export function Folder({ className }: IconProps): VNode {
 // Folder — open
 // ---------------------------------------------------------------------------
 
-export function FolderOpen({ className }: IconProps): VNode {
+export function FolderOpen({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -227,10 +205,9 @@ export function FolderOpen({ className }: IconProps): VNode {
 // File — generic
 // ---------------------------------------------------------------------------
 
-export function FileGeneric({ className }: IconProps): VNode {
+export function FileGeneric({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -252,10 +229,9 @@ export function FileGeneric({ className }: IconProps): VNode {
 // File — code
 // ---------------------------------------------------------------------------
 
-export function FileCode({ className }: IconProps): VNode {
+export function FileCode({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -279,10 +255,9 @@ export function FileCode({ className }: IconProps): VNode {
 // File — text
 // ---------------------------------------------------------------------------
 
-export function FileText({ className }: IconProps): VNode {
+export function FileText({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -306,10 +281,9 @@ export function FileText({ className }: IconProps): VNode {
 // File — image
 // ---------------------------------------------------------------------------
 
-export function FileImage({ className }: IconProps): VNode {
+export function FileImage({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -328,10 +302,9 @@ export function FileImage({ className }: IconProps): VNode {
 // File — video
 // ---------------------------------------------------------------------------
 
-export function FileVideo({ className }: IconProps): VNode {
+export function FileVideo({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -349,10 +322,9 @@ export function FileVideo({ className }: IconProps): VNode {
 // File — PDF
 // ---------------------------------------------------------------------------
 
-export function FilePdf({ className }: IconProps): VNode {
+export function FilePdf({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -384,10 +356,9 @@ export function FilePdf({ className }: IconProps): VNode {
 // File — archive
 // ---------------------------------------------------------------------------
 
-export function FileArchive({ className }: IconProps): VNode {
+export function FileArchive({ class: className }: IconProps): Child {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"

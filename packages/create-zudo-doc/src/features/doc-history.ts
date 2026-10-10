@@ -16,7 +16,7 @@ import type { FeatureModule } from "../compose.js";
  * What's left to wire: the self-contained doc-route stub(s)
  * (`pages/docs/[[...slug]].tsx`, and its i18n locale sibling when i18n is
  * also selected) always thread the host's `chromeBindings`. Unlike
- * `DesignTokenPanelBootstrap` (auto-defaulted at the chrome-derive seam,
+ * `DesignTokenPanelBootstrap` server boundary (auto-defaulted at the chrome-derive seam,
  * #2658 gate-2 fix), `DocHistory`'s derive-level default is a deliberate
  * no-op stub (see `routes/_chrome.tsx`'s comment on why — its own island
  * needs the REAL host binding to hydrate). So when docHistory is selected,
@@ -41,7 +41,7 @@ export const docHistoryFeature: FeatureModule = () => ({
       // comment (explaining WHY this patch exists) mentions "DocHistory" in
       // prose, which would false-positive a weaker check and skip patching
       // on every run.
-      const importMarker = `import { DocHistory } from "@takazudo/zudo-doc/doc-history";`;
+      const importMarker = `import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area";`;
       if (content.includes(importMarker)) continue; // already patched
 
       content = content.replace(

@@ -1,9 +1,8 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 // Package route entrypoint: /404 — package-owned equivalent of pages/404.tsx
 // (A1 #2361). Static route; emitted as dist/404.html.
 
-import type { JSX } from "preact";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { settings, defaultLocale, withBase, themePackRegistry } from "./_context.js";
@@ -17,7 +16,7 @@ import {
 
 export const frontmatter = { title: "404" };
 
-export default function NotFoundPage(): JSX.Element {
+export default function NotFoundPage(): Child {
   const locale = defaultLocale;
   const title = "Page Not Found";
 

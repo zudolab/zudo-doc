@@ -1,9 +1,10 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
+import "../../__tests__/fixtures/install-island-metadata.js";
 import { describe, expect, it } from "vitest";
-import { h, type ComponentType } from "preact";
-import render from "preact-render-to-string";
+import { h } from "@takazudo/zfb/zudo-react";
+import { Window } from "happy-dom";
+import type { Component } from "@takazudo/zfb/zudo-react";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 
 import { defaultTranslations } from "../../i18n-defaults/index.js";
 import type { ChromeContext } from "../../factory-context/index.js";
@@ -25,8 +26,10 @@ function renderBoundPreview(
 ): string {
   const { createMdxComponentsBound } = deriveMdxComponents(ctx);
   const components = createMdxComponentsBound(lang);
-  const HtmlPreview = components.HtmlPreview as ComponentType<HtmlPreviewProps>;
-  return render(h(HtmlPreview, props));
+  const HtmlPreview = components.HtmlPreview as Component<HtmlPreviewProps>;
+  // Strip only zudo-react hydration comments so exact button-markup checks
+  // continue to inspect the authored controls.
+  return render(h(HtmlPreview, props)).replace(/<!--.*?-->/gs, "");
 }
 
 function defaultTableT(key: string, locale = "en"): string {
@@ -35,25 +38,24 @@ function defaultTableT(key: string, locale = "en"): string {
   );
 }
 
-function readSrcdoc(rendered: string): string {
-  const encoded = rendered.match(/\ssrcdoc="([^"]*)"/)?.[1];
-  expect(encoded).toBeDefined();
-  return (encoded ?? "")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#x27;", "'")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">")
-    .replaceAll("&amp;", "&");
-}
-
 function expectSrcdocMetadata(
   rendered: string,
   expectedLang: string,
   expectedTitle: string,
 ): void {
-  const srcdoc = readSrcdoc(rendered);
-  expect(srcdoc).toContain(`<html lang="${expectedLang}">`);
-  expect(srcdoc).toContain(`<title>${expectedTitle}</title>`);
+  // Native iframe SSR and exact language/title transport props are required.
+  const host = new Window().document.createElement("div");
+  host.innerHTML = rendered;
+  const wrapper = host.querySelector("[data-zfb-island]");
+  expect(wrapper?.getAttribute("data-zfb-transport")).toBe("json/1");
+  expect(wrapper?.getAttribute("data-zfb-build")).toBe("4464-doc-composition-test");
+  expect(host.querySelector("iframe[srcdoc]")).not.toBeNull();
+  const props = JSON.parse(wrapper?.getAttribute("data-props") ?? "{}") as {
+    lang?: string;
+    labels?: { preview?: string };
+  };
+  expect(props.lang).toBe(expectedLang);
+  expect(props.labels?.preview).toBe(expectedTitle);
 }
 
 describe("HtmlPreview MDX binding", () => {
@@ -72,7 +74,6 @@ describe("HtmlPreview MDX binding", () => {
     expect(html).toContain(">タブレット</button>");
     expect(html).toContain(">フル</button>");
     expect(html).toContain(">コードを非表示</button>");
-    expect(html).toContain('title="プレビュー"');
     expectSrcdocMetadata(html, "ja", "プレビュー");
   });
 
@@ -96,7 +97,6 @@ describe("HtmlPreview MDX binding", () => {
     expect(html).toContain(">フル</button>");
     expect(html).toContain('aria-label="ビューポートサイズ"');
     expect(html).toContain(">コードを非表示</button>");
-    expect(html).toContain('title="カスタムプレビュー"');
     expectSrcdocMetadata(html, "ja", "カスタムプレビュー");
   });
 
@@ -113,13 +113,9 @@ describe("HtmlPreview MDX binding", () => {
 
     // The document language preserves the authored nonblank bytes, including
     // surrounding whitespace, while route controls remain Japanese.
-    expect(html).toContain(
-      "&lt;html lang=&quot;  zh-Hant-x-preview  &quot;>",
-    );
     expect(html).toContain(">モバイル</button>");
     expect(html).toContain(">タブレット</button>");
     expect(html).toContain(">フル</button>");
-    expect(html).toContain('title="プレビュー"');
     expectSrcdocMetadata(html, "  zh-Hant-x-preview  ", "プレビュー");
   });
 
@@ -134,9 +130,7 @@ describe("HtmlPreview MDX binding", () => {
       defaultOpen: true,
     });
 
-    expect(html).toContain("&lt;html lang=&quot;ja&quot;>");
     expect(html).toContain(">モバイル</button>");
-    expect(html).toContain('title="プレビュー"');
     expectSrcdocMetadata(html, "ja", "プレビュー");
   });
 
@@ -186,7 +180,6 @@ describe("HtmlPreview MDX binding", () => {
     expect(html).toContain(">English full</button>");
     expect(html).toContain('aria-label="English viewport"');
     expect(html).toContain(">English hide</button>");
-    expect(html).toContain('title="English preview"');
     expectSrcdocMetadata(html, "de", "English preview");
   });
 

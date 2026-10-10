@@ -427,6 +427,10 @@ export interface Settings {
   tagGovernance: TagGovernanceMode;
   tagVocabulary: boolean;
   llmsTxt: boolean;
+  /** Generate the package-owned static agent documentation feed. */
+  agentExport?: boolean;
+  /** Add the stateless read-only MCP endpoint; requires agentExport. */
+  mcp?: boolean;
   changelogs?: ChangelogConfig[] | false;
   math: boolean;
   cjkFriendly: boolean;
@@ -576,8 +580,10 @@ export interface Settings {
    * `chromeBindings.DesignTokenPanelBootstrap`, stub-rendered pages now mount
    * NO panel island at all (the injected routes still get the configured one,
    * from any entry page). To get a panel on stub-rendered pages too, thread
-   * your builder through `chromeBindings.DesignTokenPanelBootstrap` — that
-   * binding wins everywhere and is unaffected by this rule. See
+   * your builder through a client bootstrap and expose its fixed-target,
+   * Fragment-wrapped Island server boundary as
+   * `chromeBindings.DesignTokenPanelBootstrap` — that boundary wins everywhere
+   * and is unaffected by this rule. Do not supply a raw client component. See
    * `docs/adr/route-injection-seam.md`.
    *
    * EDGE CASE (zudolab/zudo-doc#3420, diagnostic added #3428, scoped by

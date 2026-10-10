@@ -9,16 +9,9 @@ tags:
 
 ## Two ways to add a component
 
-You can make a component available to MDX in two ways:
-
-- **Import it in one file** when it belongs to a single document or a small, explicit set of documents.
-- **Register it globally with `mdxExtras`** when authors should be able to use the component throughout the documentation, or when you are replacing a built-in MDX component.
-
-Both approaches render on the server. Choose global registration only for a shared authoring surface; it is not required for ordinary document-specific UI.
+Import a component in a single MDX file, or register a reusable component through `mdxExtras`. Both use zfb's zudo-react descriptions; presentational components render server HTML without client JavaScript.
 
 ## Per-file imports
-
-Import a component directly at the top of an `.mdx` file. The scaffold's `@/` alias works from MDX, so the component can live with the rest of your project code.
 
 ```mdx
 import { MyBadge } from "@/components/my-badge";
@@ -26,27 +19,27 @@ import { MyBadge } from "@/components/my-badge";
 <MyBadge>New</MyBadge>
 ```
 
-This is the smallest and most local option. A bare MDX import is SSR-only: it renders the component into HTML, but it does not make a client component hydrate. See [Interactive islands (experimental)](#interactive-islands-experimental) when the component needs browser-side state or event handlers.
+A bare MDX import renders on the server. It does not activate state or event handlers by itself.
 
 ## Global registration: mdxExtras
 
-`mdxExtras` is the global registry for project-owned MDX components. Create a bindings module and point `zudoDoc()` at it. Fresh scaffold routes already consume the configured module through `virtual:zudo-doc-chrome-bindings`, so presentational components need no route-stub edit.
-
-Start with this complete example.
+Create a typed component and register it in a host bindings module:
 
 ```tsx title="src/components/my-badge.tsx"
-import type { ComponentChildren } from "preact";
+/** @jsxRuntime automatic */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
+import type { Child } from "@takazudo/zfb/zudo-react";
 
-export function MyBadge({ children }: { children: ComponentChildren }) {
+export function MyBadge({ children }: { children?: Child }) {
   return (
-    <span className="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg">
+    <span class="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg">
       {children}
     </span>
   );
 }
 ```
 
-```ts title="src/chrome-bindings.tsx"
+```tsx title="src/chrome-bindings.tsx"
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 import { MyBadge } from "./components/my-badge";
 
@@ -56,7 +49,7 @@ export const chromeBindings = defineChromeBindings({
 ```
 
 ```ts title="zfb.config.ts"
-import { defineConfig } from "zfb/config";
+import { defineConfig } from "@takazudo/zfb/config";
 import { zudoDoc } from "@takazudo/zudo-doc/config";
 
 export default defineConfig(
@@ -67,105 +60,125 @@ export default defineConfig(
 );
 ```
 
-The generated `pages/docs/[[...slug]].tsx` and locale counterpart both import `chromeBindings` from `virtual:zudo-doc-chrome-bindings` and call `createChrome(routeCtx, chromeBindings)`. When doc history is enabled, the generator merges `DocHistory` over that same object rather than replacing it. This is the supported no-fork path for **presentational, server-rendered** `mdxExtras` and every other host binding.
-
-<Warning title="The virtual path does not make islands hydrate">
-
-The generated virtual path does not make a component declared inside the bindings module scanner-reachable. It therefore does not turn a presentational binding into a hydrating client island. If an experimental island needs route-level static reachability, explicitly import the project bindings module from every applicable route stub as described below; that is an advanced route customization, not required for ordinary `mdxExtras`.
-
-</Warning>
-
-Once registered, every MDX page can use the component without an import:
+Generated routes consume `virtual:zudo-doc-chrome-bindings`. Omitted slots retain package defaults, and `mdxExtras` overrides same-named built-in components. Avoid requiring props the caller does not supply. See [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
 
 ```mdx
 <MyBadge>New</MyBadge>
 ```
 
-For the delivery channel and its other host-bound slots, see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
-
 ## Overriding built-in components
 
-`mdxExtras` also overrides a built-in component when it uses the same key. This resolves in two stages: `chrome/derive` merges host `mdxExtras` over its package defaults, then the package MDX-component factory spreads those extras last after its default map. Your same-named binding therefore wins.
+The extras map is applied after the built-in MDX map. It can replace admonitions (`Note`, `Tip`, `Info`, `Warning`, `Danger`, `Important`, `Caution`), helpers (`Details`, `HtmlPreview`, `CodeGroup`, `Tabs`, `TabItem`, `Island`, `Asset`, `AssetCode`), and HTML overrides such as `p` or `table`. Preserve the authored syntax and prop contract. Prefer a new named component when a global override is unnecessary. See [Asset Viewer](./asset-viewer.mdx) for manifest-backed assets.
 
-The overridable names include:
+<span id="classname-not-class" />
 
-- Admonitions: `Note`, `Tip`, `Info`, `Warning`, `Danger`, `Important`, and `Caution`
-- Content helpers: `Details`, `HtmlPreview`, `CodeGroup`, `Tabs`, `TabItem`, `Island`, `PresetGenerator`, `Asset`, and `AssetCode`
-- HTML overrides such as `p`, `a`, `img`, and `table`
+## JSX and strict props
 
-Keep the replacement compatible with the MDX syntax and props that your existing documents use. Replacing `p` or another HTML element affects every matching element in the documentation, so prefer a new named component unless a global rendering change is intentional.
-
-`Asset` and `AssetCode` are the package defaults for manifest-backed asset cards and source excerpts. See [Asset Viewer](./asset-viewer.mdx) for their authoring syntax and the settings that supply their asset manifest.
-
-## className, not class
-
-Write `className` in project `.tsx` components, not `class`. The scaffold maps `react` to `preact/compat`, so authored components type-check through the React-compatible JSX types. `class=` fails `zfb check` with `TS2322`; `className` works in both the scaffold and Preact-compatible code.
-
-```tsx
-// Correct in project-owned .tsx files.
-export function MyBadge() {
-  return <span className="text-caption">New</span>;
-}
-```
-
-Some zudo-doc package and showcase source uses `class=`. That source follows its own Preact compilation boundary; do not copy that spelling into a newly authored scaffold component.
+The shared tsconfig uses `jsxImportSource: "@takazudo/zfb/zudo-react"`. Import `Child`, `Component`, and `Description` from that public entry; import the `JSX` namespace from `@takazudo/zfb/zudo-react/jsx-runtime`. Use `class`, not `className`. Native props use explicit DOM spellings and units: lengths in a style object need strings such as `"12px"`, rather than unitless numbers. Native `<ol start={3}>` and leading newlines in `<pre>` use the current native contract.
 
 ## Interactive islands (experimental)
 
-An interactive component needs more than an MDX import: its module must opt into client execution, and zfb must be able to reach that import through a static route graph. This recipe registers a visible-on-scroll counter island through the same static bindings path described above.
+The module opts into client execution with `"use client"`. A server boundary statically imports one fixed client target and supplies serializable `props`; component functions and signals cannot cross that transport.
 
 ```tsx title="src/components/counter.tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
 "use client";
 
-import { useState } from "preact/hooks";
+import { computed, getScope, signal } from "@takazudo/zfb/zudo-react";
 
 export default function Counter() {
-  const [count, setCount] = useState(0);
+  const scope = getScope();
+  const count = signal(0);
+  const label = computed(() => `Count: ${count.value}`);
+
+  scope.onActivate(() => {
+    // Browser-only setup belongs here. Return cleanup when needed.
+  });
 
   return (
-    <button type="button" className="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg" onClick={() => setCount((value) => value + 1)}>
-      Count: {count}
+    <button
+      type="button"
+      class="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg"
+      on:click={() => { count.value += 1; }}
+    >
+      {label}
     </button>
   );
 }
 ```
 
-```tsx title="src/chrome-bindings.tsx"
+```tsx title="src/components/counter-island.tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
 import { Island } from "@takazudo/zfb";
+import Counter from "./counter";
+
+export function CounterIsland() {
+  return <>{Island({ when: "visible", children: <Counter /> })}</>;
+}
+```
+
+```tsx title="src/chrome-bindings.tsx"
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
-import Counter from "./components/counter";
-
-(Counter as { displayName?: string }).displayName = "Counter";
-
-const CounterIsland = () =>
-  Island({
-    when: "visible",
-    children: <Counter />,
-  });
+import { CounterIsland } from "./components/counter-island";
 
 export const chromeBindings = defineChromeBindings({
   mdxExtras: { CounterIsland },
 });
 ```
 
-For this experimental island case only, replace the generated virtual import in every applicable document-route stub with a static `../../src/chrome-bindings` import (adjusting the relative path for locale routes). The default virtual-module path is SSR-presentational and cannot guarantee discovery. Setting `Counter.displayName` pins the island marker name even when the render pipeline rewrites function names.
+Use `<CounterIsland />` in MDX. The generated virtual binding path alone cannot guarantee scanner reachability for a custom island: keep the host boundary statically reachable from every applicable document route, with relative imports adjusted for locale/version routes. Do not assign `displayName` or pass a pre-rendered child as the island target. Verify the real built island marker and browser activation after changing the route graph.
 
-<Warning title="Experimental scanner contract">
+For this custom island only, replace the existing `virtual:zudo-doc-chrome-bindings` import in every applicable route stub with a direct static import. Keep the rest of the route, including `createChrome(routeCtx, chromeBindings)`, unchanged. The import section for the default and locale document routes becomes:
 
-This pattern is experimental because upstream island-marker deduplication remains fragile; follow [issue #2718](https://github.com/zudolab/zudo-doc/issues/2718) for that work. Test the hydrated behavior in your built site whenever you change an island's registration path.
-
-</Warning>
-
-This showcase's `pages/lib/_preset-generator.tsx` demonstrates the same `Island({...})` call form and display-name pinning. For a presentational `className`-based component, see the `Pill` renderer in `src/config/frontmatter-preview-renderers.tsx` in this showcase.
-
-Use the registered island from MDX like any other global component:
-
-```mdx
-<CounterIsland />
+```tsx title="pages/docs/[[...slug]].tsx (import section)"
+import { chromeBindings } from "../../src/chrome-bindings";
 ```
+
+```tsx title="pages/[locale]/docs/[[...slug]].tsx (import section)"
+import { chromeBindings } from "../../../src/chrome-bindings";
+```
+
+Versioned stubs also need a direct static import. Adjust its relative path for each directory depth (`pages/v/[version]/docs/` uses `../../../../src/chrome-bindings`; a locale/version combination adds another level). Package-injected routes need a project-owned route seam that makes the same static boundary reachable. This advanced route customization is needed for discovery of a custom client island; ordinary presentational `mdxExtras` keeps the generated virtual import.
+
+zudo-react runs component setup once per scope. Pass a signal or computed signal directly to JSX for reactive output; `{count.value}` would read only the setup-time snapshot. `scope.onActivate` owns browser setup and can return cleanup. `scope.effect` owns reactive side effects. Setup helpers receive `scope` and signals explicitly rather than emulating React hooks. Use `scope.abortSignal` for fetches, and check it again after an awaited import or request before mutating the DOM.
+
+## Forms and events
+
+The five model adapters are text inputs, checkbox inputs, radio inputs, textarea, and single-select. Text/textarea/select use `modelValue` with a writable string signal; checkbox uses `modelChecked` with a boolean signal; radio uses `modelValue` with a string-or-null signal and an explicit value. Unsupported input kinds and multiple select need explicit native handlers. Do not mix a model adapter with competing value/checked handlers.
+
+```tsx title="src/components/name-field.tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource @takazudo/zfb/zudo-react */
+"use client";
+
+import { signal } from "@takazudo/zfb/zudo-react";
+
+export function NameField() {
+  const name = signal("");
+  return <input type="text" modelValue={name} aria-label="Name" />;
+}
+```
+
+```tsx
+function handleInput(event: Event) {
+  const target = event.currentTarget;
+  if (!(target instanceof HTMLInputElement)) return;
+  console.log(target.value);
+}
+```
+
+Event handlers use `on:click`, `on:input`, or `on:event-name:capture`. Handlers receive native `Event`; narrow `currentTarget` locally before reading element fields.
+
+## Structural updates and trusted HTML
+
+Use `Show` for a boolean branch and keyed `For` for a changing list. A `Show` whose condition stays true retains its child scope; changing a key in `For` removes the old scope and creates the new one. A JSX `key` on an ordinary element does not provide that reset behavior. Keep table structure valid: table children are native sections/rows, section children are rows, and row children are cells. Do not put `Show`/`For` marker structures directly inside those restricted parents; place the structural boundary around a complete table.
+
+Use `rawHtml` only after a trust review at each site. It does not sanitize content. Script/style raw bodies require a static string, with no reactive replacement or mixed children. Prefer escaped children for user-provided text. `modalDialog(scope, options)` from `@takazudo/zudo-doc/use-modal-dialog` owns a native dialog for its scope; conditional dialogs need a child component inside `Show` so the helper's ref and lifetime belong to that child.
 
 ## See also
 
-- [Customizing zudo-doc](../reference/customizing.mdx) for the minimal-to-extended customization ladder
-- [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) for the bindings module and its non-component slots
-- [Writing Documentation](../getting-started/writing-docs.mdx) for regular MDX authoring
+- [Customizing zudo-doc](../reference/customizing.mdx)
+- [Writing Documentation](../getting-started/writing-docs.mdx)
+- [Component First Strategy](../reference/component-first.mdx)

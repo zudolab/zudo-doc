@@ -1,0 +1,27 @@
+---
+title: Migration Parity Runtime Test
+sidebar_position: 100
+description: Browser fixture for native list, pre, code-copy, and revision behavior.
+---
+
+This dedicated article keeps migration parity checks separate from the existing
+Getting Started history fixture.
+
+## Ordered list starting at three
+
+3. Third step
+4. Fourth step
+
+## Native pre with a leading line feed
+
+<pre data-migration-parity-lf>{"\nfirst line\nsecond line"}</pre>
+
+## Code copied exactly from the authored fence
+
+```js title="migration-parity-leading-lf.js"
+
+const migrationParityFirst = 1;
+const migrationParitySecond = 2;
+```
+
+History revision one.

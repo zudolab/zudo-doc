@@ -75,6 +75,35 @@ describe("changelogPackages preset support", () => {
   });
 });
 
+describe("agent export and MCP preset support", () => {
+  it("normalizes MCP to include agent export and the Cloudflare preset", () => {
+    expect(validatePreset({ features: ["mcp"] })).toBeNull();
+    expect(presetToChoices({ features: ["mcp"] })).toMatchObject({
+      features: { agentExport: true, mcp: true },
+      mcpDeploy: "cloudflare",
+    });
+  });
+
+  it("keeps the legacy feature list unchanged when MCP is not selected", () => {
+    expect(presetToChoices({ features: ["search"] })).toMatchObject({
+      features: { search: true, agentExport: false, mcp: false },
+    });
+    expect(presetToChoices({ features: ["search"] }).mcpDeploy).toBeUndefined();
+  });
+
+  it("rejects unsupported deployment targets regardless of feature selection", () => {
+    expect(validatePreset({ mcpDeploy: "netlify" })).toBe(
+      "Unsupported mcpDeploy value. Supported value: cloudflare.",
+    );
+  });
+
+  it("rejects a deployment target without MCP", () => {
+    expect(validatePreset({ features: ["agentExport"], mcpDeploy: "cloudflare" })).toBe(
+      "mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.",
+    );
+  });
+});
+
 describe("presetToChoices — minifyHtml", () => {
   it("forwards minifyHtml: true", () => {
     const choices = presetToChoices({ minifyHtml: true });

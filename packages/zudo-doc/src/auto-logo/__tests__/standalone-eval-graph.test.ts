@@ -7,12 +7,12 @@ import { fileURLToPath } from "node:url";
 // IMPORT-GRAPH GUARD for standalone.ts (issue #3048) and icon.ts (#3286).
 //
 // The `zudo-doc eject logo` CLI (sibling issue #3050) imports the compiled
-// `dist/auto-logo/standalone.js` directly — no preact runtime, no bundler —
+// `dist/auto-logo/standalone.js` directly — no client runtime, no bundler —
 // and the icon rasterizer script (#3287) does the same with
 // `dist/auto-logo/icon.js`. So neither module's graph may ever reach a
-// `.tsx`-derived module or `preact` itself (both would either fail to import
-// outside a JSX pipeline or drag the preact runtime into a plain CLI
-// script). This mirrors the node-free eval-graph guard pattern in
+// `.tsx`-derived module or a UI runtime (`preact` / `zudo-react`), which would
+// drag a runtime dependency into a plain CLI script. This mirrors the node-free
+// eval-graph guard pattern in
 // `src/__tests__/preset.test.ts` (bundle exactly the reachable graph, assert
 // on what's reachable) but checks reachable *input files* via esbuild's
 // metafile instead of `node:*` specifiers.
@@ -51,7 +51,11 @@ function isPreactInput(path: string): boolean {
   return /(^|\/)node_modules\/preact(\/|$)/.test(path) || /(^|\/)preact\//.test(path);
 }
 
-describe("string-renderer module graphs are .tsx-free and preact-free", () => {
+function isZudoReactInput(path: string): boolean {
+  return /(^|\/)node_modules\/@takazudo\/zfb\/(?:dist\/)?zudo-react\//.test(path);
+}
+
+describe("string-renderer module graphs are .tsx-free and UI-runtime-free", () => {
   it.each([
     ["standalone.ts", standaloneSrc],
     ["icon.ts", iconSrc],
@@ -71,16 +75,16 @@ describe("string-renderer module graphs are .tsx-free and preact-free", () => {
     const inputs = Object.keys(result.metafile.inputs);
     const tsxOffenders = inputs.filter(isTsxInput);
     const preactOffenders = inputs.filter(isPreactInput);
+    const zudoReactOffenders = inputs.filter(isZudoReactInput);
 
     expect(tsxOffenders, `${name} reached .tsx module(s): ${tsxOffenders.join(", ")}`).toEqual([]);
     expect(preactOffenders, `${name} reached preact module(s): ${preactOffenders.join(", ")}`).toEqual([]);
+    expect(zudoReactOffenders, `${name} reached zudo-react module(s): ${zudoReactOffenders.join(", ")}`).toEqual([]);
   });
 
-  // Self-test: prove the detector is LIVE, not dead code. auto-logo/index.tsx
-  // is a known positive control — it genuinely is `.tsx` and genuinely
-  // imports preact — so bundling IT must trip both checks the guard above
-  // relies on.
-  it("DETECTS a .tsx module and preact (guard is not dead code)", async () => {
+  // Self-test: prove both detectors are LIVE. auto-logo/index.tsx is a known
+  // positive control for .tsx and the zudo-react runtime.
+  it("DETECTS a .tsx module and zudo-react (guard is not dead code)", async () => {
     const esbuild = loadEsbuild();
     const result = await esbuild.build({
       entryPoints: [autoLogoIndexSrc],
@@ -95,6 +99,6 @@ describe("string-renderer module graphs are .tsx-free and preact-free", () => {
     expect(result.errors).toEqual([]);
     const inputs = Object.keys(result.metafile.inputs);
     expect(inputs.some(isTsxInput)).toBe(true);
-    expect(inputs.some(isPreactInput)).toBe(true);
+    expect(inputs.some(isZudoReactInput)).toBe(true);
   });
 });

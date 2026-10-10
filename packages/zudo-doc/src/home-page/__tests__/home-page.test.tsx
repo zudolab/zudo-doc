@@ -1,5 +1,4 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
 /**
  * Unit tests for `createHomePageView` (epic #2499, S3 #2502).
  *
@@ -22,14 +21,102 @@
  *     this extraction.
  */
 
-import { describe, expect, it, vi } from "vitest";
-import { render } from "preact-render-to-string";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { createHomePageView } from "../index.js";
 import type { HomePageViewProps } from "../index.js";
 import type { DocNavNode } from "../../doc-page-props/index.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { PreparedHomeIntro } from "../../home-intro/types.js";
+
+const { layoutProps, headProps, islandProps, introProps } = vi.hoisted(() => ({
+  layoutProps: [] as Array<Record<string, unknown>>,
+  headProps: [] as Array<Record<string, unknown>>,
+  islandProps: [] as Array<Record<string, unknown>>,
+  introProps: [] as Array<Record<string, unknown>>,
+}));
+
+// Isolate the home body factory from shared shell rendering (#4458), scanner-
+// assigned island identity, and the concurrently ported HomeIntro/CompactProse
+// body (#4457). These tests pin the props crossing those owned seams.
+vi.mock("../../doclayout/index.js", () => ({
+  DocLayoutWithDefaults: (props: Record<string, unknown>) => {
+    layoutProps.push(props);
+    return [props.head as Child, props.children as Child];
+  },
+}));
+vi.mock("../../head-with-defaults/index.js", () => ({
+  createHeadWithDefaults: () => (props: Record<string, unknown>) => {
+    headProps.push(props);
+    return null;
+  },
+}));
+vi.mock("../../auto-logo/index.js", () => ({
+  AutoLogo: ({ class: className, seed }: { class?: string; seed: string }) => (
+    <svg class={className} data-auto-logo={seed} aria-hidden="true" />
+  ),
+}));
+vi.mock("@takazudo/zfb", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@takazudo/zfb")>();
+  return {
+    ...actual,
+    Island: (props: Record<string, unknown>) => {
+      islandProps.push(props);
+      return <div data-zd-test-home-island data-when={props.when as string} />;
+    },
+  };
+});
+vi.mock("../../home-intro/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../home-intro/index.js")>();
+  const { renderPreparedIntro } = await import("./render-prepared-intro.js");
+  return {
+    ...actual,
+    CompactProse: (props: Record<string, unknown>) => {
+      introProps.push(props);
+      const intro = props.intro as PreparedHomeIntro | null | undefined;
+      return intro?.nodes.length ? (
+        <div class="zd-content zd-compact-prose" data-zd-test-home-intro>{renderPreparedIntro(intro)}</div>
+      ) : null;
+    },
+  };
+});
+
+beforeEach(() => {
+  layoutProps.length = 0;
+  headProps.length = 0;
+  islandProps.length = 0;
+  introProps.length = 0;
+});
+
+function latestLayout(): Record<string, unknown> {
+  return layoutProps.at(-1) ?? {};
+}
+
+function latestHead(): Record<string, unknown> {
+  return headProps.at(-1) ?? {};
+}
+
+function latestIslandProps(): Record<string, unknown> {
+  return islandProps.at(-1) ?? {};
+}
+
+function latestSiteTreeProps(): Record<string, unknown> {
+  return ((latestIslandProps().children as { props?: Record<string, unknown> } | undefined)?.props ?? {});
+}
+
+function latestIntro(): PreparedHomeIntro | null | undefined {
+  return introProps.at(-1)?.intro as PreparedHomeIntro | null | undefined;
+}
+
+function introText(intro: PreparedHomeIntro | null | undefined): string {
+  const visit = (node: PreparedHomeIntro["nodes"][number]): string => {
+    if (typeof node === "string") return node;
+    return node.children.map(visit).join("");
+  };
+  return intro?.nodes.map(visit).join("") ?? "";
+}
 
 const EMPTY_TREE: DocNavNode[] = [];
 const CHANGELOG_TREE: DocNavNode[] = [
@@ -101,9 +188,9 @@ describe("createHomePageView — hero markup", () => {
     const html = render(<HomePageView {...makeProps()} />);
 
     // Mirrors the hero <h1> assertion in route-injection-build.slow.test.ts:2214 — keep both in sync.
-    // wrap-anywhere (not break-words) so a long unbreakable word (e.g. a long
+    // zd-wrap-anywhere (overflow-wrap: anywhere, not break-word) so a long unbreakable word (e.g. a long
     // siteName) can wrap inside the hero at narrow viewports (#4297/#4302).
-    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs wrap-anywhere">Test Site</h1>');
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs zd-wrap-anywhere">Test Site</h1>');
     // Scoped to the hero <h1>: a bare `not.toContain("break-words")` over the
     // whole render would fail on any unrelated home-page element that
     // legitimately carries the utility.
@@ -285,18 +372,16 @@ describe("createHomePageView — hero markup", () => {
 });
 
 describe("createHomePageView — meta description (#4200)", () => {
-  it("emits <meta name=\"description\"> and og:description on the default-locale home, matching siteDescription", () => {
+  it("passes the default-locale description to the shared head factory", () => {
     const ctx = makeFakeChromeContext({
       settings: { siteName: "Test Site", siteDescription: "A test description" },
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps()} />);
-
-    expect(html).toContain('<meta name="description" content="A test description"/>');
-    expect(html).toContain('<meta property="og:description" content="A test description"/>');
+    render(<HomePageView {...makeProps()} />);
+    expect(latestHead().description).toBe("A test description");
   });
 
-  it("emits both tags carrying a locale description override", () => {
+  it("passes a locale description override to the shared head factory", () => {
     const ctx = makeFakeChromeContext({
       settings: {
         siteDescription: "Global description",
@@ -310,13 +395,11 @@ describe("createHomePageView — meta description (#4200)", () => {
       },
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
-
-    expect(html).toContain('<meta name="description" content="Japanese description"/>');
-    expect(html).toContain('<meta property="og:description" content="Japanese description"/>');
+    render(<HomePageView {...makeProps({ locale: "ja" })} />);
+    expect(latestHead().description).toBe("Japanese description");
   });
 
-  it("falls back to siteDescription for both tags when the locale has no override", () => {
+  it("falls back to siteDescription when the locale has no override", () => {
     const ctx = makeFakeChromeContext({
       settings: {
         siteDescription: "Global description",
@@ -324,13 +407,11 @@ describe("createHomePageView — meta description (#4200)", () => {
       },
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
-
-    expect(html).toContain('<meta name="description" content="Global description"/>');
-    expect(html).toContain('<meta property="og:description" content="Global description"/>');
+    render(<HomePageView {...makeProps({ locale: "ja" })} />);
+    expect(latestHead().description).toBe("Global description");
   });
 
-  it("emits neither tag when metaTags.description is false", () => {
+  it("passes no description when metaTags.description is false", () => {
     const ctx = makeFakeChromeContext({
       settings: {
         siteDescription: "A test description",
@@ -338,63 +419,60 @@ describe("createHomePageView — meta description (#4200)", () => {
       },
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps()} />);
-
-    expect(html).not.toContain('name="description"');
-    expect(html).not.toContain("og:description");
+    render(<HomePageView {...makeProps()} />);
+    expect(latestLayout().description).toBeUndefined();
   });
 
-  it("emits neither tag when the resolved description is empty", () => {
+  it("passes no description when the resolved description is empty", () => {
     const ctx = makeFakeChromeContext({
       settings: { siteDescription: "" },
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps()} />);
-
-    expect(html).not.toContain('name="description"');
-    expect(html).not.toContain("og:description");
+    render(<HomePageView {...makeProps()} />);
+    expect(latestHead().description).toBeUndefined();
   });
 
-  it("emits neither tag when the resolved description is whitespace-only", () => {
+  it("passes no description when the resolved description is whitespace-only", () => {
     const ctx = makeFakeChromeContext({
       settings: { siteDescription: "   " },
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps()} />);
-
-    expect(html).not.toContain('name="description"');
-    expect(html).not.toContain("og:description");
+    render(<HomePageView {...makeProps()} />);
+    expect(latestHead().description).toBeUndefined();
   });
 });
 
 describe("createHomePageView — SiteTreeNav island", () => {
   it("uses the narrow content band when wide is omitted", () => {
     const HomePageView = createHomePageView(makeFakeChromeContext());
-    const html = render(<HomePageView {...makeProps()} />);
+    render(<HomePageView {...makeProps()} />);
 
-    expect(html).toContain("data-zd-nosidebar");
-    expect(html).not.toContain("data-zd-wide");
+    expect(latestLayout().hideSidebar).toBe(true);
+    expect(latestLayout().hideToc).toBe(true);
+    expect(latestLayout().contentWide).toBeUndefined();
   });
 
   it("uses the wide content band when wide is true", () => {
     const HomePageView = createHomePageView(makeFakeChromeContext());
-    const html = render(<HomePageView {...makeProps({ wide: true })} />);
+    render(<HomePageView {...makeProps({ wide: true })} />);
 
-    expect(html).toContain("data-zd-wide");
+    expect(latestLayout().contentWide).toBe(true);
   });
 
-  it("wraps SiteTreeNav in the real Island(when: idle) — same marker as before extraction", () => {
+  it("passes SiteTreeNav through the idle Island boundary", () => {
     const ctx = makeFakeChromeContext();
     const HomePageView = createHomePageView(ctx);
     const html = render(<HomePageView {...makeProps()} />);
 
-    expect(html).toContain('data-zfb-island="SiteTreeNav"');
+    expect(latestIslandProps().when).toBe("idle");
+    expect((latestIslandProps().children as { type?: { name?: string } }).type?.name).toBe("SiteTreeNav");
+    expect(html).toContain("data-zd-test-home-island");
   });
 
   it("forwards the explicit initial-collapse slugs to SiteTreeNav", () => {
     const ctx = makeFakeChromeContext();
     const HomePageView = createHomePageView(ctx);
-    const html = render(
+    render(
       <HomePageView
         {...makeProps({
           tree: CHANGELOG_TREE,
@@ -403,32 +481,32 @@ describe("createHomePageView — SiteTreeNav island", () => {
       />,
     );
 
-    expect(html).toContain('aria-expanded="false" aria-label="Expand Release notes"');
-    expect(html).not.toContain('href="/docs/changelog/1.0.0"');
+    expect(latestSiteTreeProps().initiallyCollapsedCategorySlugs).toEqual(["changelog"]);
   });
 
   it("keeps the existing expanded default when no initial-collapse slugs are provided", () => {
     const ctx = makeFakeChromeContext();
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ tree: CHANGELOG_TREE })} />);
+    render(<HomePageView {...makeProps({ tree: CHANGELOG_TREE })} />);
 
-    expect(html).toContain('aria-expanded="true" aria-label="Collapse Release notes"');
-    expect(html).toContain('href="/docs/changelog/1.0.0"');
+    expect(latestSiteTreeProps().initiallyCollapsedCategorySlugs).toBeUndefined();
+    expect(latestSiteTreeProps().tree).toBe(CHANGELOG_TREE);
   });
 
   it("shows a develop category by default when no siteTreeNavIgnore setting is provided", () => {
     const HomePageView = createHomePageView(makeFakeChromeContext());
-    const html = render(<HomePageView {...makeProps({ tree: DEVELOP_TREE })} />);
+    render(<HomePageView {...makeProps({ tree: DEVELOP_TREE })} />);
 
-    expect(html).toContain('href="/docs/develop"');
+    expect(latestSiteTreeProps().tree).toBe(DEVELOP_TREE);
+    expect(latestSiteTreeProps().categoryIgnore).not.toContain("develop");
   });
 
   it("hides a develop category when siteTreeNavIgnore includes it", () => {
     const ctx = makeFakeChromeContext({ settings: { siteTreeNavIgnore: ["develop"] } });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ tree: DEVELOP_TREE })} />);
+    render(<HomePageView {...makeProps({ tree: DEVELOP_TREE })} />);
 
-    expect(html).not.toContain('href="/docs/develop"');
+    expect(latestSiteTreeProps().categoryIgnore).toContain("develop");
   });
 
   it("localizes note-tray dates without rendering the updated label", () => {
@@ -439,7 +517,7 @@ describe("createHomePageView — SiteTreeNav island", () => {
       },
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(
+    render(
       <HomePageView
         {...makeProps({
           locale: "ja",
@@ -472,12 +550,8 @@ describe("createHomePageView — SiteTreeNav island", () => {
       />,
     );
 
-    expect(html).toContain("2026年8月19日");
-    const noteTrayRow = html.match(
-      /<a[^>]*data-note-tray-row[^>]*>[\s\S]*?<\/a>/,
-    )?.[0];
-    expect(noteTrayRow).toBeDefined();
-    expect(noteTrayRow).not.toContain("更新");
+    expect(latestSiteTreeProps().locale).toBe("ja");
+    expect(latestSiteTreeProps().updatedLabel).toBe("更新");
   });
 });
 
@@ -497,13 +571,12 @@ describe("createHomePageView — siteTreeNavSecondary row (#4236)", () => {
     const HomePageView = createHomePageView(makeFakeChromeContext({ settings, overrides }));
     const html = render(<HomePageView {...makeProps({ tree: SECONDARY_TREE, ...props })} />);
     const row = html.match(ROW_RE)?.[0];
-    const grid = row ? html.replace(row, "") : html;
     const rowHrefs = row ? [...row.matchAll(/href="([^"]*)"/g)].map((m) => m[1]) : [];
-    return { html, row, grid, rowHrefs };
+    return { html, row, rowHrefs, siteTree: latestSiteTreeProps() };
   }
 
   it("renders the listed slugs in the setting's order, with their hrefs and labels, after the grid island", () => {
-    const { html, row, rowHrefs } = renderHome({ siteTreeNavSecondary: ["codex", "changelog", "claude"] });
+    const { html, row, rowHrefs, siteTree } = renderHome({ siteTreeNavSecondary: ["codex", "changelog", "claude"] });
 
     expect(row).toBeDefined();
     expect(rowHrefs).toEqual(["/docs/codex", "/docs/changelog", "/docs/claude"]);
@@ -512,58 +585,63 @@ describe("createHomePageView — siteTreeNavSecondary row (#4236)", () => {
     expect(row).toContain("<span>Claude</span>");
     expect(row).toContain('aria-label="home.secondaryNav"');
     expect(row).toContain('class="mt-vsp-md flex flex-wrap items-center gap-x-hsp-xl gap-y-vsp-xs"');
-    const islandAt = html.indexOf('data-zfb-island="SiteTreeNav"');
+    const islandAt = html.indexOf("data-zd-test-home-island");
     const rowAt = html.indexOf("data-home-secondary-nav");
     expect(islandAt).toBeGreaterThan(-1);
     expect(rowAt).toBeGreaterThan(islandAt);
     expect(rowAt).toBeLessThan(html.indexOf("</section>", islandAt));
+    expect(siteTree.categoryIgnore).toEqual(["codex", "changelog", "claude"]);
   });
 
-  it("removes the moved slugs from the grid", () => {
-    const { grid } = renderHome({ siteTreeNavSecondary: ["changelog", "claude", "codex"] });
+  it("passes the moved slugs to SiteTreeNav's ignore list", () => {
+    const { siteTree } = renderHome({ siteTreeNavSecondary: ["changelog", "claude", "codex"] });
 
-    expect(grid).toContain('href="/docs/guides"');
-    expect(grid).not.toContain('href="/docs/changelog"');
-    expect(grid).not.toContain('href="/docs/claude"');
-    expect(grid).not.toContain('href="/docs/codex"');
+    expect(siteTree.categoryIgnore).toEqual(["changelog", "claude", "codex"]);
+    expect(siteTree.tree).toBe(SECONDARY_TREE);
   });
 
   it("renders no row when the setting is empty or omitted", () => {
     expect(renderHome({ siteTreeNavSecondary: [] }).html).not.toContain("data-home-secondary-nav");
     const { html } = renderHome({});
     expect(html).not.toContain("data-home-secondary-nav");
-    expect(html).toContain('href="/docs/changelog"');
+    expect(latestSiteTreeProps().tree).toBe(SECONDARY_TREE);
+    expect(latestSiteTreeProps().categoryIgnore).toEqual([]);
   });
 
   it("hides a slug listed in both siteTreeNavIgnore and siteTreeNavSecondary everywhere", () => {
-    const { html, rowHrefs } = renderHome({
+    const { html, rowHrefs, siteTree } = renderHome({
       siteTreeNavIgnore: ["claude"],
       siteTreeNavSecondary: ["claude", "codex"],
     });
 
-    expect(html).not.toContain('href="/docs/claude"');
     expect(rowHrefs).toEqual(["/docs/codex"]);
+    expect(siteTree.categoryIgnore).toEqual(["claude", "codex"]);
   });
 
   it("skips slugs absent from the tree", () => {
-    expect(renderHome({ siteTreeNavSecondary: ["missing", "codex"] }).rowHrefs).toEqual(["/docs/codex"]);
+    const withMissing = renderHome({ siteTreeNavSecondary: ["missing", "codex"] });
+    expect(withMissing.rowHrefs).toEqual(["/docs/codex"]);
+    expect(withMissing.siteTree.categoryIgnore).toEqual(["codex"]);
     expect(renderHome({ siteTreeNavSecondary: ["missing"] }).row).toBeUndefined();
   });
 
   it("renders a duplicated slug once", () => {
-    expect(renderHome({ siteTreeNavSecondary: ["codex", "codex"] }).rowHrefs).toEqual(["/docs/codex"]);
+    const duplicate = renderHome({ siteTreeNavSecondary: ["codex", "codex"] });
+    expect(duplicate.rowHrefs).toEqual(["/docs/codex"]);
+    expect(duplicate.siteTree.categoryIgnore).toEqual(["codex"]);
   });
 
   it("leaves a category without a page (no href) in the grid and warns", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const { grid, row } = renderHome(
+      const { row, siteTree } = renderHome(
         { siteTreeNavSecondary: ["notes"] },
         { tree: [...SECONDARY_TREE, category("notes", "Notes")] },
       );
 
       expect(row).toBeUndefined();
-      expect(grid).toContain("Notes");
+      expect(siteTree.tree).toContainEqual(expect.objectContaining({ slug: "notes", label: "Notes" }));
+      expect(siteTree.categoryIgnore).not.toContain("notes");
       expect(warn).toHaveBeenCalledWith(
         '[zudo-doc] siteTreeNavSecondary: category "notes" has no page (href) — left in the grid',
       );
@@ -588,14 +666,14 @@ describe("createHomePageView — siteTreeNavSecondary row (#4236)", () => {
   });
 
   it("uses the tree's base-prefixed href as-is under a non-root base (no double prefix)", () => {
-    const { html, grid, rowHrefs } = renderHome(
+    const { html, rowHrefs, siteTree } = renderHome(
       { base: "/base", siteTreeNavSecondary: ["codex"] },
       { tree: [category("guides", "Guides", "/base/docs/guides"), category("codex", "Codex", "/base/docs/codex")] },
       { withBase: (p: string) => `/base${p}` },
     );
 
     expect(rowHrefs).toEqual(["/base/docs/codex"]);
-    expect(grid).toContain('href="/base/docs/guides"');
+    expect(siteTree.tree).toContainEqual(expect.objectContaining({ slug: "guides", href: "/base/docs/guides" }));
     expect(html).not.toContain("/base/base/");
   });
 });
@@ -707,7 +785,7 @@ describe("createHomePageView — homepage introduction", () => {
     expect((html.match(/<h2\b/g) ?? []).length).toBe(2);
     expect(html).toContain('class="zd-home-inner flex flex-col');
     expect(html).toContain('<div class="zd-home-inner"><div class="zd-content zd-compact-prose"');
-    expect(html).toContain('<section class="zd-home-sitemap"><h2 class="zd-home-heading text-title font-bold leading-tight mb-vsp-md">');
+    expect(html).toContain('<section data-zd-home-sitemap="true"><h2 class="zd-home-heading text-title font-bold leading-tight mb-vsp-md">');
     // #4194: the compact intro h2 carries the same class list as the sitemap heading.
     expect(html).toContain('<h2 id="intro" class="zd-home-heading text-title font-bold leading-tight">Introduction</h2>');
   });
@@ -754,15 +832,15 @@ describe("createHomePageView — docTags gating", () => {
     const HomePageView = createHomePageView(ctx);
     const html = render(<HomePageView {...makeProps({ tagCount: 1, tags: TAG_ITEMS() })} />);
 
-    expect(html).toMatch(/<hr [^>]*data-home-rule="tags"[^>]*\/>/);
+    expect(html).toMatch(/<hr [^>]*data-home-rule="tags"[^>]*>/);
     expect(html).toMatch(/<hr [^>]*class="zd-home-rule"[^>]*data-home-rule="tags"|<hr [^>]*data-home-rule="tags"[^>]*class="zd-home-rule"/);
     expect((html.match(/data-home-rule=/g) ?? []).length).toBe(2);
-    const sitemapAt = html.indexOf('class="zd-home-sitemap"');
+    const sitemapAt = html.indexOf('data-zd-home-sitemap');
     const tagsRuleAt = html.indexOf('data-home-rule="tags"');
-    const tagsSectionAt = html.indexOf('<section class="zd-home-tags">');
+    const tagsSectionAt = html.indexOf('<section data-zd-home-tags="true">');
     expect(sitemapAt).toBeLessThan(tagsRuleAt);
     expect(tagsRuleAt).toBeLessThan(tagsSectionAt);
-    expect(html).toContain('<section class="zd-home-tags"><h2 class="zd-home-heading text-title font-bold leading-tight mb-vsp-md">doc.tags</h2>');
+    expect(html).toContain('<section data-zd-home-tags="true"><h2 class="zd-home-heading text-title font-bold leading-tight mb-vsp-md">doc.tags</h2>');
     expect(html).not.toContain("mt-vsp-xl");
   });
 

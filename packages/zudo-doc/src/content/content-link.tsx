@@ -1,33 +1,26 @@
 /** @jsxRuntime automatic */
-/** @jsxImportSource preact */
-
-import type { JSX, VNode } from "preact";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { SmartBreak as SmartBreakBase } from "../smart-break/index.js";
 import { decodeAuthoredHref, assetViewerHref } from "../asset-path/index.js";
 import type { AssetManifest } from "../route-context-payload/types.js";
 import { AssetFileIcon, formatAssetBytes } from "../asset-components/index.js";
 
-// SmartBreak returns VNode; cast to align with JSX.IntrinsicElements["a"].children
-// under compat mode. Runtime is fine since the preact/compat alias is in effect.
-const SmartBreak = SmartBreakBase as unknown as (props: {
-  children?: JSX.IntrinsicElements["a"]["children"];
-}) => VNode;
+const SmartBreak = SmartBreakBase;
 
 type Props = JSX.IntrinsicElements["a"];
 
-export function ContentLink({ href, className, children, ...rest }: Props) {
+export function ContentLink({ href, class: klass, children, ...rest }: Props) {
   // Block links and hash-links (heading anchors) should render without content link styling
-  // (className may be a Preact SignalLike under JSX.IntrinsicElements["a"]; only split real strings)
-  const classes = typeof className === "string" ? className.split(" ") : [];
+  const classes = typeof klass === "string" ? klass.split(" ") : [];
   if (classes.includes("block") || classes.includes("hash-link")) {
     return (
-      <a href={href} className={className} {...rest}>
+      <a href={href} class={klass} {...rest}>
         {children}
       </a>
     );
   }
 
-  // Astro 6 wraps pure-text MDX children in a `StaticHtml` Preact component
+  // Legacy MDX may wrap pure-text children in a `StaticHtml` component
   // whose text lives in `props.value`, not as a direct string child. Unwrap
   // when possible so path-like text gets smart-break treatment.
   const textFromChildren = extractText(children);
@@ -41,7 +34,7 @@ export function ContentLink({ href, className, children, ...rest }: Props) {
   return (
     <a
       href={href}
-      className={`text-accent underline hover:text-accent-hover${className ? ` ${className}` : ""}`}
+      class={`text-accent underline hover:text-accent-hover${klass ? ` ${klass}` : ""}`}
       {...rest}
     >
       {content}
@@ -73,8 +66,8 @@ export function createContentLink({
   isDefaultLocaleOnlyPath,
 }: CreateContentLinkOptions) {
   return function ManifestAwareContentLink(props: Props) {
-    const { href, className, children } = props;
-    const classes = typeof className === "string" ? className.split(" ") : [];
+    const { href, class: klass, children } = props;
+    const classes = typeof klass === "string" ? klass.split(" ") : [];
 
     // Preserve the established early-return variants before attempting any
     // path decoding. Heading hashes and block cards are not inline asset links.
@@ -107,10 +100,10 @@ export function createContentLink({
           fragment: decoded.fragment,
         })}
       >
-        <span className="inline-flex items-baseline gap-x-hsp-xs font-mono">
-          <AssetFileIcon className="h-icon-sm w-icon-sm shrink-0" />
+        <span class="inline-flex items-baseline gap-x-hsp-xs font-mono">
+          <AssetFileIcon class="h-icon-sm w-icon-sm shrink-0" />
           <span>{children}</span>
-          <span className="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
+          <span class="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
         </span>
       </ContentLink>
     );
@@ -121,7 +114,7 @@ function extractText(children: unknown): string | null {
   if (typeof children === "string") return children;
   if (typeof children === "number") return String(children);
   // Only accept a single StaticHtml-like VNode (Astro's wrapper for pure-text
-  // MDX children). Arrays or VNodes with inline markup indicate mixed content
+  // MDX children). Arrays or descriptions with inline markup indicate mixed content
   // that must not be flattened through SmartBreak.
   if (children && typeof children === "object" && !Array.isArray(children)) {
     const v = children as { props?: { value?: unknown } };

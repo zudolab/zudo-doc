@@ -1,0 +1,190 @@
+{
+  "purpose": "Exploratory same-document sidebar/ThemeToggle identity control; the probe writes DOM tokens before SPA navigation and records the result before its exploratory assertions.",
+  "baseline": {
+    "commit": "337b9f110793dccb4759bddd5273eab38cd9d2f0",
+    "zfbVersion": "2.22.1",
+    "label": "reconstructed pinned baseline"
+  },
+  "current": {
+    "headAtCapture": "c374657e0eeee8a157a6d41f8b5dff937cefacdc",
+    "productSourceBase": "2926b1da1ee1b1f3d402fbe02543a1d87ba0d9fc",
+    "zfbVersion": "4.2.1",
+    "projectLabel": "v4-94746b6",
+    "fixtureOnlyDifferenceFromProductBase": "e2e/fixtures/smoke/src/content/docs/guides/migration-parity-test.mdx",
+    "captureGuard": "run.sh checked current packages/src/pages/e2e/fixtures source tree unchanged from 94746b6 at c374 HEAD"
+  },
+  "probe": {
+    "file": "sidebar-input-token-probe.spec.ts",
+    "sha256": "1b80d58ff835b2c410eca48f22588ea2d529d2ce5bab24cfea304f8fc7c524b9"
+  },
+  "captures": {
+    "initial": {
+      "sourceLog": "run-initial.log",
+      "sourceLogSha256": "f48a8729f7c52f9bda51ab862ec4920d359f001a81fe928af5e1e02bdebd2279",
+      "readiness": "not recorded; probe did not wait for pending markers",
+      "testStatus": {
+        "v2-337b9f1": "fail",
+        "v4-94746b6": "pass"
+      },
+      "versions": {
+        "v2-337b9f1": {
+          "zfbVersion": "2.22.1",
+          "paths": {
+            "initial": "/docs/guides/page-1/",
+            "target": "/docs/guides/code-blocks-test"
+          },
+          "initialFilterValue": "not captured by this run",
+          "themeHydrationAtTokenWrite": "not recorded; probe did not wait for pending markers",
+          "documentRequests": {
+            "initial": 1,
+            "afterSpa": 1
+          },
+          "sameDocument": true,
+          "sameTimeOrigin": {
+            "before": 1791534859491.4,
+            "after": 1791534859491.4
+          },
+          "afterSpa": {
+            "asideTokenPreserved": true,
+            "sidebarTreeRootTokenPreserved": true,
+            "filterInputTokenPreserved": false,
+            "filterValue": "",
+            "activeRouteAriaCurrent": "page",
+            "viewTransition": {
+              "calls": 1,
+              "status": "fulfilled"
+            }
+          },
+          "sidebarPropsChanged": [
+            "currentSlug"
+          ],
+          "themePropsUnchanged": true,
+          "themeRootTokenPreserved": true,
+          "themeButtonTokenPreserved": false
+        },
+        "v4-94746b6": {
+          "zfbVersion": "4.2.1",
+          "paths": {
+            "initial": "/docs/guides/page-1/",
+            "target": "/docs/guides/code-blocks-test"
+          },
+          "initialFilterValue": "not captured by this run",
+          "themeHydrationAtTokenWrite": "not recorded; probe did not wait for pending markers",
+          "documentRequests": {
+            "initial": 1,
+            "afterSpa": 1
+          },
+          "sameDocument": true,
+          "sameTimeOrigin": {
+            "before": 1791534861780.7,
+            "after": 1791534861780.7
+          },
+          "afterSpa": {
+            "asideTokenPreserved": true,
+            "sidebarTreeRootTokenPreserved": true,
+            "filterInputTokenPreserved": false,
+            "filterValue": "",
+            "activeRouteAriaCurrent": "page",
+            "viewTransition": {
+              "calls": 1,
+              "status": "fulfilled"
+            }
+          },
+          "sidebarPropsChanged": [
+            "currentSlug"
+          ],
+          "themePropsUnchanged": true,
+          "themeRootTokenPreserved": true,
+          "themeButtonTokenPreserved": true
+        }
+      }
+    },
+    "hydrated": {
+      "sourceLog": "run-hydrated.log",
+      "sourceLogSha256": "54ea0bf0266778a710c4b0562849cfd6183fd895fb5bb0d7280081308573cadf",
+      "readiness": "ThemeToggle was hydrated before token write: data-zd-pending absent and aria-disabled absent; sidebar filter value was Code Blocks Test",
+      "testStatus": {
+        "v2-337b9f1": "fail",
+        "v4-94746b6": "pass"
+      },
+      "versions": {
+        "v2-337b9f1": {
+          "zfbVersion": "2.22.1",
+          "paths": {
+            "initial": "/docs/guides/page-1/",
+            "target": "/docs/guides/code-blocks-test"
+          },
+          "initialFilterValue": "Code Blocks Test",
+          "themeHydrationAtTokenWrite": "ThemeToggle was hydrated before token write: data-zd-pending absent and aria-disabled absent; sidebar filter value was Code Blocks Test",
+          "documentRequests": {
+            "initial": 1,
+            "afterSpa": 1
+          },
+          "sameDocument": true,
+          "sameTimeOrigin": {
+            "before": 1791535226948.5,
+            "after": 1791535226948.5
+          },
+          "afterSpa": {
+            "asideTokenPreserved": true,
+            "sidebarTreeRootTokenPreserved": true,
+            "filterInputTokenPreserved": false,
+            "filterValue": "",
+            "activeRouteAriaCurrent": "page",
+            "viewTransition": {
+              "calls": 1,
+              "status": "fulfilled"
+            }
+          },
+          "sidebarPropsChanged": [
+            "currentSlug"
+          ],
+          "themePropsUnchanged": true,
+          "themeRootTokenPreserved": true,
+          "themeButtonTokenPreserved": false
+        },
+        "v4-94746b6": {
+          "zfbVersion": "4.2.1",
+          "paths": {
+            "initial": "/docs/guides/page-1/",
+            "target": "/docs/guides/code-blocks-test"
+          },
+          "initialFilterValue": "Code Blocks Test",
+          "themeHydrationAtTokenWrite": "ThemeToggle was hydrated before token write: data-zd-pending absent and aria-disabled absent; sidebar filter value was Code Blocks Test",
+          "documentRequests": {
+            "initial": 1,
+            "afterSpa": 1
+          },
+          "sameDocument": true,
+          "sameTimeOrigin": {
+            "before": 1791535229657.2,
+            "after": 1791535229657.2
+          },
+          "afterSpa": {
+            "asideTokenPreserved": true,
+            "sidebarTreeRootTokenPreserved": true,
+            "filterInputTokenPreserved": false,
+            "filterValue": "",
+            "activeRouteAriaCurrent": "page",
+            "viewTransition": {
+              "calls": 1,
+              "status": "fulfilled"
+            }
+          },
+          "sidebarPropsChanged": [
+            "currentSlug"
+          ],
+          "themePropsUnchanged": true,
+          "themeRootTokenPreserved": true,
+          "themeButtonTokenPreserved": true
+        }
+      }
+    }
+  },
+  "interpretation": [
+    "Both versions kept the Document, aside, and SidebarTree root across one fulfilled same-document transition; each replaced the filter input and reset its value to empty.",
+    "The incoming SidebarTree top-level props changed only currentSlug; ThemeToggle props remained equal.",
+    "The hydrated rerun confirms the ThemeToggle button token persisted in v4 but not v2. This identity difference is recorded as an observation, not treated as a parity contract.",
+    "The exploratory test failed in v2 on its speculative identity-retention assertion; report lines were emitted before assertions. The permanent acceptance test asserts measured baseline reset behavior and post-navigation filter functionality."
+  ]
+}
