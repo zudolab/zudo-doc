@@ -1,4 +1,23 @@
-# Release readiness — published zfb 4.2.0
+# Release readiness — published zfb 4.3.0
+
+**Verdict: BLOCKED/PENDING. Do not merge PR4477, publish 6.0.0, or delete temporary resources until the closeout disposition task.**
+
+Updated 2026-10-10 for the published 4.3.0 family. Permanent evidence: `docs/findings/4430-zfb3-migration/2026-10-10-zfb-4.3.0-resume.md` and `2026-10-10-closeout-dependencies.md`. The 4.2.0 checkpoint below is preserved as history.
+
+- Published family: zfb/runtime/md-wasm/Cloudflare adapter all 4.3.0, exact pins and ^4.3.0 peer floor. Actual Linux native CLI 4.3.0, esbuild 0.25.12.
+- Former blockers resolved: #4059, #4060 and #4109 are closed; the strict published #4097 consumer passes 3/3 (hosted run 38030809260 at head `fd0764f`). PR Checks 38030812860 passed 28/28 (475 E2E); generator slow 24/24; package slow/packed 133/133; built bookmarks 30 targets / 12 routes.
+- A2: required gate and full slow gates pass. The historical byte diagnostic deliberately keeps its inequality (seven native build IDs plus the islands filename); assertions and normalizer are unchanged.
+- zdtp stays at 0.8.5 (upgrade handled elsewhere); no floor change, no global dedupe.
+
+### Remaining gates
+
+- Visual 06R: 47 aggregate `nav`/`sidebarTree` height differences need paired-pixel classification (accept intended additions or fix regressions).
+- Installed three-package browser acceptance (packed history-server, zudo-doc, create-zudo-doc; barebone and all-feature; outside the workspace).
+- macOS Japanese IME / manual smoke (Takazudo/zudo-front-builder#3330); unavailable on this host.
+- #4476 cleanup of `_temp-resource/4430-zfb3-migration/` after acceptance PASS.
+- Final-head gates: exact-head required checks, review, and #4501 deferred-verification rows.
+
+## History — published zfb 4.2.0 checkpoint (2026-10-08)
 
 **Verdict: BLOCKED. Do not merge PR4477, publish 6.0.0, or delete temporary resources.**
 

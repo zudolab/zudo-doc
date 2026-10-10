@@ -1,6 +1,24 @@
 # zudo-doc 6 / zfb 4 migration matrix
 
-## Active target — zfb 4.2.0 (2026-10-08)
+## Active target — zfb 4.3.0 (2026-10-10)
+
+All four published family packages are pinned to exactly **4.3.0** (zfb, runtime, md-wasm, Cloudflare adapter), with peers **^4.3.0**. npm `latest` and the native CLI (`zfb 4.3.0`, embedded esbuild 0.25.12) were rechecked on 2026-10-10. The resume record is [2026-10-10 zfb 4.3.0 resume](2026-10-10-zfb-4.3.0-resume.md); the exact dependency tuple (including the zdtp resolution per consumer) is in [closeout dependencies](2026-10-10-closeout-dependencies.md).
+
+**Release verdict: BLOCKED (pending the closeout gates).** [Readiness checklist](../../../_temp-resource/4430-zfb3-migration/release-readiness.md). Existing root PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) remains draft. Former upstream blockers are resolved: #4059, #4060 and #4109 are closed, and the strict published #4097 consumer passes 3/3 on the published 4.3.0 packages (hosted run [38030809260](https://github.com/zudolab/zudo-doc/actions/runs/38030809260), head `fd0764f`). The same head passed PR Checks [38030812860](https://github.com/zudolab/zudo-doc/actions/runs/38030812860) 28/28 (475 E2E), generator slow 24/24, package slow/packed 133/133 and built bookmarks (30 targets / 12 routes). The required A2 gate passes; the historical byte diagnostic deliberately keeps its inequality (seven native build IDs plus the islands filename), which is reviewed and not a product failure.
+
+Remaining gates (all still unverified, tracked under #4475 / #4476 / #4501):
+
+- Visual 06R: paired-pixel review of the 47 aggregate `nav`/`sidebarTree` height differences (measurements, not proven regressions).
+- Installed three-package acceptance: packed history-server, zudo-doc and create-zudo-doc, scaffolded outside the workspace (barebone and all-feature), with real browser hydration and interaction.
+- macOS Japanese IME and other manual/platform checks (Takazudo/zudo-front-builder#3330); cannot run on the Linux host.
+- #4476 cleanup of `_temp-resource/4430-zfb3-migration/` (only after full acceptance PASS), including relocating lasting fixtures.
+- Final-head gates: exact-head required checks, review and the #4501 deferred-verification rows.
+
+zdtp stays at 0.8.5 for this closeout; any upgrade is handled elsewhere.
+
+## History — zfb 4.2.0 lead (2026-10-08, superseded)
+
+The text below led this file before 4.3.0 was published. It is preserved as a historical record; #4059/#4060/#4077 are no longer open blockers.
 
 All four published family packages are pinned to **4.2.0**, peers **^4.2.0**. npm and the native binary are verified. [Current 4.2 integration findings](v4.2-integration.md) supersede the historical [4.1 round](v4.1-integration.md).
 
