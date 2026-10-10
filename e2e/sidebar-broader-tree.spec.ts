@@ -235,3 +235,56 @@ test("modified sidebar links open a native new tab without changing the selected
   }
   assertNoConsoleErrors();
 });
+
+const DEEP_PAGE = `/docs/guides/deep/${Array.from({ length: 11 }, (_, i) => `level-${String(i + 2).padStart(2, "0")}`).join("/")}/page`;
+
+/** Per `◎` control: whether its row's label text paints under it, and its box relative to the nav (#4507). */
+async function focusControlLayout(container: import("@playwright/test").Locator) {
+  return container.locator("nav").evaluate((nav) => {
+    const navRight = nav.getBoundingClientRect().right;
+    return [...nav.querySelectorAll<HTMLElement>("[data-sidebar-focus]")].map((focus) => {
+      const row = focus.parentElement!.querySelector<HTMLElement>(":scope > a, :scope > button[aria-expanded]")!;
+      const f = focus.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(row);
+      const overlaps = [...range.getClientRects()].some(
+        (r) => r.width > 0 && r.right > f.left + 0.5 && r.left < f.right - 0.5 && r.bottom > f.top && r.top < f.bottom,
+      );
+      return { label: focus.getAttribute("aria-label"), overlaps, width: f.width, height: f.height, right: f.right, navRight };
+    });
+  });
+}
+
+for (const { width, drawer } of [
+  { width: 1024, drawer: false },
+  { width: 1280, drawer: false },
+  { width: 390, drawer: true },
+]) {
+  test(`twelve-level tree keeps branch focus clear of category labels at ${width}px`, async ({ page, assertNoConsoleErrors }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto(DEEP_PAGE);
+    let container;
+    if (drawer) {
+      await openMobileDrawer(page);
+      container = page.locator("[data-zd-mobile-sidebar]");
+    } else {
+      await waitForSidebarHydration(page);
+      container = desktopSidebar(page);
+    }
+    await expect(container.getByRole("button", { name: "Show only this branch: Deep level 12 with a long wrapped editorial category label", exact: true })).toBeVisible();
+    const controls = await focusControlLayout(container);
+    expect(controls.length).toBeGreaterThanOrEqual(12);
+    for (const control of controls) {
+      expect(control.overlaps, `${control.label} overlaps its label`).toBe(false);
+      expect(control.width, `${control.label} width`).toBeGreaterThanOrEqual(24);
+      expect(control.right, `${control.label} stays inside the nav`).toBeLessThanOrEqual(control.navRight + 0.5);
+    }
+    const deepest = container.getByRole("button", { name: "Show only this branch: Deep level 12 with a long wrapped editorial category label", exact: true });
+    const url = page.url();
+    await deepest.focus();
+    await page.keyboard.press("Enter");
+    await expect(container.getByRole("button", { name: "Show only this branch: Deep level 11 with a long wrapped editorial category label", exact: true })).toHaveCount(0);
+    expect(page.url()).toBe(url);
+    assertNoConsoleErrors();
+  });
+}
