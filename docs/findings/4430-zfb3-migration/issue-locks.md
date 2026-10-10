@@ -12,7 +12,7 @@ In root `package.json`, `packages/zudo-doc/package.json`, `pnpm-lock.yaml` and s
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the round-1 exact `3.0.0`/`^3.0.0` pin instructions. Pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm` and `@takazudo/zfb-adapter-cloudflare` exactly to `3.1.0` wherever owned (root, package dev dependencies, scaffold and fixture pins); peer floors are `^3.1.0`. npm latest was rechecked as 3.1.0 on 2026-10-01. Recheck before execution; report a newer 3.x and revalidate affected contracts before aligning every pin/peer, never silently use mixed versions. Pin parity, published/freshness checks and actual binary version remain required. Keep the existing owned JSX/config wind passthrough and zdtp-only Preact work. No pnpm patch is selected. Cutover stays behind verified #4435 and this #4480 lock.
 
@@ -34,7 +34,7 @@ In `packages/zudo-doc/package.json` remove `./safelist.css` AND `./theme-no-rese
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the round-1 physical CSS imports and #3364 workaround comments: use public `@takazudo/zudo-doc/<name>.css` exports and `@takazudo/zdtp/styles.css`; package-internal relative imports remain relative. #4479 Z06/D01 prove the public resolution from a packed consumer, including a sibling relative asset for the CSS producer. Cover public imports/relative assets in the integration packed build. Do not treat standalone `zfb css` companion-asset behavior as proven by `zfb build`.
 
@@ -50,7 +50,7 @@ Implement the exact existing installNestedIslandPropsRefresh/ensureNestedIslandP
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the round-1 unconditional `data-zfb-island-remount`, post-teardown metadata copier and accepted loss of unchanged local state. #4479 Z04 proves unchanged nested roots keep a live handle and signal through packed swap. Use native 3.1.0 reconciliation; unchanged effective identity/exact props keep DOM/handle/state, changed props or identity recreate with render. Keep the existing install/ensure/dispose helper signatures and eager document singleton, now limited to the existing zudo-doc host preserve-props policy and safe incoming-structure preparation. This topic remains necessary.
 
@@ -64,7 +64,7 @@ In desktop-sidebar-toggle-island/index.tsx and desktop-toc-toggle-island/index.t
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void use of #4442 as an unconditional remount controller. Keep ClientRouterBootstrap and `@takazudo/zfb-runtime/client-router`; its eager singleton installs the simplified round-2 incoming-document/host-policy adapter. Storage/prepaint/activation, removal of inner-button persist, ordinary helper modules and empty Sidebar behavior remain required because #3363/#3384 are not fixed. Tests distinguish native preservation of a root retained by an ancestor from fresh mount of a replaced root; no new SDK persist prop or reset of unchanged state.
 
@@ -126,7 +126,7 @@ In `content/*.tsx`, accept class and owned JSX.IntrinsicElements types; content-
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the earlier prohibition on forwarding `start` and the round-1 rawHtml `<ol>` serializer/display-contents wrapper. `ContentOl` uses native `<ol start={start}>` and normal children. #4479 Z02 proves declarations, actual MDX SSR and hydration at 3.1.0. Test start-at-3, resumed/default/task lists, class/attribute forwarding and child composition without extra wrappers or CSS counters.
 
@@ -138,7 +138,7 @@ In `head/doc-head.tsx`, `head/og-tags.tsx`, `head-with-defaults/index.tsx`, `doc
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void applying #4442's round-1 post-teardown metadata rewrite/unconditional remount to aside#desktop-sidebar. Use its round-2 native lifecycle and incoming-document policy; retain unchanged SidebarTree handle/state, refresh changed props safely, and preserve actual nonzero scroll. Test callback ordering and request the browser proof. Keep existing ancestor persistence and avoid fabricated root wrappers.
 
@@ -150,7 +150,7 @@ In `header/header.tsx`, footer wrappers and header-with-defaults, retain existin
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void inherited #4442 unconditional remount/post-teardown metadata semantics. Existing header/footer persist keys use native unchanged-root preservation and the round-2 host preserve-props/incoming-structure policy. Consecutive SPA tests cover unchanged live state and changed nav props; callback ordering, focus and scroll remain browser gates. Keep strict prop construction as permanent practice and the unresolved #3376 contract check. Preserve search/nav script drift and trust checks; the still-open #3359 attr gap is not resolved by #3362.
 
@@ -168,7 +168,7 @@ In `sidebar-toggle-island/index.tsx`, install/ensure #4442 singleton idempotentl
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the round-1 accepted #3362 remount/local-state reset limitation. Use #4442's simplified singleton idempotently, preserving body-overflow cleanup, Escape IME/defaultPrevented guards and focus return. Mutated unchanged nested state survives same-document navigation through native preservation; changed effective page props refresh through native recreation. Test cross-section tree refresh and same-locale expanded state, and hand nonzero-scroll/focus/browser proof to #4468/#4475. No nested Island wrappers or inner-button persistence.
 
@@ -178,7 +178,7 @@ In `packages/create-zudo-doc/templates/base/tsconfig.json`, remove Preact aliase
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void temporary physical package/zdtp CSS imports, #3364 comments and the claim that public imports await a future fix. Generated global.css uses public `@takazudo/zudo-doc/<name>.css` exports; the DesignTokenPanel feature emits `@takazudo/zdtp/styles.css`. #4479 Z06/D01 proves packed-consumer resolution on 3.1.0. Generated zfb family pins follow #4436's exact 3.1.0 lock and peer compatibility floor; keep zdtp's Preact peer because its packaging is still partial. Preserve owned JSX, manifest and removed safelist/theme-no-reset changes. Test template/emitter strings and request the packed generated-consumer build with relative CSS assets plus hydration/interaction from #4475.
 
@@ -200,7 +200,7 @@ In the integration-owned `package.json`, `pnpm-lock.yaml` and owned dependency/g
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the old 3.0.0 target and seven-blocker removal list. Start from exact family 3.1.0 / peers ^3.1.0, recheck newest published 3.x and actual binary, and align/revalidate all pins if advanced. #4481 remains a dependency. Already native: #3360 `<ol start>`, #3364 public CSS exports and #3362 unchanged nested-root preservation. Fail regressions or obsolete opaque-list/physical-import/blanket-remount survivors; validate changed-props/structure cases too. Recheck native #3385 LF behavior.
 
@@ -214,7 +214,7 @@ Use `docs/findings/4430-zfb3-migration/README.md` route-family table and every t
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void parity expectations that tolerate a list wrapper, physical CSS imports or lost local state from unconditional persistence remount. Verify native start-at-N/resumed MDX lists, public CSS exports with relative assets, and a mutated unchanged nested island retaining node/handle/state across real same-document navigation (one activation/no cleanup). Also verify changed props/identity, host preserve policy, structural replacement, skip-SSR timing, focus and nonzero sidebar scroll. #4479 Z04 used happy-dom and does not satisfy this browser gate. Confirm native `<pre>` leading LF in a real HTML parser and code-copy output (Z25).
 
@@ -226,7 +226,7 @@ Apply only measured parity findings in their owning files, recording each result
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the round-1 plan to wait for list/persistence/CSS-import fixes while preserving their shims. Fix measured native 3.1.0 regressions without reinstating opaque lists, physical CSS imports or blanket remounts; if native behavior requires a new workaround, file it and record a release blocker. Remaining shim work is #3359/#3361/#3375, plus #3376 published-contract verification; retain permanent strict props and explicit units. Correct native LF/list/CSS/persistence parity findings with targeted reruns and the original ownership rules. Keep intentional-fix #4482/#4483 after this parity round.
 
@@ -236,7 +236,7 @@ In engine-bound export/CSS/compatibility gate files listed above, record removed
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the conditional "add audit only if it can gate" and round-1 output-parsing-only rule. Add the required native error gate `pnpm exec zfb wind audit --project-root . --fail-on error` to b4push/CI with manifest/parity wiring in the owned files. #4479 Z11 proves invalid config/error diagnostics exit 1 and clean config exits 0; add negative and clean command controls. Unflagged audit still exits 0 for errors; warning policy remains separate. Retain authored/emitted candidate coverage for #3366/#3367/#3371 and diagnostic visibility despite #3370. Gate/reference docs target 3.1.0 and ^3.1.0; required native list, CSS exports, persistence and LF regressions remain covered. Other export/API changes and measured A2 rebaseline scope are unchanged; remaining release blockers use the round-2 README list.
 
@@ -246,7 +246,7 @@ In the owned EN/JA reference pages, document the normative wind choices in conve
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the round-1 implication that public CSS exports still need a future resolver fix. Current EN/JA reference examples use public exports on 3.1.0, native `<ol start>` and native leading-LF handling. Cite the normative research documents at v3.1.0. Teach the flagged audit error gate with its coverage limits; retained-parent lifecycle preserves unchanged nested state and recreates changed effective identity/props. Keep table restrictions, strict props/units, owned-v1 patch and all other wind/runtime choices. Remaining head/iframe/style adaptations are interim release blockers, never recommended consumer compatibility APIs.
 
@@ -260,7 +260,7 @@ The EN/JA 5.x→6.0 guide and `packages/zudo-doc/README.md` must list: remove sa
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the inherited 3.0.0 compatibility target and any implication that physical CSS imports are the 6.0 migration path. The no-shim consumer guide targets at least 3.1.0 with ^3.1.0 peers (or the later aligned release pin recorded by #4467/#4475) and public CSS exports, including zdtp/styles.css. Explain native ordered-list and unchanged-root persistence behavior; strict prop construction and explicit CSS units remain permanent. Preserve the complete existing 5.x→6.0 API list. Do not claim release readiness while the README remaining-shim/contract gates or browser gates are unresolved.
 
@@ -270,7 +270,7 @@ In owned CLAUDE.md/README/API/DEPENDENCIES/TESTING/skill-source documentation, s
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void stale round-1 current-target/shim guidance in the docs being updated. Current instructions use exact 3.1.0 family / ^3.1.0 peers (or the later verified aligned pin), v3.1.0 normative references, public CSS exports, native ol/LF and unchanged nested-state preservation. Document `zfb wind audit --project-root . --fail-on error` plus authored/emitted coverage limits. Preserve historical lesson evidence and distinguish it from this current lock. Permanent strict props/units remain; interim #3359/#3361/#3375 adapters and #3376 contract verification must match the remaining release list.
 
@@ -280,7 +280,7 @@ Release readiness is BLOCKED while any #3359/#3360/#3361/#3362/#3364 source shim
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the round-1 seven-shim release list. The current remaining temporary shim families are #3359 (head/standard-attr adapters), #3361 (imperative iframe host) and #3375 (issue-specific style fallbacks); #3376 is an additional unresolved published-contract check. Use `README.md#remaining-shims-and-contract-gates` for exact owners and proof requirements. Strict optional-key construction, explicit CSS units and the locked public string-style type are permanent practices, not automatic shim survivors. #3375/#3376 clear only on verified published fix/explicit published contract resolution and affected runtime proof.
 
@@ -294,7 +294,7 @@ Finalize every `docs/findings/4430-zfb3-migration/*.md` pending row and expand R
 
 ### Locked spec (round 2, zfb 3.1.0)
 
-Decision: #4480, based on #4479 packed-family evidence in `_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
+Decision: #4480, based on #4479 packed-family evidence in `docs/findings/4430-zfb3-migration/round2-3.1.0.md` (merge `64b6f3bf30fc37a33e9834e18274565955731403`). The active target is exact zfb family `3.1.0`, peer floor `^3.1.0`; normative research specs are at `v3.1.0` (`baac44eac12d300d68fd8742c585567ea24e6aa9`). Read the re-locked `conventions.md` and permanent matrix. This section overrides only the round-1 instructions explicitly named below; ownership and all other acceptance checks remain binding.
 
 Void the stale seven-blocker summary. Finalize the matrix and upstream #3328 report against the verified 3.1.0-or-later aligned family/binary, explicitly distinguishing native #3360/#3362/#3364/#3385 proofs from remaining #3359/#3361/#3375 shims and #3376 contract resolution. Include #3366 partial status, audit --fail-on error proof and all actual browser/packed-consumer results without promoting runtime-only probes to visual passes. Preserve permanent strict props/units.
 

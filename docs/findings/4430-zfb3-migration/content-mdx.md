@@ -1,6 +1,6 @@
 # Content typography and MDX component port (#4457)
 
-Status: **ported in the #4457 topic branch** against packed zfb 3.1.0. This is an interim leaf-port verdict; integrated browser, build, and visual parity belong to #4467/#4468/#4475. [Index and column meanings](README.md). Binding decisions: [conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md), [round-2 evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md).
+Status: **ported in the #4457 topic branch** against packed zfb 3.1.0. This is an interim leaf-port verdict; integrated browser, build, and visual parity belong to #4467/#4468/#4475. [Index and column meanings](README.md). Binding decisions: [conventions](conventions.md), [round-2 evidence](round2-3.1.0.md).
 
 ## v2 → v3 gap table
 

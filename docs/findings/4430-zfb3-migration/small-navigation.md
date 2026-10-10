@@ -1,8 +1,8 @@
 # Port the small navigation islands: desktop toggles, MobileToc, Sidebar and ClientRouterBootstrap
 
-Owner: [#4443](https://github.com/zudolab/zudo-doc/issues/4443). Status: **implemented and source-verified**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4443](https://github.com/zudolab/zudo-doc/issues/4443). Status: **implemented and source-verified**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
-Active target: zfb 3.1.0, locked by [#4480](https://github.com/zudolab/zudo-doc/issues/4480) from [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Read the round-two convention and the issue lock; they supersede named round-one behavior only.
+Active target: zfb 3.1.0, locked by [#4480](https://github.com/zudolab/zudo-doc/issues/4480) from [#4479 packed evidence](round2-3.1.0.md). Read the round-two convention and the issue lock; they supersede named round-one behavior only.
 
 ## Files and symbol mapping
 

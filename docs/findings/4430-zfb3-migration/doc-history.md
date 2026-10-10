@@ -1,6 +1,6 @@
 # DocHistory and DocHistoryArea migration (#4452)
 
-Status: ported against zfb 3.1.0. Binding rules: [conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md); spec anchors are indexed in the [matrix README](README.md).
+Status: ported against zfb 3.1.0. Binding rules: [conventions](conventions.md); spec anchors are indexed in the [matrix README](README.md).
 
 | Owned symbol/site | v2 construct → v3 form | Status and evidence |
 | --- | --- | --- |

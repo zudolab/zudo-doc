@@ -1,6 +1,6 @@
 # Migrate the HtmlPreview unit tests to the zudo-react harness
 
-Owner: [#4454](https://github.com/zudolab/zudo-doc/issues/4454). Status: **complete**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4454](https://github.com/zudolab/zudo-doc/issues/4454). Status: **complete**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Base: #4453 at `e5c7f4b0b7fc9d5b9627c3a5408ae3762e533a30`; target zfb 3.1.0. This topic changes tests only; the implementation and existing `html-preview.md` source matrix remain owned by #4453.
 

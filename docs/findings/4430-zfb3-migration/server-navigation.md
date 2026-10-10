@@ -1,6 +1,6 @@
 # Port the server-side navigation layer (nav-indexing, category navs, site-tree-nav, note-tray-index, tag and versions pages) and rewrite the VNode-walker tests
 
-Owner: [#4460](https://github.com/zudolab/zudo-doc/issues/4460). Status: **port complete; local checks pass; visual parity deferred**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4460](https://github.com/zudolab/zudo-doc/issues/4460). Status: **port complete; local checks pass; visual parity deferred**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 

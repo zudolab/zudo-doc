@@ -1,6 +1,6 @@
 # Port the Toc island and useActiveHeading to zudo-react
 
-Owner: [#4444](https://github.com/zudolab/zudo-doc/issues/4444). Status: **implemented; focused source-resolution checks pass**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4444](https://github.com/zudolab/zudo-doc/issues/4444). Status: **implemented; focused source-resolution checks pass**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Baseline: zudo-doc 5.28.2 at `337b9f110`, zfb 2.22.1. Target: zfb 3.1.0. This topic changed only its assigned TOC files and this evidence file.
 

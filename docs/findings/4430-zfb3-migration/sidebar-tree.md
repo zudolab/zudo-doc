@@ -1,6 +1,6 @@
 # SidebarTree v3 port
 
-Owner: [#4447](https://github.com/zudolab/zudo-doc/issues/4447). Status: **ported and source checked**. Binding rules: [conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md), especially runtime/lifecycle, keyed structure, raw HTML, and persisted chrome. The implementation is in `packages/zudo-doc/src/sidebar-tree-island/`.
+Owner: [#4447](https://github.com/zudolab/zudo-doc/issues/4447). Status: **ported and source checked**. Binding rules: [conventions](conventions.md), especially runtime/lifecycle, keyed structure, raw HTML, and persisted chrome. The implementation is in `packages/zudo-doc/src/sidebar-tree-island/`.
 
 ## Construct and symbol gap table
 

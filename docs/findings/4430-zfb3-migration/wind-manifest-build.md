@@ -1,12 +1,12 @@
 # CSS cutover B: wind candidate manifest, compiled.css pipeline, showcase global.css, and the lockstep safelist-gate rename
 
-Owner: [#4440](https://github.com/zudolab/zudo-doc/issues/4440). Status: **pipeline and authored-class gate passing after leaf integrations; browser parity pending**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4440](https://github.com/zudolab/zudo-doc/issues/4440). Status: **pipeline and authored-class gate passing after leaf integrations; browser parity pending**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
 ## Round-2 locked spec (3.1.0)
 
-Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
 
 Void the round-1 physical CSS imports and #3364 workaround comments: use public `@takazudo/zudo-doc/<name>.css` exports and `@takazudo/zdtp/styles.css`; package-internal relative imports remain relative. #4479 Z06/D01 prove the public resolution from a packed consumer, including a sibling relative asset for the CSS producer. Cover public imports/relative assets in the integration packed build. Do not treat standalone `zfb css` companion-asset behavior as proven by `zfb build`.
 

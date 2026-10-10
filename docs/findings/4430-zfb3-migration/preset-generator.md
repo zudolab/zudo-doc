@@ -1,6 +1,6 @@
 # PresetGenerator host island — #4455
 
-Status: **ported and locally verified** against zfb 3.1.0. Binding decision: [#4434/#4480 conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md); implementation issue: [#4455](https://github.com/zudolab/zudo-doc/issues/4455).
+Status: **ported and locally verified** against zfb 3.1.0. Binding decision: [#4434/#4480 conventions](conventions.md); implementation issue: [#4455](https://github.com/zudolab/zudo-doc/issues/4455).
 
 | Owned file / v2 construct | v3 form and status | Evidence |
 | --- | --- | --- |

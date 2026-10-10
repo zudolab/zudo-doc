@@ -5,8 +5,8 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const archive = join(repository, '_temp-resource/4430-zfb3-migration/parity/4.2.1/runtime-controls/persistence-browser/native-published-repro');
-const consumerPins = join(repository, '_temp-resource/4430-zfb3-migration/parity/4.3.0/native-published-repro');
+const archive = join(repository, 'scripts/migration-4097/fixtures/native-published-repro');
+const consumerPins = join(repository, 'scripts/migration-4097/fixtures/consumer-pins');
 const [mode, destination] = process.argv.slice(2);
 assert.ok(destination, 'consumer directory required');
 const root = resolve(destination);
