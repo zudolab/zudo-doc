@@ -6,7 +6,7 @@ import { getBasePrefix } from "./plugin-utils.js";
 const plugin: ZfbPlugin = {
   name: "agent-export",
   async postBuild(ctx: ZfbBuildHookContext) {
-    emitAgentCorpus({ ...(ctx.options as unknown as AgentExportOptions), outDir: ctx.outDir });
+    emitAgentCorpus({ ...(ctx.options as unknown as AgentExportOptions), outDir: ctx.outDir, copyPublicWithBase: ctx.config.copyPublicWithBase });
   },
   devMiddleware(ctx: ZfbDevMiddlewareContext) {
     const options = ctx.options as unknown as AgentExportOptions;

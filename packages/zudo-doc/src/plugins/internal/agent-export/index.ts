@@ -112,9 +112,11 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
 }
 
 /** Replace only the owned agent/v1 subtree, including on exclude/delete rebuilds. */
-export function emitAgentCorpus(options: AgentExportOptions & { outDir: string }): string[] {
+export function emitAgentCorpus(options: AgentExportOptions & { outDir: string; copyPublicWithBase?: boolean }): string[] {
   const corpus = projectAgentCorpus(options);
-  const root = join(options.outDir, prefix(options.base).slice(1), "agent", "v1");
+  // zfb `copyPublicWithBase: false` means the deploy relocates the whole output under `base`, so nesting here would double the base.
+  const segment = options.copyPublicWithBase === false ? "" : prefix(options.base).slice(1);
+  const root = join(options.outDir, segment, "agent", "v1");
   rmSync(root, { recursive: true, force: true });
   mkdirSync(join(root, "items"), { recursive: true });
   mkdirSync(join(root, "pages"), { recursive: true });

@@ -102,6 +102,46 @@ describe("agent export", () => {
     expect(existsSync(staleItem)).toBe(false);
   });
 
+  describe("emitted location vs copyPublicWithBase", () => {
+    function fixture(base: string) {
+      const root = mkdtempSync(join(tmpdir(), "agent-export-base-"));
+      const en = join(root, "en"); const outDir = join(root, "dist");
+      mkdirSync(en);
+      writeFileSync(join(en, "index.mdx"), "---\ntitle: Home\n---\n# Hello\n");
+      return { outDir, options: { base, siteName: "Docs", defaultLocale: "en", defaultLocaleDir: en } };
+    }
+    const runPostBuild = (f: ReturnType<typeof fixture>, config: Record<string, unknown>) =>
+      plugin.postBuild!({ outDir: f.outDir, config, options: f.options } as never);
+
+    it("root base emits at dist/agent/v1 for true, unset and false", async () => {
+      for (const config of [{}, { copyPublicWithBase: true }, { copyPublicWithBase: false }]) {
+        const f = fixture("/");
+        await runPostBuild(f, config);
+        expect(existsSync(join(f.outDir, "agent/v1/manifest.json"))).toBe(true);
+      }
+    });
+
+    it("non-root base nests under the base when copyPublicWithBase is unset or true", async () => {
+      for (const config of [{}, { copyPublicWithBase: true }]) {
+        const f = fixture("/nested/docs/");
+        await runPostBuild(f, config);
+        expect(existsSync(join(f.outDir, "nested/docs/agent/v1/manifest.json"))).toBe(true);
+        expect(existsSync(join(f.outDir, "agent"))).toBe(false);
+      }
+    });
+
+    it("non-root base emits unprefixed when copyPublicWithBase is false, while advertising base URLs", async () => {
+      const f = fixture("/nested/docs/");
+      await runPostBuild(f, { copyPublicWithBase: false });
+      const manifestPath = join(f.outDir, "agent/v1/manifest.json");
+      expect(existsSync(manifestPath)).toBe(true);
+      expect(existsSync(join(f.outDir, "nested"))).toBe(false);
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+      expect(manifest.searchIndex.url).toBe("/nested/docs/agent/v1/search-index.json");
+      expect(manifest.documents[0].markdownUrl).toMatch(/^\/nested\/docs\/agent\/v1\/pages\//);
+    });
+  });
+
   it("resolves source-file links using locale and target slug overrides", () => {
     const root = mkdtempSync(join(tmpdir(), "agent-links-"));
     writeFileSync(join(root, "source.mdx"), '---\ntitle: Source\nslug: moved/source\n---\n[Target](./target.mdx#section)\n[Reference][target]\n[target]: ./target.mdx');
