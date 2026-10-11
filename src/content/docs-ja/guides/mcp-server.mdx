@@ -122,7 +122,7 @@ adapter: "@takazudo/zfb-adapter-cloudflare",
 1. `build`から追加した`&& node scripts/stage-cloudflare-base.mjs`だけを削除し、元のコマンドと後処理を保持します。不要になったヘルパーを削除します。
 2. MCP専用のpreview/deployスクリプトと`wrangler.jsonc`を削除します。共有していた場合はMCP用の追加部分だけを削除します。`.wrangler/`のignore指定は、残るツールが使わない場合だけ削除します。
 3. `pnpm remove @modelcontextprotocol/sdk @takazudo/zfb-adapter-cloudflare wrangler`は、残るすべての機能で使わない依存関係に対してだけ実行します。共有するアダプター、SDK、デプロイツールは保持します。
-4. `pnpm build`を実行します。完全な静的出力にはMCPルートと`dist/_worker.js`がなく、マニフェスト、項目JSON、ページごとのMarkdown、有効なllmsファイルが設定済みbase配下に残ることを確認します。静的ページとブラウザーアセットには、静的ホストの通常のbase配置方式を使います。削除したヘルパーはWrangler専用です。既存の静的ホスト公開手順で再ビルドした出力を公開し、古いWorkerデプロイを置き換えてエンドポイントを公開しなくします。
+4. `pnpm build`を実行します。完全な静的出力にはMCPルートと`dist/_worker.js`がなく、マニフェスト、項目JSON、ページごとのMarkdownが`dist/<base>/agent/v1/`配下に残ることを確認します。有効なllmsファイルは`dist/llms.txt`と`dist/<locale>/llms.txt`に戻り、リンクには正規オリジンとbaseが保持されます。静的ページ、llmsファイル、ブラウザーアセットには、静的ホストの通常のbase配置方式を使います。削除したヘルパーはWrangler専用です。既存の静的ホスト公開手順で再ビルドした出力を公開し、古いWorkerデプロイを置き換えてエンドポイントを公開しなくします。
 
 MCPの無効化だけでは、公開静的コーパスは削除されません。それも不要な場合は`agentExport`を別途無効にして再ビルドし、公開成果物を置き換えて古い`/agent/v1/`ファイルを削除します。独立した`llmsTxt`設定はドキュメントを公開し続ける場合があります。その公開も不要なら無効にしてください。
 
