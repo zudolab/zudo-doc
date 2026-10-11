@@ -15,7 +15,7 @@ argument-description: "Optional: version string or bump mode (e.g. 0.2.0, 1.0.0-
 # /l-make-release
 
 Orchestrate the full create-zudo-doc release sequence end-to-end: bump → changelog →
-validate → commit → push → CI → tag → create three GitHub releases (one each for
+validate → commit → release PR → CI (A2 executed) → merge → tag → create three GitHub releases (one each for
 `@takazudo/zudo-doc-history-server`, `@takazudo/zudo-doc`, and `create-zudo-doc`, all in
 lockstep at the same version) → **publish all three to npm**. The publish step fires each
 package's CI publish workflow and is irreversible.
@@ -315,20 +315,31 @@ git add package.json \
         packages/create-zudo-doc/CHANGELOG.md
 # Add any formatting fixes from b4push:
 git diff --name-only | xargs -r git add
+git switch -c release/<NEW_VERSION>
 git commit -m "chore: bump create-zudo-doc to v<NEW_VERSION>"
 ```
 
-## Step 6 — Push and wait for CI
+## Step 6 — Release PR, then wait for CI
+
+A direct push to `main` runs no A2 job, so the release commit goes through a PR to
+`main` (as #4524 did). See `RELEASE.md`, "Release-candidate CI: A2 must execute, not
+just pass".
 
 ```bash
-git push
+git push -u origin release/<NEW_VERSION>
+gh pr create --base main --title "release: v<NEW_VERSION>" --body "<summary>"
 ```
 
-Poll CI until green: `gh run list --branch main --limit 1 --json status,conclusion,headSha`.
-Verify `headSha` matches the pushed commit. Poll every 30 s, maximum 10 minutes.
-If CI fails, investigate with `gh run view <run-id> --log-failed`, fix, and push again.
+Wait for PR Checks to go green, and confirm the A2 job summary shows
+`A2 decision: RUN` and `A2 execution: EXECUTED and passed` (a green job with a skipped
+test step is not enough). Then merge the PR regularly and poll main CI until green:
+`gh run list --branch main --limit 1 --json status,conclusion,headSha`, verifying
+`headSha` is the merge commit. If CI fails, investigate with
+`gh run view <run-id> --log-failed`, fix on the release branch, and push again.
 
-**Do not tag until CI is green.**
+**Do not tag until both the release PR's checks (with A2 executed) and main CI are green.**
+Tag the reviewed release commit (the release branch head), not the merge commit:
+`git switch main && git pull --ff-only`, then run Step 7 with `git tag <name> <release-commit>`.
 
 ## Step 7 — Tag all three packages (lockstep)
 
@@ -344,9 +355,9 @@ unpublished `@takazudo/*` pin. **Always create all three tags** (the old
 "only if its source changed" guidance is wrong for the lockstep model):
 
 ```bash
-git tag zudo-doc-history-server-<NEW_VERSION>
-git tag zudo-doc-v<NEW_VERSION>
-git tag v<NEW_VERSION>
+git tag zudo-doc-history-server-<NEW_VERSION> <release-commit>
+git tag zudo-doc-v<NEW_VERSION> <release-commit>
+git tag v<NEW_VERSION> <release-commit>
 git push origin \
   zudo-doc-history-server-<NEW_VERSION> \
   zudo-doc-v<NEW_VERSION> \
