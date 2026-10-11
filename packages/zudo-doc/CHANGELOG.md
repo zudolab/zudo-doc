@@ -6,17 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [6.0.1] - 2026-10-12
+
 ### Features
 
-- Add `--zdc-header-logo-font` and `--zdc-header-logo-weight` to style the site-name anchor independently of navigation and controls. Shipped theme packs honor both tokens while preserving their existing defaults ([#4533](https://github.com/zudolab/zudo-doc/issues/4533)).
-
-### Documentation
-
-- Add an English/Japanese historical migration guide for 3.x consumers, distinguishing the 3.3 minimal scaffold from 4.0 compatibility removals and describing preservation-oriented reconciliation with a separate current target scaffold ([#4532](https://github.com/zudolab/zudo-doc/issues/4532)).
+- Add `--zdc-header-logo-font` and `--zdc-header-logo-weight` to style the site-name anchor independently of navigation and controls. Shipped theme packs honor both tokens while preserving their existing defaults ([#4533](https://github.com/zudolab/zudo-doc/issues/4533)). (96243bc6)
 
 ### Bug Fixes
 
-- `defineChromeBindings({ mdxExtras })` accepts MDX components with their own required typed props again (for example `(props: { html: string }) => Child`), fixing a 6.0.0 TS2322 regression. Entries must still be components returning a renderable `Child`; fixed chrome slots keep their call-side prop checks ([#4530](https://github.com/zudolab/zudo-doc/issues/4530)).
+- `defineChromeBindings({ mdxExtras })` accepts MDX components with their own required typed props again (for example `(props: { html: string }) => Child`), fixing a 6.0.0 TS2322 regression. Entries must still be components returning a renderable `Child`; fixed chrome slots keep their call-side prop checks ([#4530](https://github.com/zudolab/zudo-doc/issues/4530)). (bd090491)
+- The native sidebar islands (`SidebarToggle`, `SidebarTree`) no longer serialize page descriptions into their client payload, shrinking each page's hydration data. The new `toSidebarClientData(nodes, navigation?)` helper in `@takazudo/zudo-doc/sidebar` gives custom island hosts the same projection. Custom `sidebarNodes` arrays are now copied rather than passed by identity ([#4536](https://github.com/zudolab/zudo-doc/issues/4536)). (a1e01aad)
 
 ## [6.0.0] - 2026-10-11
 
