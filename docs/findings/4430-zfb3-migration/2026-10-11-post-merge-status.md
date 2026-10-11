@@ -2,7 +2,11 @@
 
 This is the current-status record for the zfb 4 migration (#4430) after PR #4477 merged. It replaces the pre-merge leads of the [README](README.md) and [release readiness](release-readiness.md) as the live instruction. Dated findings in this directory are historical evidence: they keep their original SHAs, failures, skips, accepted differences and owner decisions, and are not rewritten. Source issue: [#4514](https://github.com/zudolab/zudo-doc/issues/4514).
 
-## Current: preparation delivered, 6.0.0 is a release candidate (not yet published)
+## Current: 6.0.0 published (2026-10-11)
+
+`@takazudo/zudo-doc-history-server`, `@takazudo/zudo-doc` and `create-zudo-doc` 6.0.0 are on npm, each with `latest` = 6.0.0. They were published in order from release commit `b4f974598` (PR #4524, merge `875af5f23`). Workflow runs, fresh published-consumer results and post-publication test fixes are in the [6.0.0 publication record](release-6.0.0/README.md). The bullets below are the pre-publication record from the release commit.
+
+## Release candidate at the release commit (historical)
 
 Status at the release commit on branch `release/6.0.0` (2026-10-11), based on `main` `0d78d48af67db107293cd0f75793dafae95aea3f`:
 
@@ -79,7 +83,7 @@ The owner cancelled the remaining manual IME verification on 2026-10-11 ([owner 
 
 ## Next release: bounded preparation precedes the coordinated 6.0.0 release
 
-These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #4516 (combined into #4515). The preparation they depended on (#4471–#4474, #4522 and #4475 acceptance) was delivered through PR #4523. Step 4 is in progress under the owner's release authorization: the release candidate is on `release/6.0.0` and is not yet published.
+These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #4516 (combined into #4515). The preparation they depended on (#4471–#4474, #4522 and #4475 acceptance) was delivered through PR #4523. Step 4 is done: 6.0.0 was published on 2026-10-11 (see the [publication record](release-6.0.0/README.md)). Step 5's reporting follows on #3328 and #4430.
 
 1. **Select the next published zfb target. Done: 4.3.1.** Upstream [v4.3.1](https://github.com/Takazudo/zudo-front-builder/releases/tag/v4.3.1) published on 2026-10-11 and the four npm `latest` tags resolve to it. The pins are not stale.
 2. **Adopt that exact tuple in a separate bounded update. Done in #4516.** Root, package and scaffold pins moved together to exactly 4.3.1 with `^4.3.1` peers; zdtp stays 0.8.6; the history-server peer floor is unchanged until the major release commit.
