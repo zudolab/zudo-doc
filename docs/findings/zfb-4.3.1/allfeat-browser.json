@@ -1,0 +1,140 @@
+{
+  "mode": "preview",
+  "kind": "allfeat",
+  "base": "/",
+  "port": 4392,
+  "chromium": "145.0.7632.6",
+  "scripts": [
+    "/assets/islands-11662cda.js",
+    "/assets/islands-chunk-4SJ5SBYJ.js",
+    "/assets/islands-chunk-ENLQPGPK.js",
+    "/assets/islands-chunk-PXNPBVNW.js"
+  ],
+  "results": [
+    {
+      "name": "hydration: every island marker mounts (getting-started)",
+      "pass": true,
+      "detail": "SidebarToggle, ThemeToggle, SidebarTree, DesktopSidebarToggle, DocHistory, DesignTokenPanelBootstrap, ThemePackSwitcher, ImageEnlarge, MermaidEnlarge",
+      "ms": 176
+    },
+    {
+      "name": "runtime identity: exactly one islands entry module loaded",
+      "pass": true,
+      "detail": "/assets/islands-11662cda.js",
+      "ms": 0
+    },
+    {
+      "name": "reload: islands re-mount after a hard reload",
+      "pass": true,
+      "detail": "9 islands",
+      "ms": 212
+    },
+    {
+      "name": "navigation: sidebar link to Installation, islands re-mount",
+      "pass": true,
+      "detail": "client swap (zfb:after-swap, same document); 12 islands",
+      "ms": 309
+    },
+    {
+      "name": "navigation: back returns to getting-started with islands mounted",
+      "pass": true,
+      "detail": "9 islands",
+      "ms": 261
+    },
+    {
+      "name": "R6: Broaden hides the toolbar at the highest tree; refocus then Restore returns",
+      "pass": true,
+      "detail": "15 -> 18 -> 15",
+      "ms": 213
+    },
+    {
+      "name": "06R: branch focus narrows, Restore undoes; URL and article unchanged",
+      "pass": true,
+      "detail": "\"Show only this branch: Deep level 1 with a long wrapped editorial category label\": 15 -> 12 -> 15",
+      "ms": 130
+    },
+    {
+      "name": "search: Ctrl+K opens, query returns results, result navigates, Escape closes",
+      "pass": true,
+      "detail": "1 results; first /docs/getting-started/installation -> 200",
+      "ms": 222
+    },
+    {
+      "name": "theme: Dark/Light toggle changes scheme and persists across reload and navigation",
+      "pass": true,
+      "detail": "dark oklch(0.185 0.005 65) (reload ok, nav ok) / light oklch(0.965 0.004 65)",
+      "ms": 658
+    },
+    {
+      "name": "DTP: trigger opens exactly one panel (zdtp lazy-loaded on first open)",
+      "pass": true,
+      "detail": "1 shell; chunks loaded on open: /assets/islands-chunk-4SJ5SBYJ.js, /assets/islands-chunk-ENLQPGPK.js",
+      "ms": 188
+    },
+    {
+      "name": "DTP: editing a token applies it to the document",
+      "pass": true,
+      "detail": "--spacing-hsp-lg: 1rem -> 3rem",
+      "ms": 136
+    },
+    {
+      "name": "DTP: override persists across a hard reload with the panel closed (no click)",
+      "pass": true,
+      "detail": "3rem re-applied before any click; row shows 3; 1 shell",
+      "ms": 369
+    },
+    {
+      "name": "DTP: reconfiguration on color-scheme change keeps one open panel; override restored on return",
+      "pass": true,
+      "detail": "dark-mode --spacing-hsp-lg=3rem; back to light -> 3rem; shells=1",
+      "ms": 419
+    },
+    {
+      "name": "DTP: reconfiguration on theme-pack switch hides pack A override, restores it on return",
+      "pass": true,
+      "detail": "default=3rem -> academia=1rem -> default=3rem",
+      "ms": 501
+    },
+    {
+      "name": "DTP: close/reopen lifecycle and client navigation never duplicate the mount",
+      "pass": true,
+      "detail": "shell counts 1,0,1,0,1,0,1,1; reverted to 1rem",
+      "ms": 1352
+    },
+    {
+      "name": "i18n: /ja/ route hydrates with lang=ja",
+      "pass": true,
+      "detail": "9 islands",
+      "ms": 168
+    },
+    {
+      "name": "no console errors or page errors",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "no failed same-origin requests",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "teardown: server process group gone, port free",
+      "pass": true,
+      "detail": "{\"serverTreeWhileRunning\":[\"28215 node /tmp/zfb431/allfeat/node_modules/.bin/../@takazudo/zfb/bin/zfb.mjs preview --port 4392 --host 127.0.0.1\",\"28228 /tmp/zfb431/allfeat/node_modules/.pnpm/@takazudo+zfb-linux-x64-gnu@4.3.1/node_modules/@takazudo/zfb-linux-x64-gnu/zfb preview --port 4392 --host 127.0.0.1\",\"28246 node --enable-source-maps /tmp/zfb-plugin-host-puy0cf/plugin-host.mjs\"],\"signal\":\"SIGTERM\",\"survivorsInProcessGroup\":[],\"processesWithCwdOrArgsInServedDir\":[],\"portFree\":true,\"connectionRefused\":true}"
+    }
+  ],
+  "consoleErrors": [],
+  "failedRequests": [],
+  "teardown": {
+    "serverTreeWhileRunning": [
+      "28215 node /tmp/zfb431/allfeat/node_modules/.bin/../@takazudo/zfb/bin/zfb.mjs preview --port 4392 --host 127.0.0.1",
+      "28228 /tmp/zfb431/allfeat/node_modules/.pnpm/@takazudo+zfb-linux-x64-gnu@4.3.1/node_modules/@takazudo/zfb-linux-x64-gnu/zfb preview --port 4392 --host 127.0.0.1",
+      "28246 node --enable-source-maps /tmp/zfb-plugin-host-puy0cf/plugin-host.mjs"
+    ],
+    "signal": "SIGTERM",
+    "survivorsInProcessGroup": [],
+    "processesWithCwdOrArgsInServedDir": [],
+    "portFree": true,
+    "connectionRefused": true
+  }
+}

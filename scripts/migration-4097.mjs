@@ -36,7 +36,7 @@ if (mode === 'prepare') {
     }
   }
   const lockfile = readFileSync(join(root, 'pnpm-lock.yaml'), 'utf8');
-  assert.ok(!/^\s*(?:specifier|version|tarball):\s*['"]?(?:workspace:|link:|file:)/m.test(lockfile) && !/4\.2\.1/.test(lockfile), 'registry-only 4.3.0 lockfile required');
+  assert.ok(!/^\s*(?:specifier|version|tarball):\s*['"]?(?:workspace:|link:|file:)/m.test(lockfile) && !/4\.2\.1/.test(lockfile), 'registry-only 4.3.1 lockfile required');
   writeFileSync(join(root, 'inputs.json'), JSON.stringify({
     sourceHashes,
     archiveSpecSha256: hash(join(archive, 'native-pending.spec.ts.txt')),
@@ -50,7 +50,7 @@ if (mode === 'prepare') {
   for (const name of ['@takazudo/zfb', '@takazudo/zfb-runtime', '@playwright/test', 'typescript']) {
     const path = realpathSync(join(root, 'node_modules', name, 'package.json'));
     assert.ok(path.startsWith(join(root, 'node_modules') + sep), `${name} must resolve inside registry consumer`);
-    const expected = name.startsWith('@takazudo/') ? '4.3.0' : name === 'typescript' ? '5.9.3' : '1.58.2';
+    const expected = name.startsWith('@takazudo/') ? '4.3.1' : name === 'typescript' ? '5.9.3' : '1.58.2';
     const { version } = JSON.parse(readFileSync(path, 'utf8'));
     assert.equal(version, expected, name);
     packages[name] = { version, path };

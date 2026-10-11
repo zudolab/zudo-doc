@@ -1,0 +1,92 @@
+[
+  {
+    "name": "@takazudo/zfb",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb/-/zfb-4.3.1.tgz",
+    "integrity": "sha512-LeA4UqvYdwmNtWX9xzq4sU/p2n0Ogc+A/oDLxnQ3xAH+3EG2G/6FgDPnAD9uEu94D7ns0/hQ01zLgOZmHjQRLw==",
+    "sha256": "9527d61032c283ea6f6759187c77dcba459b003a80d96e3382355a11465fd132"
+  },
+  {
+    "name": "@takazudo/zfb-runtime",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-runtime/-/zfb-runtime-4.3.1.tgz",
+    "integrity": "sha512-TI7x1k1ve9A8TvHGF1dGOiPe6xeArUfk+nPopfhQ6oJ014o85zLx5ptD5kYmKKTDE9KoW6LwZcf2jg++juGaNQ==",
+    "sha256": "6367e9204c1f9840b844b52c31bdc599340fc3dd274c95012c4a1b8bfd6a72ee"
+  },
+  {
+    "name": "@takazudo/zfb-md-wasm",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-md-wasm/-/zfb-md-wasm-4.3.1.tgz",
+    "integrity": "sha512-r/1+srKVjHRAdLyH2eAAvj4l9AfesVQXexE69ZZNwwgW0mL+6yuS3ayg2pFysLuICLXoW0GGwtIYD5MPRaX96g==",
+    "sha256": "c24855fe21f8d94f6045bb55ac35a23be109f4d3730add526c17f8ba9406bf6d"
+  },
+  {
+    "name": "@takazudo/zfb-adapter-cloudflare",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-adapter-cloudflare/-/zfb-adapter-cloudflare-4.3.1.tgz",
+    "integrity": "sha512-fAH20a26XjpVXI+ONLIE1h/MvUc3H7pxlCFk94N0+l/nBzIumpnF0qujQk83I0L9ctf6h3mQ/HnmeyRLk7qhUQ==",
+    "sha256": "f1a0e4185e22de6017ffe6620bc32c286625256c3f078d1a7e074a7963938f13"
+  },
+  {
+    "name": "@takazudo/zfb-slugify",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-slugify/-/zfb-slugify-4.3.1.tgz",
+    "integrity": "sha512-mSl1cYcMIEviKHZyBudoKmRdFrUi/uVDoJaiqP6yq5qgzOao+0kambptZG4M1D50e95x//69iQ03QpKpF3A1hg==",
+    "sha256": "0e6ad545f841c28f253fa54dcf3736ad0aa89c5db5d4e435c43c319dfadaa60c"
+  },
+  {
+    "name": "@takazudo/zfb-darwin-arm64",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-darwin-arm64/-/zfb-darwin-arm64-4.3.1.tgz",
+    "integrity": "sha512-xS6I6oLP2iiNdauPgH5FAMGhvfPa4EeVs5dB7mMqlKZI6kV9En6Nw/BtNqvow4N7R/0zjiEKjYoBvoN6DBFkeA==",
+    "sha256": "83096bf1bcea4878f19cf54364089565d4994d320cc3ba597fec5ee4d9a08831"
+  },
+  {
+    "name": "@takazudo/zfb-darwin-x64",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-darwin-x64/-/zfb-darwin-x64-4.3.1.tgz",
+    "integrity": "sha512-SKIaL6bLNzroKogWMgNj9h9q+AhAyySCYIoosZ+pu47nkmaG8+Chzmb3Y+MbWedUK0NpGmHH6/uYLbH3KZ4uyQ==",
+    "sha256": "ecc64954b56e95498902f60e275c72b0e49d3df6547d0971d1c8b896d691e6fd"
+  },
+  {
+    "name": "@takazudo/zfb-linux-arm64-gnu",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-linux-arm64-gnu/-/zfb-linux-arm64-gnu-4.3.1.tgz",
+    "integrity": "sha512-3KEdBhfmeU4PO0Svcay84YK1R6dcQV8p2AXebaA5Iij7sakVH5IklbRSn8TwmILc+QLLEPt68DTx1BrDDunmxw==",
+    "sha256": "b70eb2dade2d09b148cb4d2d738540b8267d1929570964a3a8254b4011b5dbbb"
+  },
+  {
+    "name": "@takazudo/zfb-linux-x64-gnu",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-linux-x64-gnu/-/zfb-linux-x64-gnu-4.3.1.tgz",
+    "integrity": "sha512-r2axlR8skHuRdvzAV4ECVtBJeNJOgysc1fY3qQrkL4ei/82+Ms62hJ1Hy8HfqjttiTz6xG2uJySAN8l42UAuFg==",
+    "sha256": "3dd6841e97223351e64ccaf4c76a11a0b29d1ead3ddb829856b7e59fb667cabb"
+  },
+  {
+    "name": "@takazudo/zfb-win32-x64-msvc",
+    "version": "4.3.1",
+    "metadataHTTP": 200,
+    "tarballHTTP": 200,
+    "tarball": "https://registry.npmjs.org/@takazudo/zfb-win32-x64-msvc/-/zfb-win32-x64-msvc-4.3.1.tgz",
+    "integrity": "sha512-PHxaSGVnD8vw23MhMxZEtOSwKlv/858n9sHylDFQvIXkVcfFkQCFvOUHfG6t75DedVSfjGtQpKRHBc9m/OwlGQ==",
+    "sha256": "21a163650aa209801f2d5ec15c67a43d726ae57a607b4ed7535743f605a15d93"
+  }
+]
