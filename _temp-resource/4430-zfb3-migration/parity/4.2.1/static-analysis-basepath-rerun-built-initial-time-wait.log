@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "<stdin>", line 3, in <module>
-OSError: [Errno 98] Address already in use
-heavy-guard: verdict=FAIL exit=1 secs=0 min_mem_mb=13880 reason=-
