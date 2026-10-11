@@ -2,6 +2,8 @@
 
 Owner: #4475 (human/platform evidence), topic #4506 under epic #4502. Upstream gate: Takazudo/zudo-front-builder#3330.
 
+> **Status pointer (2026-10-11):** PR #4477 has merged and its production deployment succeeded. The owner waived the macOS IME gate for that merge. The PENDING wording below is the pre-merge record and is kept as written. Current status: human ATOK A1/A2 PASS on their original SHAs; A3 PARTIAL/UNVERIFIED; Apple built-in Japanese IME NOT RUN / OWNER WAIVED; A5 NOT RUN. None is a PASS. See [post-merge status](2026-10-11-post-merge-status.md).
+
 ## Status at a glance
 
 - **Real macOS Japanese IME check: PENDING (human, macOS).** It cannot run on this Linux/WSL host. No IME pass is claimed anywhere in this file.

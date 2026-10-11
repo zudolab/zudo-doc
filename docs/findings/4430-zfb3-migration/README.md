@@ -1,6 +1,10 @@
 # zudo-doc 6 / zfb 4 migration matrix
 
-## Closeout verdict — PENDING: one human acceptance item (macOS IME/manual) (2026-10-10)
+## Current status — #4477 merged and deployed; coordinated 6.0.0 unreleased (2026-10-11)
+
+PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) merged to `main` as `b9dd43b0d` (final head `68ad9623c`, same tree), and [Production Deploy 38074440930](https://github.com/zudolab/zudo-doc/actions/runs/38074440930) succeeded. Pins: zfb family 4.3.1 (peers `^4.3.1`; adopted by #4516, evidence in [zfb 4.3.1 verification](../zfb-4.3.1/verification.md)), zdtp 0.8.6. Coordinated 6.0.0 unreleased (npm `latest` 5.28.2). The macOS Apple IME gate was owner-waived for the merge; it is NOT RUN, not PASS, and A3/A5 keep their limits. The live status, the evidence limits, the required-check name mismatch, and the ordered next-release handoff are in [post-merge status](2026-10-11-post-merge-status.md). The dated sections below are history (the column meanings, normative references and topic index stay as reference): they keep its original SHAs, results and decisions, and its instructions to merge #4477 no longer apply.
+
+## History — closeout verdict before merge (2026-10-10, superseded 2026-10-11)
 
 **Release verdict: PENDING — one human acceptance item (macOS IME/manual).** Every other required gate is verified on the final candidate `d4185fb9e4f8555d6edaadb419be49ff694cd3ad` (`base/zfb3-migration`, PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477), still draft). `main` is unchanged at `337b9f110793dccb4759bddd5273eab38cd9d2f0`, and the base is not missing any `main` commit. Full record: [closeout final gates](2026-10-10-closeout-final-gates.md). Checklist: [release readiness](release-readiness.md).
 

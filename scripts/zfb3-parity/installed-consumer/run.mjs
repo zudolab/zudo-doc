@@ -211,15 +211,19 @@ if (mode === "preview") {
     const focusLabels = () => page.locator("#desktop-sidebar [data-sidebar-focus]:visible").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
     const h1 = await page.locator("h1").first().textContent();
     const startUrl = page.url();
-    await check("06R: Broaden reaches the highest tree (Broaden disabled, Restore shown), Restore returns", async () => {
+    await check("R6: Broaden hides the toolbar at the highest tree; refocus then Restore returns", async () => {
       const broaden = page.locator("#desktop-sidebar [data-sidebar-broaden]:visible").first();
       await broaden.waitFor({ state: "visible", timeout: T });
       const before = await focusLabels();
+      const branchScope = await page.locator("#desktop-sidebar [data-sidebar-focus]:visible").nth(1).getAttribute("data-sidebar-focus-scope");
+      assert(branchScope, "need a nested branch to refocus before Restore");
       await broaden.click();
-      await page.locator("#desktop-sidebar [data-sidebar-restore]:visible").first().waitFor({ state: "visible", timeout: T });
+      // Accepted R6 removes the whole toolbar at the highest tree (#4477).
+      // Refocus a nested branch before Restore, as sidebar-broader-tree.spec.ts does.
+      await page.locator("#desktop-sidebar [data-sidebar-scope-toolbar]").waitFor({ state: "hidden", timeout: T });
       const widened = await focusLabels();
       assert(widened.length > before.length, `broaden did not widen (${before.length} -> ${widened.length})`);
-      assert(await broaden.isDisabled(), "Broaden not disabled at highest tree");
+      await page.locator(`#desktop-sidebar [data-sidebar-focus-scope="${branchScope}"]`).click();
       await page.locator("#desktop-sidebar [data-sidebar-restore]:visible").first().click();
       await page.waitForFunction((n) => [...document.querySelectorAll("#desktop-sidebar [data-sidebar-focus]")].filter((e) => e.getBoundingClientRect().width > 0).length === n, before.length, { timeout: T });
       return `${before.length} -> ${widened.length} -> ${before.length}`;

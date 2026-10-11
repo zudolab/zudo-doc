@@ -1,8 +1,14 @@
-# Release readiness — published zfb 4.3.0
+# Release readiness — zfb 4 migration (current pins: published zfb 4.3.1)
 
 > **Canonical copy:** `docs/findings/4430-zfb3-migration/release-readiness.md` is canonical from now on (relocated by #4508). The copy under `_temp-resource/4430-zfb3-migration/` is a frozen duplicate kept only until #4476 deletes that directory; edit this file, not the temporary one.
 
-**Verdict: PENDING — one human acceptance item (macOS IME/manual).** Every other required gate is verified on the final candidate. Do not merge PR #4477, publish 6.0.0 or delete temporary resources until a human records the macOS IME/manual PASS.
+## Current status — #4477 merged and deployed; coordinated 6.0.0 unreleased (2026-10-11)
+
+PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) merged to `main` as `b9dd43b0d` (final head `68ad9623c`, same tree), and [Production Deploy 38074440930](https://github.com/zudolab/zudo-doc/actions/runs/38074440930) succeeded. Pins: zfb family 4.3.1 (peers `^4.3.1`; adopted by #4516, evidence in [zfb 4.3.1 verification](../zfb-4.3.1/verification.md)), zdtp 0.8.6. Coordinated 6.0.0 unreleased (npm `latest` 5.28.2). The macOS Apple IME gate was owner-waived for the merge; it is NOT RUN, not PASS, and A3/A5 keep their limits. The live status, the evidence limits, the required-check name mismatch, and the ordered next-release handoff are in [post-merge status](2026-10-11-post-merge-status.md). Everything below is dated history: it keeps its original SHAs, results and decisions, and its instructions to merge #4477 no longer apply.
+
+## History — closeout disposition before merge (2026-10-10, superseded 2026-10-11)
+
+**Verdict (then): PENDING — one human acceptance item (macOS IME/manual).** Every other required gate is verified on the final candidate. Do not merge PR #4477, publish 6.0.0 or delete temporary resources until a human records the macOS IME/manual PASS.
 
 Updated 2026-10-10 by the closeout disposition (#4511). Full gate record: [2026-10-10-closeout-final-gates.md](2026-10-10-closeout-final-gates.md).
 
@@ -91,7 +97,7 @@ This records the October8 continuation of #4430/#4467/#4475, not a completed rel
 - Survivor scan over package.json, pnpm-lock.yaml, packages and src found no patchedDependencies or `workaround for …zudo-front-builder` matches. This lexical scan does not replace the remaining native-path/packed/parity gates or assert a universal no-shim audit.
 - v2 baseline reconstructed from exact main337b9f110793dccb4759bddd5273eab38cd9d2f0; original sealed cache absent. Compact parity reports remain under parity/4.2; no oversized raw reports or Git LFS.
 
-## Authorized release sequence after all gates pass
+## History — authorized release sequence as recorded 2026-10-08 (superseded; see the post-merge status for the current release order)
 
 User explicitly authorizes normal repository `l-make-release` actions after merging this existing PR. Planned major6.0.0, lockstep history-server → zudo-doc → create-zudo-doc, npm and GitHub release destinations under the actual skill. Set history-server peer floor^6.0.0 and approvedBaseline as RELEASE.md requires, with B4PUSH_SKIP_PIN_PUBLISHED=1 for unpublished lockstep pins. Keep5.x frozen. Verify main/release CI and all npm publications, then report exact versions to upstream #3328 and unblock #3329. No release step has been executed.
 
