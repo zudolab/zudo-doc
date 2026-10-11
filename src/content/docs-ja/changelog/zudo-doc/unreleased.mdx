@@ -4,6 +4,14 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1134
 ---
 
+### 機能
+
+- サイト名のリンクだけをナビゲーションや操作ボタンとは別に設定できる`--zdc-header-logo-font`と`--zdc-header-logo-weight`を追加しました。同梱テーマパックは従来の既定値を保ちつつ両トークンを反映します（[#4533](https://github.com/zudolab/zudo-doc/issues/4533)）。
+
+### ドキュメント
+
+- 3.x利用者向けの移行ガイドを英語・日本語で追加しました。3.3の最小スキャフォールド導入と4.0の互換API削除を区別し、別ディレクトリの現行版ひな形と照合してコンテンツやカスタマイズを保持する手順を説明します（[#4532](https://github.com/zudolab/zudo-doc/issues/4532)）。
+
 ### バグ修正
 
 - `defineChromeBindings({ mdxExtras })` が、独自の必須型付きprops（例: `(props: { html: string }) => Child`）を持つMDXコンポーネントを再び受け付けるようになりました。6.0.0で発生したTS2322の退行の修正です。エントリーは引き続き描画可能な`Child`を返すコンポーネントである必要があり、固定のchromeスロットは呼び出し側のprops検査を維持します（[#4530](https://github.com/zudolab/zudo-doc/issues/4530)）。

@@ -4,7 +4,7 @@
   "name": "Botanica",
   "description": "A vintage botanical plate — herbarium cream, deep green ink, engraved double rules, Latin small-caps plate labels.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Crimson Pro",
     "mono": "Courier Prime",

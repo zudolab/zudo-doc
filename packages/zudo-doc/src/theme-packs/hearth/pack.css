@@ -193,8 +193,8 @@ html[data-theme-pack="hearth"] header[data-header] {
   );
 }
 html[data-theme-pack="hearth"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 620;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 620);
   color: var(--zd-accent);
 }
 /* Exclude the current page: it carries the base `bg-fg text-bg` inverted

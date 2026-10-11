@@ -229,8 +229,8 @@ html[data-theme-pack="onyx"] header[data-header] {
   border-bottom: 1px solid color-mix(in oklch, var(--zd-accent) 38%, transparent);
 }
 html[data-theme-pack="onyx"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 600);
   font-size: 1.35rem;
   letter-spacing: 0.04em;
 }

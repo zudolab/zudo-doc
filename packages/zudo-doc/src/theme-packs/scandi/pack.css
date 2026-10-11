@@ -144,7 +144,7 @@ html[data-theme-pack="scandi"] header[data-header] {
   border-bottom-color: color-mix(in srgb, var(--zd-muted) 26%, transparent);
 }
 html[data-theme-pack="scandi"] [data-header-logo] {
-  font-weight: 800;
+  font-weight: var(--zdc-header-logo-weight, 800);
   letter-spacing: -0.02em;
 }
 html[data-theme-pack="scandi"] [data-nav-item] {

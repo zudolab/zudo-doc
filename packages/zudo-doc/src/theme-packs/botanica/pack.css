@@ -208,9 +208,9 @@ html[data-theme-pack="botanica"] header[data-header] {
   border-bottom: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
 }
 html[data-theme-pack="botanica"] [data-header-logo] {
-  font-family: var(--font-display);
+  font-family: var(--zdc-header-logo-font, var(--font-display));
   font-size: 1.45rem;
-  font-weight: 600;
+  font-weight: var(--zdc-header-logo-weight, 600);
   letter-spacing: 0.02em;
 }
 html[data-theme-pack="botanica"] [data-header-logo]::before {

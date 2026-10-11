@@ -78,6 +78,8 @@ zudo-docのトークンは3つの層に整理されており、各層は1つ上�
 | `--zdc-nav-active-weight` | `nav-active` | `var(--font-weight-medium)` | Font weight of the active sidebar nav link. |
 | `--zdc-chrome-font` | `chrome` | `var(--font-sans)` | Base font family of the document `body` — the seam that lets a theme pack's `--font-sans` reach the whole app shell (header, sidebar, TOC, breadcrumb, footer), not just `.zd-content` prose. Redefine `--font-sans` to restyle chrome and content together, or `--zdc-chrome-font` directly to move the shell independently of prose. |
 | `--zdc-header-font` | `header` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the site header (`header[data-header]`). A no-op until redefined; set it to give the header its own face (for example a display font for the wordmark and nav) without touching the rest of the chrome. |
+| `--zdc-header-logo-font` | `header-logo` | `inherit` | Font family of the site-name anchor (`a[data-header-logo]`) only. Theme packs with explicit logo fonts preserve their existing family as fallback. |
+| `--zdc-header-logo-weight` | `header-logo` | `var(--font-weight-bold)` | Font weight of the site-name anchor only. Theme packs with explicit logo weights preserve their existing weight as fallback. |
 | `--zdc-sidebar-font` | `sidebar` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the navigation sidebar. The selector names both the desktop rail (`#desktop-sidebar`) and the mobile drawer (`aside[data-zd-mobile-sidebar]`) — 本番ビルドでは両方に一致します（詳細は表の下の注記を参照）。 |
 | `--zdc-toc-font` | `toc` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the table of contents. The selector names both the desktop rail (`nav[data-zd-toc]`) and the mobile TOC (`div[data-zd-mobile-toc]`) — 本番ビルドでは両方に一致します（詳細は表の下の注記を参照）。 |
 
@@ -88,6 +90,17 @@ zudo-docのトークンは3つの層に整理されており、各層は1つ上�
 コンポーネントのセレクターはデスクトップとモバイルのクロームを対象にします。ビルドしたページと繰り返しのクライアントナビゲーションで computed value を確認してください。実効的な identity と props が変わらないアイランドは保持され、変更時は描画スコープが再作成されます。
 
 </Note>
+
+### ワードマークのタイポグラフィ
+
+ロゴトークンはサイト名だけを変更し、ナビゲーション、検索、言語切り替えの書体は維持します。デフォルトテーマはヘッダーの書体を継承し、`--font-weight-bold`を使用します。同梱パックは上書きするまで各パックのロゴ書体とウェイトを維持します。各トークンは独立して使用でき、宣言を削除するとテーマのフォールバックに戻ります。
+
+```css title="src/styles/global.css"
+:root {
+  --zdc-header-logo-font: "Georgia", serif;
+  --zdc-header-logo-weight: 400;
+}
+```
 
 ### `--zdc-surface-radius` メタノブ
 

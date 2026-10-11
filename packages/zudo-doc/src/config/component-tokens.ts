@@ -109,6 +109,8 @@ export type ComponentTokenName =
   | "--zdc-nav-active-weight"
   | "--zdc-chrome-font"
   | "--zdc-header-font"
+  | "--zdc-header-logo-font"
+  | "--zdc-header-logo-weight"
   | "--zdc-sidebar-font"
   | "--zdc-toc-font";
 
@@ -506,6 +508,30 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     category: "typography",
     description:
       "Font family of the site header. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined); set in :root to give the header its own face, e.g. a display font for the wordmark and nav. Scoped to the header itself — it does not leak into the mobile sidebar drawer that the header hosts.",
+  },
+  // Wordmark-only knobs: the anchor selector beats its font-bold utility.
+  // Packs with explicit logo typography preserve their own fallbacks.
+  {
+    cssVar: "--zdc-header-logo-font",
+    selector: "a[data-header-logo]",
+    property: "font-family",
+    default: "inherit",
+    component: "header-logo",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Font family of the site-name anchor only. Defaults to the inherited header font; theme packs retain their existing logo family as fallback. Navigation and header controls keep their own typography.",
+  },
+  {
+    cssVar: "--zdc-header-logo-weight",
+    selector: "a[data-header-logo]",
+    property: "font-weight",
+    default: "var(--font-weight-bold)",
+    component: "header-logo",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Font weight of the site-name anchor only. Defaults to --font-weight-bold, matching font-bold; theme packs retain their existing logo weight as fallback.",
   },
   {
     cssVar: "--zdc-sidebar-font",

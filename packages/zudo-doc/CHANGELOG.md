@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Features
+
+- Add `--zdc-header-logo-font` and `--zdc-header-logo-weight` to style the site-name anchor independently of navigation and controls. Shipped theme packs honor both tokens while preserving their existing defaults ([#4533](https://github.com/zudolab/zudo-doc/issues/4533)).
+
+### Documentation
+
+- Add an English/Japanese historical migration guide for 3.x consumers, distinguishing the 3.3 minimal scaffold from 4.0 compatibility removals and describing preservation-oriented reconciliation with a separate current target scaffold ([#4532](https://github.com/zudolab/zudo-doc/issues/4532)).
+
 ### Bug Fixes
 
 - `defineChromeBindings({ mdxExtras })` accepts MDX components with their own required typed props again (for example `(props: { html: string }) => Child`), fixing a 6.0.0 TS2322 regression. Entries must still be components returning a renderable `Child`; fixed chrome slots keep their call-side prop checks ([#4530](https://github.com/zudolab/zudo-doc/issues/4530)).

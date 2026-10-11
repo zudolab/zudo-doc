@@ -201,6 +201,24 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
         },
         {
           "category": "typography",
+          "component": "header-logo",
+          "cssVar": "--zdc-header-logo-font",
+          "default": "inherit",
+          "property": "font-family",
+          "selector": "a[data-header-logo]",
+          "surface": "chrome",
+        },
+        {
+          "category": "typography",
+          "component": "header-logo",
+          "cssVar": "--zdc-header-logo-weight",
+          "default": "var(--font-weight-bold)",
+          "property": "font-weight",
+          "selector": "a[data-header-logo]",
+          "surface": "chrome",
+        },
+        {
+          "category": "typography",
           "component": "sidebar",
           "cssVar": "--zdc-sidebar-font",
           "default": "var(--zdc-chrome-font, var(--font-sans))",
@@ -221,8 +239,8 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
     `);
   });
 
-  it("contains exactly 21 tokens in the #2887 registry (12 content + 9 chrome)", () => {
-    expect(COMPONENT_TOKENS).toHaveLength(21);
+  it("contains exactly 23 tokens (12 content + 11 chrome)", () => {
+    expect(COMPONENT_TOKENS).toHaveLength(23);
   });
 
   it("every cssVar follows the --zdc- prefix convention", () => {
@@ -237,11 +255,11 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
     }
   });
 
-  it("12 content tokens and 9 chrome tokens (#2887 adds the body font seam + 3 per-surface knobs)", () => {
+  it("12 content tokens and 11 chrome tokens", () => {
     const contentTokens = COMPONENT_TOKENS.filter((t) => t.surface === "content");
     const chromeTokens = COMPONENT_TOKENS.filter((t) => t.surface === "chrome");
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(9);
+    expect(chromeTokens).toHaveLength(11);
   });
 
   // The seam that makes theme-pack fonts reach the app shell (#2887 / epic

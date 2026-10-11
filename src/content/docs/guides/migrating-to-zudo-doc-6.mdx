@@ -10,6 +10,8 @@ This guide covers the migration from 5.x to **zudo-doc 6.0.0**, the coordinated 
 
 The fix for [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) first shipped in 4.3.0; the issue is resolved. The strict published-consumer browser/navigation control passed **3/3 with no failures, skips or retries** on the supported 4.3.1 tuple, as recorded in the [source-bound verification](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md). That is Linux Chromium evidence, not native macOS WebKit or Apple IME acceptance. The [migration status record](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md) preserves the platform limits and the owner's cancellation of the remaining manual IME check.
 
+For a 3.x consumer, start with [Migrating from zudo-doc 3](./migrating-from-zudo-doc-3.mdx) to inventory and reconcile the earlier scaffold/API changes while preserving authored work.
+
 ## Dependencies and TypeScript
 
 To upgrade an existing project, edit the project's own `package.json` and reinstall with your package manager. Set `@takazudo/zudo-doc` to `^6.0.0`, and set `@takazudo/zudo-doc-history-server` to `^6.0.0` if the project declares it (it is needed only when doc history or the asset viewer is enabled). Align every installed engine package (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm`, and the Cloudflare adapter when used) to 4.3.1. Core rendering no longer requires Preact.

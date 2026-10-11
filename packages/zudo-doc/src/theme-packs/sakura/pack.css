@@ -215,8 +215,8 @@ html[data-theme-pack="sakura"] header[data-header] {
 
 /* wordmark — mincho voice with a single blossom */
 html[data-theme-pack="sakura"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 700);
   letter-spacing: 0.015em;
 }
 html[data-theme-pack="sakura"] [data-header-logo]::after {

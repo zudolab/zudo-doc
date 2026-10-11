@@ -203,7 +203,7 @@ html[data-theme-pack="ledger"] header[data-header] {
   border-bottom-color: color-mix(in srgb, var(--zd-fg) 30%, transparent);
 }
 html[data-theme-pack="ledger"] [data-header-logo] {
-  font-weight: 500;
+  font-weight: var(--zdc-header-logo-weight, 500);
   font-style: italic;
   font-size: 1.4rem;
   letter-spacing: 0.01em;
