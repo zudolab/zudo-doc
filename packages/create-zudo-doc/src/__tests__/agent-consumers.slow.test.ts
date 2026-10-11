@@ -145,10 +145,14 @@ async function assertLocalAssets(origin: string, base: string, proof: any): Prom
   const page = await fetch(new URL(citation.pathname, origin));
   expect(page.status).toBe(200);
   const html = await page.text();
-  const assets = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)]
-    .map((match) => new URL(match[1]!, page.url));
-  expect(assets.some((asset) => asset.pathname.endsWith(".js"))).toBe(true);
-  expect(assets.some((asset) => asset.pathname.endsWith(".css"))).toBe(true);
+  const resourceTags = html.match(/<(?:script|link)\b[^>]*>/g)?.join("\n") ?? "";
+  // minifyHtml is enabled by default and can remove optional attribute quotes.
+  // Read either legal serialization while retaining the required JS/CSS checks.
+  const assets = [...resourceTags.matchAll(/\s(?:src|href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/g)]
+    .map((match) => new URL(match[1] ?? match[2] ?? match[3]!, page.url))
+    .filter((asset) => /\.(?:js|css)$/.test(asset.pathname));
+  expect(assets.some((asset) => asset.pathname.endsWith(".js")), resourceTags).toBe(true);
+  expect(assets.some((asset) => asset.pathname.endsWith(".css")), resourceTags).toBe(true);
   for (const asset of assets) {
     expect(asset.origin).toBe(origin);
     expect(asset.pathname.startsWith(`${base}/`)).toBe(true);
