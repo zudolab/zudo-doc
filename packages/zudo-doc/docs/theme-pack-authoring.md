@@ -188,6 +188,29 @@ The build-time validator allowlists this **by CSS property** (`border-image`), n
 
 **Home-page section headings are exempt.** The three h2s on the home page (compact intro, sitemap, Tags) carry `.zd-home-heading`, and `content.css` neutralises every pack's h2 rule / counter / bar there at specificity (0,3,2) — the home page already separates its sections with `.zd-home-rule` dividers, so a pack's h2 top-rule would double up (zudolab/zudo-doc#4194). A pack keeps its h2 font, weight, tracking, colour and case on those headings; it does not need to, and should not, special-case them.
 
+### Wordmark font and weight tokens
+
+`--zdc-header-logo-font` and `--zdc-header-logo-weight` target only the existing
+`a[data-header-logo]` site-name anchor. The base defaults are `inherit` and
+`var(--font-weight-bold)`. Unlike the per-surface font knobs above, the logo family
+inherits the header intentionally.
+
+A pack that declares logo typography must read these tokens in its existing
+pack-scoped rule and preserve its exact old value as fallback. This lets consumers
+set either property independently without changing nav, search or language controls:
+
+```css
+html[data-theme-pack="washi"] [data-header-logo] {
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 700);
+}
+```
+
+Do not declare logo tokens on the pack root as defaults: that would compete with
+consumer `:root` overrides. Keep decorations, tracking and layout in the existing
+logo rule. Removing a consumer override restores the pack's fallback. Bump the
+pack metadata version whenever this rule changes, following the contract below.
+
 ## (d) Pack-versioning rule
 
 Every `pack.css` change that should reach already-visited browsers **requires a `meta.json` version bump**. `meta.version` drives the `?v=` cache-busting query string on the stylesheet URL — `buildPackCssUrl` in `packages/zudo-doc/src/theme-pack-switcher/theme-pack-sync.ts`:

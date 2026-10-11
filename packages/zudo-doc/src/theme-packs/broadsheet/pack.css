@@ -202,8 +202,8 @@ html[data-theme-pack="broadsheet"] header[data-header] {
   box-shadow: 0 6px 0 -5px var(--zd-fg);
 }
 html[data-theme-pack="broadsheet"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 900;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 900);
   letter-spacing: 0.01em;
 }
 html[data-theme-pack="broadsheet"] [data-nav-item] {

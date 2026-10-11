@@ -276,8 +276,8 @@ html[data-theme-pack="washi"] header[data-header] {
 
 /* header logo: mincho wordmark with a small square indigo mark */
 html[data-theme-pack="washi"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 700);
   letter-spacing: 0.02em;
 }
 html[data-theme-pack="washi"] [data-header-logo]::before {

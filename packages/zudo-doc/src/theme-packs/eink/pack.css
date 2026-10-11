@@ -255,7 +255,7 @@ html[data-theme-pack="eink"] .zd-content hr {
 
 /* device-menu chrome labels: small, letterspaced, even in Garamond */
 html[data-theme-pack="eink"] [data-header-logo] {
-  font-weight: 600;
+  font-weight: var(--zdc-header-logo-weight, 600);
   font-size: 1.3rem;
   letter-spacing: 0.01em;
 }

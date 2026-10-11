@@ -255,8 +255,8 @@ html[data-theme-pack="brutalist"] header[data-header] button:focus-visible {
 
 html[data-theme-pack="brutalist"] [data-header-logo] {
   color: var(--zd-bg);
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 400);
   font-size: 1.02rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;

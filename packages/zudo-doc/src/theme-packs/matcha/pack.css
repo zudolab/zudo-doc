@@ -251,8 +251,8 @@ html[data-theme-pack="matcha"] header[data-header] {
   );
 }
 html[data-theme-pack="matcha"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 600);
   letter-spacing: 0.05em;
 }
 

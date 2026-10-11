@@ -1036,6 +1036,11 @@ header[data-header] {
   font-family: var(--zdc-header-font, var(--zdc-chrome-font, var(--font-sans)));
 }
 
+a[data-header-logo] {
+  font-family: var(--zdc-header-logo-font, inherit);
+  font-weight: var(--zdc-header-logo-weight, var(--font-weight-bold));
+}
+
 #desktop-sidebar, aside[data-zd-mobile-sidebar] {
   font-family: var(--zdc-sidebar-font, var(--zdc-chrome-font, var(--font-sans)));
 }

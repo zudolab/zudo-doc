@@ -253,8 +253,8 @@ html[data-theme-pack="sumi"] header[data-header] {
   border-bottom: 3px solid var(--zd-fg);
 }
 html[data-theme-pack="sumi"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 800;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 800);
   letter-spacing: 0.02em;
 }
 html[data-theme-pack="sumi"] [data-header-logo]::after {
