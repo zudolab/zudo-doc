@@ -1,0 +1,16 @@
+---
+title: 6.0.0
+description: Release notes for 6.0.0.
+sidebar_position: 1039
+---
+
+Released: 2026-10-11
+
+### Breaking Changes
+
+- Generated projects target `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` `^6.0.0` on the zfb 4.3.1 family. The emitted project uses zudo-react and zudo-wind: `tsconfig.json` extends the package base, the CSS entry holds plain `:root` tokens, and Tailwind and Preact are not installed. Existing 5.x projects should follow the [migration guide](https://zudo-doc.takazudomodular.com/docs/guides/migrating-to-zudo-doc-6/) instead of re-running the initializer. (b9dd43b0d)
+- With the design token panel enabled, the project pins `@takazudo/zdtp` 0.8.6, which owns its Preact dependency. The generator no longer adds `preact`. (fe4e83d9d)
+
+### Features
+
+- Adds the `--agent-export` and `--mcp` choices, plus a `--mcp-deploy cloudflare` preset that emits a Cloudflare Workers MCP deployment pinned to `@modelcontextprotocol/sdk` 1.32.1 and `wrangler` 4.149.0. `llmsTxt` stays selected by default; agent export and MCP remain opt-in. (c8a4b0ca7, 5f481822a, 3fabb05fc)

@@ -1,0 +1,27 @@
+---
+title: 6.0.0
+description: 6.0.0のリリースノート。
+sidebar_position: 1133
+---
+
+リリース日: 2026-10-11
+
+### 破壊的変更
+
+- フレームワークを zfb 4 エンジンファミリーへ移行しました。`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm` は `^4.3.1` が必要です。5.x のプロジェクトは[移行ガイド](https://zudo-doc.takazudomodular.com/ja/docs/guides/migrating-to-zudo-doc-6/)に従って更新してください。(b9dd43b0d)
+- 描画に Preact ではなく zfb 独自の zudo-react ランタイムを使うようになり、Preact はコアパッケージの peer ではなくなりました。`@takazudo/zudo-doc/tsconfig.base.json` を継承し、React→Preact 互換パスを削除し、ホスト側やイジェクトしたコンポーネントを zudo-react のシグナルと `on:*` イベントへ移植してください。(b9dd43b0d)
+- スタイリングに Tailwind ではなく zudo-wind ユーティリティコンパイラーを使います。CSS エントリーから Tailwind ディレクティブを削除し、トークンは通常の `:root` 変数として宣言してください。`./safelist.css` と `./theme-no-reset.css` のエクスポートを削除し、`./wind.json` を追加しました。`zudoDoc()` が自動で登録します。(b9dd43b0d)
+- 公開型を zudo-react へ移しました。要素の記述は `Description`/`Child`、コンポーネントのコールバックは `Component<P>` を使います。組み込み要素互換のコンポーネントは `className` ではなく `class` を受け取ります。`useModalDialog(...)` は `modalDialog(scope, options)` になり、`ThemePackDialogProps.open` は `ReadonlySignal<boolean>` です。(b9dd43b0d)
+- `DocHistory` と `DesignTokenPanelBootstrap` の chrome-bindings 上書きは、Island のマウントを自ら持つサーバー境界になりました。標準の履歴にはエクスポートされた `DocHistoryBoundary` を使ってください。(84333fa7e)
+- 任意の peer である `@takazudo/zudo-doc-history-server` は `^6.0.0` が必要になりました。
+
+### 機能
+
+- オプトインのエージェント向けドキュメントエクスポート（`agentExport`）と、全文検索・取得ツールを備えた読み取り専用 MCP サーバー（`mcp`）、エージェント向けの発見用リンクを追加しました。どちらも既定値は `false` です。(4591145b0, 860eda41e, 578abf4ec)
+- サイドバーに Broader Tree の操作を追加しました。ツリーを編集上の親まで広げる、1 つのブランチだけを表示する、現在ページのローカルツリーに戻す、の各操作ができます。`items` と `initialPath` を持つオブジェクト形式のサイドバー設定で、ローカル表示の外にある編集上の親を指定できます。(9c9826dcc)
+
+### バグ修正
+
+- 見出し参照とコードフェンスのアンカーを zfb ネイティブの見出し ID に揃えました。(3f35bff85)
+- エージェントエクスポートが `agent/v1` を配置するとき、`copyPublicWithBase: false` に従うようにしました。(db8e8495d)
+- 検索ショートカットのプレースホルダーが再接続後も保たれるようにしました。(05c35801e, dab099db9)

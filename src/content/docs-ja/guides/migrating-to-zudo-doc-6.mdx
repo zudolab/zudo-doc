@@ -1,14 +1,14 @@
 ---
 title: zudo-doc 6 への移行
 sidebar_position: 80
-description: 予定されている zudo-react・Wind のメジャーリリースに向けて 5.x の利用側を更新します。
+description: 5.x の利用側を zudo-react・Wind のメジャーリリースへ更新します。
 ---
 
 ## リリース状況
 
-このガイドは、5.x から移行する予定の **zudo-doc 6.0.0** を説明します。協調して公開するメジャーリリースは **まだ未公開** で、リポジトリのパッケージバージョンは 5.28.2 のままです。現在のエンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.3.1** ファミリーで、パッケージの peer 下限は **^4.3.1** です。過去の 3.0/3.1 を移行先としてインストールしたり、このページを公開告知として扱ったりしないでください。
+このガイドは、5.x から **zudo-doc 6.0.0** への移行を説明します。6.0.0 は `@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server`、`create-zudo-doc` を揃えて公開するメジャーリリースです（[6.0.0 のリリースノート](../changelog/zudo-doc/6.0.0.mdx)を参照）。エンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.3.1** ファミリーで、パッケージの peer 下限は **^4.3.1** です。過去の 3.0/3.1 を移行先としてインストールしないでください。
 
-[#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) の修正は 4.3.0 で初めて公開され、issue は解決済みです。サポート対象の 4.3.1 ファミリーで、公開パッケージを使う厳密なブラウザー・ナビゲーション検証は **3/3 PASS（失敗・skip・retry なし）** でした。[ソースに紐付いた検証記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md)を参照してください。これは Linux Chromium の証拠であり、ネイティブ macOS WebKit や Apple IME の検証ではありません。最終候補の検証と協調公開は別の手順です。[現在の状況](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md)には、オーナーによる免除とプラットフォーム上の限界が保持されています。
+[#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) の修正は 4.3.0 で初めて公開され、issue は解決済みです。サポート対象の 4.3.1 ファミリーで、公開パッケージを使う厳密なブラウザー・ナビゲーション検証は **3/3 PASS（失敗・skip・retry なし）** でした。[ソースに紐付いた検証記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md)を参照してください。これは Linux Chromium の証拠であり、ネイティブ macOS WebKit や Apple IME の検証ではありません。[移行状況の記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md)には、プラットフォーム上の限界と、残っていた手動 IME 確認をオーナーが取り消したことが記録されています。
 
 ## 依存関係と TypeScript
 

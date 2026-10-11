@@ -48,7 +48,7 @@ ChatGPTなどのリモートMCPクライアントには、デプロイ済みのH
 
 ### プロジェクトを置き換えずにMCPを追加する
 
-MCPに対応した同じリリースの`@takazudo/zudo-doc`と`create-zudo-doc`を使います。対象は**6.0.0以降**です。6.0.0の協調公開前はnpmの`latest`が5.28.2のため、この手順には対応していません。以下のコマンドは公開後に使ってください。公開前のリポジトリテストでは、古いレジストリのイニシャライザーではなく、候補コードをpackした成果物を使います。
+MCPに対応した同じリリースの`@takazudo/zudo-doc`と`create-zudo-doc`を使います。対象は**6.0.0以降**です。5.xのリリースはこの手順に対応していません。
 
 必要なら先に[移行ガイド](./migrating-to-zudo-doc-6.mdx)に従って既存プロジェクトを更新し、[静的エクスポート](./agent-export.mdx)を有効にします。コンテンツ、`siteUrl`、`base`、ロケール、バンドル設定、他の機能と共有する依存関係、既存スクリプトを保持します。既存ディレクトリに対してイニシャライザーを実行しないでください。
 
@@ -67,8 +67,8 @@ cp -n "$MCP_REFERENCE/scripts/stage-cloudflare-base.mjs" scripts/stage-cloudflar
 参照プロジェクトに記載されたMCP依存関係をインストールします。現在対応する組み合わせは次のとおりです。
 
 ```bash
-pnpm add @modelcontextprotocol/sdk@1.31.0 @takazudo/zfb-adapter-cloudflare@4.3.1
-pnpm add -D wrangler@4.111.0
+pnpm add @modelcontextprotocol/sdk@1.32.1 @takazudo/zfb-adapter-cloudflare@4.3.1
+pnpm add -D wrangler@4.149.0
 ```
 
 アダプターはプロジェクトが対応するzfbバージョンに合わせます。既存の`zudoDoc({ ... })`内で、他の設定を維持して次のフィールドを有効にします。

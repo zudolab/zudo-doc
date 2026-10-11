@@ -2058,8 +2058,8 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
       ROOT_ZFB_PINS["@takazudo/zfb-adapter-cloudflare"],
     );
-    expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBe("1.31.0");
-    expect(pkg.devDependencies.wrangler).toBe("4.111.0");
+    expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBe("1.32.1");
+    expect(pkg.devDependencies.wrangler).toBe("4.149.0");
     const workspace = await fs.readFile(path.join(project, "pnpm-workspace.yaml"), "utf8");
     expect(workspace).toContain("onlyBuiltDependencies:\n  - esbuild\n  - workerd\n  - sharp\n");
     expect(workspace).toContain("allowBuilds:\n  esbuild: true\n  workerd: true\n  sharp: true\n");
