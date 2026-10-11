@@ -16,6 +16,7 @@ import type { Settings } from "../settings.js";
 import { themeToggleLabels } from "../theme-toggle/labels.js";
 import { deriveDateFormats, deriveNavDataPrep } from "../chrome/derive.js";
 import { normalizeIslandData } from "../chrome/island-data.js";
+import { toSidebarClientData } from "../sidebar/client-data.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
@@ -92,8 +93,7 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
     const themeDefaultMode = getThemeDefaultMode();
 
     const treeProps = normalizeIslandData({
-      nodes,
-      navigation,
+      ...toSidebarClientData(nodes, navigation),
       ...(currentSlug !== undefined ? { currentSlug } : {}),
       rootMenuItems,
       ...(backToMenuLabel !== undefined ? { backToMenuLabel } : {}),

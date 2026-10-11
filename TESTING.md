@@ -769,3 +769,18 @@ Apple IME **NOT RUN / OWNER WAIVED**, A3 **PARTIAL / UNVERIFIED**, A5 **NOT RUN*
 ATOK A1/A2 results retain their original SHAs and are not claimed repeated on
 the latest candidate. Historical byte/browser diagnostics retain their accepted
 differences rather than becoming equality or PASS claims.
+
+## Sidebar client transport (#4536)
+
+Native desktop/mobile factories validate navigation data before projecting client
+fields. Both local nodes and broader `navigation.roots` exclude descriptions;
+server navigation/category data retains them. Custom hosts can use
+`toSidebarClientData` from `@takazudo/zudo-doc/sidebar`. Custom mobile overrides
+are copied without remapping their URLs. The existing opaque navigation identity,
+occurrence topology and expansion metadata remain intact.
+
+`client-data.test.ts` and `sidebar-client-data.test.tsx` cover recursive field
+selection, malformed discarded data and actual native serialized props. The
+sidebar interaction suites exercise projected data through native hydration.
+See [the reviewed design](docs/findings/4536-sidebar-client-transport.md).
+This projection does not exempt A2 bytes or establish release provenance.
