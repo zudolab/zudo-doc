@@ -16,15 +16,17 @@ This is the current-status record for the zfb 4 migration (#4430) after PR #4477
   - Two historical comparison diagnostics stay **failed with explicitly accepted differences**: `Migration baseline/current browser measurement` and `Complete A2 baseline/current byte differences`. They are not passes, and bytes and pixels are not claimed identical. The causes are attributed in the owner checkpoint and in [R6 cloud CI attribution](r6-cloud-ci-attribution.md).
 - [Production Deploy 38074440930](https://github.com/zudolab/zudo-doc/actions/runs/38074440930) on the merge SHA succeeded. All five jobs succeeded: Build Doc History, Build Site, Deploy to Cloudflare Workers, HTML validate and Deploy Notification. This is a workflow result. No new manual live-site or browser acceptance was run after the merge.
 
-## Pins match npm `latest`: zfb family 4.3.0, zdtp 0.8.6, release packages 5.28.2 (2026-10-11 JST)
+## Pins match npm `latest`: zfb family 4.3.1, zdtp 0.8.6, release packages 5.28.2 (2026-10-11 JST)
 
 | Item | Repository | npm `latest` observed |
 | --- | --- | --- |
 | Root, `@takazudo/zudo-doc-history-server`, `@takazudo/zudo-doc`, `create-zudo-doc` | 5.28.2 | 5.28.2 (the three release packages) |
-| `@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, `zfb-adapter-cloudflare` | exactly 4.3.0, peers `^4.3.0` | 4.3.0 ([upstream v4.3.0](https://github.com/Takazudo/zudo-front-builder/releases/tag/v4.3.0)) |
+| `@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, `zfb-adapter-cloudflare` | exactly 4.3.1, peers `^4.3.1` | 4.3.1 ([upstream v4.3.1](https://github.com/Takazudo/zudo-front-builder/releases/tag/v4.3.1)) |
 | `@takazudo/zdtp` | 0.8.6 | 0.8.6 |
 
-Coordinated 6.0.0 is unreleased (npm `latest` 5.28.2). The audited release records show no completed 6.0.0 publication. Do not infer that consumers can install 6.0.0 just because the showcase is merged and deployed. Upstream [Takazudo/zudo-front-builder#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) closed on 2026-10-10 and is no longer a blocker. No npm `latest` newer than 4.3.0 was returned for the zfb family. Refresh these lookups when the next implementation starts.
+Coordinated 6.0.0 is unreleased (npm `latest` 5.28.2). The audited release records show no completed 6.0.0 publication. Do not infer that consumers can install 6.0.0 just because the showcase is merged and deployed. Upstream [Takazudo/zudo-front-builder#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) closed on 2026-10-10 and is no longer a blocker.
+
+The zfb family moved from 4.3.0 to the published 4.3.1 on 2026-10-11 through [PR #4516](https://github.com/zudolab/zudo-doc/pull/4516) (`deps/zfb-4.3.1`, final head `8dbbbcedb`), whose branch was merged into this documentation PR (#4515) so the two post-merge PRs land as one. Its evidence (published-byte verification, MD/WASM hashes, History-rejection smoke regressions, A2 attribution, installed barebone/all-feature consumers, exact-head PR Checks and Nightly Exam) is in [zfb 4.3.1 verification](../zfb-4.3.1/verification.md). A `@takazudo/*` registry bump dry run on the combined tree (2026-10-11) reported every live pin up-to-date; the only remaining "bump" rows were historical fixture manifests under evidence directories, which are kept as-is, and the history-server peer floor `^5.17.2`, which moves only in the 6.0.0 release commit.
 
 ## Manual IME evidence keeps its limits; the Apple IME gate is owner-waived
 
@@ -51,23 +53,16 @@ None of these becomes a PASS through this record.
   - The repository rulesets on `main` contain only `deletion` and `non_fast_forward`.
 - Observation limits: this read shows the configured settings at that time. It does not show how #4477's merge satisfied or bypassed the stale context. Do not infer a bypass, or a blocked merge, from `enforce_admins=false`.
 - Follow-up for the next PR or release owner: before attempting a merge, inspect the effective protection. Reconcile the stale required context only through an explicitly authorized settings action. Do not rename the passing CI job to match. This does not block independent documentation work.
+- **Resolved 2026-10-11 JST (owner-directed merge/release run).** `PATCH repos/zudolab/zudo-doc/branches/main/protection/required_status_checks` replaced the contexts with the 26 names in `.required-checks-manifest` (`strict` stays `false`). Net change: `Package Safelist Check` removed; `Chrome Bindings Fixture Drift Check`, `Theme A11y Audit`, `Package Wind Manifest Check` and `Bash 3.2 Compatibility Lint` added. No other protection field or ruleset was touched. PR #4515 went from `BLOCKED` to `CLEAN` without any new check run.
 
-## Next release waits on a newer published zfb, then a separately authorized 6.0.0
+## Next release: zfb 4.3.1 is adopted and verified; the 6.0.0 release itself remains
 
-These are recorded next actions. They do not authorize anyone to carry them out. Each step names when it can run.
+These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #4516 (combined into #4515). Steps 4–6 remain and run under the owner's release direction.
 
-1. **Select the next published zfb target. Waits on a newer published zfb.** The owner's direction is to take the updated zfb into zudo-doc's next version. On 2026-10-11 the four npm `latest` tags still resolve to 4.3.0. Recheck registry releases when starting. Do not substitute an unpublished branch or invent a target version, and do not call the current pins stale only because upstream development continues.
-2. **Adopt that exact tuple in a separate bounded update. Runs once step 1 has a target.**
-   - Review the release changes and the public contract.
-   - Update the zfb/runtime/md-wasm/adapter pins together with the required scaffold, config and test mirrors.
-   - Preserve package ownership and the supported floors, unless the actual change requires a documented exception.
-   - Keep zdtp 0.8.6. No unrelated dependency sweep is implied.
-3. **Verify the resulting candidate. Runs after step 2.**
-   - Follow the current `TESTING.md`, the dependency-update contract and `RELEASE.md`.
-   - Cover the changed runtime and adapter surfaces, the pin/template/fixture guards, the native 06R/search/heading regressions, and fresh installed three-package and scaffold consumers.
-   - The existing 4.3.0 CI is baseline evidence, not proof for a later tuple.
-   - Keep the strict process-lifecycle assertions, and classify causal CSS and build-identity differences honestly.
-4. **Prepare and deliver coordinated 6.0.0 through the existing #4512 / #4502 / #4430. Needs a separate release authorization.** Follow `RELEASE.md` (normally via `l-make-release`):
+1. **Select the next published zfb target. Done: 4.3.1.** Upstream [v4.3.1](https://github.com/Takazudo/zudo-front-builder/releases/tag/v4.3.1) published on 2026-10-11 and the four npm `latest` tags resolve to it. The pins are not stale.
+2. **Adopt that exact tuple in a separate bounded update. Done in #4516.** Root, package and scaffold pins moved together to exactly 4.3.1 with `^4.3.1` peers; zdtp stays 0.8.6; the history-server peer floor is unchanged until the major release commit.
+3. **Verify the resulting candidate. Done in #4516.** Exact-head PR Checks (28 jobs) and the expanded Nightly Exam (482 E2E, slow lanes, scaffold published guard, a11y) succeeded; installed barebone (12/12) and all-feature (19/19) consumers passed browser checks; the three strict A2 fingerprints changed only through the native `data-zfb-build` identity. Limits: Linux Chromium evidence, no native macOS WebKit; operator-driven manual smoke omitted; the IME table above is unchanged. Details: [zfb 4.3.1 verification](../zfb-4.3.1/verification.md).
+4. **Prepare and deliver coordinated 6.0.0 through the existing #4512 / #4502 / #4430.** Follow `RELEASE.md` (normally via `l-make-release`):
    - Publish in the order history-server → zudo-doc → create-zudo-doc, with synchronized release versions.
    - Write six EN/JA package notes, plus the generated changelogs and redirects.
    - Update the history-server peer floor and the `approvedBaseline` in `check-pin-parity.mjs` together to `^6.0.0`.

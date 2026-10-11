@@ -1,10 +1,10 @@
-# Release readiness — published zfb 4.3.0
+# Release readiness — zfb 4 migration (current pins: published zfb 4.3.1)
 
 > **Canonical copy:** `docs/findings/4430-zfb3-migration/release-readiness.md` is canonical from now on (relocated by #4508). The copy under `_temp-resource/4430-zfb3-migration/` is a frozen duplicate kept only until #4476 deletes that directory; edit this file, not the temporary one.
 
 ## Current status — #4477 merged and deployed; coordinated 6.0.0 unreleased (2026-10-11)
 
-PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) merged to `main` as `b9dd43b0d` (final head `68ad9623c`, same tree), and [Production Deploy 38074440930](https://github.com/zudolab/zudo-doc/actions/runs/38074440930) succeeded. Pins: zfb family 4.3.0 (peers `^4.3.0`), zdtp 0.8.6. Coordinated 6.0.0 unreleased (npm `latest` 5.28.2). The macOS Apple IME gate was owner-waived for the merge; it is NOT RUN, not PASS, and A3/A5 keep their limits. The live status, the evidence limits, the required-check name mismatch, and the ordered next-release handoff are in [post-merge status](2026-10-11-post-merge-status.md). Everything below is dated history: it keeps its original SHAs, results and decisions, and its instructions to merge #4477 no longer apply.
+PR [#4477](https://github.com/zudolab/zudo-doc/pull/4477) merged to `main` as `b9dd43b0d` (final head `68ad9623c`, same tree), and [Production Deploy 38074440930](https://github.com/zudolab/zudo-doc/actions/runs/38074440930) succeeded. Pins: zfb family 4.3.1 (peers `^4.3.1`; adopted by #4516, evidence in [zfb 4.3.1 verification](../zfb-4.3.1/verification.md)), zdtp 0.8.6. Coordinated 6.0.0 unreleased (npm `latest` 5.28.2). The macOS Apple IME gate was owner-waived for the merge; it is NOT RUN, not PASS, and A3/A5 keep their limits. The live status, the evidence limits, the required-check name mismatch, and the ordered next-release handoff are in [post-merge status](2026-10-11-post-merge-status.md). Everything below is dated history: it keeps its original SHAs, results and decisions, and its instructions to merge #4477 no longer apply.
 
 ## History — closeout disposition before merge (2026-10-10, superseded 2026-10-11)
 
