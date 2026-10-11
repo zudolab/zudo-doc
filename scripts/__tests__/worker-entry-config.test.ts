@@ -87,7 +87,6 @@ describe("custom Worker deployment contract", () => {
       const source = read(workflow);
       expect(source).toContain('mktemp "$PWD/.wrangler-preview.XXXXXX.toml"');
       expect(source).toContain('node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"');
-      expect(source).toContain("wrangler@4.111.0 deploy");
       expect(source).toContain('Preview service bootstrap @ ${GITHUB_SHA:0:7}');
       expect(source).toContain('--config "$PREVIEW_CONFIG"');
       expect(source).toContain("/workers/scripts/zudo-doc-preview/subdomain");
@@ -97,6 +96,50 @@ describe("custom Worker deployment contract", () => {
       expect(source).not.toContain('$RUNNER_TEMP/wrangler-preview-bootstrap.toml');
       expect(source).not.toContain("UPLOAD_STATUS");
     }
+  });
+
+  it("routes every deploy and preview upload through the shared Wrangler pin", () => {
+    // #4528: one manifest pin (devDependencies.wrangler) resolved by
+    // scripts/wrangler-pinned.mjs — no per-workflow version literals.
+    const count = (source: string, pattern: RegExp) => source.match(pattern)?.length ?? 0;
+    let total = 0;
+
+    for (const workflow of [
+      ".github/workflows/main-deploy.yml",
+      ".github/workflows/preview-deploy.yml",
+      ".github/workflows/pr-checks.yml",
+    ]) {
+      const source = read(workflow);
+      expect(source, workflow).not.toContain("npx wrangler@");
+      expect(source, workflow).not.toMatch(/wrangler@\d/);
+      total += count(source, /node scripts\/wrangler-pinned\.mjs /g);
+    }
+
+    const main = read(".github/workflows/main-deploy.yml");
+    expect(count(main, /node scripts\/wrangler-pinned\.mjs /g)).toBe(1);
+    expect(main).toMatch(/^\s*run: node scripts\/wrangler-pinned\.mjs deploy\s*$/m);
+
+    for (const workflow of [
+      ".github/workflows/preview-deploy.yml",
+      ".github/workflows/pr-checks.yml",
+    ]) {
+      const source = read(workflow);
+      expect(count(source, /node scripts\/wrangler-pinned\.mjs deploy\b/g), workflow).toBe(1);
+      expect(source, workflow).toMatch(
+        /node scripts\/wrangler-pinned\.mjs deploy \\\n\s*--config "\$PREVIEW_CONFIG" \\\n\s*--message="Preview service bootstrap @/,
+      );
+      expect(count(source, /node scripts\/wrangler-pinned\.mjs versions upload\b/g), workflow).toBe(1);
+      const fn = source.match(/upload_preview\(\) \{\n([\s\S]*?)\n\s*\}\n/);
+      expect(fn, `${workflow} upload_preview()`).not.toBeNull();
+      expect(fn![1]).toMatch(
+        /node scripts\/wrangler-pinned\.mjs versions upload \\\n\s*--config "\$PREVIEW_CONFIG" \\\n\s*--preview-alias[= ]"\$(?:SLUG|ALIAS)"/,
+      );
+      expect(fn![1]).toContain('2>&1 | tee "$DEPLOY_LOG"');
+      // Initial upload plus the one alias-URL retry.
+      expect(count(source, /^\s*upload_preview\s*$/gm), workflow).toBe(2);
+    }
+
+    expect(total).toBe(5);
   });
 
   it("keeps every post-deploy gate on a bounded propagation retry policy", () => {
