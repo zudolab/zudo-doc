@@ -295,10 +295,14 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 ## Shipped CSS artifacts and Wind manifest
 
-The current migration target is published zfb family **4.3.0**, peers **^4.3.0**.
+The current migration target is published zfb family **4.3.1**, peers **^4.3.1**.
 The coordinated zudo-doc/create-zudo-doc **6.0.0 is not released**. Source package
-versions still read 5.28.2. Upstream zfb #4097 remains an open browser/navigation
-gate; do not infer release readiness from these architecture instructions.
+versions still read 5.28.2. Upstream zfb #4097 is resolved; its strict published
+4.3.1 consumer control passed 3/3 with no skips or retries in the
+[source-bound verification](../../docs/findings/zfb-4.3.1/verification.md).
+Linux Chromium evidence does not prove native macOS WebKit or Apple IME behavior;
+retain the [owner disposition and platform limits](../../docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md).
+Release preparation and publication remain separate from these architecture instructions.
 
 `theme.css`, `content.css`, `page-loading.css`, and `features.css` are copied from
 `src/` to `dist/` by the tsup `onSuccess` chain. `gen-wind-manifest.mjs` then
