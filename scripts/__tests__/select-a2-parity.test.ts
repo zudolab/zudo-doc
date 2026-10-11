@@ -96,6 +96,9 @@ describe("#4528 A2 input selection (real detector, synthetic histories)", () => 
     ["tsconfig.json", "toolchain"],
     ["scripts/parity-html-normalize.mjs", "fixture-contract"],
     ["scripts/__tests__/fixtures/a2-route-reference.json", "fixture-contract"],
+    ["scripts/a2-causal-diff.py", "evidence-maintenance"],
+    ["scripts/__tests__/a2-causal-diff.test.ts", "evidence-maintenance"],
+    ["scripts/__tests__/fixtures/a2-causal-source-packs.json", "evidence-maintenance"],
     [".github/workflows/pr-checks.yml", "gate-execution"],
     [".github/actions/setup-node-pnpm/action.yml", "gate-execution"],
     ["scripts/ensure-workspace-build.mjs", "gate-execution"],
@@ -113,6 +116,7 @@ describe("#4528 A2 input selection (real detector, synthetic histories)", () => 
     ["src/content/docs-ja/guides/migrating-to-zudo-doc-6.mdx"],
     ["packages/zudo-doc-other/package.json"],
     ["scripts/parity-html-normalize.mjs.bak"],
+    ["scripts/a2-causal-diff.py.bak"],
   ])("skips cheaply when only unrelated %s changes", (path) => {
     const result = changeOnly([path]);
     expect(result.status, result.log).toBe(0);

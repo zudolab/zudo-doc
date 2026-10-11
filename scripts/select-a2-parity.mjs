@@ -42,6 +42,12 @@ export const A2_INPUTS = [
     paths: ["scripts/parity-html-normalize.mjs", "scripts/__tests__/fixtures/a2-route-reference.json"],
   },
   {
+    category: "evidence-maintenance",
+    // Changes to offline diagnosis still need fresh strict A2 execution. The
+    // helper never changes the gate's normalization or accepts references.
+    paths: ["scripts/a2-causal-diff.py", "scripts/__tests__/a2-causal-diff.test.ts", "scripts/__tests__/fixtures/a2-causal-source-packs.json"],
+  },
+  {
     category: "gate-execution",
     paths: [
       ".github/workflows/pr-checks.yml",

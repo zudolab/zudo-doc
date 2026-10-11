@@ -202,6 +202,7 @@ a rename are seen, and selects A2 when any changed path matches:
 | workspace-dependency | `packages/doc-history-server/` — built first by `build:workspace`; `zudo-doc` imports it. |
 | toolchain | root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.npmrc`, `.nvmrc`, `tsconfig.json` |
 | fixture-contract | `scripts/parity-html-normalize.mjs`, `scripts/__tests__/fixtures/a2-route-reference.json` |
+| evidence-maintenance | `scripts/a2-causal-diff.py`, its `scripts/__tests__/a2-causal-diff.test.ts` tests and `scripts/__tests__/fixtures/a2-causal-source-packs.json` source snapshot — changes to the offline diagnostic tool also require fresh strict A2 execution. |
 | gate-execution | `.github/workflows/pr-checks.yml`, `.github/actions/setup-node-pnpm/`, `scripts/ensure-workspace-build.mjs`, `scripts/select-a2-parity.mjs` |
 
 Everything else — root README, showcase `src/content/docs` and `docs-ja`, other packages —
@@ -757,6 +758,45 @@ can be preserved with `ZUDO_A2_CAPTURE_DIR=<external-directory>` while running t
 output remain available for per-page causal review. Fingerprint references live
 outside the linked package tree to avoid changing its source identity when the
 reference changes. No build identity, runtime marker or markup is normalized away.
+
+### Offline A2 causal evidence (#4538)
+
+Use `python3 scripts/a2-causal-diff.py --help` to compare already accessible A2
+capture directories. This optional offline helper validates the three raw/normalized
+pages and manifests, immutable capture source SHAs, accepted reference hashes from
+an independently specified source, exact source pack maps, and stylesheet version
+obligations. It uses the unchanged JavaScript normalizer through Node and writes
+complete raw, normalized and forensic residual diffs to a new directory outside
+the repository and Git metadata. Captures also stay outside the linked package.
+It does not download artifacts, build, or update references.
+
+```sh
+python3 scripts/a2-causal-diff.py \
+  --repo "$PWD" \
+  --baseline /tmp/a2-accepted --candidate /tmp/a2-candidate \
+  --baseline-source <actual-baseline-checkout-sha> \
+  --candidate-source <actual-candidate-checkout-sha> \
+  --reference-source <accepted-reference-commit-sha> \
+  --output /tmp/a2-comparison-new
+```
+
+Supply full immutable SHAs from independently reviewed capture evidence; a manifest
+alone is not proof of its own authenticity. Required Git objects must already be
+available locally. Preserve original archive checksums and run/job/checkout evidence
+separately. The helper reports source trees but does not certify their equivalence.
+
+Exit **0** means only exact normalized capture equality. Exit **1** means differences
+require review, including when restoring only observed identity values and source-backed
+pack-version values reproduces the baseline. Exit **2** means invalid evidence or an
+unsupported contract. Native identities are explicitly **observed, freshness unverified**:
+even a coherent token may be stale. Review residual diffs, then independently justify
+any reference change and obtain fresh required CI with A2 actually executed. A helper
+report cannot replace the release checkout/tree/artifact requirements in `RELEASE.md`.
+
+This is the bounded maintenance fallback, not semantic gate separation: strict hashes,
+all existing assertions and shared-normalizer callers remain unchanged. Native identity
+baseline churn remains. [Design and regression evidence](docs/findings/4538-a2-causal-helper.md)
+records why no equivalent independent expected-identity check was demonstrated.
 
 Hydration probes must demonstrate an actual registered island, real handler input,
 repeated state changes and cleanup. For non-root deployments retain prefixed asset
