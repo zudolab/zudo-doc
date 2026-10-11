@@ -384,7 +384,10 @@ describe("packed generated agent consumers", () => {
     // layout (llms-txt/emit.ts); their public links still retain the site base.
     const restoredLlms = await fs.readFile(path.join(project, "dist/llms.txt"), "utf8");
     expect(restoredLlms).toBe(originalLlms);
-    expect(restoredLlms).toContain(`https://docs.example.test${base}/docs/agent-proof`);
+    const restoredProof = restored.manifest.documents.find((document: any) => document.title === "Agent Proof");
+    // With agentExport enabled, llms.txt intentionally links to per-page
+    // Markdown; human citation URLs were checked through the SDK above.
+    expect(restoredLlms).toContain(new URL(restoredProof.markdownUrl, "https://docs.example.test").href);
   }, 20 * 60 * 1000);
 
 });
