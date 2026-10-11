@@ -113,7 +113,13 @@ gate selects its slow test from the changed paths (`scripts/select-a2-parity.mjs
 contract in `TESTING.md`, "A2 No-Stub Parity Gate input selection"), and a job whose test
 step was skipped still reports success.
 
-Before tagging or publishing, check the candidate's PR Checks run:
+A2 runs only in PR Checks (`pull_request` to `main`). A direct push to `main` runs no A2
+job, and a local run of the subset is not a substitute: the native identity depends on the
+build environment, so local fingerprints differ from the hosted reference even on an
+unchanged `main`. The release commit must therefore reach `main` through a release PR, as
+#4524 did, and the A2 evidence comes from that PR's run.
+
+Before merging the release PR, and so before tagging or publishing, check its PR Checks run:
 
 - [ ] The A2 job summary reads `A2 decision: RUN (...)` and
       `A2 execution: EXECUTED and passed (...)`. A release PR
@@ -296,9 +302,10 @@ exactly as v3.0.0, v4.0.0 and v5.0.0 did.
 
 A clean linear release therefore needs no interleaving:
 
-> bump versions + scaffold pins → `pnpm b4push` → commit → push → main CI green (with A2
-> executed — see "Release-candidate CI: A2 must execute, not just pass") → tag → publish all
-> three in publish-order.
+> bump versions + scaffold pins → `pnpm b4push` → commit → push a release branch and open
+> a PR to `main` → PR Checks green with A2 executed (see "Release-candidate CI: A2 must
+> execute, not just pass") → merge → main CI green → tag → publish all three in
+> publish-order.
 
 ---
 

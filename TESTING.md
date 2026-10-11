@@ -220,7 +220,8 @@ A2's test steps on release PR #4524 even though the release changed the linked p
 bytes; the post-publication exam then failed three fingerprints (fixed in #4527 — see the
 [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md)).
 A release candidate changes package manifests and the lockfile, so A2 must show as
-**executed** before publication; that check is in `RELEASE.md`, "Release-candidate CI: A2
+**executed** before publication. The job exists only in PR Checks, and local fingerprints
+are environment-dependent, so that evidence comes from the release PR's run; that check is in `RELEASE.md`, "Release-candidate CI: A2
 must execute, not just pass".
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
