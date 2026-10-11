@@ -44,3 +44,47 @@ Native status is scoped to the recorded proof: #3360 includes declarations/MDX S
 | [Takazudo/zudo-front-builder#3329](https://github.com/Takazudo/zudo-front-builder/issues/3329) | [Owned Engines][Follow-up] Re-pin and port the zfb docs host after release | OPEN | none identified; recheck before release | pending release | Docs-host repin follows owner release |
 | [Takazudo/zudo-front-builder#3330](https://github.com/Takazudo/zudo-front-builder/issues/3330) | [deferred-verification] Owned Engines: complete the real Japanese IME R-A06 check | OPEN | none identified; recheck before release | pending IME check | Real IME verification remains pending |
 | [Takazudo/zudo-front-builder#3331](https://github.com/Takazudo/zudo-front-builder/issues/3331) | [Owned Engines][Follow-up] Restore a published-preset runtime identity regression fixture | OPEN | none identified; recheck before release | pending fixture | Published-preset identity regression proof remains pending |
+
+## Refresh (2026-10-11, zfb 4.3.1 published)
+
+Current issue `state` / `closedAt` was read through GitHub on 2026-10-11. The 2026-09-30 lock above is unchanged. This census covers all 34 issues currently labeled `zudo-doc-v3-dogfood`, plus zdtp #1002. Published fix attribution uses the [3.1.0](https://github.com/Takazudo/zudo-front-builder/releases/tag/v3.1.0), [3.2.0](https://github.com/Takazudo/zudo-front-builder/releases/tag/v3.2.0) and [4.2.1](https://github.com/Takazudo/zudo-front-builder/releases/tag/v4.2.1) release notes and the packed 3.1.0 evidence above. A close date is not a fix version. The current consumer uses the published 4.3.1 family; see [verification](../zfb-4.3.1/verification.md).
+
+| Issue | Current state / closed date (UTC) | First published fix version |
+| --- | --- | --- |
+| [zfb #3359](https://github.com/Takazudo/zudo-front-builder/issues/3359) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3360](https://github.com/Takazudo/zudo-front-builder/issues/3360) | CLOSED / 2026-09-30 | 3.1.0 |
+| [zfb #3361](https://github.com/Takazudo/zudo-front-builder/issues/3361) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3362](https://github.com/Takazudo/zudo-front-builder/issues/3362) | CLOSED / 2026-09-30 | 3.1.0 |
+| [zfb #3363](https://github.com/Takazudo/zudo-front-builder/issues/3363) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3364](https://github.com/Takazudo/zudo-front-builder/issues/3364) | CLOSED / 2026-09-30 | 3.1.0 |
+| [zfb #3365](https://github.com/Takazudo/zudo-front-builder/issues/3365) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3366](https://github.com/Takazudo/zudo-front-builder/issues/3366) | CLOSED / 2026-09-30 | No source override; diagnostic fixed in 3.1.0; package-root `dist` scanning added in 3.2.0 |
+| [zfb #3367](https://github.com/Takazudo/zudo-front-builder/issues/3367) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3368](https://github.com/Takazudo/zudo-front-builder/issues/3368) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3369](https://github.com/Takazudo/zudo-front-builder/issues/3369) | CLOSED / 2026-09-30 | 3.1.0 |
+| [zfb #3370](https://github.com/Takazudo/zudo-front-builder/issues/3370) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3372](https://github.com/Takazudo/zudo-front-builder/issues/3372) | OPEN / — | No complete fix; partial additions in 3.2.0 |
+| [zfb #3373](https://github.com/Takazudo/zudo-front-builder/issues/3373) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3374](https://github.com/Takazudo/zudo-front-builder/issues/3374) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3375](https://github.com/Takazudo/zudo-front-builder/issues/3375) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3376](https://github.com/Takazudo/zudo-front-builder/issues/3376) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3377](https://github.com/Takazudo/zudo-front-builder/issues/3377) | CLOSED / 2026-09-30 | 3.1.0 |
+| [zfb #3378](https://github.com/Takazudo/zudo-front-builder/issues/3378) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3379](https://github.com/Takazudo/zudo-front-builder/issues/3379) | CLOSED / 2026-09-30 | 3.1.0 |
+| [zfb #3380](https://github.com/Takazudo/zudo-front-builder/issues/3380) | CLOSED / 2026-10-01 | 3.1.0 |
+| [zfb #3381](https://github.com/Takazudo/zudo-front-builder/issues/3381) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3384](https://github.com/Takazudo/zudo-front-builder/issues/3384) | CLOSED / 2026-10-01 | 3.2.0 |
+| [zfb #3385](https://github.com/Takazudo/zudo-front-builder/issues/3385) | CLOSED / 2026-09-30 | 3.1.0 |
+| [zfb #3386](https://github.com/Takazudo/zudo-front-builder/issues/3386) | OPEN / — | No complete fix; partial additions in 3.2.0 |
+| [zfb #3569](https://github.com/Takazudo/zudo-front-builder/issues/3569) | CLOSED / 2026-10-04 | 3.2.0 |
+| [zfb #3570](https://github.com/Takazudo/zudo-front-builder/issues/3570) | CLOSED / 2026-10-04 | 3.2.0 |
+| [zfb #3645](https://github.com/Takazudo/zudo-front-builder/issues/3645) | CLOSED / 2026-10-05 | Not established by this census |
+| [zfb #3647](https://github.com/Takazudo/zudo-front-builder/issues/3647) | CLOSED / 2026-10-05 | Not established by this census |
+| [zfb #3895](https://github.com/Takazudo/zudo-front-builder/issues/3895) | CLOSED / 2026-10-06 | Not established by this census |
+| [zfb #3992](https://github.com/Takazudo/zudo-front-builder/issues/3992) | CLOSED / 2026-10-07 | Not established by this census |
+| [zfb #4059](https://github.com/Takazudo/zudo-front-builder/issues/4059) | CLOSED / 2026-10-09 | Not established by this census |
+| [zfb #4060](https://github.com/Takazudo/zudo-front-builder/issues/4060) | CLOSED / 2026-10-09 | 4.2.1 |
+| [zdtp #1002](https://github.com/Takazudo/zudo-design-token-panel/issues/1002) | CLOSED / 2026-10-10 | 0.8.6 (Preact dependency ownership); zfb 3.1.0 (public CSS imports) |
+
+Open #3386 and #3372 do not block 6.0.0: the accepted cascade/parity fixes and authored catalog replacements cover this consumer. Partial additions are not reported as a complete proposal fix. Full consumer dispositions: [current dogfood table](README.md#dogfood-issues-state-as-of-2026-10-11).

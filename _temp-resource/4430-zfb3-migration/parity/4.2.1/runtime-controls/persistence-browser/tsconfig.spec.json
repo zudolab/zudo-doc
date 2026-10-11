@@ -1,1 +1,0 @@
-{"compilerOptions":{"target":"ESNext","module":"ESNext","moduleResolution":"Bundler","strict":true,"noEmit":true,"skipLibCheck":true,"allowJs":true},"include":["persistence.spec.ts"]}

@@ -41,3 +41,7 @@ Copy-only relocation ahead of the gated #4476 deletion of `_temp-resource/4430-z
 - Before: 162 hits in 42 files (`scripts/migration-4097.mjs` and 41 findings pages; mostly `../../../_temp-resource/.../conventions.md` links).
 - After: only historical mentions remain, with no link targets and no executable reference. They name raw dumps that are deliberately not preserved (`static-analysis*.json`, `runtime-controls/`, `explain.tsv`, the A2 JSON, probe logs), the README/issue-locks plan text about #4476, and this document.
 - `.github/workflows/migration-hosted-parity.yml` has no direct path; it calls `scripts/migration-4097.mjs`, which resolves the new location.
+
+## #4476 deletion disposition (2026-10-11)
+
+Copied `_temp-resource/4430-zfb3-migration/lessons-digest.md` and `_temp-resource/4430-zfb3-migration/codemod-deferred.md` verbatim to this directory with provenance lines. Compared `_temp-resource/4430-zfb3-migration/release-readiness.md` with [`release-readiness.md`](release-readiness.md); it was not copied because the permanent copy retains its historical substance. Deleted the remaining temp artifacts—raw parity captures, explore maps, spike repros, `4482-search/`, and `4483-heading-ids/` scratch—because their summaries already live in this directory.
