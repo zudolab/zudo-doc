@@ -307,7 +307,7 @@ describe("packed generated agent consumers", () => {
     await fs.writeJson(path.join(project, "wrangler.jsonc"), wrangler, { spaces: 2 });
     const originalIgnore = await fs.readFile(path.join(project, ".gitignore"), "utf8");
     await fs.writeFile(path.join(project, ".gitignore"), `${originalIgnore}\n.wrangler/\n`);
-    installScaffoldedDeps(project, false);
+    installScaffoldedDeps(project, false, { manifestEdited: true });
 
     // Positive omission control: the adapter build succeeds but prerendered
     // HTML is flat, so literal Wrangler assets lack the base-prefixed page.
@@ -366,7 +366,7 @@ describe("packed generated agent consumers", () => {
     await fs.remove(path.join(project, "wrangler.jsonc"));
     await fs.remove(path.join(project, "scripts/stage-cloudflare-base.mjs"));
     await fs.writeFile(path.join(project, ".gitignore"), originalIgnore);
-    installScaffoldedDeps(project, false);
+    installScaffoldedDeps(project, false, { manifestEdited: true });
     runOrThrow("pnpm build", project, { SKIP_DOC_HISTORY: "1" });
     const restored = await artifacts(project, base.slice(1));
     expect(restored.manifest).toEqual(manifest);
