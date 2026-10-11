@@ -189,6 +189,38 @@ it ran) — this lane and the page-axis fix in "Theme A11y Audit" below are comp
 not alternatives: coverage makes the audit capable of failing on this bug class, and this
 lane makes that failure block the PR instead of waiting for the next nightly run.
 
+**A2 No-Stub Parity Gate input selection (#4528).** The required `A2 No-Stub Parity Gate`
+job always runs, but it executes the slow `A2 no-stub: injected routes render correct HTML`
+subset only when a changed path is in A2's build-input contract. Selection is owned by
+`scripts/select-a2-parity.mjs` (built-in Node + git, no install). It diffs
+`BASE_SHA...HEAD` with `git diff --no-renames --name-only`, so deletions and both sides of
+a rename are seen, and selects A2 when any changed path matches:
+
+| Category | Paths |
+| --- | --- |
+| linked-package | `packages/zudo-doc/` — the whole tree. Every tracked file, including README, CLAUDE.md, tests and fixtures, feeds zfb's native `data-zfb-build` identity, which the fingerprints include. |
+| workspace-dependency | `packages/doc-history-server/` — built first by `build:workspace`; `zudo-doc` imports it. |
+| toolchain | root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.npmrc`, `.nvmrc`, `tsconfig.json` |
+| fixture-contract | `scripts/parity-html-normalize.mjs`, `scripts/__tests__/fixtures/a2-route-reference.json` |
+| gate-execution | `.github/workflows/pr-checks.yml`, `.github/actions/setup-node-pnpm/`, `scripts/ensure-workspace-build.mjs`, `scripts/select-a2-parity.mjs` |
+
+Everything else — root README, showcase `src/content/docs` and `docs-ja`, other packages —
+is a cheap skip. A missing or invalid base SHA or a failed diff fails the selection step;
+it never degrades to an empty skip. The step logs the decision with the matched category
+and path, and writes a job summary line `A2 decision: RUN (<category>: <path>)` or
+`A2 decision: SKIP (no A2 build input changed)`.
+
+A green job does not prove A2 ran. To tell execution from skip, read the job: a skipped
+run shows the "Run A2 no-stub parity slow-suite subset" step as skipped and the summary
+says SKIP; an executed run shows that step with a real duration and vitest output. The
+selector replaced an incomplete list of individual script/markup emitters, which skipped
+A2's test steps on release PR #4524 even though the release changed the linked package
+bytes; the post-publication exam then failed three fingerprints (fixed in #4527 — see the
+[6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md)).
+A release candidate changes package manifests and the lockfile, so A2 must show as
+**executed** before publication; that check is in `RELEASE.md`, "Release-candidate CI: A2
+must execute, not just pass".
+
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
 runs a 35-step suite
