@@ -79,9 +79,11 @@ its small-fixture saving is not a production estimate.
 
 ## Approval and delivery status
 
-At this evidence checkpoint, independent causal review is pending and references
-have not changed. A bounded reference update requires that review, then a fresh
-actually executed passing A2 subset and all required CI on the resulting head.
+Independent causal review approved this bounded reference update after replaying
+the complete reverse-diff assertions and inspecting raw property serialization.
+The three references now use the hash-matched hosted candidate values listed in
+the comparison. Fresh actually executed passing A2 and all required CI on the
+resulting head remain required.
 Merge and exact-main workflow/deployment verification remain separate gates.
 Final status and continuation checkpoints are posted on PR #4537 and issue #4536.
 
