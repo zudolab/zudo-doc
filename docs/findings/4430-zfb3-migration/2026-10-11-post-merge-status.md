@@ -69,7 +69,7 @@ These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #45
    - Use `B4PUSH_SKIP_PIN_PUBLISHED=1` only for the unpublished lockstep-pin window.
    - Run the publication checks and the installed-consumer checks.
    - Re-read the runbook when executing; this outline does not replace its staged bootstrap.
-   - Deleting `_temp-resource/4430-zfb3-migration/` is owned by #4476 and runs only inside #4512's gated completion; it is not done. The lasting evidence was already relocated by #4508.
+   - Deleting `_temp-resource/4430-zfb3-migration/` is owned by #4476 and runs only inside #4512's gated completion. The lasting evidence was already relocated by #4508. Done on 2026-10-11 in this epic's PR (#4518); the lasting summaries were copied first.
 5. **Finish the bookkeeping at the matching delivery boundary.** Report the published versions and validation results on [ZFB #3328](https://github.com/Takazudo/zudo-front-builder/issues/3328) and add the "Dogfood results" section to the #4430 body, as #4512 requires. Reconcile the implemented migration children one by one. Close their parents only when each parent's own remaining scope is complete. #4501 explicitly closes through #4512. Do not bulk-close protected trackers.
 6. **Downstream adoption follows actual publication.** [ZFB #3329](https://github.com/Takazudo/zudo-front-builder/issues/3329) owns the docs-host migration, and [ZFB #4099](https://github.com/Takazudo/zudo-front-builder/issues/4099) owns the later 06R host adoption. Both keep their published-compatible-release prerequisites.
 

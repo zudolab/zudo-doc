@@ -1,3 +1,5 @@
+> Copied verbatim from `_temp-resource/4430-zfb3-migration/lessons-digest.md` before the #4476 deletion (2026-10-11).
+
 # Lessons digest for the zfb 2.22.1 → 3.0.0 migration
 
 Distilled on 2026-09-30 from `.claude/skills/l-lessons-zfb-migration-parity/SKILL.md` and
@@ -36,6 +38,7 @@ title are given so a reader can find each entry in the source.
   - 29/29 passed while the whole viewport cross-faded.
 
   Gate on behaviour instead:
+
   - no full reload on click;
   - `viewTransition.finished` resolves;
   - the element is the same node after navigation (`el === elAfterNav`);

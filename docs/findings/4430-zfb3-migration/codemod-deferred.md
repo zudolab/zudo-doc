@@ -1,3 +1,5 @@
+> Copied verbatim from `_temp-resource/4430-zfb3-migration/codemod-deferred.md` before the #4476 deletion (2026-10-11).
+
 # JSX codemod deferrals (#4433)
 
 | Candidate | Decision on v2 | Reason / next owner |
