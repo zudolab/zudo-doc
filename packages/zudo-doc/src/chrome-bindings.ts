@@ -264,12 +264,14 @@ export interface ChromeBindingsInput {
     Component<FrontmatterRendererSlotProps>
   >;
   /**
-   * MDX content-component overrides (renderer record). Component props are a
-   * broad record because each MDX component has its own authored prop shape;
-   * the showcase's `MdxStub = (_props: unknown) => null` is accepted because
-   * `unknown` safely accepts that record.
+   * MDX content-component overrides (heterogeneous component registry). There
+   * is no package call-side contract: each component's props are authored at
+   * its MDX call site, so any parameter shape is accepted — including required
+   * typed props such as `(props: { html: string }) => Child` (#4530) and the
+   * showcase's `MdxStub = (_props: unknown) => null`. `Component<never>` still
+   * requires every entry to be a component returning a `Child`.
    */
-  mdxExtras?: Record<string, Component<Record<string, unknown>>>;
+  mdxExtras?: Record<string, Component<never>>;
   /**
    * Frontmatter preview entry builder. `doc-content-header` calls it with the
    * page `data` (`Record<string, unknown>`) and spreads the result into
@@ -333,7 +335,8 @@ export function defineChromeBindings<T extends ChromeBindingsInput>(
   // Since the chrome only ever invokes each value with the `*SlotProps` we
   // checked against, no widened call can reach a prop the value did not accept,
   // so bridging the structural gap through `unknown` here introduces no runtime
-  // risk. Do NOT weaken any input slot type to avoid this cast (that would
+  // risk. `mdxExtras` is the one registry without a chrome call-side contract:
+  // its props come from the MDX author's call site, which is where they belong. Do NOT weaken any input slot type to avoid this cast (that would
   // re-erase the #2674 check); do NOT scatter more casts — this is the only one.
   return input as unknown as ChromeHostBindings;
 }

@@ -95,6 +95,19 @@ export function _positiveCompileAssertions(): void {
     },
     mdxExtras: { Stub: (_p: Record<string, unknown>) => null },
   });
+
+  // #4530: MDX components keep their own authored, REQUIRED prop shapes, and
+  // heterogeneous entries coexist in one registry without adapters.
+  function Demo(props: { html: string }) {
+    return props.html;
+  }
+  defineChromeBindings({
+    mdxExtras: {
+      Demo,
+      Counter: ({ start, step = 1 }: { start: number; step?: number }) => start + step,
+      Stub: (_p: unknown) => null,
+    },
+  });
 }
 
 /**
@@ -140,6 +153,16 @@ export function _negativeCompileAssertions(): void {
   defineChromeBindings({
     // @ts-expect-error a frontmatter renderer must be callable, not a number
     frontmatterRenderers: { foo: 42 },
+  });
+
+  // (4b) `mdxExtras` accepts any authored props but still only components.
+  defineChromeBindings({
+    // @ts-expect-error an mdxExtras entry must be a component, not a string
+    mdxExtras: { Demo: "not-a-component" },
+  });
+  defineChromeBindings({
+    // @ts-expect-error an mdxExtras component must return a renderable Child
+    mdxExtras: { Demo: (_props: { html: string }) => ({ notAChild: true }) },
   });
 
   // (5) a `frontmatterRenderers` entry REQUIRING a prop the chrome never passes.

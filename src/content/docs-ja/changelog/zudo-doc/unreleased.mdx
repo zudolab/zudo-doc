@@ -4,4 +4,6 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1134
 ---
 
-未リリースの変更はありません。
+### バグ修正
+
+- `defineChromeBindings({ mdxExtras })` が、独自の必須型付きprops（例: `(props: { html: string }) => Child`）を持つMDXコンポーネントを再び受け付けるようになりました。6.0.0で発生したTS2322の退行の修正です。エントリーは引き続き描画可能な`Child`を返すコンポーネントである必要があり、固定のchromeスロットは呼び出し側のprops検査を維持します（[#4530](https://github.com/zudolab/zudo-doc/issues/4530)）。

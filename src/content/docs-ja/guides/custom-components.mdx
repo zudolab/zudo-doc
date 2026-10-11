@@ -62,7 +62,7 @@ export default defineConfig(
 );
 ```
 
-生成ルートは`virtual:zudo-doc-chrome-bindings`を使用します。省略したスロットにはパッケージのデフォルトが残り、`mdxExtras`は同名の組み込みコンポーネントを上書きします。呼び出し元が渡さないpropsを必須にしないでください。[Host Chrome Bindings](../reference/host-chrome-bindings.mdx)を参照してください。
+生成ルートは`virtual:zudo-doc-chrome-bindings`を使用します。省略したスロットにはパッケージのデフォルトが残り、`mdxExtras`は同名の組み込みコンポーネントを上書きします。各エントリーは`(props: { html: string })`のような必須propsを含め、独自の型付きpropsをそのまま保持できます。propsはMDXの呼び出し側で渡されるため、アダプターは不要です。MDXでの使用時に渡さないpropsを必須にしないでください。[Host Chrome Bindings](../reference/host-chrome-bindings.mdx)を参照してください。
 
 ```mdx
 <MyBadge>New</MyBadge>
