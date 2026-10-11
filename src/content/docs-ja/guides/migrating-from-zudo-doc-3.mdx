@@ -1,0 +1,122 @@
+---
+title: zudo-doc 3 からの移行
+sidebar_position: 79
+description: コンテンツと動作を維持しながら、カスタマイズした 3.x サイトを現在の scaffold に合わせます。
+---
+
+## 既存サイトを棚卸しする
+
+3.3 より前、またはそれ以降の 3.x を使っている場合は、このページから始めます。別に生成した移行先の参照プロジェクトと既存サイトを照合し、以下の各時点の変更を反映して現在のリリースへ移行します。最後の runtime、CSS、component の移行の詳細は、[zudo-doc 6 への移行ガイド](./migrating-to-zudo-doc-6.mdx)を参照してください。各境界は変更を確認するためのチェックリストであり、途中の各メジャーを順番にインストールする指示ではありません。このガイドでは、過去のバージョンを段階的にインストールする手順は検証していません。
+
+依存関係を変更する前に、未追跡の著作ファイルも含め、カスタマイズしたプロジェクトを commit またはバックアップします。次を記録してください。
+
+- `package.json` と lockfile にある zudo-doc、history-server、zfb ファミリー、任意パッケージのインストール済みバージョン。分かる場合は initializer のバージョン、元の preset/CLI の選択と生成日。
+- 著作した MDX、frontmatter（著者情報を含む）、翻訳ページ、バージョン別コンテンツ、アセット。`public/` のロゴ、favicon、ダウンロード、画像も含みます。
+- 設定、独自 schema/plugin、alias、script、デプロイ設定、サイト URL/base path、redirect。
+- route override、eject した chrome、独自 MDX component、client island。それぞれの意図的な変更。
+- branding、theme pack、color scheme、CSS/token override、navigation、既定・追加 locale、有効にしている機能。
+
+この棚卸しを移行ブランチとともに残します。生成プロジェクトのファイル数が減っても、これらのローカルファイルや選択を消す理由にはなりません。
+
+## どの過去の変更が適用されるか
+
+### 3.3 より前: minimal scaffold の契約を取り入れる
+
+**minimal scaffold と `zudoDoc()` は 3.3.0 で公開済み**です。[3.3.0 のリリースノート](../changelog/zudo-doc/3.3.0.mdx)にも記載されています。4.0.0 で初めて導入されたものではありません。[3.3.0 タグの generator](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/create-zudo-doc/src/zfb-config-gen.ts)は、`defineConfig(zudoDoc({...}))` を使う一つの `zfb.config.ts` にパッケージの既定値との差分を出力します（`siteName` は常に出力）。[タグの TypeScript template](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/create-zudo-doc/templates/base/tsconfig.json)はパッケージのベースを継承し、ベースが config と仮想 module の宣言を所有します。
+
+この契約より前のサイトでは、コピーされた既定値、route helper、chrome、schema、style を分類してから削除します。変更していない既定値は移行先のパッケージに任せ、意図的な変更はサポートされる設定と override の箇所へ移します。すでに `zudoDoc()` を使う 3.x サイトでは、scaffold を再導入するのではなくローカルの差分を確認してください。過去の `zfb/config` import、Tailwind の設定、React から Preact への alias はソースの証拠に限ります。置き換えは現在の 6.x ガイドに従います。
+
+### 3.x から 4.0: 互換 wiring を削除し、リンクを確認する
+
+[4.0.0 のリリースノート](../changelog/zudo-doc/4.0.0.mdx)は、互換処理の削除、階層型のみの heading ID、現在の zfb doc-entry model を説明しています。[3.3.0 の manifest](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/zudo-doc/package.json)と [4.0.0 の manifest](https://github.com/zudolab/zudo-doc/blob/53cbe58985437ef7d72fbd56362a95ae671c499a/packages/zudo-doc/package.json)を比較すると、次の公開サブパスが削除されています。
+
+- `@takazudo/zudo-doc/integrations/doc-history`
+- `@takazudo/zudo-doc/integrations/llms-txt`
+- `@takazudo/zudo-doc/integrations/search-index`
+- `@takazudo/zudo-doc/integrations/claude-resources`
+- `@takazudo/zudo-doc/safelist`
+
+`integrations/changelog` はこの境界では残ります。別の export である `safelist.css` も 4.0 では残り、6.0 で削除されます。古い integration の import をすべて plugin の import に置き換えるのではなく、`zudoDoc()` による機能 wiring を優先してください。古い tag/deprecation、token storage、Syntect markup、doc-history data、link-checker entrypoint に依存する独自コードは、現在の公開 API と照合します。
+
+独自 route と data helper は現在の zfb entry model を使い、古い平坦な構造を前提とする処理を削除します（[entry-model の変更](https://github.com/zudolab/zudo-doc/commit/df048e305b6be8082ec93f727163285b69253121)を参照）。見出し fragment は階層を含み、古い flat-ID fallback はなくなりました。代表的な入れ子・重複見出しの描画後 ID を比較し、著作した内部リンクを更新して、外部で共有した deep link を一覧にします。可能な限りページ URL は維持してください。サーバーの redirect は URL fragment を参照できないため、ページの redirect だけでは古い anchor を修復できません。外部の参照を更新するか、検証したページ側の互換処理を用意するかを決めます。
+
+### 4.x から 5.0: 当時の engine を揃え、autolinks 設定を削除する
+
+[5.0.0 のリリースノート](../changelog/zudo-doc/5.0.0.mdx)には、当時の zfb peer が `^1.1.0` から `^2.1.0` に移ったこと、`githubAutolinks` と `githubAutolinksRepo` の削除、TypeScript ベースが Preact の `react-jsx` へ変更されたことが記載されています。廃止された autolinks の機能・設定キーを削除し、GitHub の自動リンクに依存したコンテンツを確認します。過去の Preact 設定は現在の JSX の移行先ではありません。
+
+zudo-doc と zfb engine のメジャー番号は独立しています。この表はタグ時点の scaffold の選択を記録したもので、**現在のインストールコマンドではありません**。engine バージョンは zfb、runtime、生成される場合の adapter を指します。3.3.0 scaffold では md-wasm を宣言していなかったため、別に記載します。後の 4.x は 4.0.0 の組み合わせから更新されています。これらの過去の scaffold は zdtp を無条件にインストールしていましたが、現在の scaffold は panel 機能を使う場合だけインストールします。
+
+| zudo-doc タグ | Scaffold の doc/history 範囲 | Engine / md-wasm の pin | Scaffold の zdtp pin | zfb peer 下限 |
+| --- | --- | --- | --- | --- |
+| 3.3.0 | `^3.3.0` / `^3.3.0` | `0.1.0-next.78` / 未宣言 | `0.4.6` | `^0.1.0-next.78` |
+| 4.0.0 | `^4.0.0` / `^4.0.0` | `0.1.0-next.87` / `0.1.0-next.87` | `0.4.9` | `^0.1.0-next.87` |
+| 5.0.0 | `^5.0.0` / `^5.0.0` | `2.1.0` / `2.1.0` | `0.4.9` | `^2.1.0` |
+
+Scaffold のソース: [3.3.0](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/create-zudo-doc/src/scaffold.ts)、[4.0.0](https://github.com/zudolab/zudo-doc/blob/53cbe58985437ef7d72fbd56362a95ae671c499a/packages/create-zudo-doc/src/scaffold.ts)、[5.0.0](https://github.com/zudolab/zudo-doc/blob/a93dfa6b596e47f0b3c2aa3f47544bd5bb266b03/packages/create-zudo-doc/src/scaffold.ts)。peer 下限は各タグの package manifest に基づきます（[5.0.0 manifest](https://github.com/zudolab/zudo-doc/blob/a93dfa6b596e47f0b3c2aa3f47544bd5bb266b03/packages/zudo-doc/package.json)）。3.3.0 の history-server peer 下限は `^3.1.0` で、scaffold の `^3.3.0` とは異なります。4.0.0 のタグの scaffold は zdtp 0.4.9 を指定していますが、過去のリリースノートには 0.4.8 と記載されています。
+
+### 5.x から現在の 6.x: 現在の移行ガイドに従う
+
+依存関係の編集、zudo-react、Wind、公開 CSS、eject した component、固定 target の island boundary は、[zudo-doc 6 への移行](./migrating-to-zudo-doc-6.mdx)に従います。詳細はそのガイドを参照し、このページではそれ以前の変更を照合します。
+
+## 移行先の参照プロジェクトを別に生成する
+
+**2026-10-11** の確認時点で、npm の `create-zudo-doc`、`@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server` は **6.0.0**、揃える engine は **zfb 4.3.1** ファミリー、panel 有効時は **zdtp 0.8.6** です。engine peer 下限は `^4.3.1`、history-server peer 下限は `^6.0.0` です。後日移行する際は公開バージョンを再確認し、インストールする engine ファミリーを揃えてください。
+
+次を既存プロジェクトの外に `upgrade-reference.json` として保存します。英語を既定にして日本語、検索、theme-pack switcher を有効にする例です。自分のサイトに使う前に、locale と機能の選択を棚卸しの結果に置き換えます。
+
+```json
+{
+  "projectName": "upgrade-reference",
+  "defaultLang": "en",
+  "additionalLangs": ["ja"],
+  "packageManager": "pnpm",
+  "features": ["search", "i18n", "themePackSwitcher"]
+}
+```
+
+明示的な `features` 配列は機能の選択全体を決めます。MCP が agent export を有効にするような機能間の関係を除き、省略した項目は無効になります。既存サイトの選択との merge は行いません。この例では history、asset viewer、panel、llms.txt、agent export、MCP は無効です。維持する機能をすべて含め、それぞれの設定・依存関係・データを照合してください。パッケージと initializer の既定値は異なる場合があります。
+
+preset を置いたディレクトリで、`./upgrade-reference` が存在しない状態から実行します。
+
+```bash
+pnpm dlx create-zudo-doc@6.0.0 ./upgrade-reference --preset ./upgrade-reference.json --yes
+cd upgrade-reference
+pnpm install
+pnpm check
+pnpm exec zfb wind audit --project-root . --fail-on error
+pnpm build
+pnpm check:links
+```
+
+`--yes` では initializer が既定で依存関係のインストールと git の初期化も行います。明示的な `pnpm install` は依存関係のインストールを再実行するものです。
+
+この参照には Node 22 と pnpm 10.30.3 を使います。生成した manifest と解決済み lockfile は移行先の証拠として残してください。`create-zudo-doc` は generator で、アプリケーションの依存関係ではありません。**既存ディレクトリに対して実行しないでください。** preset/CLI のオプションは [initializer reference](../reference/create-zudo-doc.mdx)を参照します。これらのコマンドは変更前の移行先を検証するものです。独自コンテンツとカスタマイズを移した後に再度実行してください。
+
+## 著作した内容を失わずに照合する
+
+保存したコピー、生成時の commit、または正確な過去の generator と選択から元の未変更 scaffold を復元できる場合は、**古い未変更 scaffold**、**カスタマイズした利用側**、**移行先の未変更 scaffold**の三つを使います。古い未変更 scaffold と利用側を比較して意図的な編集を特定し、その目的を移行先の契約に合わせて反映します。追加と同様に削除も確認してください。元の generator バージョンやほかの生成入力が不明なら、preset の保存だけでは不十分です。
+
+古い未変更 scaffold が入手できない場合は、棚卸し、利用側、移行先の参照を使って**手動で照合**します。これを三方向 merge と呼んだり、古いファイルすべてを削除可能な生成物として扱ったりしないでください。既存リポジトリの移行用コピー・ブランチを維持し、著作コンテンツ、git 履歴、著者・日付の由来を保持します。参照プロジェクトは比較用の入力として使います。
+
+| 既存の内容 | 保持する方法 |
+| --- | --- |
+| MDX、翻訳、frontmatter、アセット | 著作ファイルと metadata を維持します。サンプルページとの衝突は個別に解決し、アセットのパスと既存 URL、バージョン別 route を残します。 |
+| 設定、schema、plugin の変更 | 対応する設定を `zudoDoc({...})` に表し、独自 schema/plugin の動作は意図的に残します。パッケージの既定値のローカルコピーは不要です。 |
+| Locale と base-path 設定 | `docsDir`、locale のディレクトリ・コード、既定 locale、fallback の選択、base path を維持します。既定 locale は prefix なしです。全 locale と prefix 付きアセット URL を検証します。[i18n](./i18n.mdx)を参照してください。 |
+| Route override | 削除前にそれぞれを移行先の package route と比較します。著作した route を維持し、必要な場合は対応する file-route override を使います。新しい package の動作を意図せず隠さないよう確認します。[customizing](../reference/customizing.mdx)を参照してください。 |
+| Chrome と branding | 意図的な chrome 変更は `chromeBindingsModule` と部分的な `defineChromeBindings` に移し、ロゴ、favicon、navigation、footer、theme pack、color scheme の選択を残します。省略した chrome slot はパッケージの既定値を維持します。 |
+| Eject した component と独自 MDX component | ローカルの変更を現在の公開 props と runtime に合わせ、名前付き登録と必須 props を維持します。古い実装をコピーする前に、[custom components](./custom-components.mdx)と 6.x ガイドを確認します。 |
+| CSS と token | 公開 CSS import と `:root` 変数でプロジェクトの override を維持します。変更していない package style のコピーは比較後に削除します。Tailwind から Wind への変更は 6.x ガイドに従います。 |
+| 機能、script、デプロイ | 棚卸しした各機能の設定・データ・依存関係と、独自 build/history/deploy script、環境設定を復元します。新しい opt-in 機能の採用は別に判断します。 |
+
+:::warning[型付き MDX 登録と公開パッケージ]
+[#4530](https://github.com/zudolab/zudo-doc/issues/4530) の修正は [#4531](https://github.com/zudolab/zudo-doc/pull/4531) で merge 済みですが、npm 6.0.0 には含まれません。このリリースでは、必須の型付き props を持つ名前付き extra MDX component が登録時に拒否される場合があります。修正を含む packed package による検証は、そのソース revision の証拠に限られ、修正の公開を証明しません。維持する独自 component の検証ではこの違いを記録し、修正に依存する前にリリース状況を再確認してください。
+:::
+
+## 照合した利用側を検証する
+
+現在の依存関係・設定への変更後、移行用コピーで再インストールし、参照用の手順と同じ型検査、native Wind error audit、build、link 検査を再実行します。維持したアセットには `pnpm check:images` を実行してください。HTML 検証をすでに設定している場合はそれも実行します。既定 scaffold には `check:html` はありません。
+
+両言語の代表的なビルド済みページで、著作テキスト、著者 metadata、画像・ダウンロード、branding、route override、component props、heading ID を確認します。古い内部・外部 deep link を検証してください。実ブラウザーでは、検索、テーマ切り替え、locale/base-path navigation、独自 chrome/island、繰り返す navigation を確認し、history/panel が有効ならその動作も含めます。build/link の成功だけではこれらの操作を証明できません。
+
+正確なコマンド、解決済みバージョン、結果を記録し、npm または packed source のどちらを使ったかを明記します。過去のソース比較と実行した移行先の検証は分けて記録します。棚卸しした動作が照合後の利用側で維持されてからデプロイし、rollback 用に以前のデプロイと移行ブランチを残します。

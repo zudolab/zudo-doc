@@ -1,0 +1,122 @@
+---
+title: Migrating from zudo-doc 3
+sidebar_position: 79
+description: Reconcile a customized 3.x site with the current scaffold while preserving its content and behavior.
+---
+
+## Inventory your existing site
+
+Start here for a pre-3.3 or later 3.x consumer. The route to the current release is to reconcile your site with a separate target reference, accounting for each historical change below. The [zudo-doc 6 migration guide](./migrating-to-zudo-doc-6.mdx) remains the detailed source for the final runtime, CSS and component transition. These boundaries are a checklist of changes, not instructions to install every intermediate major; historical staged installs are not verified by this guide.
+
+Before changing dependencies, save a clean commit or backup of the customized project, including untracked authored files. Record:
+
+- Installed zudo-doc, history-server, zfb-family and optional-package versions from `package.json` and the lockfile; the initializer version, original preset/CLI choices and generation date, if available.
+- Authored MDX, frontmatter (including author metadata), translated pages, versioned content and assets, including `public/` logos, favicons, downloads and images.
+- Configuration, custom schemas/plugins, aliases, scripts, deployment settings, site URL/base path and redirects.
+- Route overrides, ejected chrome, custom MDX components and client islands, with the intentional changes in each.
+- Branding, theme packs, color schemes, CSS/token overrides, navigation, default/additional locales and enabled features.
+
+Keep this inventory with the migration branch. A smaller generated project does not mean these local files and choices should disappear.
+
+## Which historical boundaries apply?
+
+### Before 3.3: adopt the minimal scaffold contract
+
+**3.3.0 already shipped the minimal scaffold and `zudoDoc()`**, as recorded in the [3.3.0 release notes](../changelog/zudo-doc/3.3.0.mdx). They were not first introduced in 4.0.0. The [tagged 3.3.0 generator](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/create-zudo-doc/src/zfb-config-gen.ts) emits one `zfb.config.ts` using `defineConfig(zudoDoc({...}))`, with differences from package defaults (`siteName` is always emitted). The [tagged TypeScript template](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/create-zudo-doc/templates/base/tsconfig.json) extends the package base, which owns config and virtual-module declarations.
+
+If your site predates this contract, classify copied defaults, route helpers, chrome, schema and styles before removing them. Let the target package own unchanged defaults; transfer your intentional edits to supported configuration and override points. If your 3.x site already uses `zudoDoc()`, review its local deviations rather than adopting the scaffold a second time. The historical `zfb/config` import, Tailwind setup and React-to-Preact aliases are source evidence only; use the current 6.x guide for their replacements.
+
+### 3.x to 4.0: remove compatibility wiring and review links
+
+The [4.0.0 release notes](../changelog/zudo-doc/4.0.0.mdx) cover compatibility removals, hierarchical-only heading IDs and the current zfb doc-entry model. Comparing the [3.3.0 manifest](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/zudo-doc/package.json) with the [4.0.0 manifest](https://github.com/zudolab/zudo-doc/blob/53cbe58985437ef7d72fbd56362a95ae671c499a/packages/zudo-doc/package.json), these public subpaths disappear:
+
+- `@takazudo/zudo-doc/integrations/doc-history`
+- `@takazudo/zudo-doc/integrations/llms-txt`
+- `@takazudo/zudo-doc/integrations/search-index`
+- `@takazudo/zudo-doc/integrations/claude-resources`
+- `@takazudo/zudo-doc/safelist`
+
+`integrations/changelog` survives this particular boundary. The separate `safelist.css` export also survives 4.0 and is removed at 6.0. Prefer feature wiring through `zudoDoc()` rather than replacing every old integration import with a plugin import. Review customized code that depends on legacy tags/deprecations, token storage, Syntect markup, doc-history data or link-checker entrypoints against the current public APIs.
+
+Custom routes and data helpers must use the current zfb entry model; remove assumptions about the legacy flattened shape (see the [entry-model change](https://github.com/zudolab/zudo-doc/commit/df048e305b6be8082ec93f727163285b69253121)). Heading fragments now encode hierarchy; the old flat-ID fallback is gone. Compare rendered IDs for representative nested and repeated headings, update authored internal links, and list externally shared deep links. Preserve page URLs where possible. A server redirect cannot inspect a URL fragment, so page redirects alone cannot repair old anchors; decide whether to update inbound references or provide a tested page-side compatibility mechanism.
+
+### 4.x to 5.0: align the then-current engine and remove autolinks settings
+
+The [5.0.0 release notes](../changelog/zudo-doc/5.0.0.mdx) describe the then-current zfb peer move from `^1.1.0` to `^2.1.0`, removal of `githubAutolinks` and `githubAutolinksRepo`, and a base TypeScript switch to `react-jsx` with Preact. Remove the retired autolinks feature/config keys, and review content that relied on automatic GitHub links. The historical Preact configuration is not the current JSX target.
+
+zudo-doc major numbers and zfb engine major numbers are independent. This table records tagged scaffold choices, **not current installation commands**. Engine versions cover zfb, runtime and the adapter when emitted; md-wasm is separate because it was not declared by the 3.3.0 scaffold. Later 4.x releases moved beyond the 4.0.0 tuple. These historical scaffolds installed zdtp unconditionally; the current scaffold installs it only for the panel feature.
+
+| zudo-doc tag | Scaffold doc/history ranges | Engine / md-wasm pins | Scaffold zdtp pin | zfb peer floor |
+| --- | --- | --- | --- | --- |
+| 3.3.0 | `^3.3.0` / `^3.3.0` | `0.1.0-next.78` / not declared | `0.4.6` | `^0.1.0-next.78` |
+| 4.0.0 | `^4.0.0` / `^4.0.0` | `0.1.0-next.87` / `0.1.0-next.87` | `0.4.9` | `^0.1.0-next.87` |
+| 5.0.0 | `^5.0.0` / `^5.0.0` | `2.1.0` / `2.1.0` | `0.4.9` | `^2.1.0` |
+
+Scaffold sources: [3.3.0](https://github.com/zudolab/zudo-doc/blob/6cd6e06b83eba956666d9aa187e801f981b21691/packages/create-zudo-doc/src/scaffold.ts), [4.0.0](https://github.com/zudolab/zudo-doc/blob/53cbe58985437ef7d72fbd56362a95ae671c499a/packages/create-zudo-doc/src/scaffold.ts), [5.0.0](https://github.com/zudolab/zudo-doc/blob/a93dfa6b596e47f0b3c2aa3f47544bd5bb266b03/packages/create-zudo-doc/src/scaffold.ts); peer floors come from those tags' package manifests ([5.0.0 manifest](https://github.com/zudolab/zudo-doc/blob/a93dfa6b596e47f0b3c2aa3f47544bd5bb266b03/packages/zudo-doc/package.json)). At 3.3.0, the history-server peer floor was `^3.1.0`, distinct from the scaffold's `^3.3.0`. The 4.0.0 tagged scaffold pins zdtp 0.4.9 even though its historical release note says 0.4.8.
+
+### 5.x to current 6.x: follow the current migration guide
+
+Use [Migrating to zudo-doc 6](./migrating-to-zudo-doc-6.mdx) for dependency edits, zudo-react, Wind, public CSS, ejected components and fixed-target island boundaries. Keep those details in that guide while reconciling all earlier changes here.
+
+## Generate a separate target reference
+
+As checked on **2026-10-11**, npm publishes `create-zudo-doc`, `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at **6.0.0**, with the aligned **zfb 4.3.1** family and **zdtp 0.8.6** when the panel is enabled. The engine peer floor is `^4.3.1`; the history-server peer floor is `^6.0.0`. Refresh the published target before a later migration and keep the installed engine family aligned.
+
+Save the following as `upgrade-reference.json` outside the existing project. It demonstrates an English-default site with Japanese, search and the theme-pack switcher. Replace its locale and feature choices with your inventory before using it for your own site.
+
+```json
+{
+  "projectName": "upgrade-reference",
+  "defaultLang": "en",
+  "additionalLangs": ["ja"],
+  "packageManager": "pnpm",
+  "features": ["search", "i18n", "themePackSwitcher"]
+}
+```
+
+An explicit `features` list controls the whole feature selection: omitted entries are disabled, subject to feature implications such as MCP enabling agent export. It does not merge with an existing site's choices. This example leaves history, asset viewer, panel, llms.txt, agent export and MCP off. Include every feature you intend to preserve, and reconcile its config/dependencies/data. Package defaults and initializer defaults can differ.
+
+From the directory containing the preset, with `./upgrade-reference` absent, run:
+
+```bash
+pnpm dlx create-zudo-doc@6.0.0 ./upgrade-reference --preset ./upgrade-reference.json --yes
+cd upgrade-reference
+pnpm install
+pnpm check
+pnpm exec zfb wind audit --project-root . --fail-on error
+pnpm build
+pnpm check:links
+```
+
+With `--yes`, the initializer also installs dependencies and initializes git by default; the explicit `pnpm install` repeats dependency installation.
+
+Use Node 22 and pnpm 10.30.3 for this reference. Preserve its generated manifest and resolved lockfile as target evidence. `create-zudo-doc` is a generator, not an application dependency. **Never run it over your existing directory.** See the [initializer reference](../reference/create-zudo-doc.mdx) for preset/CLI options. These commands validate the pristine target; rerun the checks after transferring your own content and customizations.
+
+## Reconcile without losing authored work
+
+If the original pristine scaffold is recoverable from a saved copy, generation commit or the exact historical generator and choices, use three inputs: **old pristine scaffold**, **customized consumer**, and **target pristine scaffold**. Compare old pristine against your consumer to identify intentional edits, then reapply their purpose against the target contract. Review deletions as carefully as additions. A saved preset alone is insufficient if the original generator version or other generation inputs are unknown.
+
+If the old pristine scaffold is unavailable, use **manual reconciliation** between the inventory, your consumer and the target reference. Do not call it a three-way merge or treat every old file as disposable generated output. Keep a migration copy/branch of the existing repository so authored content, git history and author/date provenance remain available; use the reference as a comparison input.
+
+| Existing work | Preservation action |
+| --- | --- |
+| MDX, translations, frontmatter and assets | Retain authored files and metadata. Resolve collisions with sample pages individually; keep asset paths and existing URLs, including versioned routes. |
+| Config, schema and plugin changes | Express supported settings in `zudoDoc({...})`; retain custom schema/plugin behavior deliberately. Package-owned defaults need no project copy. |
+| Locale and base-path settings | Preserve `docsDir`, locale directories/codes, default locale, fallback choices and base path. The default locale is unprefixed; test every locale and prefixed asset URL. See [i18n](./i18n.mdx). |
+| Route overrides | Compare each against target package routes before removing it. Keep authored routes and use the supported file-route override where needed; avoid accidentally shadowing new package behavior. See [customizing](../reference/customizing.mdx). |
+| Chrome and branding | Move intentional chrome changes through `chromeBindingsModule` and partial `defineChromeBindings`; keep logos, favicon, navigation, footer, theme pack and color-scheme choices. Omitted chrome slots retain package defaults. |
+| Ejected and custom MDX components | Port local changes against current public props and runtime; preserve named registration and required props. Consult [custom components](./custom-components.mdx) and the 6.x guide before copying old implementations. |
+| CSS and tokens | Preserve project overrides through public CSS imports and `:root` variables; remove unchanged copied package styles after comparing them. Use the 6.x guide for Tailwind-to-Wind changes. |
+| Features, scripts and deployment | Restore each inventoried feature's config, data and dependencies, plus custom build/history/deploy scripts and environment settings. New opt-in features are separate decisions. |
+
+:::warning[Typed MDX registration and published packages]
+The fix for [#4530](https://github.com/zudolab/zudo-doc/issues/4530), merged in [#4531](https://github.com/zudolab/zudo-doc/pull/4531), is not included in npm 6.0.0. That release can reject named extra MDX components with required typed props during registration. A check using packed packages containing the fix proves that source revision only; it does not prove the fix is published. Keep this distinction when validating preserved custom components, and recheck release status before relying on the fix.
+:::
+
+## Verify the reconciled consumer
+
+After applying the current dependency/config changes, reinstall in the migration copy and rerun type checking, the native Wind error audit, build and link checks from the reference recipe. Run `pnpm check:images` for preserved assets. Add your existing HTML validation if configured; the default scaffold does not include `check:html`.
+
+Inspect representative built pages in both languages for authored text, author metadata, images/downloads, branding, route overrides, component props and heading IDs. Test old internal and inbound deep links. In a real browser, exercise search, theme switching, locale/base-path navigation, custom chrome/islands and repeated navigation; include history/panel behavior if enabled. Build/link success alone does not prove those interactions.
+
+Record the exact commands, resolved versions and results, stating whether packages came from npm or packed source. Keep historical source comparisons separate from executed target checks. Deploy only after the reconciled consumer preserves the inventoried behavior; retain the previous deployment and migration branch for rollback.

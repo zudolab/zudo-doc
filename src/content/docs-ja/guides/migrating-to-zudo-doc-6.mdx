@@ -10,6 +10,8 @@ description: 5.x の利用側を zudo-react・Wind のメジャーリリース�
 
 [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) の修正は 4.3.0 で初めて公開され、issue は解決済みです。サポート対象の 4.3.1 ファミリーで、公開パッケージを使う厳密なブラウザー・ナビゲーション検証は **3/3 PASS（失敗・skip・retry なし）** でした。[ソースに紐付いた検証記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md)を参照してください。これは Linux Chromium の証拠であり、ネイティブ macOS WebKit や Apple IME の検証ではありません。[移行状況の記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md)には、プラットフォーム上の限界と、残っていた手動 IME 確認をオーナーが取り消したことが記録されています。
 
+3.x の利用側は、[zudo-doc 3 からの移行](./migrating-from-zudo-doc-3.mdx)から始め、著作した内容を維持しながら、それ以前の scaffold/API の変更を棚卸し・照合してください。
+
 ## 依存関係と TypeScript
 
 既存のプロジェクトを更新するには、プロジェクト自身の `package.json` を編集し、パッケージマネージャーで再インストールします。`@takazudo/zudo-doc` を `^6.0.0` にし、`@takazudo/zudo-doc-history-server` を宣言している場合はそれも `^6.0.0` にします（doc history または asset viewer を有効にしている場合にだけ必要です）。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.3.1 に揃えてください。コアの描画には Preact は不要です。
