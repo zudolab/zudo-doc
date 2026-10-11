@@ -1,0 +1,358 @@
+{
+  "scope": "Offline forensic comparison only; capture origin/hosted CI execution verified separately by manager",
+  "accepted_main": "1640ec683808119293fb05a2c2bb241446b9dbff",
+  "accepted_tree": "6318251a4b007abb5abae7854592bd825aab20a6",
+  "capture_source": "40cd6769dbb04429ece136ce68e03323c7f5c53e",
+  "capture_tree": "5fb15f3d95368bee287e2ea1a926c3cbd75b0b83",
+  "source_parents": [
+    "69a4c8d6352ed8ce6a608d8d22ee4e282757fc7c",
+    "1640ec683808119293fb05a2c2bb241446b9dbff"
+  ],
+  "original_archives_sha256": {
+    "accepted-main-a2-diagnostics.zip": "857f47c4016b2b4b922034f1264a9ea1946b75822f8cb726c8d9a6315f52aa9a",
+    "pr4535-a2-diagnostics.zip": "42369a85fb38c7c4be438b737ba3cf41c6023728db1089dcfa944927bd84d2dd"
+  },
+  "normalizer_sha256": "0c769b0c4c2e86ac950dcafc0a5866d9740ac68a90796f3cc7b4b3d3203a3b82",
+  "projection_source_sha256": "ada14efbac4f6400fe147fe94d13e12917b74fa8db6c4fdce1627af36cd10af4",
+  "pages": [
+    {
+      "route": "404.html",
+      "accepted_sha256": "f3550359f09d49d206d643c300fb5e08f3d249f3cbe305b8e009ef10ded6ca77",
+      "candidate_sha256": "88dc46d740562bdef7f8398547cd55cb5760d17ccfb16a8aaeebcd4193ad1a78",
+      "accepted_normalized_bytes": 57031,
+      "candidate_normalized_bytes": 57031,
+      "accepted_build": "3928750a22e09636",
+      "candidate_build": "aae1d8c79c0ac792",
+      "build_occurrences": 1,
+      "pack_entries": 31,
+      "pack_changes": {
+        "academia": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "bauhaus": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "blueprint": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "botanica": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "broadsheet": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "brutalist": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "eink": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "futura-editorial": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "hearth": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "ledger": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "manuscript": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "matcha": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "nocturne": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "observatory": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "onyx": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "phosphor": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "riso": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "sakura": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "scandi": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "solar": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "sumi": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "swissgrid": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "timberline": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "washi": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        }
+      },
+      "token_only_restores": false,
+      "packs_only_restores": false,
+      "both_restore_every_byte": true,
+      "reverse_sha256": "f3550359f09d49d206d643c300fb5e08f3d249f3cbe305b8e009ef10ded6ca77"
+    },
+    {
+      "route": "docs/getting-started/index.html",
+      "accepted_sha256": "210a4f2826b8dc799b42b6617ba05af23b1b732606235385295b9c1f06dc34f9",
+      "candidate_sha256": "e860cef0953c93468d2820528b64a907e39fed4eab7fc41a5a3cb94fb4ad8e89",
+      "accepted_normalized_bytes": 67372,
+      "candidate_normalized_bytes": 67372,
+      "accepted_build": "3928750a22e09636",
+      "candidate_build": "aae1d8c79c0ac792",
+      "build_occurrences": 2,
+      "pack_entries": 31,
+      "pack_changes": {
+        "academia": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "bauhaus": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "blueprint": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "botanica": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "broadsheet": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "brutalist": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "eink": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "futura-editorial": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "hearth": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "ledger": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "manuscript": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "matcha": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "nocturne": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "observatory": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "onyx": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "phosphor": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "riso": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "sakura": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "scandi": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "solar": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "sumi": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "swissgrid": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "timberline": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "washi": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        }
+      },
+      "token_only_restores": false,
+      "packs_only_restores": false,
+      "both_restore_every_byte": true,
+      "reverse_sha256": "210a4f2826b8dc799b42b6617ba05af23b1b732606235385295b9c1f06dc34f9"
+    },
+    {
+      "route": "docs/getting-started/coverage/index.html",
+      "accepted_sha256": "1f7c97157113b19530c80617ff1ebd37201e168334c24b6642850dfffe0276d5",
+      "candidate_sha256": "99b4384a85f1d337515790293e0db7e431bcea856203c61f6b7981fcaadbd467",
+      "accepted_normalized_bytes": 78824,
+      "candidate_normalized_bytes": 78824,
+      "accepted_build": "3928750a22e09636",
+      "candidate_build": "aae1d8c79c0ac792",
+      "build_occurrences": 4,
+      "pack_entries": 31,
+      "pack_changes": {
+        "academia": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "bauhaus": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "blueprint": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "botanica": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "broadsheet": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "brutalist": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "eink": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "futura-editorial": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "hearth": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "ledger": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "manuscript": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "matcha": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "nocturne": {
+          "old": "1.0.2",
+          "new": "1.0.3"
+        },
+        "observatory": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "onyx": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "phosphor": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "riso": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "sakura": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "scandi": {
+          "old": "1.0.0",
+          "new": "1.0.1"
+        },
+        "solar": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "sumi": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        },
+        "swissgrid": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "timberline": {
+          "old": "1.0.1",
+          "new": "1.0.2"
+        },
+        "washi": {
+          "old": "1.0.3",
+          "new": "1.0.4"
+        }
+      },
+      "token_only_restores": false,
+      "packs_only_restores": false,
+      "both_restore_every_byte": true,
+      "reverse_sha256": "1f7c97157113b19530c80617ff1ebd37201e168334c24b6642850dfffe0276d5"
+    }
+  ]
+}
