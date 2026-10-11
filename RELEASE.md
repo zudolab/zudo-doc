@@ -115,7 +115,8 @@ step was skipped still reports success.
 
 Before tagging or publishing, check the candidate's PR Checks run:
 
-- [ ] The A2 job summary reads `A2 decision: RUN (<category>: <path>)`. A release PR
+- [ ] The A2 job summary reads `A2 decision: RUN (...)` and
+      `A2 execution: EXECUTED and passed (...)`. A release PR
       changes `packages/zudo-doc/package.json`, the root `package.json` and
       `pnpm-lock.yaml`, so it must select A2; a `SKIP` decision on a release candidate
       is a selector defect to fix before publication.

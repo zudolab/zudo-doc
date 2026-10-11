@@ -207,12 +207,14 @@ a rename are seen, and selects A2 when any changed path matches:
 Everything else — root README, showcase `src/content/docs` and `docs-ja`, other packages —
 is a cheap skip. A missing or invalid base SHA or a failed diff fails the selection step;
 it never degrades to an empty skip. The step logs the decision with the matched category
-and path, and writes a job summary line `A2 decision: RUN (<category>: <path>)` or
-`A2 decision: SKIP (no A2 build input changed)`.
+and path, and writes a job summary line `A2 decision: RUN (<category>: <path>; <n> matched input path(s))`
+or `A2 decision: SKIP (no A2 build input changed)`. Only after the parity subset passes does
+the job add `A2 execution: EXECUTED and passed (selected by <path>)`.
 
 A green job does not prove A2 ran. To tell execution from skip, read the job: a skipped
 run shows the "Run A2 no-stub parity slow-suite subset" step as skipped and the summary
-says SKIP; an executed run shows that step with a real duration and vitest output. The
+says SKIP with no `A2 execution` line; an executed run shows that step with a real
+duration and vitest output, and the summary carries the `A2 execution: EXECUTED` line. The
 selector replaced an incomplete list of individual script/markup emitters, which skipped
 A2's test steps on release PR #4524 even though the release changed the linked package
 bytes; the post-publication exam then failed three fingerprints (fixed in #4527 — see the
