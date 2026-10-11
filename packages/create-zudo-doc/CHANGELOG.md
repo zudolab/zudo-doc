@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [6.0.1] - 2026-10-12
+
+### Other Changes
+
+- New projects pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^6.0.1`, picking up the header logo font tokens and the `mdxExtras` typing and sidebar payload fixes. No scaffold configuration change is required.
+
 ## [6.0.0] - 2026-10-11
 
 ### Breaking Changes
