@@ -125,7 +125,9 @@ async function adoptionReference(): Promise<string> {
   const reference = dir("mcp-reference");
   const referencePkg = await fs.readJson(path.join(reference, "package.json"));
   const candidatePkg = await fs.readJson(path.join(initializer, "../zudo-doc/package.json"));
-  expect(referencePkg.dependencies["@takazudo/zudo-doc"]).toBe(candidatePkg.version);
+  // The scaffold intentionally emits a caret range; candidate installation
+  // below replaces that range with the packed artifact, never npm's release.
+  expect(referencePkg.dependencies["@takazudo/zudo-doc"]).toBe(`^${candidatePkg.version}`);
   const docPackDir = dir("documentation-pack");
   await fs.ensureDir(docPackDir);
   runOrThrow(`pnpm pack --pack-destination "${docPackDir}"`, path.join(initializer, "../zudo-doc"));
