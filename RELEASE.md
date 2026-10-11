@@ -106,6 +106,31 @@ version has been bumped in `package.json` but not yet published to npm.
 
 ---
 
+## Release-candidate CI: A2 must execute, not just pass
+
+A green `A2 No-Stub Parity Gate` job is not enough evidence on a release candidate. The
+gate selects its slow test from the changed paths (`scripts/select-a2-parity.mjs`; input
+contract in `TESTING.md`, "A2 No-Stub Parity Gate input selection"), and a job whose test
+step was skipped still reports success.
+
+Before tagging or publishing, check the candidate's PR Checks run:
+
+- [ ] The A2 job summary reads `A2 decision: RUN (<category>: <path>)`. A release PR
+      changes `packages/zudo-doc/package.json`, the root `package.json` and
+      `pnpm-lock.yaml`, so it must select A2; a `SKIP` decision on a release candidate
+      is a selector defect to fix before publication.
+- [ ] The "Run A2 no-stub parity slow-suite subset" step shows a real duration and vitest
+      output, not a skipped step.
+- [ ] That step passed. A fingerprint failure caused by the version bump (the native
+      `data-zfb-build` identity hashes the linked package bytes) is re-baselined with
+      causal evidence before publication, not after.
+
+Why: in the 6.0.0 release PR #4524 the old per-emitter path list skipped A2's test steps
+on a green job; the post-publication Nightly Exam then failed three A2 fingerprints, fixed
+in #4527. See the [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
+
+---
+
 ## Publish order
 
 **Always publish `@takazudo/zudo-doc-history-server` and `@takazudo/zudo-doc`
@@ -190,7 +215,9 @@ that is a signal something genuinely changed — investigate rather than bumping
 ## First-party peer floor (publish-lag)
 
 `packages/zudo-doc/package.json` declares `@takazudo/zudo-doc-history-server` as a
-**peerDependency** with a caret floor (today `^5.17.2`).
+**peerDependency** with a caret floor (today `^6.0.0`, raised in the 6.0.0 major-bump
+release commit under rule 4 below; see the
+[6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md)).
 
 **This section is the single contract for that floor.** `scripts/check-pin-parity.mjs`
 and `.claude/skills/l-make-release/SKILL.md` reference it rather than restating it — if
@@ -242,10 +269,11 @@ deliberately does not touch the floor.
 ### The lag is expected, unbounded, and not a defect
 
 Because rule 2 holds, the distance between the floor and the root version **grows with
-every release and may be arbitrarily large**. It is `^5.17.2` against root `5.25.0` — eight
-minors — and that is the contract working, not drift. A same-major caret floor keeps
-admitting the root version however far behind it sits: `^5.17.2` is satisfied by a `5.25.0`
-install.
+every release and may be arbitrarily large**. Historical example from the 5.x line: the floor
+was `^5.17.2` against root `5.25.0` — eight minors — and that was the contract working, not
+drift. A same-major caret floor keeps admitting the root version however far behind it sits:
+`^5.17.2` was satisfied by a `5.25.0` install, and today's `^6.0.0` will keep admitting every
+later 6.x release.
 
 **Do not chase the advisory — the loop does not converge.** Raising the floor to match the
 just-published version clears the note, but the next release moves the version past it again
@@ -267,8 +295,9 @@ exactly as v3.0.0, v4.0.0 and v5.0.0 did.
 
 A clean linear release therefore needs no interleaving:
 
-> bump versions + scaffold pins → `pnpm b4push` → commit → push → main CI green →
-> tag → publish all three in publish-order.
+> bump versions + scaffold pins → `pnpm b4push` → commit → push → main CI green (with A2
+> executed — see "Release-candidate CI: A2 must execute, not just pass") → tag → publish all
+> three in publish-order.
 
 ---
 

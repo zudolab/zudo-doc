@@ -6,13 +6,15 @@ description: 5.x の利用側を zudo-react・Wind のメジャーリリース�
 
 ## リリース状況
 
-このガイドは、5.x から **zudo-doc 6.0.0** への移行を説明します。6.0.0 は `@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server`、`create-zudo-doc` を揃えて公開するメジャーリリースです（[6.0.0 のリリースノート](../changelog/zudo-doc/6.0.0.mdx)を参照）。エンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.3.1** ファミリーで、パッケージの peer 下限は **^4.3.1** です。過去の 3.0/3.1 を移行先としてインストールしないでください。
+このガイドは、5.x から **zudo-doc 6.0.0** への移行を説明します。6.0.0 は `@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server`、`create-zudo-doc` を揃えて公開するメジャーリリースです（[6.0.0 のリリースノート](../changelog/zudo-doc/6.0.0.mdx)を参照）。三つのパッケージはすべて npm で 6.0.0（`latest`）として公開済みです。公開時のワークフローと、公開パッケージを使った利用側の検証結果は [6.0.0 の公開記録](https://github.com/zudolab/zudo-doc/blob/43b03a7989fc5e88377860d7a400cc18b9517d6e/docs/findings/4430-zfb3-migration/release-6.0.0/README.md)にまとめています。エンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.3.1** ファミリーで、パッケージの peer 下限は **^4.3.1** です。過去の 3.0/3.1 を移行先としてインストールしないでください。
 
 [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) の修正は 4.3.0 で初めて公開され、issue は解決済みです。サポート対象の 4.3.1 ファミリーで、公開パッケージを使う厳密なブラウザー・ナビゲーション検証は **3/3 PASS（失敗・skip・retry なし）** でした。[ソースに紐付いた検証記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md)を参照してください。これは Linux Chromium の証拠であり、ネイティブ macOS WebKit や Apple IME の検証ではありません。[移行状況の記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md)には、プラットフォーム上の限界と、残っていた手動 IME 確認をオーナーが取り消したことが記録されています。
 
 ## 依存関係と TypeScript
 
-協調メジャーリリースの公開後、zudo-doc と create-zudo-doc を一緒に更新します。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.3.1 に揃えてください。コアの描画には Preact は不要です。
+既存のプロジェクトを更新するには、プロジェクト自身の `package.json` を編集し、パッケージマネージャーで再インストールします。`@takazudo/zudo-doc` を `^6.0.0` にし、`@takazudo/zudo-doc-history-server` を宣言している場合はそれも `^6.0.0` にします（doc history または asset viewer を有効にしている場合にだけ必要です）。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.3.1 に揃えてください。コアの描画には Preact は不要です。
+
+`create-zudo-doc` はプロジェクトを生成する initializer で、アプリケーションの依存パッケージではありません。既存のプロジェクトに追加したり、既存のプロジェクトに対して再実行したりしないでください。6.0.0 の生成結果と比較したい場合は、別のディレクトリで `pnpm dlx create-zudo-doc@6.0.0` を実行して新規または参照用の scaffold を作り、必要な部分だけを取り込みます。
 
 次のようにパッケージのベース設定を継承します。ベースが `jsx: "react-jsx"` と `jsxImportSource: "@takazudo/zfb/zudo-react"` を所有します。`react`、`react-dom`、`react/jsx-runtime` から Preact への互換パスを削除し、React/Preact の型 import も変更します。必要なプロジェクト固有のエイリアスだけを残し、プロジェクト側の `baseUrl` で基準を指定してください。config と仮想モジュールの宣言を読み込むベースのトップレベル `files` を上書きしないでください。
 
@@ -162,4 +164,4 @@ parser の規則も owned JSX の契約です。table/select は正しい構造�
 
 静的な agent export と MCP は個別に選択する任意の機能で、このコア移行の必須条件ではありません。`zudoDoc()` を直接設定する場合、パッケージの `agentExport`、`mcp`、`llmsTxt` の既定値はすべて `false` です。create-zudo-doc の initializer は `llmsTxt` を既定で選択し、agent export と MCP は任意の選択です。明示的に導入しない限り、既存の選択を維持してください。完全な導入手順は [llms.txt](./llms-txt.mdx)、[Agent-readable export](./agent-export.mdx)、[MCP サーバー](./mcp-server.mdx)を参照してください。
 
-本番サイトの更新前に、パックしたパッケージを新しい利用側で検証します。strict な型検査（廃止 export・無効 props が拒否されることも）、公開 CSS/manifest の解決、実ビルド、hydration、繰り返すナビゲーションが対象です。base path、locale fallback、history fallback のシリアライズ、開いた dialog、sidebar の永続状態、パネルによる変数更新も確認します。二言語の内容を揃え、format と link 検査を実行してください。公開とリリース調整は別の担当ゲートです。
+更新した本番サイトをデプロイする前に、公開済みの 6.0.0 パッケージで検証します。strict な型検査（廃止 export・無効 props が拒否されることも）、公開 CSS/manifest の解決、実ビルド、hydration、繰り返すナビゲーションが対象です。base path、locale fallback、history fallback のシリアライズ、開いた dialog、sidebar の永続状態、パネルによる変数更新も確認します。二言語の内容を揃え、format と link 検査を実行してください。
