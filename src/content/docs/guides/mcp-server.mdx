@@ -113,6 +113,8 @@ Append `&& node scripts/stage-cloudflare-base.mjs` **after your entire existing 
 
 Merge these scripts rather than replacing the scripts object. If a preview or deploy script already exists, keep it and choose a separate name for MCP verification/deployment. Add `.wrangler/` to `.gitignore` if absent. The helper reads the exported manifest's base: it is a no-op at root, and stages prerendered pages, llms files, and browser assets under `dist/manual/` for `/manual`. The Worker entry remains `dist/_worker.js`; do not move it or wrap its export.
 
+The llms paths below apply only when `llmsTxt: true`; MCP does not enable that independent export.
+
 Run `pnpm build` and `pnpm preview:worker`. At root, verify `/docs/`, `/llms.txt`, `/agent/v1/manifest.json`, and `/mcp`; under `/manual`, verify `/manual/docs/`, `/manual/llms.txt`, `/manual/agent/v1/manifest.json`, and `/manual/mcp`. Open an actual content page and its referenced JS/CSS, then use an SDK client to discover `search`/`fetch`, search EN and JA content, fetch a returned ID, and open its cited human URL. Check the manifest's Markdown and item URLs too. Canonical citations must retain your public origin and base; the local runtime can be checked using the same paths on its printed origin. Deploy and connect an account only after this local verification, as described above.
 
 ### Remove MCP and keep static export

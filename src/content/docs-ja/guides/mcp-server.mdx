@@ -113,6 +113,8 @@ adapter: "@takazudo/zfb-adapter-cloudflare",
 
 `scripts`オブジェクトを置き換えずに統合します。既存のpreviewまたはdeployスクリプトがある場合は保持し、MCPの検証・デプロイには別の名前を選びます。`.gitignore`に`.wrangler/`がなければ追加します。ヘルパーはエクスポート済みマニフェストのbaseを読みます。ルート配置では何も移動せず、`/manual`配置ではプリレンダリング済みページ、llmsファイル、ブラウザーアセットを`dist/manual/`配下に配置してWranglerが提供できるようにします。Workerエントリーは`dist/_worker.js`のままです。移動したり、エクスポートをラップしたりしないでください。
 
+以下のllmsパスは`llmsTxt: true`の場合だけ確認します。MCPを有効にしても、この独立したエクスポートは有効になりません。
+
 `pnpm build`と`pnpm preview:worker`を実行します。ルート配置では`/docs/`、`/llms.txt`、`/agent/v1/manifest.json`、`/mcp`を、`/manual`配置では`/manual/docs/`、`/manual/llms.txt`、`/manual/agent/v1/manifest.json`、`/manual/mcp`を確認します。実際のコンテンツページと参照先のJS/CSSを開き、SDKクライアントで`search`/`fetch`を検出し、ENとJAのコンテンツを検索し、返されたIDをfetchして引用用の人間向けURLを開きます。マニフェストのMarkdownと項目URLも確認してください。正規引用URLには公開オリジンとbaseが必要です。ローカルランタイムでは、表示されたオリジンの同じパスで確認できます。この検証が終わってから、前述の手順でデプロイとアカウント接続を行います。
 
 ### MCPを削除して静的エクスポートを残す
