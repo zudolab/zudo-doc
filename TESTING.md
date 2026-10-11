@@ -221,8 +221,18 @@ bytes; the post-publication exam then failed three fingerprints (fixed in #4527 
 [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md)).
 A release candidate changes package manifests and the lockfile, so A2 must show as
 **executed** before publication. The job exists only in PR Checks, and local fingerprints
-are environment-dependent, so that evidence comes from the release PR's run; that check is in `RELEASE.md`, "Release-candidate CI: A2
-must execute, not just pass".
+are environment-dependent, so that evidence comes from the release PR's run. Record the
+frozen candidate head/tree, successful run ID/attempt whose `head_sha` matches it, the
+run's base SHA, and the A2 job/artifact identity. Record the actual checkout `sourceHead`
+and tree from that job's diagnostic manifest/checkout evidence: default PR checkout is a
+synthetic merge, so the run's `head_sha` alone is not the tested source. All three release
+tags must target the frozen accepted main integration SHA, whose tree must equal that
+actual tested tree, after all applicable main workflows succeed on that exact SHA.
+Candidate/base changes affecting the integration require refreshed PR checks with A2
+executed. A post-merge source change or tree mismatch requires a corrective PR and a new
+accepted evidence chain; only an unchanged transient failure can be rerun at the recorded
+SHA. Full evidence and repair procedure: `RELEASE.md`, "Release-candidate CI: A2 must
+execute, not just pass". Missing evidence or a skipped A2 test blocks tagging.
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
