@@ -58,7 +58,7 @@ Current issue `state` / `closedAt` was read through GitHub on 2026-10-11. The 20
 | [zfb #3363](https://github.com/Takazudo/zudo-front-builder/issues/3363) | CLOSED / 2026-10-01 | 3.2.0 |
 | [zfb #3364](https://github.com/Takazudo/zudo-front-builder/issues/3364) | CLOSED / 2026-09-30 | 3.1.0 |
 | [zfb #3365](https://github.com/Takazudo/zudo-front-builder/issues/3365) | CLOSED / 2026-10-01 | 3.2.0 |
-| [zfb #3366](https://github.com/Takazudo/zudo-front-builder/issues/3366) | CLOSED / 2026-09-30 | 3.2.0 |
+| [zfb #3366](https://github.com/Takazudo/zudo-front-builder/issues/3366) | CLOSED / 2026-09-30 | No source override; diagnostic fixed in 3.1.0; package-root `dist` scanning added in 3.2.0 |
 | [zfb #3367](https://github.com/Takazudo/zudo-front-builder/issues/3367) | CLOSED / 2026-10-01 | 3.2.0 |
 | [zfb #3368](https://github.com/Takazudo/zudo-front-builder/issues/3368) | CLOSED / 2026-10-01 | 3.2.0 |
 | [zfb #3369](https://github.com/Takazudo/zudo-front-builder/issues/3369) | CLOSED / 2026-09-30 | 3.1.0 |
