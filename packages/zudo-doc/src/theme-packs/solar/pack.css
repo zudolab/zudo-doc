@@ -190,7 +190,7 @@ html[data-theme-pack="solar"] body {
 
 /* logo gets the sun glyph in solarized orange */
 html[data-theme-pack="solar"] [data-header-logo] {
-  font-weight: 600;
+  font-weight: var(--zdc-header-logo-weight, 600);
   letter-spacing: -0.01em;
 }
 html[data-theme-pack="solar"] [data-header-logo]::after {

@@ -204,7 +204,7 @@ html[data-theme-pack="swissgrid"] header[data-header] {
   border-bottom: 3px solid var(--zd-fg);
 }
 html[data-theme-pack="swissgrid"] [data-header-logo] {
-  font-weight: 900;
+  font-weight: var(--zdc-header-logo-weight, 900);
   letter-spacing: -0.03em;
 }
 html[data-theme-pack="swissgrid"] [data-header-logo]::before {

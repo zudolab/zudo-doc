@@ -4,7 +4,7 @@
   "name": "E-Ink",
   "description": "E-reader grayscale — warm paper, near-black ink, shadowless hairline chrome, zero radius. Code is told by weight, slant, and gray value; only diffs keep a trace of ink-blue and ink-red.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "EB Garamond",
     "mono": "Courier Prime",

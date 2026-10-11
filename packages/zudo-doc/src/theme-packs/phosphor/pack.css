@@ -225,8 +225,8 @@ html[data-theme-pack="phosphor"] header[data-header] {
   border-bottom-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
 }
 html[data-theme-pack="phosphor"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 400);
   font-size: 1.55rem;
   color: var(--zd-accent);
 }

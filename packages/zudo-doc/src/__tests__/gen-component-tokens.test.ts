@@ -383,9 +383,9 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(generated);
   });
 
-  it("12 tokens route to content; 9 chrome tokens after the #2887 font seam", () => {
+  it("12 tokens route to content; 11 chrome tokens including the logo knobs", () => {
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(9);
+    expect(chromeTokens).toHaveLength(11);
   });
 
   // The compiled proof of the chrome font seam (#2887): the generated rule must

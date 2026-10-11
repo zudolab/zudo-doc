@@ -235,8 +235,8 @@ html[data-theme-pack="nocturne"] header[data-header] {
   );
 }
 html[data-theme-pack="nocturne"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 600);
   font-size: 1.45rem;
   letter-spacing: 0.02em;
 }

@@ -183,7 +183,7 @@ html[data-theme-pack="manuscript"] header[data-header] {
 html[data-theme-pack="manuscript"] [data-header-logo] {
   font-variant-caps: small-caps;
   letter-spacing: 0.06em;
-  font-weight: 600;
+  font-weight: var(--zdc-header-logo-weight, 600);
   font-size: 1.35rem;
 }
 html[data-theme-pack="manuscript"] [data-nav-item] {

@@ -78,6 +78,8 @@ Tokens are split by **rendering surface**. Content tokens target the `.zd-conten
 | `--zdc-nav-active-weight` | `nav-active` | `var(--font-weight-medium)` | Font weight of the active sidebar nav link. |
 | `--zdc-chrome-font` | `chrome` | `var(--font-sans)` | Base font family of the document `body` — the seam that lets a theme pack's `--font-sans` reach the whole app shell (header, sidebar, TOC, breadcrumb, footer), not just `.zd-content` prose. Redefine `--font-sans` to restyle chrome and content together, or `--zdc-chrome-font` directly to move the shell independently of prose. |
 | `--zdc-header-font` | `header` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the site header (`header[data-header]`). A no-op until redefined; set it to give the header its own face (for example a display font for the wordmark and nav) without touching the rest of the chrome. |
+| `--zdc-header-logo-font` | `header-logo` | `inherit` | Font family of the site-name anchor (`a[data-header-logo]`) only. Theme packs with explicit logo fonts preserve their existing family as fallback. |
+| `--zdc-header-logo-weight` | `header-logo` | `var(--font-weight-bold)` | Font weight of the site-name anchor only. Theme packs with explicit logo weights preserve their existing weight as fallback. |
 | `--zdc-sidebar-font` | `sidebar` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the navigation sidebar. The selector names both the desktop rail (`#desktop-sidebar`) and the mobile drawer (`aside[data-zd-mobile-sidebar]`) — both match in the production build (see the note below the table). |
 | `--zdc-toc-font` | `toc` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the table of contents. The selector names both the desktop rail (`nav[data-zd-toc]`) and the mobile TOC (`div[data-zd-mobile-toc]`) — both match in the production build (see the note below the table). |
 
@@ -88,6 +90,17 @@ Tokens are split by **rendering surface**. Content tokens target the `.zd-conten
 The component selectors cover desktop and mobile chrome. Check their computed values on built pages, including repeated client navigation; retained islands preserve unchanged effective identity and props, while changed identity or props recreate their render scope.
 
 </Note>
+
+### Wordmark typography
+
+Use the logo tokens to change only the site name while navigation, search and language controls retain their typography. The default theme inherits the header family and uses `--font-weight-bold`; bundled packs retain their own logo family and weight until overridden. Each token works independently. Remove its declaration to restore the theme's fallback.
+
+```css title="src/styles/global.css"
+:root {
+  --zdc-header-logo-font: "Georgia", serif;
+  --zdc-header-logo-weight: 400;
+}
+```
 
 ### The `--zdc-surface-radius` meta-knob
 

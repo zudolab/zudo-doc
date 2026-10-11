@@ -4,7 +4,7 @@
   "name": "Bauhaus",
   "description": "Primary triad as structure — gallery white, near-black ink, and red, yellow, blue doing structural work: circle, triangle, square markers, thick geometric rules, zero radius.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Jost",
     "mono": "Space Mono",

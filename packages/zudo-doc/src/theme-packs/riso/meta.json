@@ -4,7 +4,7 @@
   "name": "Riso",
   "description": "Risograph duotone print — warm paper, two inks (riso blue + fluorescent coral), misregistered offset shadows, and a soft linear paper grain.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Space Grotesk",
     "mono": "Space Mono",

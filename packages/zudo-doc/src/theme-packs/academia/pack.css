@@ -397,7 +397,7 @@ html[data-theme-pack="academia"] header[data-header] {
 }
 html[data-theme-pack="academia"] [data-header-logo] {
   font-variant-caps: small-caps;
-  font-weight: 600;
+  font-weight: var(--zdc-header-logo-weight, 600);
   letter-spacing: 0.03em;
   font-size: 1.3rem;
 }

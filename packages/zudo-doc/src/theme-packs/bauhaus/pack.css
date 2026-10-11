@@ -207,8 +207,8 @@ html[data-theme-pack="bauhaus"] header[data-header] {
   background-repeat: no-repeat;
 }
 html[data-theme-pack="bauhaus"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 400);
   letter-spacing: 0.01em;
 }
 html[data-theme-pack="bauhaus"] [data-header-logo]::before {

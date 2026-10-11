@@ -288,8 +288,8 @@ html[data-theme-pack="observatory"] header[data-header] {
   );
 }
 html[data-theme-pack="observatory"] [data-header-logo] {
-  font-family: var(--font-display);
-  font-weight: 300;
+  font-family: var(--zdc-header-logo-font, var(--font-display));
+  font-weight: var(--zdc-header-logo-weight, 300);
   font-size: 1.05rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
