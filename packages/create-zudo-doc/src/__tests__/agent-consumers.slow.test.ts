@@ -109,6 +109,9 @@ async function adoptionReference(): Promise<string> {
   const initializer = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const packDir = dir("initializer-pack");
   await fs.ensureDir(packDir);
+  // Unlike zudo-doc, the initializer has no prepare/prepack build hook.
+  // Cold slow-test jobs must pack the current CLI/API, not absent or stale dist.
+  runOrThrow("pnpm build", initializer);
   runOrThrow(`pnpm pack --pack-destination "${packDir}"`, initializer);
   const tarballs = (await fs.readdir(packDir)).filter((name) => name.endsWith(".tgz"));
   expect(tarballs).toHaveLength(1);
