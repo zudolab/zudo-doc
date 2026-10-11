@@ -18,6 +18,8 @@
  */
 
 export { Sidebar } from "./sidebar.js";
+export { toSidebarClientData } from "./client-data.js";
+export type { SidebarClientNode, SidebarClientNavigation } from "./client-data.js";
 export type { SidebarProps } from "./sidebar.js";
 export type {
   SidebarLocaleLink,

@@ -19,6 +19,8 @@ import {
 import { ThemeToggle } from "../theme-toggle/index.js";
 import { themeToggleLabels } from "../theme-toggle/labels.js";
 import { SidebarToggle } from "../sidebar-toggle-island/index.js";
+import { toSidebarClientData } from "../sidebar/client-data.js";
+import { normalizeIslandData } from "../chrome/island-data.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { buildGitHubRepoUrl as buildGitHubRepoUrlBase } from "../github-helpers/index.js";
@@ -51,8 +53,8 @@ export interface HeaderWithDefaultsProps {
    * resolved per render against that render's `lang`/`navSection`/
    * `currentVersion`.
    *
-   * - An array is passed to `SidebarToggle` as-is — no default build, no
-   *   version-href remapping.
+   * - An array skips the default build and version-href remapping. Transport
+   *   copies only sidebar client fields, omitting server-only descriptions.
    * - A callback receives the resolved `lang`/`navSection`/`currentVersion`
    *   plus a lazy `buildDefault()` that reproduces today's default tree
    *   (`buildSidebarNodes(lang, navSection, currentVersion)`) only when
@@ -179,17 +181,18 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         when: "visible",
         children: (
           <SidebarToggle
-            nodes={sidebarNodes}
-            {...(defaultSidebar?.navigation ? { navigation: defaultSidebar.navigation } : {})}
-            {...(currentSlug !== undefined ? { currentSlug } : {})}
-            rootMenuItems={rootMenuItems}
-            {...(backToMenuLabel !== undefined ? { backToMenuLabel } : {})}
-            locale={lang}
-            {...(localeLinks !== undefined ? { localeLinks } : {})}
-            {...(themeDefaultMode !== undefined ? { themeDefaultMode } : {})}
-            themeLabels={themeToggleLabels(t, lang)}
-            themeRespectSystem={themeRespectSystem}
-            dateFormats={dateFormatsFor(lang)}
+            {...normalizeIslandData({
+              ...toSidebarClientData(sidebarNodes, defaultSidebar?.navigation),
+              currentSlug,
+              rootMenuItems,
+              backToMenuLabel,
+              locale: lang,
+              localeLinks,
+              themeDefaultMode,
+              themeLabels: themeToggleLabels(t, lang),
+              themeRespectSystem,
+              dateFormats: dateFormatsFor(lang),
+            })}
           />
         ),
       });

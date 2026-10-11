@@ -4,6 +4,7 @@ import { renderIsland, flushAll } from "../../__tests__/helpers/zudo-react.js";
 import { SidebarTree, type SidebarTreeProps } from "../index.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 import { buildSidebarNavigation } from "../../sidebar-utils/index.js";
+import { toSidebarClientData } from "../../sidebar/client-data.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 import { CURRENT_PATH_DATASET_KEY } from "../../current-path/index.js";
 import { disposeSidebarScrollPreserve } from "../sidebar-scroll-preserve.js";
@@ -47,7 +48,7 @@ let view:
   | Awaited<ReturnType<typeof renderIsland<SidebarTreeProps>>>
   | undefined;
 async function mount(props: SidebarTreeProps) {
-  view = await renderIsland(SidebarTree, props, {
+  view = await renderIsland(SidebarTree, { ...props, ...toSidebarClientData(props.nodes, props.navigation) }, {
     identity: { component: "SidebarTree", build: "test" },
   });
   expect(view.diagnostics).toEqual([]);

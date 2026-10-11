@@ -96,7 +96,7 @@ describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
     expect(Object.hasOwn(theme.props, "defaultMode")).toBe(false);
   });
 
-  it("array override: the exact array reaches SidebarToggle by identity, and the default builder is never called", () => {
+  it("array override: copied values reach SidebarToggle, and the default builder is never called", () => {
     const loadNavSourceDocs = vi.fn(() => ({
       docs: [],
       navDocs: [],
@@ -115,7 +115,8 @@ describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
       sidebarNodes: override,
     }) as AnyVNode;
 
-    expect(getSidebarToggleNodes(vnode)).toBe(override);
+    expect(getSidebarToggleNodes(vnode)).toEqual(override);
+    expect(getSidebarToggleNodes(vnode)).not.toBe(override);
     expect(loadNavSourceDocs).not.toHaveBeenCalled();
   });
 
@@ -147,7 +148,8 @@ describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
       },
     }) as AnyVNode;
 
-    expect(getSidebarToggleNodes(vnode)).toBe(override);
+    expect(getSidebarToggleNodes(vnode)).toEqual(override);
+    expect(getSidebarToggleNodes(vnode)).not.toBe(override);
     expect(receivedArgs).toEqual({ lang: "ja", navSection: "guides", currentVersion: "2.0" });
     // The callback never called `buildDefault()` — the default tree must
     // never have been built.
@@ -195,8 +197,8 @@ describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
         lang === "ja" && currentVersion === "2.0" ? overrideJa : [fixedNode("wrong")],
     }) as AnyVNode;
 
-    expect(getSidebarToggleNodes(vnodeEn)).toBe(overrideEn);
-    expect(getSidebarToggleNodes(vnodeJa)).toBe(overrideJa);
+    expect(getSidebarToggleNodes(vnodeEn)).toEqual(overrideEn);
+    expect(getSidebarToggleNodes(vnodeJa)).toEqual(overrideJa);
   });
 
   it("forwards sidebarNodes through createChrome(...).HeaderWithDefaults", () => {
@@ -211,6 +213,6 @@ describe("createHeaderWithDefaults — #4219 sidebarNodes override", () => {
     }) as AnyVNode;
     const headerVNode = fragment.props["children"] as AnyVNode;
 
-    expect(getSidebarToggleNodes(headerVNode)).toBe(override);
+    expect(getSidebarToggleNodes(headerVNode)).toEqual(override);
   });
 });
