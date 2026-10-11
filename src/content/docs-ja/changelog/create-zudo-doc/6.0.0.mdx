@@ -1,0 +1,16 @@
+---
+title: 6.0.0
+description: 6.0.0のリリースノート。
+sidebar_position: 1039
+---
+
+リリース日: 2026-10-11
+
+### 破壊的変更
+
+- 生成されるプロジェクトは、zfb 4.3.1 ファミリー上の `@takazudo/zudo-doc` と `@takazudo/zudo-doc-history-server` `^6.0.0` を対象にします。zudo-react と zudo-wind を使い、`tsconfig.json` はパッケージの base を継承し、CSS エントリーは通常の `:root` トークンを持ちます。Tailwind と Preact はインストールされません。既存の 5.x プロジェクトはイニシャライザーを再実行せず、[移行ガイド](https://zudo-doc.takazudomodular.com/ja/docs/guides/migrating-to-zudo-doc-6/)に従ってください。(b9dd43b0d)
+- デザイントークンパネルを有効にすると、Preact を自身の依存として持つ `@takazudo/zdtp` 0.8.6 を固定します。ジェネレーターは `preact` を追加しなくなりました。(fe4e83d9d)
+
+### 機能
+
+- `--agent-export` と `--mcp` の選択肢、および `--mcp-deploy cloudflare` プリセットを追加しました。このプリセットは `@modelcontextprotocol/sdk` 1.32.1 と `wrangler` 4.149.0 を固定した Cloudflare Workers の MCP デプロイ構成を出力します。`llmsTxt` は引き続き既定で選択され、エージェントエクスポートと MCP はオプトインのままです。(c8a4b0ca7, 5f481822a, 3fabb05fc)

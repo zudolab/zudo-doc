@@ -1,6 +1,6 @@
 {
   "name": "@takazudo/zudo-doc",
-  "version": "5.28.2",
+  "version": "6.0.0",
   "type": "module",
   "description": "zudo-doc framework primitives layer that sits on top of zfb's engine — sidebar, theme, TOC, breadcrumb, layouts, head injection, View Transitions, SSR-skip wrappers (per ADR-003).",
   "license": "MIT",
@@ -755,7 +755,7 @@
     "@takazudo/zfb": "^4.3.1",
     "@takazudo/zfb-md-wasm": "^4.3.1",
     "@takazudo/zfb-runtime": "^4.3.1",
-    "@takazudo/zudo-doc-history-server": "^5.17.2",
+    "@takazudo/zudo-doc-history-server": "^6.0.0",
     "diff": "^8.0.0",
     "katex": "^0.16.0",
     "zod": "^4.3.6"

@@ -1,14 +1,14 @@
 ---
 title: Migrating to zudo-doc 6
 sidebar_position: 80
-description: Prepare a 5.x consumer for the planned zudo-react and Wind major release.
+description: Upgrade a 5.x consumer to the zudo-react and Wind major release.
 ---
 
 ## Release status
 
-This guide describes the planned **zudo-doc 6.0.0** migration from 5.x. The coordinated major release is **not published yet**; the repository package version still reads 5.28.2. The current engine target is the published, aligned **zfb 4.3.1** family, with package peer floor **^4.3.1**. Do not install historical 3.0/3.1 targets or treat this guide as a release announcement.
+This guide covers the migration from 5.x to **zudo-doc 6.0.0**, the coordinated major release of `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` (see the [6.0.0 release notes](../changelog/zudo-doc/6.0.0.mdx)). The engine target is the published, aligned **zfb 4.3.1** family, with package peer floor **^4.3.1**. Do not install historical 3.0/3.1 targets.
 
-The fix for [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) first shipped in 4.3.0; the issue is resolved. The strict published-consumer browser/navigation control passed **3/3 with no failures, skips or retries** on the supported 4.3.1 tuple, as recorded in the [source-bound verification](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md). That is Linux Chromium evidence, not native macOS WebKit or Apple IME acceptance. Final candidate checks and coordinated publication remain separate steps; the [current status](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md) preserves the owner waiver and platform limits.
+The fix for [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) first shipped in 4.3.0; the issue is resolved. The strict published-consumer browser/navigation control passed **3/3 with no failures, skips or retries** on the supported 4.3.1 tuple, as recorded in the [source-bound verification](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md). That is Linux Chromium evidence, not native macOS WebKit or Apple IME acceptance. The [migration status record](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md) preserves the platform limits and the owner's cancellation of the remaining manual IME check.
 
 ## Dependencies and TypeScript
 

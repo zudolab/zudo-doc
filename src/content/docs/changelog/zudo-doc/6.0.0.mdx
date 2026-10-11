@@ -1,0 +1,27 @@
+---
+title: 6.0.0
+description: Release notes for 6.0.0.
+sidebar_position: 1133
+---
+
+Released: 2026-10-11
+
+### Breaking Changes
+
+- Moves the framework to the zfb 4 engine family. `@takazudo/zfb`, `@takazudo/zfb-runtime` and `@takazudo/zfb-md-wasm` are now required at `^4.3.1`. Follow the [migration guide](https://zudo-doc.takazudomodular.com/docs/guides/migrating-to-zudo-doc-6/) to upgrade a 5.x project. (b9dd43b0d)
+- Rendering uses zfb's owned zudo-react runtime instead of Preact, so Preact is no longer a peer of the core package. Extend `@takazudo/zudo-doc/tsconfig.base.json`, remove React→Preact compatibility paths, and port host or ejected components to zudo-react signals and `on:*` events. (b9dd43b0d)
+- Styling uses the zudo-wind utility compiler instead of Tailwind. Remove Tailwind directives from your CSS entry and declare tokens as plain `:root` variables. The `./safelist.css` and `./theme-no-reset.css` exports are removed, and `./wind.json` is added and registered automatically by `zudoDoc()`. (b9dd43b0d)
+- Public types move to zudo-react. Element descriptions use `Description`/`Child` and component callbacks use `Component<P>`. Intrinsic-compatible components take `class` instead of `className`. `useModalDialog(...)` becomes `modalDialog(scope, options)`, and `ThemePackDialogProps.open` is a `ReadonlySignal<boolean>`. (b9dd43b0d)
+- `DocHistory` and `DesignTokenPanelBootstrap` chrome-binding overrides are now server boundaries that own their Island mount. Use the exported `DocHistoryBoundary` for standard history. (84333fa7e)
+- The optional `@takazudo/zudo-doc-history-server` peer now requires `^6.0.0`.
+
+### Features
+
+- Adds an opt-in agent-readable documentation export (`agentExport`) and a read-only MCP server (`mcp`) with full-text search and fetch tools, plus agent discovery links. Both default to `false`. (4591145b0, 860eda41e, 578abf4ec)
+- Adds Broader Tree sidebar controls: broaden the tree to its editorial parent, show only one branch, and restore the current page's local tree. Object-form sidebar configs with `items` and `initialPath` supply editorial parents outside a local view. (9c9826dcc)
+
+### Bug Fixes
+
+- Heading references and code-fence anchors now match zfb's native heading IDs. (3f35bff85)
+- The agent export honors `copyPublicWithBase: false` when it places `agent/v1`. (db8e8495d)
+- The search shortcut placeholder survives reconnects. (05c35801e, dab099db9)

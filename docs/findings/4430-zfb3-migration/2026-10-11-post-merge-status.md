@@ -2,7 +2,17 @@
 
 This is the current-status record for the zfb 4 migration (#4430) after PR #4477 merged. It replaces the pre-merge leads of the [README](README.md) and [release readiness](release-readiness.md) as the live instruction. Dated findings in this directory are historical evidence: they keep their original SHAs, failures, skips, accepted differences and owner decisions, and are not rewritten. Source issue: [#4514](https://github.com/zudolab/zudo-doc/issues/4514).
 
-## Current pre-6.0.0 preparation — sweep at main `7f5cacb01a246e44d9468fa8023fd0f6ee327a40`
+## Current: preparation delivered, 6.0.0 is a release candidate (not yet published)
+
+Status at the release commit on branch `release/6.0.0` (2026-10-11), based on `main` `0d78d48af67db107293cd0f75793dafae95aea3f`:
+
+- **Preparation is delivered.** #4471–#4474 and #4522 landed through [PR #4523](https://github.com/zudolab/zudo-doc/pull/4523): main merge `0d78d48af67db107293cd0f75793dafae95aea3f`, tree identical to the tested head `796f6eb9c5dc800390ad6e737d1cd558e8da29fc`. [Exact-head PR Checks 38120852097](https://github.com/zudolab/zudo-doc/actions/runs/38120852097) had 28 successful jobs covering the 26 required contexts, and the automatic [Production Deploy 38123875491](https://github.com/zudolab/zudo-doc/actions/runs/38123875491) succeeded on the merge SHA.
+- **Final preparation acceptance #4475 is closed as completed.** It satisfied #4512's preparation prerequisite.
+- **The Apple IME follow-up is cancelled, not awaiting a human run.** The owner cancelled the remaining manual Japanese IME verification on 2026-10-11 ([owner decision](https://github.com/zudolab/zudo-doc/issues/4512#issuecomment-6107153523)); upstream [Takazudo/zudo-front-builder#3330](https://github.com/Takazudo/zudo-front-builder/issues/3330) is closed as not planned. The historical IME table below keeps its NOT RUN / PARTIAL results: cancellation is not a PASS, and it creates no pending release work. The automated composition regression tests are unchanged.
+- **6.0.0 is the release candidate, not a published release.** The release commit bumps the root and the three published packages to 6.0.0, both first-party scaffold pins and the target-manifest fixture to `^6.0.0`, and the history-server peer floor with its `approvedBaseline` to `^6.0.0`, and adds the six EN/JA package notes and generated changelogs. A preceding commit on the same branch refreshes the two scaffold-emitted pins that failed the release preflight `check:scaffold-pin-freshness`: `@modelcontextprotocol/sdk` 1.31.0 → 1.32.1 and `wrangler` 4.111.0 → 4.149.0. The zfb family 4.3.1 / `^4.3.1` and zdtp 0.8.6 tuple is unchanged.
+- Publication follows RELEASE.md after the release PR merges: history-server → zudo-doc → create-zudo-doc. Publication, registry and published-consumer evidence is recorded on [#4512](https://github.com/zudolab/zudo-doc/issues/4512) and appended to this record afterward.
+
+## Earlier sweep at main `7f5cacb01a246e44d9468fa8023fd0f6ee327a40` (historical)
 
 [PR #4515](https://github.com/zudolab/zudo-doc/pull/4515) and [PR #4521](https://github.com/zudolab/zudo-doc/pull/4521) are merged. Epic #4518 is complete: lasting evidence, the final matrix, executable consumer fixtures and temporary-resource cleanup are delivered on `main`. No migration-resource deletion remains. #4521's final head `8be5bb9b675e69ce931d9571a92e4806ac7b0add` and the sweep's `main` have the same Git tree.
 
@@ -10,7 +20,7 @@ The preparation batch before the release commit is bounded: finish current EN/JA
 
 Baseline evidence: [PR Checks 38112987070](https://github.com/zudolab/zudo-doc/actions/runs/38112987070) has 28 successful job conclusions covering all 26 required contexts. A2 and Theme A11y execution substeps were skipped under changed-file gating; this is not a fresh full run of those suites. [Production Deploy 38114146131](https://github.com/zudolab/zudo-doc/actions/runs/38114146131) succeeded in all five jobs on the sweep's `main`. These are existing workflow results, not checks or deployments performed by this documentation correction.
 
-## #4477 merged and deployed; coordinated 6.0.0 is unreleased
+## #4477 merged and deployed
 
 - [PR #4477](https://github.com/zudolab/zudo-doc/pull/4477) was regular-merged on 2026-10-11 03:06:19 JST (2026-10-10 18:06:19 UTC).
   - Merge commit on `main`: `b9dd43b0da81a3d426fee325736c2dc79d37fc1a`.
@@ -26,6 +36,8 @@ Baseline evidence: [PR Checks 38112987070](https://github.com/zudolab/zudo-doc/a
 
 ## Pins match npm `latest`: zfb family 4.3.1, zdtp 0.8.6, release packages 5.28.2 (2026-10-11 JST)
 
+This table is the pre-release observation. The release candidate above changes only the release-package versions, the first-party pins and peer floor, and the two refreshed scaffold pins.
+
 | Item | Repository | npm `latest` observed |
 | --- | --- | --- |
 | Root, `@takazudo/zudo-doc-history-server`, `@takazudo/zudo-doc`, `create-zudo-doc` | 5.28.2 | 5.28.2 (the three release packages) |
@@ -36,7 +48,7 @@ Coordinated 6.0.0 is unreleased (npm `latest` 5.28.2). The audited release recor
 
 The zfb family moved from 4.3.0 to the published 4.3.1 on 2026-10-11 through [PR #4516](https://github.com/zudolab/zudo-doc/pull/4516) (`deps/zfb-4.3.1`, final head `8dbbbcedb`), whose branch was merged into this documentation PR (#4515) so the two post-merge PRs land as one. Its evidence (published-byte verification, MD/WASM hashes, History-rejection smoke regressions, A2 attribution, installed barebone/all-feature consumers, exact-head PR Checks and Nightly Exam) is in [zfb 4.3.1 verification](../zfb-4.3.1/verification.md). A `@takazudo/*` registry bump dry run on the combined tree (2026-10-11) reported every live pin up-to-date; the only remaining "bump" rows were historical fixture manifests under evidence directories, which are kept as-is, and the history-server peer floor `^5.17.2`, which moves only in the 6.0.0 release commit.
 
-## Manual IME evidence keeps its limits; the Apple IME gate is owner-waived
+## Manual IME evidence keeps its limits; the Apple IME follow-up is cancelled
 
 The extra macOS IME gate in [closeout manual](2026-10-10-closeout-manual.md) was waived by the owner for the accepted merge. It is not a release PASS. Sources: the [prior owner record](https://github.com/zudolab/zudo-doc/pull/4477#issuecomment-6100228862) and the [merge checkpoint](https://github.com/zudolab/zudo-doc/pull/4477#issuecomment-6100575225).
 
@@ -46,9 +58,11 @@ The extra macOS IME gate in [closeout manual](2026-10-10-closeout-manual.md) was
 | A2 AI chat Enter rule, ATOK | PASS. The conversion-confirming Enter sends 0 requests; the next Enter sends exactly 1, on both the full run and the focused retest. Cancel/recompose was confirmed on `7070a396` only. |
 | A3 value/model/focus/caret | PARTIAL / UNVERIFIED. Human focus/caret checks passed with no console errors. Post-composition DOM-value/model agreement is not fully verified, and the retained post-human A3 model snapshot is unavailable. Automated ordinary-input checks do not reconstruct that state. |
 | Apple built-in Japanese IME | NOT RUN / OWNER WAIVED. Apple IME behavior is not claimed PASS. A problem found later is fixed when found. |
-| A5 upstream packed-SDK fixture ([zudo-front-builder#3330](https://github.com/Takazudo/zudo-front-builder/issues/3330)) | NOT RUN. No upstream SHA or packed-SDK acceptance is claimed. |
+| A5 upstream packed-SDK fixture ([zudo-front-builder#3330](https://github.com/Takazudo/zudo-front-builder/issues/3330), closed as not planned) | NOT RUN. No upstream SHA or packed-SDK acceptance is claimed. |
 
 None of these becomes a PASS through this record.
+
+The owner cancelled the remaining manual IME verification on 2026-10-11 ([owner decision](https://github.com/zudolab/zudo-doc/issues/4512#issuecomment-6107153523)), and #3330 is closed as not planned. Do not reopen it, request another Apple/macOS IME run, or treat these rows as a pending release prerequisite.
 
 ## Required-check name mismatch: `Package Safelist Check` vs `Package Wind Manifest Check`
 
@@ -65,7 +79,7 @@ None of these becomes a PASS through this record.
 
 ## Next release: bounded preparation precedes the coordinated 6.0.0 release
 
-These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #4516 (combined into #4515). Before steps 4–6, deliver #4471–#4474 and #4522 and complete #4475 final-candidate acceptance. Steps 4–6 then run under the owner's release direction.
+These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #4516 (combined into #4515). The preparation they depended on (#4471–#4474, #4522 and #4475 acceptance) was delivered through PR #4523. Step 4 is in progress under the owner's release authorization: the release candidate is on `release/6.0.0` and is not yet published.
 
 1. **Select the next published zfb target. Done: 4.3.1.** Upstream [v4.3.1](https://github.com/Takazudo/zudo-front-builder/releases/tag/v4.3.1) published on 2026-10-11 and the four npm `latest` tags resolve to it. The pins are not stale.
 2. **Adopt that exact tuple in a separate bounded update. Done in #4516.** Root, package and scaffold pins moved together to exactly 4.3.1 with `^4.3.1` peers; zdtp stays 0.8.6; the history-server peer floor is unchanged until the major release commit.
@@ -92,7 +106,7 @@ These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #45
 | #4485 | Agent-docs epic. #4522 owns the remaining existing-project recipe and consumer correction; optional account acceptance is one real ChatGPT account connection: discover search/fetch, search in EN and JA, fetch a returned ID, and confirm a cited human documentation URL. This is not a migration or release gate. |
 | #4501 | All four environment-deferral verification rows are satisfied; closed as completed in the 2026-10-11 sweep. Final-candidate checks remain #4475 / #4512. |
 | #4476 | Epic #4518 / PR #4521 preserves the lasting summaries, deletes the migration temp resources, finalizes the matrix and prepares the #3328 pre-publication report; delivered on `main`. The #3328 published-versions follow-up and #4430 “Dogfood results” section remain with the release step. |
-| #4475 | Epic #4518 / PR #4521 records visual and installed-consumer acceptance plus current-documentation cleanup. Readiness/cleanup is delivered; human/platform limits stay explicit. Current remaining scope is bounded preparation #4471–#4474 plus #4522 and focused final-candidate acceptance before #4512. |
+| #4475 | Closed as completed: final preparation acceptance on PR #4523's head. Human/platform limits stay explicit. |
 | #4467–#4470; #4482–#4483 | Completed implementation/measurement scopes, closed with evidence in the 2026-10-11 sweep. Remaining TESTING.md prose from #4470 belongs to #4474. |
-| #4471–#4474; #4522 | Open for the bounded documentation/status and existing-project MCP corrections above. |
-| #4430; #4502; #4512 | Coordinated 6.0.0 release and evidence bookkeeping remain open. #4512's SKIP line was removed under the owner-approved merge gate; publication requires the preparation batch and #4475 acceptance, then the separate release procedure. |
+| #4471–#4474; #4522 | Delivered by PR #4523 and closed. |
+| #4430; #4502; #4512 | Open until the coordinated 6.0.0 publication and its evidence bookkeeping complete. The preparation prerequisite is satisfied; #4512 now runs the release procedure. |

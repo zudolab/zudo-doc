@@ -105,11 +105,11 @@ If your project renders **semi-trusted or user-submitted** HTML in a preview, ov
 
 **Caveat:** removing `allow-same-origin` gives the iframe an opaque origin, which blocks the parent from reading `iframe.contentDocument`. That **disables auto-height** — always pair a stricter `sandbox` with a fixed `height`. Passing the empty string `""` is honored verbatim (only omitting the prop falls back to the computed default).
 
-## Planned 6.0 migration and peers
+## 6.0 migration and peers
 
-The coordinated zudo-doc/create-zudo-doc **6.0.0 has not been published**. This
-source tree targets the published **zfb 4.3.1** family (peer floor **^4.3.1**);
-package versions still read 5.28.2 pending release coordination.
+**6.0.0** is the coordinated major release of `@takazudo/zudo-doc`,
+`@takazudo/zudo-doc-history-server` and `create-zudo-doc`. It targets the
+published **zfb 4.3.1** family (peer floor **^4.3.1**).
 [Upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) is
 resolved; its strict published 4.3.1 consumer control passed 3/3 with no skips or
 retries in the [source-bound verification](../../docs/findings/zfb-4.3.1/verification.md).
