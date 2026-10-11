@@ -64,7 +64,7 @@ These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #45
 3. **Verify the resulting candidate. Done in #4516.** Exact-head PR Checks (28 jobs) and the expanded Nightly Exam (482 E2E, slow lanes, scaffold published guard, a11y) succeeded; installed barebone (12/12) and all-feature (19/19) consumers passed browser checks; the three strict A2 fingerprints changed only through the native `data-zfb-build` identity. Limits: Linux Chromium evidence, no native macOS WebKit; operator-driven manual smoke omitted; the IME table above is unchanged. Details: [zfb 4.3.1 verification](../zfb-4.3.1/verification.md).
 4. **Prepare and deliver coordinated 6.0.0 through the existing #4512 / #4502 / #4430.** Follow `RELEASE.md` (normally via `l-make-release`):
    - After #4518 merges, the release commit (`l-make-release major`: versions, scaffold pins, history-server peer floor and `approvedBaseline` to `^6.0.0`, six EN/JA notes, changelogs) is the only remaining pre-publication step.
-   - #3328 pre-publication report URL (manager fills after posting): COMMENT_URL. The report and final matrix land on `main` via [PR #4521](https://github.com/zudolab/zudo-doc/pull/4521).
+   - #3328 pre-publication report: https://github.com/Takazudo/zudo-front-builder/issues/3328#issuecomment-6105596278. The report and final matrix land on `main` via [PR #4521](https://github.com/zudolab/zudo-doc/pull/4521).
    - Publish in the order history-server → zudo-doc → create-zudo-doc, with synchronized release versions.
    - Write six EN/JA package notes, plus the generated changelogs and redirects.
    - Update the history-server peer floor and the `approvedBaseline` in `check-pin-parity.mjs` together to `^6.0.0`.
