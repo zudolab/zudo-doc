@@ -36,7 +36,7 @@ The [4.0.0 release notes](../changelog/zudo-doc/4.0.0.mdx) cover compatibility r
 - `@takazudo/zudo-doc/integrations/claude-resources`
 - `@takazudo/zudo-doc/safelist`
 
-`integrations/changelog` survives this particular boundary. The separate `safelist.css` export also survives 4.0 and is removed at 6.0. Prefer feature wiring through `zudoDoc()` rather than replacing every old integration import with a plugin import. Review customized code that depends on legacy tags/deprecations, token storage, Syntect markup, doc-history data or link-checker entrypoints against the current public APIs.
+`integrations/changelog` survives this particular boundary. The separate `safelist.css` export also survives 4.0 and is removed at 6.0. Prefer feature wiring through `zudoDoc()` rather than replacing every old integration import with a plugin import. Review customized code that depends on legacy tags/deprecations, token storage, retired syntax-highlighter markup, doc-history data or link-checker entrypoints against the current public APIs.
 
 Custom routes and data helpers must use the current zfb entry model; remove assumptions about the legacy flattened shape (see the [entry-model change](https://github.com/zudolab/zudo-doc/commit/df048e305b6be8082ec93f727163285b69253121)). Heading fragments now encode hierarchy; the old flat-ID fallback is gone. Compare rendered IDs for representative nested and repeated headings, update authored internal links, and list externally shared deep links. Preserve page URLs where possible. A server redirect cannot inspect a URL fragment, so page redirects alone cannot repair old anchors; decide whether to update inbound references or provide a tested page-side compatibility mechanism.
 

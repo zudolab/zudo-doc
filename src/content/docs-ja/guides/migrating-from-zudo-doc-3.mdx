@@ -36,7 +36,7 @@ description: コンテンツと動作を維持しながら、カスタマイズ�
 - `@takazudo/zudo-doc/integrations/claude-resources`
 - `@takazudo/zudo-doc/safelist`
 
-`integrations/changelog` はこの境界では残ります。別の export である `safelist.css` も 4.0 では残り、6.0 で削除されます。古い integration の import をすべて plugin の import に置き換えるのではなく、`zudoDoc()` による機能 wiring を優先してください。古い tag/deprecation、token storage、Syntect markup、doc-history data、link-checker entrypoint に依存する独自コードは、現在の公開 API と照合します。
+`integrations/changelog` はこの境界では残ります。別の export である `safelist.css` も 4.0 では残り、6.0 で削除されます。古い integration の import をすべて plugin の import に置き換えるのではなく、`zudoDoc()` による機能 wiring を優先してください。古い tag/deprecation、token storage、retired syntax-highlighter markup、doc-history data、link-checker entrypoint に依存する独自コードは、現在の公開 API と照合します。
 
 独自 route と data helper は現在の zfb entry model を使い、古い平坦な構造を前提とする処理を削除します（[entry-model の変更](https://github.com/zudolab/zudo-doc/commit/df048e305b6be8082ec93f727163285b69253121)を参照）。見出し fragment は階層を含み、古い flat-ID fallback はなくなりました。代表的な入れ子・重複見出しの描画後 ID を比較し、著作した内部リンクを更新して、外部で共有した deep link を一覧にします。可能な限りページ URL は維持してください。サーバーの redirect は URL fragment を参照できないため、ページの redirect だけでは古い anchor を修復できません。外部の参照を更新するか、検証したページ側の互換処理を用意するかを決めます。
 
