@@ -11,6 +11,7 @@ import { swapFunctions } from "@takazudo/zfb-runtime/client-router";
 import { renderIsland, flushAll } from "../../__tests__/helpers/zudo-react.js";
 import { disposeSidebarScrollPreserve } from "../../sidebar-tree-island/sidebar-scroll-preserve.js";
 import { buildSidebarNavigation } from "../../sidebar-utils/index.js";
+import { toSidebarClientData } from "../../sidebar/client-data.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 import { BEFORE_SWAP_EVENT } from "../../transitions/page-events.js";
@@ -34,7 +35,7 @@ let view:
   | undefined;
 
 async function mount(props: SidebarToggleProps = PROPS) {
-  view = await renderIsland(SidebarToggle, props, {
+  view = await renderIsland(SidebarToggle, { ...props, ...toSidebarClientData(props.nodes, props.navigation) }, {
     identity: { component: "SidebarToggle", build: "test" },
   });
   expect(view.diagnostics).toEqual([]);

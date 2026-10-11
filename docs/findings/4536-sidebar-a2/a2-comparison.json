@@ -1,0 +1,89 @@
+[
+  {
+    "page": "404.html",
+    "acceptedReference": "92770740eda1bd358fcbf3c3db2ab1d6339a336dbb69c0e32772066414eeb22b",
+    "candidateHostedFingerprint": "f3550359f09d49d206d643c300fb5e08f3d249f3cbe305b8e009ef10ded6ca77",
+    "acceptedNormalizedBytes": 57031,
+    "candidateNormalizedBytes": 57031,
+    "nativeBuildBefore": "3edf7c8e7ebc6982",
+    "nativeBuildAfter": "3928750a22e09636",
+    "nativeBuildOccurrences": 1,
+    "sidebarChanges": [],
+    "reverseDiffSha256": "92770740eda1bd358fcbf3c3db2ab1d6339a336dbb69c0e32772066414eeb22b",
+    "allOtherNormalizedBytesIdentical": true
+  },
+  {
+    "page": "docs/getting-started/index.html",
+    "acceptedReference": "40f8dac2deb206e9a9b4b11f56360bbefd76fc5886d59d291ac51903c7a18fca",
+    "candidateHostedFingerprint": "210a4f2826b8dc799b42b6617ba05af23b1b732606235385295b9c1f06dc34f9",
+    "acceptedNormalizedBytes": 67774,
+    "candidateNormalizedBytes": 67372,
+    "nativeBuildBefore": "3edf7c8e7ebc6982",
+    "nativeBuildAfter": "3928750a22e09636",
+    "nativeBuildOccurrences": 2,
+    "sidebarChanges": [
+      {
+        "component": "SidebarTree",
+        "removedDescriptions": [
+          {
+            "path": "nodes[0].description",
+            "value": "A minimal doc for the route-injection build proof"
+          },
+          {
+            "path": "nodes[0].children[0].description",
+            "value": "Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes"
+          },
+          {
+            "path": "navigation.roots[0].description",
+            "value": "A minimal doc for the route-injection build proof"
+          },
+          {
+            "path": "navigation.roots[0].children[0].description",
+            "value": "Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes"
+          }
+        ],
+        "otherParsedPropsEqual": true,
+        "serializedFieldOrderChanged": true
+      }
+    ],
+    "reverseDiffSha256": "40f8dac2deb206e9a9b4b11f56360bbefd76fc5886d59d291ac51903c7a18fca",
+    "allOtherNormalizedBytesIdentical": true
+  },
+  {
+    "page": "docs/getting-started/coverage/index.html",
+    "acceptedReference": "2f84d1ee47d99f8ebb4c9809a975be8a814ae229256ccb835880878a6292008e",
+    "candidateHostedFingerprint": "1f7c97157113b19530c80617ff1ebd37201e168334c24b6642850dfffe0276d5",
+    "acceptedNormalizedBytes": 79226,
+    "candidateNormalizedBytes": 78824,
+    "nativeBuildBefore": "3edf7c8e7ebc6982",
+    "nativeBuildAfter": "3928750a22e09636",
+    "nativeBuildOccurrences": 4,
+    "sidebarChanges": [
+      {
+        "component": "SidebarTree",
+        "removedDescriptions": [
+          {
+            "path": "nodes[0].description",
+            "value": "A minimal doc for the route-injection build proof"
+          },
+          {
+            "path": "nodes[0].children[0].description",
+            "value": "Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes"
+          },
+          {
+            "path": "navigation.roots[0].description",
+            "value": "A minimal doc for the route-injection build proof"
+          },
+          {
+            "path": "navigation.roots[0].children[0].description",
+            "value": "Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes"
+          }
+        ],
+        "otherParsedPropsEqual": true,
+        "serializedFieldOrderChanged": true
+      }
+    ],
+    "reverseDiffSha256": "2f84d1ee47d99f8ebb4c9809a975be8a814ae229256ccb835880878a6292008e",
+    "allOtherNormalizedBytesIdentical": true
+  }
+]

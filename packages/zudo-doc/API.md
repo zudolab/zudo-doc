@@ -129,6 +129,17 @@ behavior change from the previous standalone-line-below-the-row placement,
 #3012). A falsy value (`false`/`true`/`null`/`undefined` — e.g. a caller's own
 `extras={cond && <Link />}`) renders no content and no separator.
 
+### `toSidebarClientData(nodes, navigation?)` (`./sidebar`)
+
+Copies validated navigation into `SidebarClientNode[]` and optional
+`SidebarClientNavigation`. Both visible nodes and complete navigation roots retain
+all current node fields except `description`; unknown fields are omitted.
+Occurrence IDs, parents, expansion defaults, local parent and the opaque context
+ID are preserved. Inputs are not mutated. Invalid transport values still fail,
+even in discarded fields. Server builders and `SidebarNavNode.description` are
+unchanged. Native header/sidebar factories use this helper automatically; custom
+island hosts can pass its returned object to both SSR and hydration.
+
 ### `createHeaderWithDefaults(ctx)` (`./header-with-defaults`) — `sidebarNodes` override (#4219)
 
 `HeaderWithDefaultsProps` accepts an optional `sidebarNodes` prop that overrides
@@ -147,8 +158,9 @@ sidebarNodes?:
     }) => SidebarNavNode[]);
 ```
 
-- **Array**: passed to `SidebarToggle` as-is — no default tree is built and no
-  version-href remapping is applied.
+- **Array**: no default tree is built and no version-href remapping is applied.
+  Client fields are copied; descriptions and unknown fields are omitted after
+  transport validation. Array/object identity is not retained.
 - **Callback**: receives the render's resolved `lang`/`navSection`/
   `currentVersion` plus a **lazy** `buildDefault()` — calling it reproduces
   today's default tree (`buildSidebarNodes(lang, navSection, currentVersion)`,
