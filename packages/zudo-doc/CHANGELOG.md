@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Bug Fixes
+
+- `defineChromeBindings({ mdxExtras })` accepts MDX components with their own required typed props again (for example `(props: { html: string }) => Child`), fixing a 6.0.0 TS2322 regression. Entries must still be components returning a renderable `Child`; fixed chrome slots keep their call-side prop checks ([#4530](https://github.com/zudolab/zudo-doc/issues/4530)).
 
 ## [6.0.0] - 2026-10-11
 
