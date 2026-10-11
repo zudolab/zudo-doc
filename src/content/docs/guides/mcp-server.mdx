@@ -46,9 +46,85 @@ The human `url` is suitable for citations. Long pages have multiple item IDs; fe
 
 ## Existing-project recipe
 
-For a generated project that already exists, first enable [static export](./agent-export.mdx) with `agentExport: true`. To add MCP, install `@modelcontextprotocol/sdk@1.31.0` and the Cloudflare adapter matching your project's zfb version, add `mcp: true` and `adapter: "@takazudo/zfb-adapter-cloudflare"` to `zudoDoc({ ... })`, and add Wrangler `4.111.0` as a development dependency. Use the initializer's current `wrangler.jsonc` shape: `main: "./dist/_worker.js"`, an `ASSETS` binding to `./dist`, `nodejs_compat`, and the package's supported compatibility date. Add `preview:worker` as `wrangler dev` and `deploy` as your package manager's build followed by `wrangler deploy`. Keep existing bundle settings: the package adds the SDK-required `module` and `main` resolution fields when MCP is enabled. Build and verify locally before deploying.
+### Add MCP without replacing your project
 
-To remove MCP, set `mcp: false` or remove the field and adapter, rebuild, and redeploy. Then remove `wrangler.jsonc`, deployment scripts, and MCP-only dependencies if no other feature uses them. Keep `agentExport: true` if you still want portable Markdown artifacts; disable it separately when you no longer want the public corpus. A static-only project can publish to any static host.
+Use matching `@takazudo/zudo-doc` and `create-zudo-doc` releases that support MCP: **6.0.0 or later**. The npm `latest` release is still 5.28.2 before the coordinated 6.0.0 publication; it does not support this recipe. The commands below are for after that release is available. Before publication, repository tests use packed candidate artifacts instead of the registry's older initializer.
+
+First upgrade the existing project using the [migration guide](./migrating-to-zudo-doc-6.mdx) if needed, then enable [static export](./agent-export.mdx). Preserve your content, `siteUrl`, `base`, locales, bundle options, dependencies shared with other features, and existing scripts. Do not run the initializer over your existing directory.
+
+From the existing project's root, generate a temporary reference with the **same exact version** as your installed documentation package:
+
+```bash
+ZUDO_DOC_VERSION=6.0.0
+MCP_REFERENCE=$(mktemp -d)/mcp-reference
+pnpm dlx "create-zudo-doc@$ZUDO_DOC_VERSION" "$MCP_REFERENCE" --mcp --mcp-deploy cloudflare --yes
+mkdir -p scripts
+cp -n "$MCP_REFERENCE/scripts/stage-cloudflare-base.mjs" scripts/stage-cloudflare-base.mjs
+```
+
+Choose your installed version instead of `6.0.0` for later releases. Inspect the reference's `package.json` and `wrangler.jsonc`; copy only the helper and merge the deployment settings into your project. If that helper path already exists, compare it rather than overwriting it. Keep the reference until the setup is verified. It supplies version-matched build glue without replacing authored configuration.
+
+Install the MCP dependencies from the reference. For the current supported tuple:
+
+```bash
+pnpm add @modelcontextprotocol/sdk@1.31.0 @takazudo/zfb-adapter-cloudflare@4.3.1
+pnpm add -D wrangler@4.111.0
+```
+
+Match the adapter to your project's supported zfb version. Inside the existing `zudoDoc({ ... })` call, enable these fields, retaining all other settings:
+
+```ts
+agentExport: true,
+mcp: true,
+adapter: "@takazudo/zfb-adapter-cloudflare",
+```
+
+Keep `siteUrl` as the canonical origin, for example `https://docs.example.com`. At root, keep `base` omitted or `/`; for a subdirectory, retain `base: "/manual"`. The package adds the SDK-required `module` and `main` bundle resolution fields when MCP is enabled while preserving existing bundle settings.
+
+Add or merge `wrangler.jsonc`, choosing your own DNS-safe Worker name. Preserve bindings or routes used by other features. The supported generated shape is:
+
+```json
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "my-docs",
+  "main": "./dist/_worker.js",
+  "compatibility_date": "2024-12-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": false
+  }
+}
+```
+
+Append `&& node scripts/stage-cloudflare-base.mjs` **after your entire existing successful build command**, including any post-build steps. For example, an existing `zfb build && node scripts/postbuild.mjs` becomes:
+
+```json
+{
+  "scripts": {
+    "build": "zfb build && node scripts/postbuild.mjs && node scripts/stage-cloudflare-base.mjs",
+    "preview:worker": "wrangler dev",
+    "deploy": "pnpm build && wrangler deploy"
+  }
+}
+```
+
+Merge these scripts rather than replacing the scripts object. If a preview or deploy script already exists, keep it and choose a separate name for MCP verification/deployment. Add `.wrangler/` to `.gitignore` if absent. The helper reads the exported manifest's base: it is a no-op at root, and stages prerendered pages, llms files, and browser assets under `dist/manual/` for `/manual`. The Worker entry remains `dist/_worker.js`; do not move it or wrap its export.
+
+Run `pnpm build` and `pnpm preview:worker`. At root, verify `/docs/`, `/llms.txt`, `/agent/v1/manifest.json`, and `/mcp`; under `/manual`, verify `/manual/docs/`, `/manual/llms.txt`, `/manual/agent/v1/manifest.json`, and `/manual/mcp`. Open an actual content page and its referenced JS/CSS, then use an SDK client to discover `search`/`fetch`, search EN and JA content, fetch a returned ID, and open its cited human URL. Check the manifest's Markdown and item URLs too. Canonical citations must retain your public origin and base; the local runtime can be checked using the same paths on its printed origin. Deploy and connect an account only after this local verification, as described above.
+
+### Remove MCP and keep static export
+
+Set `mcp: false` or remove that field, keeping `agentExport: true` and your existing site/base/locale settings. Remove the Cloudflare adapter setting **only if no other feature needs it**. To return to a fully static project when all Cloudflare wiring was MCP-only:
+
+1. Remove only the appended `&& node scripts/stage-cloudflare-base.mjs` from `build`, retaining the original command and post-build steps. Delete the helper if unused.
+2. Remove the MCP-only preview/deploy scripts and `wrangler.jsonc` (or only their MCP-specific additions when shared). Remove the `.wrangler/` ignore entry only if no remaining tooling uses it.
+3. Run `pnpm remove @modelcontextprotocol/sdk @takazudo/zfb-adapter-cloudflare wrangler` only for dependencies unused by every remaining feature. Keep any shared adapter, SDK, or deployment tooling.
+4. Run `pnpm build`. Verify there is no MCP route or `dist/_worker.js` in the fully static output, and the manifest, item JSON, per-page Markdown and enabled llms files remain under the configured base. Static pages/browser assets use your static host's usual base-path deployment layout; the removed helper was Wrangler-specific. Publish the rebuilt static output through your existing static-host workflow, replacing the old Worker deployment so its endpoint is no longer exposed.
+
+Disabling MCP does **not** remove the public static corpus. To stop exporting that too, disable `agentExport` separately, rebuild, and replace the published artifacts so old `/agent/v1/` files are removed. The independent `llmsTxt` option may still publish documentation; disable it too if that public export is unwanted.
 
 ## Limits and publication safety
 

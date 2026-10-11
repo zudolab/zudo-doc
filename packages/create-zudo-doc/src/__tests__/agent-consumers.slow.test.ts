@@ -5,6 +5,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 import net from "node:net";
+import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { scaffold } from "../scaffold.js";
@@ -22,6 +23,8 @@ let root: string;
 let originalCwd: string;
 let worker: ChildProcess | undefined;
 let workerLog = "";
+let referencePromise: Promise<string> | undefined;
+let adoptionZudoDocTarball: string;
 const dir = (name: string) => path.join(root, name);
 
 async function build(name: string, features: string[], defaultLang = "en", additionalLangs: string[] = [], base = ""): Promise<string> {
@@ -69,7 +72,8 @@ async function freePort(): Promise<number> {
   return address.port;
 }
 
-async function startWorker(project: string): Promise<string> {
+async function startWorker(project: string, base = "/manual"): Promise<string> {
+  workerLog = "";
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
   worker = spawn("pnpm", ["preview:worker", "--ip", "127.0.0.1", "--port", String(port)], {
@@ -80,7 +84,7 @@ async function startWorker(project: string): Promise<string> {
   for (let attempt = 0; attempt < 100; attempt++) {
     if (worker.exitCode !== null) throw new Error(`Wrangler exited early: ${workerLog}`);
     try {
-      const response = await fetch(`${origin}/manual/agent/v1/manifest.json`);
+      const response = await fetch(`${origin}${base}/agent/v1/manifest.json`);
       if (response.ok) return origin;
     } catch { /* startup */ }
     await new Promise((resolve) => setTimeout(resolve, 200));
@@ -97,6 +101,54 @@ async function stopWorker(): Promise<void> {
   ]);
   try { process.kill(-worker.pid, "SIGKILL"); } catch { /* already exited */ }
   worker = undefined;
+}
+
+// The reference helper must come from the packed candidate initializer, not
+// npm's identically versioned but older 5.28.2 release or workspace source.
+async function adoptionReference(): Promise<string> {
+  const initializer = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+  const packDir = dir("initializer-pack");
+  await fs.ensureDir(packDir);
+  runOrThrow(`pnpm pack --pack-destination "${packDir}"`, initializer);
+  const tarballs = (await fs.readdir(packDir)).filter((name) => name.endsWith(".tgz"));
+  expect(tarballs).toHaveLength(1);
+  const tools = dir("reference-tools");
+  await fs.outputJson(path.join(tools, "package.json"), {
+    private: true,
+    dependencies: { "create-zudo-doc": `file:${path.join(packDir, tarballs[0]!)}` },
+  });
+  installScaffoldedDeps(tools, false);
+  runOrThrow("pnpm exec create-zudo-doc ../mcp-reference --mcp --mcp-deploy cloudflare --yes", tools);
+  const reference = dir("mcp-reference");
+  const referencePkg = await fs.readJson(path.join(reference, "package.json"));
+  const candidatePkg = await fs.readJson(path.join(initializer, "../zudo-doc/package.json"));
+  expect(referencePkg.dependencies["@takazudo/zudo-doc"]).toBe(candidatePkg.version);
+  const docPackDir = dir("documentation-pack");
+  await fs.ensureDir(docPackDir);
+  runOrThrow(`pnpm pack --pack-destination "${docPackDir}"`, path.join(initializer, "../zudo-doc"));
+  const docTarballs = (await fs.readdir(docPackDir)).filter((name) => name.endsWith(".tgz"));
+  expect(docTarballs).toHaveLength(1);
+  adoptionZudoDocTarball = path.join(docPackDir, docTarballs[0]!);
+  return reference;
+}
+
+async function assertLocalAssets(origin: string, base: string, proof: any): Promise<void> {
+  // Use the returned canonical citation's actual path on the local origin.
+  const citation = new URL(proof.url);
+  expect(citation.origin).toBe("https://docs.example.test");
+  expect(citation.pathname).toBe(`${base}/docs/agent-proof`);
+  const page = await fetch(new URL(citation.pathname, origin));
+  expect(page.status).toBe(200);
+  const html = await page.text();
+  const assets = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)]
+    .map((match) => new URL(match[1]!, page.url));
+  expect(assets.some((asset) => asset.pathname.endsWith(".js"))).toBe(true);
+  expect(assets.some((asset) => asset.pathname.endsWith(".css"))).toBe(true);
+  for (const asset of assets) {
+    expect(asset.origin).toBe(origin);
+    expect(asset.pathname.startsWith(`${base}/`)).toBe(true);
+    expect((await fetch(asset)).status).toBe(200);
+  }
 }
 
 beforeAll(async () => {
@@ -197,4 +249,128 @@ describe("packed generated agent consumers", () => {
       expect((await fetch(`${origin}/mcp`, { method: "POST", headers, body: "{}" })).status).toBe(404);
     } finally { await stopWorker(); }
   }, 60_000);
+
+  it.each(["", "/manual"])("adopts and removes MCP in an existing static consumer at base %j", async (base) => {
+    const name = base ? "adopt-manual" : "adopt-root";
+    const project = await build(name, ["agentExport", "llmsTxt"], "en", ["ja"], base);
+    const configPath = path.join(project, "zfb.config.ts");
+    const packagePath = path.join(project, "package.json");
+    const authoredConfig = (await fs.readFile(configPath, "utf8"))
+      .replace("zudoDoc({", 'zudoDoc({\n    siteUrl: "https://docs.example.test",');
+    await fs.writeFile(configPath, authoredConfig);
+    await fs.outputFile(path.join(project, "src/content/docs-ja/agent-proof.mdx"),
+      "---\ntitle: 日本語の検証\n---\n\n紫色のカモノハシの設定を検証します。\n");
+    // An authored build suffix must survive adoption and removal, and run
+    // before staging so its output is also reachable below /manual.
+    await fs.outputFile(path.join(project, "scripts/postbuild.mjs"),
+      'import { writeFileSync } from "node:fs";\nwriteFileSync("dist/authored-postbuild.txt", "preserved");\n');
+    const pkg = await fs.readJson(packagePath);
+    const originalScripts = { ...pkg.scripts, build: `${pkg.scripts.build} && node scripts/postbuild.mjs` };
+    pkg.scripts = { ...originalScripts };
+    await fs.writeJson(packagePath, pkg, { spaces: 2 });
+    runOrThrow("pnpm build", project, { SKIP_DOC_HISTORY: "1" });
+    const originalArtifacts = await artifacts(project, base.slice(1));
+    expect(originalArtifacts.manifest.site.base).toBe(base || "/");
+
+    const reference = await (referencePromise ??= adoptionReference());
+    // Keep this tarball until teardown; the older helper deletes its temporary
+    // tarball after install, so its file spec cannot support later reinstalls.
+    pkg.dependencies["@takazudo/zudo-doc"] = `file:${adoptionZudoDocTarball}`;
+    const referencePkg = await fs.readJson(path.join(reference, "package.json"));
+    for (const dependency of ["@modelcontextprotocol/sdk", "@takazudo/zfb-adapter-cloudflare"]) {
+      pkg.dependencies[dependency] = referencePkg.dependencies[dependency];
+    }
+    pkg.devDependencies.wrangler = referencePkg.devDependencies.wrangler;
+    pkg.scripts = {
+      ...originalScripts,
+      build: `${originalScripts.build} && node scripts/stage-cloudflare-base.mjs`,
+      "preview:worker": "wrangler dev",
+      deploy: "pnpm build && wrangler deploy",
+    };
+    await fs.writeJson(packagePath, pkg, { spaces: 2 });
+    await fs.writeFile(configPath, authoredConfig.replace("zudoDoc({",
+      'zudoDoc({\n    mcp: true,\n    adapter: "@takazudo/zfb-adapter-cloudflare",'));
+    await fs.copy(path.join(reference, "scripts/stage-cloudflare-base.mjs"),
+      path.join(project, "scripts/stage-cloudflare-base.mjs"), { overwrite: false, errorOnExist: true });
+    const wrangler = await fs.readJson(path.join(reference, "wrangler.jsonc"));
+    wrangler.name = name;
+    await fs.writeJson(path.join(project, "wrangler.jsonc"), wrangler, { spaces: 2 });
+    const originalIgnore = await fs.readFile(path.join(project, ".gitignore"), "utf8");
+    await fs.writeFile(path.join(project, ".gitignore"), `${originalIgnore}\n.wrangler/\n`);
+    installScaffoldedDeps(project, false);
+
+    // Positive omission control: the adapter build succeeds but prerendered
+    // HTML is flat, so literal Wrangler assets lack the base-prefixed page.
+    runOrThrow(`pnpm exec ${originalScripts.build}`, project, { SKIP_DOC_HISTORY: "1" });
+    expect(await fs.pathExists(path.join(project, "dist/docs/agent-proof/index.html"))).toBe(true);
+    if (base) {
+      expect(await fs.pathExists(path.join(project, "dist/manual/docs/agent-proof/index.html"))).toBe(false);
+    }
+    runOrThrow("pnpm build", project, { SKIP_DOC_HISTORY: "1" });
+    const { manifest } = await artifacts(project, base.slice(1));
+    expect(manifest.site).toEqual(originalArtifacts.manifest.site);
+    const origin = await startWorker(project, base);
+    try {
+      const proof = manifest.documents.find((document: any) => document.title === "Agent Proof");
+      await assertLocalAssets(origin, base, proof);
+      expect(await (await fetch(`${origin}${base}/authored-postbuild.txt`)).text()).toBe("preserved");
+      for (const url of [`${base}/llms.txt`, `${base}/agent/v1/manifest.json`, manifest.searchIndex.url,
+        proof.markdownUrl, manifest.items.find((item: any) => item.pageId === proof.id).artifactUrl]) {
+        expect((await fetch(new URL(new URL(url, origin).pathname, origin))).status).toBe(200);
+      }
+      const client = new Client({ name: "existing-consumer-recipe", version: "1.0.0" });
+      await client.connect(new StreamableHTTPClientTransport(new URL(`${origin}${base}/mcp`)));
+      try {
+        expect((await client.listTools()).tools.map((tool) => tool.name).sort()).toEqual(["fetch", "search"]);
+        for (const [query, marker, locale] of [
+          ["violet platypus", "violet platypus marker", "en"],
+          ["紫色のカモノハシ", "紫色のカモノハシ", "ja"],
+        ]) {
+          const found = await client.callTool({ name: "search", arguments: { query } });
+          const results = (found.structuredContent as any).results;
+          const match = results.find((result: any) => manifest.documents.some((document: any) =>
+            document.locale === locale && document.itemIds.includes(result.id)));
+          expect(match).toBeDefined();
+          const fetched = await client.callTool({ name: "fetch", arguments: { id: match.id } });
+          const item = fetched.structuredContent as any;
+          expect(item.text).toContain(marker);
+          expect(item.metadata.locale).toBe(locale);
+          expect(item.url).toBe(match.url);
+          const citation = new URL(item.url);
+          expect(citation.origin).toBe("https://docs.example.test");
+          expect(citation.pathname.startsWith(`${base}/${locale === "ja" ? "ja/" : ""}docs/`)).toBe(true);
+          expect((await fetch(new URL(citation.pathname, origin))).status).toBe(200);
+        }
+      } finally { await client.close(); }
+    } finally { await stopWorker(); }
+
+    // The MCP-only pieces are removed; authored config/scripts/content and
+    // the packed documentation dependency remain, including static export.
+    await fs.writeFile(configPath, authoredConfig);
+    pkg.scripts = { ...originalScripts };
+    for (const dependency of ["@modelcontextprotocol/sdk", "@takazudo/zfb-adapter-cloudflare"]) {
+      delete pkg.dependencies[dependency];
+    }
+    delete pkg.devDependencies.wrangler;
+    await fs.writeJson(packagePath, pkg, { spaces: 2 });
+    await fs.remove(path.join(project, "wrangler.jsonc"));
+    await fs.remove(path.join(project, "scripts/stage-cloudflare-base.mjs"));
+    await fs.writeFile(path.join(project, ".gitignore"), originalIgnore);
+    installScaffoldedDeps(project, false);
+    runOrThrow("pnpm build", project, { SKIP_DOC_HISTORY: "1" });
+    const restored = await artifacts(project, base.slice(1));
+    expect(restored.manifest).toEqual(manifest);
+    expect(await fs.readFile(configPath, "utf8")).toBe(authoredConfig);
+    expect((await fs.readJson(packagePath)).scripts).toEqual(originalScripts);
+    expect(await fs.readFile(path.join(project, "dist/authored-postbuild.txt"), "utf8")).toBe("preserved");
+    expect(await fs.pathExists(path.join(project, "dist/_worker.js"))).toBe(false);
+    expect(await fs.pathExists(path.join(project, "dist", base.slice(1), "mcp"))).toBe(false);
+    for (const dependency of ["@modelcontextprotocol/sdk", "@takazudo/zfb-adapter-cloudflare", "wrangler"]) {
+      expect(await fs.pathExists(path.join(project, "node_modules", dependency))).toBe(false);
+    }
+    expect(await fs.pathExists(path.join(restored.output, "pages",
+      `${restored.manifest.documents.find((document: any) => document.title === "Agent Proof").key}.md`))).toBe(true);
+    expect(await fs.pathExists(path.join(project, "dist", base.slice(1), "llms.txt"))).toBe(true);
+  }, 20 * 60 * 1000);
+
 });
