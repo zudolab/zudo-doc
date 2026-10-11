@@ -25,9 +25,9 @@
 #                              search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (903 tests: 901 passed, 2 skipped)
 #   Slow Unit Tests           — pnpm install; 60 slow root tests + 5 retiered create-zudo-doc tests
-#   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
-#                              emitter file changed; else pnpm install + build:workspace +
-#                              the A2 no-stub parity slow-suite subset
+#   A2 Parity Gate           — input-selected (#4528): scripts/select-a2-parity.mjs skips
+#                              unless an A2 build input changed; else pnpm install +
+#                              build:workspace + the A2 no-stub parity slow-suite subset
 #   Build Site               — full clone, pnpm install; pnpm build + check:links
 #   HTML validate            — needs build-site; pnpm check:html
 #   Theme A11y Audit         — needs build-site; two-lane path-filtered rendered
@@ -629,19 +629,20 @@ jobs:
         run: pnpm exec vitest run --config vitest.slow.config.ts src/__tests__/skill-name-parity.slow.test.ts src/__tests__/init-git-repo.slow.test.ts
 
   # ---------------------------------------------------------------------------
-  # Job 1.7: A2 no-stub parity gate (path-filtered) (#3419)
+  # Job 1.7: A2 no-stub parity gate (input-selected) (#3419, #4528)
   # ---------------------------------------------------------------------------
   # The A2 no-stub parity describe in route-injection-build.slow.test.ts
   # (packages/zudo-doc) asserts sha256-stable normalized HTML for pages built
-  # with package-owned routes and no host stubs. Those hashes only move when
-  # one of a small set of "every-page script emitter" files changes (scripts
-  # embedded via toString()/generated into every page's HTML — theme pack,
-  # current-path, nav overflow/active, i18n switchers, the search widget
-  # script generator, page-transition events). Running the full slow suite on
-  # every PR is wasteful, so this job diffs the PR against its base and only
-  # runs the parity subset when an emitter file is touched — otherwise it
-  # exits green on the skip path. The sibling generator-hardening epic
-  # (zudolab/zudo-doc#3425) is expected to exercise the RUN path.
+  # with package-owned routes and no host stubs. The fingerprints cover the
+  # WHOLE normalized page, including zfb's native `data-zfb-build` identity,
+  # which digests every file of the linked package tree. So the job is
+  # selected from the fixture's build inputs, not from individual markup
+  # emitters: scripts/select-a2-parity.mjs owns the documented input contract
+  # (linked package, workspace dependency, manifests/lockfile/toolchain,
+  # normalizer + external reference, and this gate's own execution code) and
+  # fails — never skips — when the base or diff cannot be resolved. Release
+  # PR #4524 changed only manifests and skipped A2 under the old emitter list;
+  # the post-publication exam then failed all three fingerprints (#4527).
   #
   # fetch-depth: 0 so the diff below has the full history needed to resolve
   # the merge-base against the PR's base SHA (mirrors build-site/build-history).
@@ -656,132 +657,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect every-page script emitter changes
-        id: detect-emitters
+      # Runs on the runner's preinstalled Node with built-ins only, so the
+      # skip path needs no setup or dependency install.
+      - name: Select A2 from changed build inputs
+        id: select-a2
         env:
           # Passed via env (not inlined into the script) so the SHA never
           # flows through shell interpolation of a ${{ }} expression.
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          set -euo pipefail
-
-          # This list has two classes of entry — CAN-MOVE-HASHES and
-          # CANARY-ONLY — marked inline below. One path per line; a trailing
-          # slash means prefix (directory) match below.
-          #
-          # CAN-MOVE-HASHES: files whose change can shift the byte-identical
-          # HTML the A2 no-stub parity hashes assert on (zudolab/zudo-doc#3419).
-          #
-          # BEST-EFFORT, NOT EXHAUSTIVE. The hashes cover the WHOLE normalized
-          # page HTML, not just the inlined scripts, so any package source that
-          # contributes SSR markup to the fixture's pages can move them — the
-          # test file's own re-baseline log records exactly that happening for
-          # `src/header/header.tsx` and `src/doc-content-header/index.tsx`
-          # (#3039). Those two are listed for that reason; when a re-baseline
-          # traces to some other markup source, add it here in the same PR.
-          #
-          # CANARY-ONLY: `search-widget-script/` and
-          # `gen-search-widget-script.mjs` CANNOT move the hashes. No fixture
-          # (resolution-chain, route-injection, route-injection-i18n,
-          # target-manifest) wires a SearchWidget binding through
-          # chromeBindingsModule, so SEARCH_WIDGET_SCRIPT never appears in any
-          # fixture's HTML. Confirmed empirically by zudolab/zudo-doc#3430,
-          # which changed the generator's output bytes (the pinned CSP hash
-          # moved) while all three A2 parity hashes stayed identical. They are
-          # kept in this list anyway: the A2 slow suite runs nowhere else in CI
-          # (excluded from b4push and the regular CI jobs for time-budget
-          # reasons — see TESTING.md), so triggering it on a search-widget
-          # change is still a useful canary — it proves the fixtures still
-          # build and the pipeline still produces the expected pages — just
-          # not the hash-movement signal every other entry provides.
-          #
-          # The parity test and external fingerprint reference are listed
-          # so a PR that edits either re-runs the suite and proves the baseline.
-          # Linked-package test source also contributes to native build identity;
-          # external reference changes do not move that identity. Reference-only
-          # edits must never skip the gate that validates their new fingerprints.
-          EMITTERS=(
-            # -- CAN-MOVE-HASHES --
-            "packages/zudo-doc/src/theme/theme-pack-provider.tsx"
-            "packages/zudo-doc/src/current-path/index.ts"
-            "packages/zudo-doc/src/header/nav-overflow-script.ts"
-            # Since zudolab/zudo-doc#3534 the nav-overflow script bytes are a
-            # frozen committed literal: ANY change to its four sources
-            # (current-path/index.ts, nav-active.ts, nav-class-tokens.ts,
-            # page-events.ts) or to the generator's template must land in the
-            # generated file below, so it is the load-bearing entry — a
-            # nav-class-tokens.ts-only edit would otherwise skip this gate.
-            # The generator is listed too, mirroring gen-search-widget-script.
-            "packages/zudo-doc/src/header/nav-overflow-generated-script.ts"
-            "packages/zudo-doc/scripts/gen-nav-overflow-script.mjs"
-            "packages/zudo-doc/src/header/nav-active.ts"
-            "packages/zudo-doc/src/header/header.tsx"
-            "packages/zudo-doc/src/doc-content-header/index.tsx"
-            "packages/zudo-doc/src/sidebar-tree-island/"
-            "packages/zudo-doc/src/sidebar-with-defaults/index.tsx"
-            "packages/zudo-doc/src/sidebar-toggle-island/"
-            "packages/zudo-doc/src/header-with-defaults/index.tsx"
-            "packages/zudo-doc/src/i18n-version/version-switcher.tsx"
-            "packages/zudo-doc/src/i18n-version/language-switcher.tsx"
-            "packages/zudo-doc/src/head-with-defaults/index.tsx"
-            "packages/zudo-doc/src/breadcrumb/"
-            # -- CANARY-ONLY: cannot move the hashes (zudolab/zudo-doc#3430) --
-            "packages/zudo-doc/src/search-widget-script/"
-            "packages/zudo-doc/scripts/gen-search-widget-script.mjs"
-            # -- CAN-MOVE-HASHES --
-            "packages/zudo-doc/src/transitions/page-events.ts"
-            # -- re-run trigger for hash edits, not an SSR-markup source; see note above --
-            "packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts"
-            "scripts/__tests__/fixtures/a2-route-reference.json"
-          )
-
-          CHANGED_FILES="$(git diff --name-only "$BASE_SHA"...HEAD)"
-          echo "Changed files vs base ($BASE_SHA):"
-          echo "$CHANGED_FILES"
-          echo ""
-
-          MATCHED=0
-          while IFS= read -r file; do
-            if [ -z "$file" ]; then
-              continue
-            fi
-            for emitter in "${EMITTERS[@]}"; do
-              case "$emitter" in
-                */)
-                  case "$file" in
-                    "$emitter"*)
-                      echo "Emitter changed (dir match): $file"
-                      MATCHED=1
-                      ;;
-                  esac
-                  ;;
-                *)
-                  if [ "$file" = "$emitter" ]; then
-                    echo "Emitter changed: $file"
-                    MATCHED=1
-                  fi
-                  ;;
-              esac
-            done
-          done <<<"$CHANGED_FILES"
-
-          if [ "$MATCHED" -eq 0 ]; then
-            echo ""
-            echo "No every-page script emitter files changed — skipping the A2 no-stub parity suite."
-            echo "run_parity=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "run_parity=true" >> "$GITHUB_OUTPUT"
+        run: node scripts/select-a2-parity.mjs
 
       - name: Setup Node.js and pnpm
-        if: steps.detect-emitters.outputs.run_parity == 'true'
+        if: steps.select-a2.outputs.run_parity == 'true'
         uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
 
       - name: Install dependencies
-        if: steps.detect-emitters.outputs.run_parity == 'true'
+        if: steps.select-a2.outputs.run_parity == 'true'
         run: pnpm install --frozen-lockfile
 
       # Mandatory, not just a freshness nicety: the slow suite builds its
@@ -790,26 +683,28 @@ jobs:
       # freshness (#3053) — a stale dist/ would silently pass a build that
       # should have failed or produce parity hashes for the wrong source.
       - name: Build workspace packages
-        if: steps.detect-emitters.outputs.run_parity == 'true'
+        if: steps.select-a2.outputs.run_parity == 'true'
         run: pnpm build:workspace
 
       - name: Run A2 no-stub parity slow-suite subset
         id: parity
-        if: steps.detect-emitters.outputs.run_parity == 'true'
+        if: steps.select-a2.outputs.run_parity == 'true'
         working-directory: packages/zudo-doc
         env:
           # Keep captured public fixture bytes outside the linked package so
           # diagnostics do not feed back into its native source digest.
           ZUDO_A2_CAPTURE_DIR: ${{ runner.temp }}/zudo-a2-route-parity
+          A2_MATCHED_PATH: ${{ steps.select-a2.outputs.matched_path }}
         # Block scalar (not inline `run: <value>`) — the --testNamePattern
         # value contains unquoted-looking `: ` sequences ("A2 no-stub: ...",
         # "setup: ...") that a YAML plain scalar parses as a nested mapping
         # key. Indentation-scoped block scalars have no such ambiguity.
         run: |
           pnpm exec vitest run --config vitest.slow.config.ts --testNamePattern "A2 no-stub: injected routes render correct HTML"
+          echo "A2 execution: EXECUTED and passed (selected by $A2_MATCHED_PATH)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload A2 fixture diagnostics
-        if: always() && steps.detect-emitters.outputs.run_parity == 'true'
+        if: always() && steps.select-a2.outputs.run_parity == 'true'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: a2-route-parity-diagnostics
@@ -1347,12 +1242,12 @@ jobs:
           # before assigning a version alias. The preview config has no custom
           # routes and keeps its primary workers.dev route disabled, so this
           # applies service-level settings without receiving public traffic.
-          npx wrangler@4.111.0 deploy \
+          node scripts/wrangler-pinned.mjs deploy \
             --config "$PREVIEW_CONFIG" \
             --message="Preview service bootstrap @ ${GITHUB_SHA:0:7}"
           upload_preview() {
             : > "$DEPLOY_LOG"
-            npx wrangler@4.111.0 versions upload \
+            node scripts/wrangler-pinned.mjs versions upload \
               --config "$PREVIEW_CONFIG" \
               --preview-alias "$ALIAS" \
               2>&1 | tee "$DEPLOY_LOG"

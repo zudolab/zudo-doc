@@ -1,0 +1,52 @@
+{
+  "ciRun": "https://github.com/zudolab/zudo-doc/actions/runs/38133503347",
+  "ciHeadSha": "cc1bc7a12fd410d12d581ac194fa168cba58690f",
+  "priorCiRun": "https://github.com/zudolab/zudo-doc/actions/runs/38132620710 (head 1b112163c, same linked-package tree, identical hashes)",
+  "oldBuildId": "3b5145496e3f6bd2",
+  "newBuildId": "a54515ab068dbd0c",
+  "pages": [
+    {
+      "page": "404.html",
+      "referenceHash": "24fc470ff66f4405ffc36fbc86e8f3a58325f367d9894511b8404fa5c39ae18d",
+      "newHash": "a91a76a3bf1499c2874e20fdc8e30decb19a6731e58dcfddac990314cb41501a",
+      "newBuildIds": [
+        "a54515ab068dbd0c"
+      ],
+      "occurrences": 1,
+      "withOldBuildIdHash": "24fc470ff66f4405ffc36fbc86e8f3a58325f367d9894511b8404fa5c39ae18d",
+      "withOldBuildIdEqualsReference": true,
+      "ciEqualsLocalBranchCaptureExceptBuildId": true
+    },
+    {
+      "page": "docs/getting-started/index.html",
+      "referenceHash": "b1843a4dd2615ee3dc0de557a4eac6b3357f5950bd25727e2587cfda467cd5ed",
+      "newHash": "44a0a6529e7d03a56b209cf194991a199c4148abe48fff1235b8ad71e77a7ba4",
+      "newBuildIds": [
+        "a54515ab068dbd0c"
+      ],
+      "occurrences": 2,
+      "withOldBuildIdHash": "b1843a4dd2615ee3dc0de557a4eac6b3357f5950bd25727e2587cfda467cd5ed",
+      "withOldBuildIdEqualsReference": true,
+      "ciEqualsLocalBranchCaptureExceptBuildId": true
+    },
+    {
+      "page": "docs/getting-started/coverage/index.html",
+      "referenceHash": "a5226775127b90e6b38be8b26f2ea0a1dae5890c36885d73b3359761e3827a9d",
+      "newHash": "ed235ddb603f4f28ce65fdd269e194a56a68b6c07a255378b96ab2eb2ddeb84c",
+      "newBuildIds": [
+        "a54515ab068dbd0c"
+      ],
+      "occurrences": 4,
+      "withOldBuildIdHash": "a5226775127b90e6b38be8b26f2ea0a1dae5890c36885d73b3359761e3827a9d",
+      "withOldBuildIdEqualsReference": true,
+      "ciEqualsLocalBranchCaptureExceptBuildId": true
+    }
+  ],
+  "localControl": {
+    "mainBuildId": "fcef159a14559664",
+    "branchBuildId": "63cb41a54a534bfa",
+    "branchWithOnlyPackageClaudeMdRevertedBuildId": "fcef159a14559664",
+    "branchNormalizedEqualsMainExceptBuildId": true,
+    "note": "Local tokens differ from hosted tokens for the same tree; local main also fails the hosted references. Local runs are causal controls only."
+  }
+}

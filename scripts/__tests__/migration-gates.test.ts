@@ -97,37 +97,26 @@ it("keeps transport identity and structural comment mutations observable", () =>
   ]) expect(sha256Html(changed)).not.toBe(sha256Html(html));
 });
 
-// Exercise the real workflow detection script, so reference-only edits cannot
-// silently skip the one CI job that owns these fingerprints.
+// The A2 job delegates selection to the real detector, whose behaviour
+// (reference-only edits included) is exercised in select-a2-parity.test.ts.
 describe("#4470 A2 workflow selection", () => {
   const workflow = readFileSync(join(root, ".github/workflows/pr-checks.yml"), "utf8");
-  it("runs the actual emitter detector for an external-reference-only commit", () => {
-    const script = workflow.match(/          EMITTERS=\([\s\S]*?          echo "run_parity=true" >> "\$GITHUB_OUTPUT"/)?.[0];
-    expect(script).toBeDefined();
-    const dir = mkdtempSync(join(tmpdir(), "a2-ci-reference-trigger-"));
-    dirs.push(dir);
-    const git = (...args: string[]) => {
-      const run = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
-      expect(run.status, run.stderr).toBe(0);
-      return run.stdout.trim();
-    };
-    git("init", "-q");
-    const reference = join(dir, "scripts/__tests__/fixtures/a2-route-reference.json");
-    mkdirSync(join(dir, "scripts/__tests__/fixtures"), { recursive: true });
-    writeFileSync(reference, '{}\n');
-    git("add", ".");
-    git("-c", "user.name=Gate Control", "-c", "user.email=gate@example.invalid", "commit", "-qm", "base");
-    const base = git("rev-parse", "HEAD");
-    writeFileSync(reference, '{"404.html":"changed-reference"}\n');
-    git("add", ".");
-    git("-c", "user.name=Gate Control", "-c", "user.email=gate@example.invalid", "commit", "-qm", "reference only");
-    const output = join(dir, "github-output");
-    const run = spawnSync("bash", ["-c", script!], {
-      cwd: dir, encoding: "utf8", env: { ...process.env, BASE_SHA: base, GITHUB_OUTPUT: output },
-    });
-    expect(run.status, run.stderr).toBe(0);
-    expect(git("diff", "--name-only", `${base}...HEAD`)).toBe("scripts/__tests__/fixtures/a2-route-reference.json");
-    expect(readFileSync(output, "utf8")).toBe("run_parity=true\n");
+  it("gates every A2 execution step on the repository-owned detector", () => {
+    const job = workflow.match(/  a2-parity-gate:\n[\s\S]*?(?=\n  # -{10,}\n  # Job 2:)/)?.[0];
+    expect(job).toBeDefined();
+    expect(job).toContain("name: A2 No-Stub Parity Gate");
+    expect(job).toContain("fetch-depth: 0");
+    const select = job!.match(/- name: Select A2 from changed build inputs[\s\S]*?(?=      - name:)/)?.[0];
+    expect(select).toContain("id: select-a2");
+    expect(select).toContain("BASE_SHA: ${{ github.event.pull_request.base.sha }}");
+    expect(select).toContain("run: node scripts/select-a2-parity.mjs");
+    expect(select).not.toContain("continue-on-error");
+    for (const step of ["Setup Node.js and pnpm", "Install dependencies", "Build workspace packages", "Run A2 no-stub parity slow-suite subset"]) {
+      const block = job!.match(new RegExp(`- name: ${step}[\\s\\S]*?(?=      - name:|$)`))?.[0];
+      expect(block, step).toContain("if: steps.select-a2.outputs.run_parity == 'true'");
+    }
+    expect(job).toContain("run: pnpm build:workspace");
+    expect(job).toMatch(/A2 execution: EXECUTED[^\n]*>> "\$GITHUB_STEP_SUMMARY"/);
   });
   it("selects the whole A2 describe including semantic, native transport and hash checks", () => {
     const step = workflow.match(/- name: Run A2 no-stub parity slow-suite subset[\s\S]*?(?=- name: Re-baseline guidance)/)?.[0];
@@ -143,7 +132,7 @@ describe("#4470 A2 workflow selection", () => {
     const suite = workflow.match(/- name: Run A2 no-stub parity slow-suite subset[\s\S]*?(?=      - name:)/)?.[0];
     expect(suite).toContain("ZUDO_A2_CAPTURE_DIR: ${{ runner.temp }}/zudo-a2-route-parity");
     const upload = workflow.match(/- name: Upload A2 fixture diagnostics[\s\S]*?(?=      - name:)/)?.[0];
-    expect(upload).toContain("if: always() && steps.detect-emitters.outputs.run_parity == 'true'");
+    expect(upload).toContain("if: always() && steps.select-a2.outputs.run_parity == 'true'");
     expect(upload).toContain("uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f");
     const pathBlock = upload?.match(/          path: \|\n([\s\S]*?)(?=          if-no-files-found:)/)?.[1];
     if (pathBlock === undefined) throw new Error("A2 diagnostic upload must define its explicit file paths");

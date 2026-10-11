@@ -15,7 +15,7 @@ argument-description: "Optional: version string or bump mode (e.g. 0.2.0, 1.0.0-
 # /l-make-release
 
 Orchestrate the full create-zudo-doc release sequence end-to-end: bump → changelog →
-validate → commit → push → CI → tag → create three GitHub releases (one each for
+validate → commit → release PR → CI (A2 executed) → merge → tag → create three GitHub releases (one each for
 `@takazudo/zudo-doc-history-server`, `@takazudo/zudo-doc`, and `create-zudo-doc`, all in
 lockstep at the same version) → **publish all three to npm**. The publish step fires each
 package's CI publish workflow and is irreversible.
@@ -315,25 +315,66 @@ git add package.json \
         packages/create-zudo-doc/CHANGELOG.md
 # Add any formatting fixes from b4push:
 git diff --name-only | xargs -r git add
+git switch -c release/<NEW_VERSION>
 git commit -m "chore: bump create-zudo-doc to v<NEW_VERSION>"
 ```
 
-## Step 6 — Push and wait for CI
+## Step 6 — Release PR, then wait for CI
+
+A direct push to `main` runs no A2 job, so the release commit goes through a PR to
+`main` (as #4524 did). See `RELEASE.md`, "Release-candidate CI: A2 must execute, not
+just pass".
 
 ```bash
-git push
+git push -u origin release/<NEW_VERSION>
+gh pr create --base main --title "release: v<NEW_VERSION>" --body "<summary>"
 ```
 
-Poll CI until green: `gh run list --branch main --limit 1 --json status,conclusion,headSha`.
-Verify `headSha` matches the pushed commit. Poll every 30 s, maximum 10 minutes.
-If CI fails, investigate with `gh run view <run-id> --log-failed`, fix, and push again.
+Follow the evidence procedure in `RELEASE.md`, "Release-candidate CI: A2 must execute,
+not just pass", before merging or tagging:
 
-**Do not tag until CI is green.**
+1. Freeze and record the release candidate head SHA/tree and the successful PR run's
+   base SHA. Require that run's `head_sha` to equal the candidate. Record its URL, ID,
+   attempt, required checks, A2 job ID/URL and same-run/attempt diagnostics artifact
+   ID/digest. Preserve the artifact before expiry.
+2. Confirm `A2 decision: RUN` and `A2 execution: EXECUTED and passed`, a real test-step
+   duration and passing vitest output. Read the actual checkout SHA from the diagnostic
+   manifest's `sourceHead` and job checkout log, resolve its Git tree, and verify its
+   parents identify the recorded base/candidate. Default checkout tests the synthetic
+   PR merge; the run's `head_sha` alone does not identify the tested tree.
+3. If the candidate/base changes the integration before merge, synchronize and rerun
+   current PR checks with A2 executed. Re-freeze the evidence; never substitute an old
+   green run. Repair failures on the still-open PR. Rebaseline only with fresh hosted
+   causal evidence and review, preserving strict normalization.
+4. Merge under the repository's normal policy, then freeze the accepted main integration
+   SHA from the PR merge result as `RELEASE_INTEGRATION_SHA`. Require its tree to equal
+   the actual A2 checkout tree and verify it belongs to main's accepted history, using
+   the commands in `RELEASE.md`. This integration SHA, not the release branch head,
+   is the canonical tag target for every package.
+5. Enumerate all applicable main workflows triggered at that exact integration SHA,
+   including Production Deploy, and record successful runs/attempts and job conclusions.
+   Filter by the full SHA; `gh run list --branch main --limit 1` is insufficient.
+   Pending, missing, failed or cancelled applicable runs block tags. Do not manually
+   dispatch a deployment as verification.
+
+If an unchanged transient main CI failure occurs, inspect its failed logs and rerun at
+that same recorded SHA, retaining the successful attempt. **After merge, any source
+repair requires a new corrective PR against refreshed main**, fresh PR checks with A2
+executed, and an accepted corrected integration with matching tree and successful
+applicable main workflows. A tested/accepted tree mismatch also stops tagging and
+requires that corrective PR evidence chain. Pushing fixes to the already-merged release
+branch is not acceptance. Keep the intended release contents/version in the corrected
+integration and update the frozen tag target.
+
+**Do not create any of the three tags until this entire chain is verified.** If main
+advances later, retain the verified frozen integration target; never silently tag the
+new main tip or `HEAD`.
 
 ## Step 7 — Tag all three packages (lockstep)
 
-Tag without asking (autonomous). Tags are cheap and easily deleted; the only
-irreversible step is the npm publish in Step 9.
+Use the full `RELEASE_INTEGRATION_SHA` recorded and verified in Step 6 for all three
+tags. Confirm its tree equality and exact-SHA main workflow evidence before the first
+tag; do not resolve a moving ref at tag time.
 
 The release script bumps all four `package.json` versions in lockstep, and
 `create-zudo-doc`'s generated scaffold pins `@takazudo/zudo-doc@^<ver>` **and**
@@ -344,9 +385,9 @@ unpublished `@takazudo/*` pin. **Always create all three tags** (the old
 "only if its source changed" guidance is wrong for the lockstep model):
 
 ```bash
-git tag zudo-doc-history-server-<NEW_VERSION>
-git tag zudo-doc-v<NEW_VERSION>
-git tag v<NEW_VERSION>
+git tag zudo-doc-history-server-<NEW_VERSION> "$RELEASE_INTEGRATION_SHA"
+git tag zudo-doc-v<NEW_VERSION> "$RELEASE_INTEGRATION_SHA"
+git tag v<NEW_VERSION> "$RELEASE_INTEGRATION_SHA"
 git push origin \
   zudo-doc-history-server-<NEW_VERSION> \
   zudo-doc-v<NEW_VERSION> \

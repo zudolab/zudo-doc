@@ -19,9 +19,12 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 ## Commands
 
 Current state (2026-10-11): the zfb 4 migration PR #4477 is merged (`b9dd43b0d`) and
-production-deployed. Pins: published zfb family 4.3.1, peers ^4.3.1 (adopted by #4516); zdtp 0.8.6.
-Coordinated zudo-doc/create-zudo-doc 6.0.0 unreleased (npm `latest` 5.28.2).
-Upstream #4097 is closed. Next-release order and owners: `docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md`.
+production-deployed. Pins: published zfb family 4.3.1, peers ^4.3.1 (adopted by #4516); zdtp 0.8.6;
+MCP SDK 1.32.1; root/generated-MCP Wrangler 4.149.0. The coordinated 6.0.0 release (#4524) is published:
+`@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` are all 6.0.0 on npm
+`latest`, and the history-server peer floor is `^6.0.0` — see the publication record
+`docs/findings/4430-zfb3-migration/release-6.0.0/README.md`. Upstream #4097 is closed. Owner
+disposition and platform limits: `docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md`.
 Use the pinned pnpm 10.30.3 (Corepack) for this workspace. Native Wind audit is
 `pnpm exec zfb wind audit --project-root . --fail-on error`; manifest/emitted CSS
 and browser checks remain separate evidence.

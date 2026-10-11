@@ -57,9 +57,11 @@ consumer relationship. This adds no unique formatter package to the lockfile.
   not redesign test dependency ownership.
 - Do not add the raw detectors as blocking CI checks: the verified false
   positives need a maintained configuration first.
-- CI's pinned `npx wrangler@4.111.0` deployment commands and the exam's
-  `npx playwright test` were inventoried but not changed. Deployment workflow
-  consolidation is separate from root formatter ownership.
+- CI's then-pinned `npx wrangler@4.111.0` deployment commands and the exam's
+  `npx playwright test` were inventoried but not changed by this audit.
+  Deployment workflow consolidation is separate from root formatter ownership.
+  The Wrangler literal has since been retired (#4528): see the current Wrangler
+  contract below.
 - The parent commit's Production Deploy run was green. Rust targets were
   inspected, not rebuilt, because no Rust changes were made.
 
@@ -83,9 +85,20 @@ Manual interactive smoke was skipped; browser E2E is outside this local suite.
 
 ## Current migration dependency contract
 
-The source migration now pins the published zfb family to 4.3.1 and peers to
-^4.3.1; the coordinated zudo-doc/create-zudo-doc 6.0.0 is not released. The
-September audit above is historical evidence, not a new dependency/build run.
+The released 6.0.0 tuple: `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`
+and `create-zudo-doc` are published at 6.0.0 (npm `latest`); the published zfb family is
+pinned to 4.3.1 with peers ^4.3.1; zdtp 0.8.6; MCP SDK 1.32.1; root and generated-MCP
+Wrangler 4.149.0. The history-server peer floor is ^6.0.0 (a minimum compatibility
+floor — see "First-party peer floor" in `RELEASE.md`). Publication and consumer
+evidence: [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
+The September audit above is historical evidence, not a new dependency/build run.
+
+Wrangler has one source of truth: the exact `devDependencies.wrangler` pin in the root
+`package.json`. The deploy/preview workflows run `node scripts/wrangler-pinned.mjs`,
+which reads that pin (no separate workflow version literal) and invokes
+`npx --yes wrangler@<pin>` without a workspace install;
+`scripts/verify-worker-dry-run.mjs` uses the installed `pnpm exec wrangler` from the
+same pin.
 Core JSX uses zudo-react. Installed zdtp 0.8.6 carries Preact ^10.29.1 as its own
 dependency (a peer through 0.8.5) and owns its internal Tailwind browser dependency; those remain intentional panel-only
 engine mentions. Native Wind uses package defaults plus the public wind.json

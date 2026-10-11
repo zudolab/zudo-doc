@@ -106,6 +106,101 @@ version has been bumped in `package.json` but not yet published to npm.
 
 ---
 
+## Release-candidate CI: A2 must execute, not just pass
+
+A green `A2 No-Stub Parity Gate` job is not enough evidence on a release candidate. The
+gate selects its slow test from the changed paths (`scripts/select-a2-parity.mjs`; input
+contract in `TESTING.md`, "A2 No-Stub Parity Gate input selection"), and a job whose test
+step was skipped still reports success.
+
+A2 runs only in PR Checks (`pull_request` to `main`). A direct push to `main` runs no A2
+job, and a local run of the subset is not a substitute: the native identity depends on the
+build environment, so local fingerprints differ from the hosted reference even on an
+unchanged `main`. The release commit must therefore reach `main` through a release PR, as
+#4524 did, and the A2 evidence comes from that PR's run.
+
+### Freeze the candidate and its tested source
+
+Before merging, record the following in the release PR or a durable release evidence
+record. Keep the record outside the linked package so it does not change A2's inputs.
+
+- [ ] Release PR number, frozen candidate head SHA and tree, and the base SHA used by
+      the successful PR run. The run's `head_sha` must equal that candidate head.
+- [ ] Successful PR Checks run URL, ID and attempt, all required check conclusions,
+      A2 job URL/ID, and the diagnostics artifact ID/digest from that same run/attempt
+      and job. Download and preserve the evidence before the artifact expires.
+- [ ] The A2 job summary reads `A2 decision: RUN (...)` and
+      `A2 execution: EXECUTED and passed (...)`. Its "Run A2 no-stub parity slow-suite
+      subset" step has a real duration and passing vitest output, not a skipped step.
+      Release manifests/lockfile changes must select A2; SKIP blocks release.
+- [ ] Actual A2 checkout SHA (`sourceHead` in the diagnostics `manifest.json`,
+      corroborated by that job's checkout log) and its Git tree. Default PR checkout
+      tests a synthetic merge, not necessarily the candidate head. A workflow run's
+      `head_sha` alone is therefore insufficient. Verify the tested merge's parents
+      identify the recorded base and candidate; do not infer them from today's PR refs.
+
+Resolve trees from the recorded commit objects with `git rev-parse '<sha>^{tree}'`.
+Retain/fetch the actual tested source object (including the PR merge ref while it still
+matches), or use GitHub's commit/tree API for that exact SHA. Never replace an unavailable
+source with the current moving merge ref. Missing evidence blocks tagging.
+
+A fingerprint failure caused by a version bump is re-baselined only with fresh hosted
+capture and per-page causal review before publication. Keep the strict identity contract
+and normalization unchanged. Freeze the resulting candidate again and obtain a successful
+current run; an earlier failing capture can explain a rebaseline but cannot certify it.
+
+### Bind all tags to the accepted main integration
+
+After the release PR is accepted under the repository's merge policy, record the exact
+main integration commit SHA and tree from that PR's merge result. This frozen integration
+SHA is the canonical target of **all three tags**, regardless of merge method. It must be
+on main's accepted history and its tree must equal the recorded actual A2 checkout tree:
+
+```sh
+# Set these to the full SHAs in the evidence record, never main or HEAD.
+A2_SOURCE_SHA="<recorded-actual-A2-checkout-sha>"
+RELEASE_INTEGRATION_SHA="<accepted-main-integration-sha>"
+git fetch origin main &&
+  A2_SOURCE_TREE=$(git rev-parse --verify "$A2_SOURCE_SHA^{tree}") &&
+  RELEASE_INTEGRATION_TREE=$(git rev-parse --verify "$RELEASE_INTEGRATION_SHA^{tree}") &&
+  git merge-base --is-ancestor "$RELEASE_INTEGRATION_SHA" origin/main &&
+  test "$A2_SOURCE_TREE" = "$RELEASE_INTEGRATION_TREE"
+```
+
+Require successful applicable main workflows on **that exact integration SHA** before
+creating any tag. Enumerate workflows triggered by the integration (including Production
+Deploy), record each run/attempt and conclusion, and inspect jobs; a newest-run lookup or
+one green workflow is insufficient. Pending, missing, cancelled or failed applicable runs
+block tagging. Do not dispatch a deployment merely to manufacture this evidence. Once
+these gates pass, use the frozen SHA explicitly for each tag, never moving `main`, `HEAD`
+or the release branch head. Main advancing later does not change the verified tag target.
+
+### Candidate changes and repair
+
+- **Before merge:** repair on the still-open release PR. If its candidate or base changes
+  the tested integration, synchronize the candidate and obtain fresh current PR checks
+  with A2 actually executed. Re-record the candidate/base, run/attempt, checkout and tree;
+  do not reuse an old green run for a different integration.
+- **After merge:** if the accepted tree differs from the tested tree, stop tagging.
+  Obtain fresh A2 evidence through a corrective PR against refreshed main. Any code,
+  configuration or other source repair also goes through a new corrective PR; pushing
+  to the already-merged release branch neither delivers the repair nor supplies an open
+  PR gate. Repeat the entire evidence chain and bind all final tags to the corrected,
+  verified main integration, with the intended release contents and version retained.
+- **Unchanged transient CI failure:** a rerun at the same recorded source SHA is allowed;
+  record the successful attempt. A source change is never a transient rerun and requires
+  fresh PR acceptance and exact-integration main workflow evidence.
+
+Tree equality is a release gate, not a claim that A2 runs on main. The successful PR run
+proves A2 execution; the equality check binds that tested content to the accepted tag
+source. Publication ordering and the minimum peer-floor policy below still apply.
+
+Why: in the 6.0.0 release PR #4524 the old per-emitter path list skipped A2's test steps
+on a green job; the post-publication Nightly Exam then failed three A2 fingerprints, fixed
+in #4527. See the [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
+
+---
+
 ## Publish order
 
 **Always publish `@takazudo/zudo-doc-history-server` and `@takazudo/zudo-doc`
@@ -116,7 +211,8 @@ downstream `package.json`. If `create-zudo-doc` is published first and a user ru
 the scaffold before the peer packages land on npm, `pnpm install` in the new project
 fails with a 404 on the pinned `@takazudo/zudo-doc` version.
 
-All three packages are versioned and released in lockstep. Recommended sequence:
+All three packages are versioned and released in lockstep. Every tag below targets the
+same frozen, tree-verified main integration SHA from the preceding section. Recommended sequence:
 
 1. Tag `zudo-doc-history-server-X.Y.Z` and publish the GitHub Draft Release for
    `@takazudo/zudo-doc-history-server`. Wait for the CI publish to succeed.
@@ -190,7 +286,9 @@ that is a signal something genuinely changed — investigate rather than bumping
 ## First-party peer floor (publish-lag)
 
 `packages/zudo-doc/package.json` declares `@takazudo/zudo-doc-history-server` as a
-**peerDependency** with a caret floor (today `^5.17.2`).
+**peerDependency** with a caret floor (today `^6.0.0`, raised in the 6.0.0 major-bump
+release commit under rule 4 below; see the
+[6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md)).
 
 **This section is the single contract for that floor.** `scripts/check-pin-parity.mjs`
 and `.claude/skills/l-make-release/SKILL.md` reference it rather than restating it — if
@@ -242,10 +340,11 @@ deliberately does not touch the floor.
 ### The lag is expected, unbounded, and not a defect
 
 Because rule 2 holds, the distance between the floor and the root version **grows with
-every release and may be arbitrarily large**. It is `^5.17.2` against root `5.25.0` — eight
-minors — and that is the contract working, not drift. A same-major caret floor keeps
-admitting the root version however far behind it sits: `^5.17.2` is satisfied by a `5.25.0`
-install.
+every release and may be arbitrarily large**. Historical example from the 5.x line: the floor
+was `^5.17.2` against root `5.25.0` — eight minors — and that was the contract working, not
+drift. A same-major caret floor keeps admitting the root version however far behind it sits:
+`^5.17.2` was satisfied by a `5.25.0` install, and today's `^6.0.0` will keep admitting every
+later 6.x release.
 
 **Do not chase the advisory — the loop does not converge.** Raising the floor to match the
 just-published version clears the note, but the next release moves the version past it again
@@ -267,8 +366,11 @@ exactly as v3.0.0, v4.0.0 and v5.0.0 did.
 
 A clean linear release therefore needs no interleaving:
 
-> bump versions + scaffold pins → `pnpm b4push` → commit → push → main CI green →
-> tag → publish all three in publish-order.
+> bump versions + scaffold pins → `pnpm b4push` → commit → push a release branch and open
+> a PR to `main` → PR Checks green with A2 executed (see "Release-candidate CI: A2 must
+> execute, not just pass") → accepted integration tree equals the tested tree → applicable
+> main workflows green at that frozen integration SHA → tag that SHA → publish all three in
+> publish-order.
 
 ---
 
