@@ -1059,7 +1059,7 @@ function generatePackageJson(
     deps["@takazudo/zfb-adapter-cloudflare"] = "4.3.1";
     // Match @takazudo/zudo-doc's optional peer exactly. The package-owned MCP
     // route imports the SDK only when this feature is enabled.
-    deps["@modelcontextprotocol/sdk"] = "1.31.0";
+    deps["@modelcontextprotocol/sdk"] = "1.32.1";
   }
 
   const devDeps: Record<string, string> = {
@@ -1075,7 +1075,7 @@ function generatePackageJson(
   if (choices.features.includes("mcp")) {
     // Match the root Wrangler dev pin. Wrangler is never installed or invoked
     // by scaffolding itself; preview and deployment remain owner-controlled.
-    devDeps["wrangler"] = "4.111.0";
+    devDeps["wrangler"] = "4.149.0";
   }
 
   // search ships as @takazudo/zudo-doc's own self-contained generated
