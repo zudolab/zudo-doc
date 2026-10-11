@@ -60,7 +60,7 @@ export default defineConfig(
 );
 ```
 
-Generated routes consume `virtual:zudo-doc-chrome-bindings`. Omitted slots retain package defaults, and `mdxExtras` overrides same-named built-in components. Avoid requiring props the caller does not supply. See [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
+Generated routes consume `virtual:zudo-doc-chrome-bindings`. Omitted slots retain package defaults, and `mdxExtras` overrides same-named built-in components. Each entry keeps its own typed props, including required ones such as `(props: { html: string })`, because the MDX call site supplies them; no adapter is needed. Avoid requiring props your MDX usage does not supply. See [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
 
 ```mdx
 <MyBadge>New</MyBadge>
