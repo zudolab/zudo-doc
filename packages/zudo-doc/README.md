@@ -108,10 +108,13 @@ If your project renders **semi-trusted or user-submitted** HTML in a preview, ov
 ## Planned 6.0 migration and peers
 
 The coordinated zudo-doc/create-zudo-doc **6.0.0 has not been published**. This
-source tree targets the published **zfb 4.3.0** family (peer floor **^4.3.0**);
-package versions still read 5.28.2 pending release coordination. The open
-[upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097)
-browser/navigation gate is not declared passed here. See the
+source tree targets the published **zfb 4.3.1** family (peer floor **^4.3.1**);
+package versions still read 5.28.2 pending release coordination.
+[Upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) is
+resolved; its strict published 4.3.1 consumer control passed 3/3 with no skips or
+retries in the [source-bound verification](../../docs/findings/zfb-4.3.1/verification.md).
+That is Linux Chromium evidence; native macOS WebKit and the human/platform
+limits retain their [recorded disposition](../../docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md). See the
 [5.x → 6.0 migration guide](../../src/content/docs/guides/migrating-to-zudo-doc-6.mdx)
 for the full public API and host-boundary census.
 
@@ -119,7 +122,9 @@ Core rendering uses `@takazudo/zfb/zudo-react`, not Preact. Extend
 `@takazudo/zudo-doc/tsconfig.base.json`, remove React→Preact compatibility paths,
 and port host/ejected components to owned JSX/signals. zod remains required;
 `katex`, `diff`, `@takazudo/zfb-md-wasm`, history-server, zdtp and MCP SDK peers
-are feature-dependent. `mcp` and `llmsTxt` remain off by default.
+are feature-dependent. Package defaults for `agentExport`, `mcp`, and `llmsTxt`
+are all `false`. The create-zudo-doc initializer enables `llmsTxt` by default;
+agent export and MCP remain opt-in.
 
 For the panel, the installed **zdtp 0.8.6** manifest carries **Preact ^10.29.1** as
 its own dependency (it was a peer through 0.8.5) and exports `./styles.css` (also `./styles`) to `dist/zdtp.css`. Its internal

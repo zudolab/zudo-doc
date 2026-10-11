@@ -196,7 +196,8 @@ runs a 35-step suite
 tags/canonical audit →
 current-only compatibility → token lint → native Wind error audit → component-tokens drift → e2e spec naming guard →
 @flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → nav-overflow-script commit drift →
-publish contract → dist-mutation guard → required-checks manifest/parity → typecheck → e2e/ type checking →
+publish contract → dist-mutation guard → bash 3.2 compatibility lint → required-checks manifest/parity →
+scaffold published-pin guard → typecheck → e2e/ type checking →
 Worker contract proof → root unit tests →
 slow unit tests → package tests → Wind manifest check → build → content-fallback allowlist scan → link check →
 image check → HTML validation → preview smoke → manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
@@ -670,7 +671,7 @@ built-output contracts retain that separate responsibility.
 
 ## Migration source resolution and verification tiers (#4438, #4470)
 
-Use exact zfb family 4.3.0 and pnpm 10.30.3. On a cold migration worktree install
+Use exact zfb family 4.3.1 and pnpm 10.30.3. On a cold migration worktree install
 with `corepack pnpm@10.30.3 install --frozen-lockfile --ignore-scripts`. Source-only
 focused units use `ZFB3_SOURCE_RESOLVE=1 corepack pnpm@10.30.3 exec vitest run
 --project scripts <spec>` or the package test command. The port helper interface is
@@ -715,6 +716,11 @@ reference changes. No build identity, runtime marker or markup is normalized awa
 Hydration probes must demonstrate an actual registered island, real handler input,
 repeated state changes and cleanup. For non-root deployments retain prefixed asset
 requests and navigation without a new Document request; native preview and deployed
-mount behavior are separate controls. Browser/runtime parity and the human macOS
-IME check remain independent release gates. A partial local pass does not replace
-hosted CI or the full locked migration matrix.
+mount behavior are separate controls. Browser/runtime checks and hosted CI remain
+required for the applicable candidate surfaces; a partial local pass does not
+replace them. Human IME evidence follows the latest
+[owner disposition](docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md):
+Apple IME **NOT RUN / OWNER WAIVED**, A3 **PARTIAL / UNVERIFIED**, A5 **NOT RUN**.
+ATOK A1/A2 results retain their original SHAs and are not claimed repeated on
+the latest candidate. Historical byte/browser diagnostics retain their accepted
+differences rather than becoming equality or PASS claims.

@@ -105,7 +105,7 @@ Compare dependencies:
 - **Main**: `package.json` — root dependencies
 - **Generator**: `packages/create-zudo-doc/src/scaffold.ts` `generatePackageJson()` — generated deps
 
-Check for packages used in base template files and feature files that are not included in the generated package.json. Read `generatePackageJson()` for the actual dependency branches: zfb family pins stay aligned; zod is required; zdtp and its Preact peer are feature-selected. `diff` and `katex` remain optional runtime peers. No `preact-render-to-string` or React compatibility dependency is needed for owned JSX.
+Check for packages used in base template files and feature files that are not included in the generated package.json. Read `generatePackageJson()` for the actual dependency branches: zfb family pins stay aligned; zod is required; zdtp is feature-selected, and 0.8.6 owns its Preact dependency. `diff` and `katex` remain optional runtime peers. No `preact-render-to-string` or React compatibility dependency is needed for owned JSX.
 
 ### 1c. zfb config / preset drift
 
