@@ -23,7 +23,7 @@ const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 function html(page: string, token = oldToken, version = "1.0.0") {
-  const islands = components[page].map((name) => `<div data-zfb-island=${name} data-zfb-build=${token} data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1 data-props='{"label":"日本語"}'><!--zr:1:0:c-->body<!--/zr:1:0--></div>`).join("");
+  const islands = components[page]!.map((name) => `<div data-zfb-island=${name} data-zfb-build=${token} data-zfb-protocol=zudo-react/1 data-zfb-transport=json/1 data-props='{"label":"日本語"}'><!--zr:1:0:c-->body<!--/zr:1:0--></div>`).join("");
   return `<html><head><script>var packs={"default":"1.0.0","washi":"${version}"};</script><link href=/assets/styles-abcdef.css></head><body><header data-zfb-transition-persist=header-en>Header</header><h1>日本語</h1><a href=/docs/getting-started/>route</a>${islands}<p class=note>content</p></body></html>`;
 }
 
@@ -61,7 +61,7 @@ function fixture(options: { version?: string; css?: string; token?: string; tran
   function capture(path: string, sourceHead: string, contents: Record<string, string>) {
     mkdirSync(path, { recursive: true });
     const rows = pages.map((page) => {
-      const raw = contents[page];
+      const raw = contents[page]!;
       const name = page.replaceAll("/", "--");
       writeFileSync(join(path, name), raw);
       writeFileSync(join(path, name + ".normalized.html"), normalizeHtml(raw));
@@ -228,8 +228,8 @@ describe("offline A2 causal evidence (strict fingerprints remain authoritative)"
     } else f.git("rm", "-r", packsRoot + "washi");
     const source = f.commit();
     const candidate = Object.fromEntries(pages.map((p) => [p, kind === "added"
-      ? f.candidateHtml[p].replace('"washi":"1.0.0"', '"washi":"1.0.0","extra":"1.0.0"')
-      : f.candidateHtml[p].replace(',"washi":"1.0.0"', "")]));
+      ? f.candidateHtml[p]!.replace('"washi":"1.0.0"', '"washi":"1.0.0","extra":"1.0.0"')
+      : f.candidateHtml[p]!.replace(',"washi":"1.0.0"', "")]));
     f.capture(f.candidate, source, candidate);
     const result = f.run({ "candidate-source": source });
     expect(result.status, result.text).toBe(1);
@@ -323,7 +323,7 @@ describe("offline A2 causal evidence (strict fingerprints remain authoritative)"
     const archives = [
       ["accepted-main-a2-diagnostics.zip", "857f47c4016b2b4b922034f1264a9ea1946b75822f8cb726c8d9a6315f52aa9a"],
       ["pr4535-a2-diagnostics.zip", "42369a85fb38c7c4be438b737ba3cf41c6023728db1089dcfa944927bd84d2dd"],
-    ];
+    ] as const;
     const contents = archives.map(([name, digest]) => {
       const archive = join(root, "docs/findings/4535-a2-rebaseline/original", name);
       expect(createHash("sha256").update(readFileSync(archive)).digest("hex")).toBe(digest);
@@ -337,9 +337,9 @@ describe("offline A2 causal evidence (strict fingerprints remain authoritative)"
         f.write(`${packsRoot}${slug}/meta.json`, JSON.stringify({ slug, version }));
         if (slug !== "default") f.write(`${packsRoot}${slug}/pack.css`, `/* synthetic source replay ${version} */`);
       }
-      f.write(reference, JSON.stringify(Object.fromEntries(pages.map((page) => [page, sha256Html(contents[0][page])]))));
+      f.write(reference, JSON.stringify(Object.fromEntries(pages.map((page) => [page, sha256Html(contents[0]![page])]))));
       const source = f.commit();
-      f.capture(index ? f.candidate : f.baseline, source, contents[index]);
+      f.capture(index ? f.candidate : f.baseline, source, contents[index]!);
       return source;
     });
     const result = f.run({ "baseline-source": sources[0], "candidate-source": sources[1], "reference-source": sources[0] });
