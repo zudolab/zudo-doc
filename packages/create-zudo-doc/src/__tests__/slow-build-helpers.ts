@@ -82,8 +82,14 @@ function isTransientInstallError(err: unknown): boolean {
  * immediately rather than wasting retries. See zudolab/zudo-doc#2123 / #2270
  * for why 5 attempts and the broad transient-error heuristic.
  */
-export function installScaffoldedDeps(cwd: string, ignoreWorkspace = false): void {
-  const workspaceFlag = ignoreWorkspace ? " --ignore-workspace" : "";
+export function installScaffoldedDeps(
+  cwd: string,
+  ignoreWorkspace = false,
+  { manifestEdited = false }: { manifestEdited?: boolean } = {},
+): void {
+  // pnpm defaults to --frozen-lockfile when CI is set; a reinstall after the
+  // test edits an existing lockfile's manifest must update it like `pnpm add`.
+  const workspaceFlag = `${ignoreWorkspace ? " --ignore-workspace" : ""}${manifestEdited ? " --no-frozen-lockfile" : ""}`;
   const attempts = [
     `pnpm install --prefer-offline${workspaceFlag}`,
     `pnpm install${workspaceFlag}`,
