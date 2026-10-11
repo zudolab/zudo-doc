@@ -2,6 +2,14 @@
 
 This is the current-status record for the zfb 4 migration (#4430) after PR #4477 merged. It replaces the pre-merge leads of the [README](README.md) and [release readiness](release-readiness.md) as the live instruction. Dated findings in this directory are historical evidence: they keep their original SHAs, failures, skips, accepted differences and owner decisions, and are not rewritten. Source issue: [#4514](https://github.com/zudolab/zudo-doc/issues/4514).
 
+## Current pre-6.0.0 preparation — sweep at main `7f5cacb01a246e44d9468fa8023fd0f6ee327a40`
+
+[PR #4515](https://github.com/zudolab/zudo-doc/pull/4515) and [PR #4521](https://github.com/zudolab/zudo-doc/pull/4521) are merged. Epic #4518 is complete: lasting evidence, the final matrix, executable consumer fixtures and temporary-resource cleanup are delivered on `main`. No migration-resource deletion remains. #4521's final head `8be5bb9b675e69ce931d9571a92e4806ac7b0add` and the sweep's `main` have the same Git tree.
+
+The preparation batch before the release commit is bounded: finish current EN/JA reference/guide and migration advice (#4471–#4473), repository/agent/test status (#4474), and the existing-project MCP adoption/removal recipe plus installed-consumer scenario (#4522). Integrate one PR to current `main`; #4475 owns focused rendered/link checks, the packed MCP scenario and required checks on its final head. The optional real ChatGPT account connection in #4484/#4485 is not a release prerequisite. These are pending delivery/acceptance tasks, not a new migration or publication claim.
+
+Baseline evidence: [PR Checks 38112987070](https://github.com/zudolab/zudo-doc/actions/runs/38112987070) has 28 successful job conclusions covering all 26 required contexts. A2 and Theme A11y execution substeps were skipped under changed-file gating; this is not a fresh full run of those suites. [Production Deploy 38114146131](https://github.com/zudolab/zudo-doc/actions/runs/38114146131) succeeded in all five jobs on the sweep's `main`. These are existing workflow results, not checks or deployments performed by this documentation correction.
+
 ## #4477 merged and deployed; coordinated 6.0.0 is unreleased
 
 - [PR #4477](https://github.com/zudolab/zudo-doc/pull/4477) was regular-merged on 2026-10-11 03:06:19 JST (2026-10-10 18:06:19 UTC).
@@ -55,24 +63,24 @@ None of these becomes a PASS through this record.
 - Follow-up for the next PR or release owner: before attempting a merge, inspect the effective protection. Reconcile the stale required context only through an explicitly authorized settings action. Do not rename the passing CI job to match. This does not block independent documentation work.
 - **Resolved 2026-10-11 JST (owner-directed merge/release run).** `PATCH repos/zudolab/zudo-doc/branches/main/protection/required_status_checks` replaced the contexts with the 26 names in `.required-checks-manifest` (`strict` stays `false`). Net change: `Package Safelist Check` removed; `Chrome Bindings Fixture Drift Check`, `Theme A11y Audit`, `Package Wind Manifest Check` and `Bash 3.2 Compatibility Lint` added. No other protection field or ruleset was touched. PR #4515 went from `BLOCKED` to `CLEAN` without any new check run.
 
-## Next release: zfb 4.3.1 is adopted and verified; the 6.0.0 release itself remains
+## Next release: bounded preparation precedes the coordinated 6.0.0 release
 
-These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #4516 (combined into #4515). Steps 4–6 remain and run under the owner's release direction.
+These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #4516 (combined into #4515). Before steps 4–6, deliver #4471–#4474 and #4522 and complete #4475 final-candidate acceptance. Steps 4–6 then run under the owner's release direction.
 
 1. **Select the next published zfb target. Done: 4.3.1.** Upstream [v4.3.1](https://github.com/Takazudo/zudo-front-builder/releases/tag/v4.3.1) published on 2026-10-11 and the four npm `latest` tags resolve to it. The pins are not stale.
 2. **Adopt that exact tuple in a separate bounded update. Done in #4516.** Root, package and scaffold pins moved together to exactly 4.3.1 with `^4.3.1` peers; zdtp stays 0.8.6; the history-server peer floor is unchanged until the major release commit.
 3. **Verify the resulting candidate. Done in #4516.** Exact-head PR Checks (28 jobs) and the expanded Nightly Exam (482 E2E, slow lanes, scaffold published guard, a11y) succeeded; installed barebone (12/12) and all-feature (19/19) consumers passed browser checks; the three strict A2 fingerprints changed only through the native `data-zfb-build` identity. Limits: Linux Chromium evidence, no native macOS WebKit; operator-driven manual smoke omitted; the IME table above is unchanged. Details: [zfb 4.3.1 verification](../zfb-4.3.1/verification.md).
 4. **Prepare and deliver coordinated 6.0.0 through the existing #4512 / #4502 / #4430.** Follow `RELEASE.md` (normally via `l-make-release`):
-   - After #4518 merges, the release commit (`l-make-release major`: versions, scaffold pins, history-server peer floor and `approvedBaseline` to `^6.0.0`, six EN/JA notes, changelogs) is the only remaining pre-publication step.
-   - #3328 pre-publication report: https://github.com/Takazudo/zudo-front-builder/issues/3328#issuecomment-6105596278. The report and final matrix land on `main` via [PR #4521](https://github.com/zudolab/zudo-doc/pull/4521).
+   - After the bounded preparation and #4475 acceptance are delivered, create the release commit (`l-make-release major`: versions, scaffold pins, history-server peer floor and `approvedBaseline` to `^6.0.0`, six EN/JA notes, changelogs). #4518 / PR #4521 are already delivered.
+   - #3328 pre-publication report: https://github.com/Takazudo/zudo-front-builder/issues/3328#issuecomment-6105596278. The report and final matrix are on `main` via [PR #4521](https://github.com/zudolab/zudo-doc/pull/4521).
    - Publish in the order history-server → zudo-doc → create-zudo-doc, with synchronized release versions.
    - Write six EN/JA package notes, plus the generated changelogs and redirects.
    - Update the history-server peer floor and the `approvedBaseline` in `check-pin-parity.mjs` together to `^6.0.0`.
    - Use `B4PUSH_SKIP_PIN_PUBLISHED=1` only for the unpublished lockstep-pin window.
    - Run the publication checks and the installed-consumer checks.
    - Re-read the runbook when executing; this outline does not replace its staged bootstrap.
-   - Deleting `_temp-resource/4430-zfb3-migration/` is owned by #4476 and runs only inside #4512's gated completion. The lasting evidence was already relocated by #4508. Done on 2026-10-11 in this epic's PR (#4518); the lasting summaries were copied first.
-5. **Finish the bookkeeping at the matching delivery boundary.** Report the published versions and validation results on [ZFB #3328](https://github.com/Takazudo/zudo-front-builder/issues/3328) and add the "Dogfood results" section to the #4430 body, as #4512 requires. Reconcile the implemented migration children one by one. Close their parents only when each parent's own remaining scope is complete. #4501 explicitly closes through #4512. Do not bulk-close protected trackers.
+   - Temporary migration-resource cleanup is complete through #4518 / PR #4521. The lasting summaries and executable fixtures were preserved first; do not repeat deletion or reconstruct temporary resources.
+5. **Finish the bookkeeping at the matching delivery boundary.** Report the published versions and validation results on [ZFB #3328](https://github.com/Takazudo/zudo-front-builder/issues/3328) and add the "Dogfood results" section to the #4430 body, as #4512 requires. Reconcile the implemented migration children one by one. Close their parents only when each parent's own remaining scope is complete. #4501's verification scope was completed and closed in the 2026-10-11 sweep; its closure does not waive checks on the next candidate. Do not bulk-close protected trackers.
 6. **Downstream adoption follows actual publication.** [ZFB #3329](https://github.com/Takazudo/zudo-front-builder/issues/3329) owns the docs-host migration, and [ZFB #4099](https://github.com/Takazudo/zudo-front-builder/issues/4099) owns the later 06R host adoption. Both keep their published-compatible-release prerequisites.
 
 ## Existing issues keep their owners; no new hierarchy
@@ -81,8 +89,10 @@ These are recorded next actions. Steps 1–3 were completed on 2026-10-11 by #45
 | --- | --- |
 | #4428, #4478, #4500 | Fixed on `main` by #4477. Their closures are evidence-backed and are not an npm-release claim. |
 | #4484 | Deliberately open canonical agent-docs specification. Implementation children rely on it; do not recreate it, or close it as a generic duplicate. |
-| #4485 | Protected agent-docs epic. Its remaining acceptance is one real ChatGPT account connection: discover search/fetch, search in EN and JA, fetch a returned ID, and confirm a cited human documentation URL. This is not a migration or release gate. |
-| #4501 | All four verification rows are satisfied. The issue stays open and closes through #4512's completion order. |
-| #4476 | Epic #4518 / PR #4521 preserves the lasting summaries, deletes the migration temp resources, finalizes the matrix and prepares the #3328 pre-publication report; pending merge. The #3328 published-versions follow-up and #4430 “Dogfood results” section remain with the release step. |
-| #4475 | Epic #4518 / PR #4521 records visual and installed-consumer acceptance plus current-documentation cleanup. Readiness/cleanup stays pending merge; human/platform limits stay explicit; final integration/release preparation remains with the release step. |
-| #4430; #4467–#4474; #4482–#4483; #4502; #4512 | Existing migration epic and sub-issue coordination. Many implementation clauses are on `main`, but the release and evidence bookkeeping must be reconciled against each full body. #4512's SKIP line was removed under the owner-approved merge gate; its release and cleanup work stays separately gated. |
+| #4485 | Agent-docs epic. #4522 owns the remaining existing-project recipe and consumer correction; optional account acceptance is one real ChatGPT account connection: discover search/fetch, search in EN and JA, fetch a returned ID, and confirm a cited human documentation URL. This is not a migration or release gate. |
+| #4501 | All four environment-deferral verification rows are satisfied; closed as completed in the 2026-10-11 sweep. Final-candidate checks remain #4475 / #4512. |
+| #4476 | Epic #4518 / PR #4521 preserves the lasting summaries, deletes the migration temp resources, finalizes the matrix and prepares the #3328 pre-publication report; delivered on `main`. The #3328 published-versions follow-up and #4430 “Dogfood results” section remain with the release step. |
+| #4475 | Epic #4518 / PR #4521 records visual and installed-consumer acceptance plus current-documentation cleanup. Readiness/cleanup is delivered; human/platform limits stay explicit. Current remaining scope is bounded preparation #4471–#4474 plus #4522 and focused final-candidate acceptance before #4512. |
+| #4467–#4470; #4482–#4483 | Completed implementation/measurement scopes, closed with evidence in the 2026-10-11 sweep. Remaining TESTING.md prose from #4470 belongs to #4474. |
+| #4471–#4474; #4522 | Open for the bounded documentation/status and existing-project MCP corrections above. |
+| #4430; #4502; #4512 | Coordinated 6.0.0 release and evidence bookkeeping remain open. #4512's SKIP line was removed under the owner-approved merge gate; publication requires the preparation batch and #4475 acceptance, then the separate release procedure. |

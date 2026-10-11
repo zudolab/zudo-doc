@@ -36,6 +36,9 @@ Under `packageOwnedRoutes: true` the chrome is wired inside the package, so ther
 Set `chromeBindingsModule` in your `zudoDoc()` config to a project-root-relative path pointing at a module with a named `chromeBindings` export built with `defineChromeBindings`:
 
 ```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
 export default defineConfig(
   zudoDoc({
     // packageOwnedRoutes defaults to true
@@ -222,6 +225,8 @@ homeExtras?: (args: { locale: string }) => unknown;
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+
 export const chromeBindings = defineChromeBindings({
   homeExtras: ({ locale }) => (
     <a

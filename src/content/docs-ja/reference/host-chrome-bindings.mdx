@@ -36,6 +36,9 @@ import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 `zudoDoc()` 設定の `chromeBindingsModule` に、`defineChromeBindings` で組み立てた名前付き `chromeBindings` エクスポートを持つモジュールを指すプロジェクトルート相対パスを設定します。
 
 ```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
 export default defineConfig(
   zudoDoc({
     // packageOwnedRoutes defaults to true
@@ -62,17 +65,23 @@ export const chromeBindings = defineChromeBindings({
 
 ## 名前付きヘッダー右コンポーネント
 
-`headerRightItems` はシリアライズ可能なままです。カスタムコンポーネント項目には文字列名だけを置き、呼び出し可能なレンダラーは `chromeBindings.headerRightComponents` で同じ名前へ登録します。
+`headerRightItems` はシリアライズ可能なままです。カスタムコンポーネント項目には文字列名だけを置き、呼び出し可能なレンダラーは `chromeBindings.headerRightComponents` で同じ名前へ登録します。完全な設定例は次のとおりです。
 
 ```ts title="zfb.config.ts"
-zudoDoc({
-  chromeBindingsModule: "./src/chrome-bindings.tsx",
-  headerRightItems: [
-    { type: "link", href: "/status", label: "Status" },
-    { type: "component", component: "release-badge" },
-    { type: "component", component: "search" },
-  ],
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "Acme Docs",
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+    headerRightItems: [
+      { type: "link", href: "/status", label: "Status" },
+      { type: "component", component: "release-badge" },
+      { type: "component", component: "search" },
+    ],
+  }),
+);
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
@@ -82,7 +91,7 @@ export const chromeBindings = defineChromeBindings({
   headerRightComponents: {
     "release-badge": ({ item, index, lang }) => (
       <a
-        href={`/${lang ?? "ja"}/releases`}
+        href={`/${lang ?? "en"}/releases`}
         data-component={item.component}
         data-position={index}
       >
@@ -211,6 +220,8 @@ homeExtras?: (args: { locale: string }) => unknown;
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+
 export const chromeBindings = defineChromeBindings({
   homeExtras: ({ locale }) => (
     <a

@@ -6,13 +6,13 @@ description: 予定されている zudo-react・Wind のメジャーリリース
 
 ## リリース状況
 
-このガイドは、5.x から移行する予定の **zudo-doc 6.0.0** を説明します。協調して公開するメジャーリリースは **まだ未公開** で、リポジトリのパッケージバージョンは 5.28.2 のままです。現在のエンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.3.0** ファミリーで、パッケージの peer 下限は **^4.3.0** です。過去の 3.0/3.1 を移行先としてインストールしたり、このページを公開告知として扱ったりしないでください。
+このガイドは、5.x から移行する予定の **zudo-doc 6.0.0** を説明します。協調して公開するメジャーリリースは **まだ未公開** で、リポジトリのパッケージバージョンは 5.28.2 のままです。現在のエンジン対象は、同じバージョンに揃えた公開済みの **zfb 4.3.1** ファミリーで、パッケージの peer 下限は **^4.3.1** です。過去の 3.0/3.1 を移行先としてインストールしたり、このページを公開告知として扱ったりしないでください。
 
-公開済みの 4.3.0 runtime には [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) の修正が含まれますが、その公開パッケージで利用側の厳密なブラウザー・ナビゲーション検証を終えるまでゲートは未完了です。公開前に、パックしたパッケージの利用側、ドキュメントの描画、ブラウザーでの同等性を検証する必要があります。上流 issue のクローズや型検査の成功だけでは公開準備完了を意味しません。
+[#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) の修正は 4.3.0 で初めて公開され、issue は解決済みです。サポート対象の 4.3.1 ファミリーで、公開パッケージを使う厳密なブラウザー・ナビゲーション検証は **3/3 PASS（失敗・skip・retry なし）** でした。[ソースに紐付いた検証記録](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md)を参照してください。これは Linux Chromium の証拠であり、ネイティブ macOS WebKit や Apple IME の検証ではありません。最終候補の検証と協調公開は別の手順です。[現在の状況](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md)には、オーナーによる免除とプラットフォーム上の限界が保持されています。
 
 ## 依存関係と TypeScript
 
-協調メジャーリリースの公開後、zudo-doc と create-zudo-doc を一緒に更新します。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.3.0 に揃えてください。コアの描画には Preact は不要です。
+協調メジャーリリースの公開後、zudo-doc と create-zudo-doc を一緒に更新します。インストールするすべてのエンジンパッケージ（`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使用する場合は Cloudflare adapter）を 4.3.1 に揃えてください。コアの描画には Preact は不要です。
 
 次のようにパッケージのベース設定を継承します。ベースが `jsx: "react-jsx"` と `jsxImportSource: "@takazudo/zfb/zudo-react"` を所有します。`react`、`react-dom`、`react/jsx-runtime` から Preact への互換パスを削除し、React/Preact の型 import も変更します。必要なプロジェクト固有のエイリアスだけを残し、プロジェクト側の `baseUrl` で基準を指定してください。config と仮想モジュールの宣言を読み込むベースのトップレベル `files` を上書きしないでください。
 
@@ -77,11 +77,11 @@ Wind は独自に定義されたユーティリティ言語で、Tailwind の互
 | `ThemePackDialogProps.open: boolean` | 一つの client component tree 内の `ReadonlySignal<boolean>`。Island props にこの signal をシリアライズしない |
 | `useModalDialog(...)` | 既存の `./use-modal-dialog` サブパスにある `modalDialog(scope, options)` と `ModalDialogOptions` / `ModalDialogResult` |
 | `./safelist.css`、`./theme-no-reset.css` | 廃止。`./wind.json` を追加し、ほかの公開 CSS export は維持 |
-| コアの必須 Preact peer | 廃止。zdtp を使う利用側は zdtp の Preact peer をインストール |
+| コアの必須 Preact peer | 廃止。zdtp 0.8.6 が Preact 依存を所有するため、パネル利用側は zdtp のみインストール |
 
 `ThemeToggle` の `defaultMode`、`respectPrefersColorScheme`、`labels`、`pendingUntilHydrated` は維持します。ほかのドメイン props 名も維持してください。`class` への変更は intrinsic と互換の API が対象で、独自の `className` props を一律に変更するものではありません（たとえば `SidebarTree` は独自の `className` を維持します）。
 
-`ENLARGE_DIALOG_STYLE` は `./island-types` から引き続き export されます。実際の 4.3.0 対象では固定の style object `{ position: "fixed", inset: 0, margin: "auto" }` で、`EnlargeDialogProps.style` は `typeof ENLARGE_DIALOG_STYLE` です。以前の 3.x 計画にあった文字列化は、ネイティブの style 対応によって不要になりました。対応する CSS property 名を使い、ゼロ以外の長さには単位を明示してください。完全な CSS 宣言の文字列も使用できます。
+`ENLARGE_DIALOG_STYLE` は `./island-types` から引き続き export されます。実際の 4.3.1 対象では固定の style object `{ position: "fixed", inset: 0, margin: "auto" }` で、`EnlargeDialogProps.style` は `typeof ENLARGE_DIALOG_STYLE` です。以前の 3.x 計画にあった文字列化は、ネイティブの style 対応によって不要になりました。対応する CSS property 名を使い、ゼロ以外の長さには単位を明示してください。完全な CSS 宣言の文字列も使用できます。
 
 ## eject した component と host component
 
@@ -154,12 +154,12 @@ Island boundary を越えられるのは有限の JSON scalar、dense array、pl
 
 現在のエンジンにあるネイティブの順序付きリスト、先頭改行の処理、変更のない root の永続化を使います。island の identity/props が同じなら live scope の状態を維持し、変更されたら再生成します。パッケージの `zfb:before-swap` adapter は切り離された incoming document だけを更新し、live 側の `data-zd-props-preserve` を尊重し、安全でない構造変更には incoming の persistence を取り除きます。一律 remount は復活させないでください。
 
-parser の規則も owned JSX の契約です。table/select は正しい構造を維持し、`tbody` を明示し、table の構造レベルに `Show`/`For`/component region を直接置きません。`rawHtml` は信頼できる文字列を受け取り、children と同時に使えません。サニタイズは行いません。raw HTML に island wrapper や runtime protocol marker を入れないでください。script/style の payload は closing-tag guard を付けた静的な raw text が必要です。ネイティブ対応は 3.x の調査時点から変化しているので、古い iframe/head/style shim をコピーせず、公開済み 4.3.0 の型宣言と契約を確認してください。
+parser の規則も owned JSX の契約です。table/select は正しい構造を維持し、`tbody` を明示し、table の構造レベルに `Show`/`For`/component region を直接置きません。`rawHtml` は信頼できる文字列を受け取り、children と同時に使えません。サニタイズは行いません。raw HTML に island wrapper や runtime protocol marker を入れないでください。script/style の payload は closing-tag guard を付けた静的な raw text が必要です。ネイティブ対応は 3.x の調査時点から変化しているので、古い iframe/head/style shim をコピーせず、公開済み 4.3.1 の型宣言と契約を確認してください。
 
-現在の制約は [上流 #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097)、[固定 target の composition #4004](https://github.com/Takazudo/zudo-front-builder/issues/4004)、[Wind coverage #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371) で追跡します。過去の issue は背景情報であり、現在の公開ゲートが通過した証拠ではありません。
+サポートされる[固定 target の composition #4004](https://github.com/Takazudo/zudo-front-builder/issues/4004) の契約と、[Wind coverage #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371) の限界を確認してください。過去の issue は背景情報であり、現在の公開ゲートが通過した証拠ではありません。
 
 ## 任意の導入と検証
 
-静的な agent export と MCP は個別に選択する任意の機能で、このコア移行の必須条件ではありません。`mcp` と `llmsTxt` の既定値は引き続き `false` です。明示的に導入しない限り、既存の選択を維持してください。
+静的な agent export と MCP は個別に選択する任意の機能で、このコア移行の必須条件ではありません。`zudoDoc()` を直接設定する場合、パッケージの `agentExport`、`mcp`、`llmsTxt` の既定値はすべて `false` です。create-zudo-doc の initializer は `llmsTxt` を既定で選択し、agent export と MCP は任意の選択です。明示的に導入しない限り、既存の選択を維持してください。完全な導入手順は [llms.txt](./llms-txt.mdx)、[Agent-readable export](./agent-export.mdx)、[MCP サーバー](./mcp-server.mdx)を参照してください。
 
 本番サイトの更新前に、パックしたパッケージを新しい利用側で検証します。strict な型検査（廃止 export・無効 props が拒否されることも）、公開 CSS/manifest の解決、実ビルド、hydration、繰り返すナビゲーションが対象です。base path、locale fallback、history fallback のシリアライズ、開いた dialog、sidebar の永続状態、パネルによる変数更新も確認します。二言語の内容を揃え、format と link 検査を実行してください。公開とリリース調整は別の担当ゲートです。

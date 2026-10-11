@@ -25,13 +25,13 @@ These files provide a machine-friendly view of your documentation that AI tools 
 
 ## Enabling llms.txt
 
-The feature is **enabled by default**. To explicitly control it, set `llmsTxt` in `zfb.config.ts`:
+The create-zudo-doc initializer **enables this feature by default**. When configuring `zudoDoc()` directly, the package default is `false`. To explicitly control it, set `llmsTxt` in `zfb.config.ts`:
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
     // ...
-    llmsTxt: true, // enabled by default
+    llmsTxt: true, // initializer default; package default is false
   }),
 );
 ```
