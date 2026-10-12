@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [6.1.0] - 2026-10-12
+
+### Other Changes
+
+- New projects pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^6.1.0`, picking up the sidebar `initialPathMode` option and explicit-only disclosure persistence. No scaffold configuration change is required.
+
 ## [6.0.2] - 2026-10-12
 
 ### Other Changes
