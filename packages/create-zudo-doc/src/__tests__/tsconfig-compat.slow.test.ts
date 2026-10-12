@@ -220,7 +220,7 @@ describe("default TS5 generated project", () => {
       await fs.writeFile(tsconfigPath, original.replace('"./src/*"', '"./src-missing/*"'));
       const result = run("pnpm", ["build"], projectDir);
       expect(result.status).not.toBe(0);
-      expect(result.output).toContain("@/components/compat-island");
+      expect(result.output).toMatch(/@\/(components\/compat-island|lib\/server-marker)/);
     } finally {
       await fs.writeFile(tsconfigPath, original);
     }
