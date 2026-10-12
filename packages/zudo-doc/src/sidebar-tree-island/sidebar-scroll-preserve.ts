@@ -143,6 +143,7 @@ export function installSidebarScrollPreserve({
   };
 
   const applyHeld = () => {
+    let restored = false;
     for (const kind of VIEWPORTS) {
       const slot = held[kind];
       if (!slot) continue;
@@ -156,7 +157,9 @@ export function installSidebarScrollPreserve({
       }
       memory[kind] = readSlot(element);
       delete held[kind];
+      restored = true;
     }
+    if (restored && !awaiting) writeHistory(memory);
   };
 
   const apply = () => {
@@ -177,9 +180,13 @@ export function installSidebarScrollPreserve({
       if (!slot || skipped.has(kind) || applied.has(kind)) continue;
       const element = findViewport(document, kind);
       if (!element || !measurable(element)) {
-        // Closed or absent viewports retry from `held` when a later notify
-        // says they are open. Their coordinates stay out of this cycle.
-        if (element) held[kind] = slot;
+        // A closed drawer stays in the DOM. Park the snapshot for the next
+        // open, and keep it in memory so settling this cycle cannot delete it
+        // from the history entry. An absent viewport is not a saved zero.
+        if (element) {
+          held[kind] = slot;
+          memory[kind] = slot;
+        }
         applied.add(kind);
         continue;
       }

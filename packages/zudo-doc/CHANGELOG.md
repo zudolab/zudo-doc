@@ -12,7 +12,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Bug Fixes
 
-- The desktop sidebar and the mobile drawer each keep their scroll offset across client navigation, a full document load, reload, and Back/Forward, including after Broaden. Restoration runs after the destination tree can hold the offset, so a replaced sidebar or a temporary empty tree does not snap back to the top. A saved zero is restored. A missing snapshot is not written as zero. Article scroll, focus, filtering, and disclosure are left unchanged. (418b2f29c)
+- The desktop sidebar and the mobile drawer each keep their scroll offset across client navigation, a full document load, reload, and Back/Forward, including after Broaden. Restoration runs after the destination tree can hold the offset, so a replaced sidebar or a temporary empty tree does not snap back to the top. A saved zero is restored. A missing snapshot is not written as zero. A closed drawer keeps its saved offset in history until it opens again. Article scroll, focus, filtering, and disclosure are left unchanged. (418b2f29c)
 
 ## [6.1.1] - 2026-10-12
 

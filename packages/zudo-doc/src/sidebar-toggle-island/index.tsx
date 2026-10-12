@@ -8,7 +8,8 @@ import { computed, getScope, signal, type Ref } from "@takazudo/zfb/zudo-react";
 // `@takazudo/zudo-doc/transitions`, so two distinct relative imports would
 // collapse into duplicate import statements in an ejected copy.
 import { AFTER_NAVIGATE_EVENT, ensureNestedIslandPropsRefresh } from "../transitions/index.js";
-import { notifySidebarScrollReady, SidebarTree } from "../sidebar-tree-island/index.js";
+import { SidebarTree } from "../sidebar-tree-island/index.js";
+import { notifySidebarScrollReady } from "../sidebar-tree-island/sidebar-scroll-preserve.js";
 import type { ThemeToggleLabels } from "../theme-toggle/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink, SidebarNavigationContext } from "../sidebar/types.js";
 import type { ResolvedDateFormats } from "../settings.js";

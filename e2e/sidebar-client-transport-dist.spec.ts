@@ -31,7 +31,11 @@ test("built desktop and mobile islands omit descriptions while server category c
     const nodes = props.nodes as Array<Record<string, unknown>>;
     const navigation = props.navigation as { roots: Array<Record<string, unknown>>; id: string; parents: Record<string, string | null> };
     expect(nodes.length).toBeGreaterThan(0);
-    expect(navigation.roots.length).toBeGreaterThan(nodes.length);
+    // Notes sets scopeRoot "configured", so the serialized forest stops at the
+    // authored Notes root. The editorial Wind page below still carries ancestry
+    // beyond its visible node.
+    expect(navigation.roots.map((root) => root.slug)).toEqual(["notes"]);
+    expect(nodes.map((node) => node.slug)).toEqual(["notes"]);
     expect(navigation.id).toBeTruthy();
     expect(Object.keys(navigation.parents).length).toBeGreaterThan(0);
     function assertMinimal(node: Record<string, unknown>): void {

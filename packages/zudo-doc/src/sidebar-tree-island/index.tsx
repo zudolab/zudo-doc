@@ -35,8 +35,6 @@ import {
   readCurrentPath,
 } from "../current-path/index.js";
 import { ensureSidebarScrollPreserve, notifySidebarScrollReady } from "./sidebar-scroll-preserve.js";
-
-export { notifySidebarScrollReady } from "./sidebar-scroll-preserve.js";
 import {
   formatYearLabel,
   formatYearMonthLabel,

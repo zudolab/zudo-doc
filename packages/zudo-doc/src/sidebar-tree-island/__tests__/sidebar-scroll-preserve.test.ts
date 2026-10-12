@@ -301,7 +301,7 @@ describe("desktop sidebar scroll preservation", () => {
     const desktop = createSidebar(200);
     const mobile = createSidebar(80, "");
     const aside = document.createElement("aside");
-    aside.setAttribute("data-zd-mobile-sidebar");
+    aside.setAttribute("data-zd-mobile-sidebar", "");
     aside.append(mobile.element);
     mobile.element.className = "flex-1 overflow-y-auto";
     document.body.append(aside);
@@ -321,6 +321,56 @@ describe("desktop sidebar scroll preservation", () => {
 
     expect(mobile.getValue()).toBe(80);
     cleanup();
+  });
+
+  it("keeps a closed drawer's saved offset in history across reload and the next navigation", () => {
+    const frames = createFrameScheduler();
+    const desktop = createSidebar(150);
+    const mobile = createSidebar(80, "");
+    const aside = document.createElement("aside");
+    aside.setAttribute("data-zd-mobile-sidebar", "");
+    aside.append(mobile.element);
+    mobile.element.className = "flex-1 overflow-y-auto";
+    document.body.append(aside);
+    markContext(desktop.element, "en:guides:1");
+    markContext(mobile.element, "en:guides:1");
+    history.replaceState({ index: 2, scrollX: 0, scrollY: 4 }, "");
+    const first = installSidebarScrollPreserve({ document, ...frames });
+
+    dispatch(BEFORE_NAVIGATE_EVENT);
+    const saved = history.state as { zdSidebarScroll: { desktop: { scrollTop: number }; mobile: { scrollTop: number } } };
+    expect(saved.zdSidebarScroll.desktop.scrollTop).toBe(150);
+    expect(saved.zdSidebarScroll.mobile.scrollTop).toBe(80);
+    first();
+
+    desktop.setValue(0);
+    mobile.setClientHeight(0);
+    mobile.setValue(0);
+    const reloaded = installSidebarScrollPreserve({ document, ...frames });
+    ready(desktop.element, frames);
+
+    const restored = history.state as {
+      index: number;
+      scrollY: number;
+      zdSidebarScroll: { desktop: { scrollTop: number }; mobile: { scrollTop: number } };
+    };
+    expect(desktop.getValue()).toBe(150);
+    expect(mobile.getWrites()).toBe(0);
+    expect(restored.index).toBe(2);
+    expect(restored.scrollY).toBe(4);
+    expect(restored.zdSidebarScroll.desktop.scrollTop).toBe(150);
+    expect(restored.zdSidebarScroll.mobile.scrollTop).toBe(80);
+
+    dispatch(BEFORE_NAVIGATE_EVENT);
+    expect((history.state as { zdSidebarScroll: { mobile: { scrollTop: number } } }).zdSidebarScroll.mobile.scrollTop).toBe(80);
+    dispatch(AFTER_NAVIGATE_EVENT);
+    ready(desktop.element, frames);
+    expect((history.state as { zdSidebarScroll: { mobile: { scrollTop: number } } }).zdSidebarScroll.mobile.scrollTop).toBe(80);
+
+    mobile.setClientHeight(120);
+    ready(mobile.element, frames);
+    expect(mobile.getValue()).toBe(80);
+    reloaded();
   });
 
   it("merges sidebar scroll into the current history entry without dropping router keys", () => {
