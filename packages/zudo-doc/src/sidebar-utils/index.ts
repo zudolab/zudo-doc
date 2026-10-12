@@ -231,12 +231,15 @@ export function buildSidebarForSection(
   const sectionKey = categoryMatch ?? "default";
   const config = sidebars[sectionKey];
 
-  if (!config || (Array.isArray(config) ? config.length === 0 : config.items.length === 0)) {
+  if (!config || (Array.isArray(config) && config.length === 0)) {
     return filterByCategory(tree, categoryMatch, explicitCategoryPrefixes);
   }
 
   if (Array.isArray(config)) return resolveItems(config, tree, lang);
-  return followInitialPath(resolveItems(config.items, tree, lang), config, sectionKey).nodes;
+  const forest = config.items.length === 0
+    ? filterByCategory(tree, categoryMatch, explicitCategoryPrefixes)
+    : resolveItems(config.items, tree, lang);
+  return followInitialPath(forest, config, sectionKey).nodes;
 }
 
 /** Descend the visible forest along `initialPath`; node mode keeps the last target itself. */
