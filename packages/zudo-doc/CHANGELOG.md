@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [6.0.2] - 2026-10-12
+
+### Other Changes
+
+- Requires zfb 4.3.2: the `@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm` and `zfb-adapter-cloudflare` peer floors move from `^4.3.1` to `^4.3.2`. zfb 4.3.2 makes zudo-wind honor `wind.sources.ignoreAttributes` for MDX components that come after frontmatter or prose, so markup inside ignored attributes such as the `html` prop of `HtmlPreview` no longer leaks class candidates into the Wind scan. Upgrade the zfb family to 4.3.2 together with this release. (a0997719)
+
 ## [6.0.1] - 2026-10-12
 
 ### Features

@@ -1,0 +1,11 @@
+---
+title: 6.0.2
+description: 6.0.2のリリースノート。
+sidebar_position: 1135
+---
+
+リリース日: 2026-10-12
+
+### その他の変更
+
+- zfb 4.3.2が必須になりました。`@takazudo/zfb`、`zfb-runtime`、`zfb-md-wasm`、`zfb-adapter-cloudflare`のpeer下限が`^4.3.1`から`^4.3.2`に上がります。zfb 4.3.2では、frontmatterや本文の後に置かれたMDXコンポーネントでもzudo-windが`wind.sources.ignoreAttributes`を守るようになり、`HtmlPreview`の`html`プロパティのような無視対象の属性内のマークアップがWindのスキャンにクラス候補として漏れなくなりました。このリリースと合わせてzfbファミリーを4.3.2に更新してください。(a0997719)

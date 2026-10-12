@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [6.0.2] - 2026-10-12
+
+### Other Changes
+
+- New projects pin the zfb family (`@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, and `zfb-adapter-cloudflare` when the MCP feature is enabled) at 4.3.2, picking up the zudo-wind `ignoreAttributes` fix for MDX, and pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^6.0.2`. No scaffold configuration change is required. (a0997719)
+
 ## [6.0.1] - 2026-10-12
 
 ### Other Changes
