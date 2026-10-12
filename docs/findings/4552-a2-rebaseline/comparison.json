@@ -1,0 +1,208 @@
+{
+  "status": "DIFFERENCES_REQUIRE_REVIEW",
+  "identityVerification": "OBSERVED_ONLY_UNVERIFIED_FRESHNESS",
+  "acceptance": "No build, CI, reference update or release approval; strict A2 remains authoritative.",
+  "sources": {
+    "baseline": {
+      "sha": "a241828bedbfb32a2bdde9599a7ece69ae508711",
+      "tree": "9747550d6da91e306ea76d8eec2fab4bba8dadd7"
+    },
+    "candidate": {
+      "sha": "438cd9226ebea2cbfa092703a57e99a883e4162a",
+      "tree": "f9d0867eef345682db676be733803c1c15ddd38d"
+    },
+    "reference": {
+      "sha": "ae962f385b31e2e213b352038787e68f1ac70c48",
+      "tree": "9747550d6da91e306ea76d8eec2fab4bba8dadd7"
+    }
+  },
+  "baselineReferenceTreeEqual": true,
+  "normalizerSha256": "0c769b0c4c2e86ac950dcafc0a5866d9740ac68a90796f3cc7b4b3d3203a3b82",
+  "captureManifestSha256": [
+    "ca3a9ea1e40a5b6655a576862c97f3c84f7462269ea3ce7ac710755c68cf69b1",
+    "be5b8d5d88eab2b5af002efe3e786d4737ff002091187bd38d7ef9e8d799be7b"
+  ],
+  "sourcePackVersions": {
+    "baseline": {
+      "academia": "1.0.3",
+      "bauhaus": "1.0.1",
+      "beacon": "1.0.1",
+      "blueprint": "1.0.2",
+      "botanica": "1.0.1",
+      "broadsheet": "1.0.3",
+      "brutalist": "1.0.4",
+      "default": "1.0.0",
+      "drift": "1.0.2",
+      "eink": "1.0.1",
+      "fjord": "1.0.2",
+      "foundry": "1.0.2",
+      "futura-editorial": "1.0.2",
+      "hearth": "1.0.4",
+      "hollow": "1.0.2",
+      "ledger": "1.0.2",
+      "manuscript": "1.0.2",
+      "matcha": "1.0.3",
+      "nocturne": "1.0.3",
+      "observatory": "1.0.4",
+      "onyx": "1.0.4",
+      "phosphor": "1.0.2",
+      "riso": "1.0.1",
+      "sakura": "1.0.2",
+      "scandi": "1.0.1",
+      "solar": "1.0.2",
+      "sumi": "1.0.4",
+      "swissgrid": "1.0.2",
+      "tidepool": "1.0.0",
+      "timberline": "1.0.2",
+      "washi": "1.0.4"
+    },
+    "candidate": {
+      "academia": "1.0.3",
+      "bauhaus": "1.0.1",
+      "beacon": "1.0.1",
+      "blueprint": "1.0.2",
+      "botanica": "1.0.1",
+      "broadsheet": "1.0.3",
+      "brutalist": "1.0.4",
+      "default": "1.0.0",
+      "drift": "1.0.2",
+      "eink": "1.0.1",
+      "fjord": "1.0.2",
+      "foundry": "1.0.2",
+      "futura-editorial": "1.0.2",
+      "hearth": "1.0.4",
+      "hollow": "1.0.2",
+      "ledger": "1.0.2",
+      "manuscript": "1.0.2",
+      "matcha": "1.0.3",
+      "nocturne": "1.0.3",
+      "observatory": "1.0.4",
+      "onyx": "1.0.4",
+      "phosphor": "1.0.2",
+      "riso": "1.0.1",
+      "sakura": "1.0.2",
+      "scandi": "1.0.1",
+      "solar": "1.0.2",
+      "sumi": "1.0.4",
+      "swissgrid": "1.0.2",
+      "tidepool": "1.0.0",
+      "timberline": "1.0.2",
+      "washi": "1.0.4"
+    }
+  },
+  "changedStylesheets": [],
+  "pages": [
+    {
+      "page": "404.html",
+      "rawEqual": false,
+      "normalizedEqual": false,
+      "residualEqual": true,
+      "baselineRawSha256": "ae6f9d1cbc46a98a9a0c868363c8dea9f3332f7a8e31a5df2a87169bb8652859",
+      "candidateRawSha256": "0694798f3dc9dbc8f4448daf3b67bef1e6df5bcab3149b5d1c2cb3186bd64ba1",
+      "baselineFingerprint": "4f7c9c68c88d0193a66ad23e8a82b27eef67d230574f643700e0296476a88167",
+      "candidateFingerprint": "adf17ea19a0c47709a3161ef94ea07f25cef1b794445bfca8747771169fba465",
+      "baselineIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "c9e761666436e451"
+        }
+      ],
+      "candidateIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "d9314217fce5d559"
+        }
+      ]
+    },
+    {
+      "page": "docs/getting-started/index.html",
+      "rawEqual": false,
+      "normalizedEqual": false,
+      "residualEqual": true,
+      "baselineRawSha256": "ae4ec08dfebc47e62fef2ce943a31506836057230efd346756e803b90dcc5872",
+      "candidateRawSha256": "6a3b012907aa8ea74e5b1f41c17dd8a7921d9469bc24da30d009d4acf0371527",
+      "baselineFingerprint": "9c0d5c03c16d12dcd3c54fcd47b1da8e8394de9e59d621e384895d0f0f418251",
+      "candidateFingerprint": "f7d407ec15a55103c9d80d372f87735f628d3d87b973e887601ab03d81fff2f8",
+      "baselineIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "c9e761666436e451"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "c9e761666436e451"
+        }
+      ],
+      "candidateIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "d9314217fce5d559"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "d9314217fce5d559"
+        }
+      ]
+    },
+    {
+      "page": "docs/getting-started/coverage/index.html",
+      "rawEqual": false,
+      "normalizedEqual": false,
+      "residualEqual": true,
+      "baselineRawSha256": "2c0a4c12adf2fc45ac99ae10418aedd7ec4ceb08e5f1bffc92e50bbc3ec267bc",
+      "candidateRawSha256": "3341cefff03e1dfbf870145141fb784472b49b2eb24164386119057c878c7d36",
+      "baselineFingerprint": "0d07d7c319d095e073fd320d4e338e4c481f11aec3c493f40b78b7808d44fc39",
+      "candidateFingerprint": "de5777be0a5b42bce268ac81d17659f1671b0e6ed636c51fa5bb0c943e876dbf",
+      "baselineIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "c9e761666436e451"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "c9e761666436e451"
+        },
+        {
+          "tag": "div",
+          "component": "MobileToc",
+          "observedBuild": "c9e761666436e451"
+        },
+        {
+          "tag": "div",
+          "component": "Toc",
+          "observedBuild": "c9e761666436e451"
+        }
+      ],
+      "candidateIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "d9314217fce5d559"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "d9314217fce5d559"
+        },
+        {
+          "tag": "div",
+          "component": "MobileToc",
+          "observedBuild": "d9314217fce5d559"
+        },
+        {
+          "tag": "div",
+          "component": "Toc",
+          "observedBuild": "d9314217fce5d559"
+        }
+      ]
+    }
+  ]
+}

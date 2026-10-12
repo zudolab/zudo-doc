@@ -47,3 +47,35 @@ test("built desktop and mobile islands omit descriptions while server category c
     expect(JSON.stringify(props)).not.toContain("The latest journal entry.");
   }
 });
+
+test("built node-mode baseline serializes the linked section root and full ancestry identically for both islands", () => {
+  const html = readDistFile("docs/wind/utility/surfaces/background/index.html");
+  const islands: Array<{ component: string; props: Record<string, unknown> }> = [];
+  function walk(node: DefaultTreeAdapterMap["node"]): void {
+    if ("attrs" in node) {
+      const attrs = Object.fromEntries(node.attrs.map(({ name, value }) => [name, value]));
+      const component = attrs["data-zfb-island"];
+      if (component === "SidebarTree" || component === "SidebarToggle") islands.push({ component, props: JSON.parse(attrs["data-props"]!) });
+    }
+    if ("childNodes" in node) node.childNodes.forEach(walk);
+  }
+  walk(parse(html));
+  expect(islands.map(({ component }) => component).sort()).toEqual(["SidebarToggle", "SidebarTree"]);
+  type Node = { slug: string; href?: string; occurrenceId: string; children: Node[] };
+  const [desktop, mobile] = ["SidebarTree", "SidebarToggle"].map((name) => islands.find(({ component }) => component === name)!.props as {
+    nodes: Node[]; navigation: { id: string; roots: Node[]; parents: Record<string, string | null>; localParentId?: string };
+  });
+  expect({ nodes: mobile!.nodes, navigation: mobile!.navigation }).toEqual({ nodes: desktop!.nodes, navigation: desktop!.navigation });
+  const { nodes, navigation } = desktop!;
+  expect(nodes).toHaveLength(1);
+  expect(nodes[0]!.slug).toBe("wind/utility/surfaces");
+  expect(nodes[0]!.href).toMatch(/\/docs\/wind\/utility\/surfaces\/?$/);
+  expect(nodes[0]!.children.map((child) => child.slug)).toEqual(["wind/utility/surfaces/background", "wind/utility/surfaces/border"]);
+  const utility = navigation.parents[nodes[0]!.occurrenceId]!;
+  expect(navigation.localParentId).toBe(utility);
+  const wind = navigation.roots.find((root) => root.slug === "wind")!;
+  expect(navigation.parents[utility]).toBe(wind.occurrenceId);
+  expect(navigation.parents[wind.occurrenceId]).toBeNull();
+  expect(JSON.stringify(desktop)).not.toContain("kept out of sidebar client props");
+  expect(JSON.stringify(desktop)).not.toContain('"description"');
+});

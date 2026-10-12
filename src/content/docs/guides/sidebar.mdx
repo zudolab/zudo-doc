@@ -72,7 +72,15 @@ sidebar_initial_expansion: collapsed
 ---
 ```
 
-Manual disclosure choices survive soft navigation and history navigation; the destination's ancestors open so its page remains visible. Restore resets disclosure and scope to the current page's author baseline. Restore appears only when those effective values differ. At the highest scope the entire toolbar disappears, while each category's branch-focus control remains available.
+Only explicit expand and collapse toggles by the reader are saved for the session. Automatically opening the current page's ancestors (on arrival, including Back/Forward and soft navigation, at any viewport width) and opening the root of a focused or broadened scope are not saved. The reader can collapse even the category containing the current page: it stays collapsed for that page, and hash changes, filter typing, and a reload of the same page do not reopen it. Navigating to another page reveals that page's path again, while choices in unrelated branches are kept.
+
+Restore resets disclosure and scope to the current page's author baseline. Restore appears only when those effective values differ. At the highest scope the entire toolbar disappears, while each category's branch-focus control remains available.
+
+<Note>
+
+Saved state from earlier versions mixed automatic and manual expansion. On the first load after upgrading, that earlier expand/collapse state is discarded once; a saved scope and the filter text are kept. This does not repeat.
+
+</Note>
 
 ## Sidebar Label
 
@@ -303,13 +311,13 @@ For changelog-style categories, combine `sortOrder: "desc"` with date-prefixed f
 
 ## Broader Tree
 
-The controls below the filter change the visible navigation tree without changing the article, reading position, or table of contents. **Broaden tree** moves to the immediate editorial parent; its hint names the next parent. At the highest available tree the button is disabled. A custom forest can be that highest tree.
+The controls below the filter change the visible navigation tree without changing the article, reading position, or table of contents. **Broaden tree** moves to the immediate editorial parent. At the highest available tree the whole scope toolbar (Broaden and Restore) is hidden; there is no disabled button or hint. A custom forest can be that highest tree.
 
 Each category has a separate **Show only this branch** target button. Category links still open pages, and disclosure buttons still expand or collapse children. **Restore current page’s local tree** appears while a different scope is selected and returns to the current page’s configured roots and order. These controls also work in the mobile drawer without closing it; page links close it normally.
 
-The filter stays in place when changing scope. A matching category keeps its subtree; a matching descendant keeps its ancestors. Restore opens the current page’s path; a filter that excludes that page must be cleared to show it. Branch expansion choices survive Broaden and branch focus. Restore resets authored collapse defaults, then opens the active path. Trees remain recursive with no depth limit.
+The filter stays in place when changing scope. A matching category keeps its subtree; a matching descendant keeps its ancestors. Branch expansion choices survive Broaden and branch focus. Restore returns to the configured baseline (including `initialPathMode: "node"`), clears the selected scope and the saved expand/collapse choices, keeps the filter text, and reveals the current page; a filter that excludes that page must be cleared to show it. The desktop sidebar and the mobile drawer update together. Trees remain recursive with no depth limit.
 
-Scope is temporary session state. Following a link inside the selected tree keeps it; another branch widens to the nearest shared editorial ancestor. Locale, version, or independent document-context changes return to the destination’s configured sidebar. Changed topology invalidates stored scopes. URLs and modified-click/new-tab link behavior stay native.
+Scope is temporary session state. `initialPath` and `initialPathMode` define only the fresh/Restore baseline. Sections that share an editorial context (the same `contextId` for the same complete `items` tree, or the automatic tree) share saved state, so a broadened or focused scope the reader chose stays in effect across those pages until Restore. Following a link inside the selected tree keeps it; another branch widens to the nearest shared editorial ancestor. A saved scope whose view equals the current page's baseline is treated as the baseline, so no Restore button appears. Locale, version, or independent document-context changes return to the destination’s configured sidebar. Changed topology invalidates stored scopes. URLs and modified-click/new-tab link behavior stay native.
 
 ### Explicit Editorial Context
 
@@ -342,6 +350,29 @@ export default sidebars;
 ```
 
 Bind this object through `chromeBindings.sidebarsConfig` as in the configuration example above. `contextId` is optional; use the same value for sections that share the same complete `items` tree but choose different `initialPath` values. Locale, version, and topology revision are added automatically. Invalid paths fail the build rather than inventing parents.
+
+#### Selecting the Node Itself
+
+`initialPathMode` controls what `initialPath` selects. The default, `"children"`, shows the children of the selected category. With `"node"`, the selected node itself is the baseline: its row (a page-backed section keeps its overview link) with its children. `navigation.roots` still holds the complete editorial tree, so Broaden goes to the target's actual enclosing parent and then on up, without a duplicate or invented parent row.
+
+```ts title="src/sidebars.ts"
+import type { SidebarsConfig } from "@takazudo/zudo-doc/sidebar-utils";
+
+const sidebars: SidebarsConfig = {
+  wind: {
+    items: [{ type: "autogenerated", dirName: "wind" }],
+    // Utility reference → Surfaces & borders
+    initialPath: [0, 0],
+    initialPathMode: "node",
+  },
+};
+
+export default sidebars;
+```
+
+Take an autogenerated tree Wind → Utility reference → Surfaces & borders → Background color, with `initialPath` pointing at Surfaces & borders. On Background color, node mode first shows Surfaces & borders (linked to its overview) with its pages; Broaden then shows Utility reference, then Wind. Children mode first shows only the pages of Surfaces & borders, and the first Broaden adds the Surfaces & borders row.
+
+A missing or empty `initialPath` keeps the whole resolved forest in either mode. A valid path ending at a leaf page is allowed in node mode and shows that page alone. Invalid indexes and any other `initialPathMode` value fail the build. Both modes apply identically to the desktop sidebar and the mobile drawer.
 
 An `autogenerated` entry retains the provenance of its omitted directory root. Authored groupings remain authoritative, and duplicate labels or links keep separate occurrence identities. A custom forest without a shared parent stops at that forest. Header dropdown grouping is not document ancestry.
 

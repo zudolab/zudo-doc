@@ -83,6 +83,7 @@ export const settings = {
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
     { label: "Editorial", path: "/docs/editorial", categoryMatch: "editorial" },
+    { label: "Wind", path: "/docs/wind", categoryMatch: "wind" },
     { label: "Notes", path: "/docs/notes", categoryMatch: "notes" },
     { label: "Journal", path: "/docs/journal", categoryMatch: "journal" },
     {
