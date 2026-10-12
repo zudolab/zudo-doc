@@ -1,5 +1,5 @@
 /** @vitest-environment happy-dom */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderIsland, flushAll } from "../../__tests__/helpers/zudo-react.js";
 import { SidebarTree, type SidebarTreeProps } from "../index.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
@@ -457,4 +457,167 @@ it("compares effective disclosure instead of retaining a sticky Restore flag", a
   await flushAll();
   expect(root.querySelector('button[aria-label="Expand Other"]')).not.toBeNull();
   expect(root.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe("/docs/guides/second");
+});
+
+
+describe("explicit-only disclosure persistence", () => {
+  const BRANCHES: SidebarNavNode[] = [
+    NODES[0]!,
+    { slug: "other", label: "Other", position: 1, hasPage: false, collapsed: true,
+      children: [{ slug: "other/page", label: "Other page", position: 0, href: "/docs/other/page", hasPage: true, children: [] }] },
+    NODES[1]!,
+  ];
+  const build = () => buildSidebarNavigation([], "en", undefined, undefined, {}, () => BRANCHES, []);
+  const stored = () => JSON.parse(sessionStorage.getItem("zd-sidebar-scope")!);
+  const navigateTo = async (path: string) => {
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = path;
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    await flushAll();
+  };
+
+  it("does not persist automatic route reveal across navigation and history traversal", async () => {
+    const data = build();
+    const root = await mount({ ...data, currentSlug: "about" });
+    expect(stored()).toMatchObject({ version: 2, expansion: {} });
+    for (const path of ["/docs/guides/first", "/docs/other/page", "/docs/guides/second", "/docs/other/page", "/docs/guides/second"]) {
+      await navigateTo(path);
+      expect(root.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe(path);
+      expect(stored().expansion).toEqual({});
+    }
+    expect(root.querySelector('button[aria-label="Collapse Guides"]')).not.toBeNull();
+    expect(root.querySelector('button[aria-label="Expand Other"]')).not.toBeNull();
+    expect(root.querySelector('[data-sidebar-restore]')).toBeNull();
+  });
+
+  it("closes an active ancestor until a later destination, keeping unrelated choices", async () => {
+    const data = build();
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/guides/first";
+    const root = await mount({ ...data, currentSlug: "guides/first" });
+    click(root.querySelector('button[aria-label="Expand Other"]'));
+    await flushAll();
+    click(root.querySelector('button[aria-label="Collapse Guides"]'));
+    await flushAll();
+    expect(root.querySelector('a[href="/docs/guides/first"]')).toBeNull();
+    expect(stored().expansion).toEqual({ "auto/0": false, "auto/1": true });
+    // Same-page hash navigation and filtering are not destinations.
+    await navigateTo("/docs/guides/first");
+    const input = root.querySelector<HTMLInputElement>("input")!;
+    for (const value of ["first", ""]) {
+      input.value = value;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await flushAll();
+    }
+    expect(root.querySelector('button[aria-label="Expand Guides"]')).not.toBeNull();
+    await navigateTo("/docs/guides/second");
+    expect(root.querySelector('a[aria-current="page"]')?.getAttribute("href")).toBe("/docs/guides/second");
+    expect(root.querySelector('button[aria-label="Collapse Other"]')).not.toBeNull();
+    expect(stored().expansion).toEqual({ "auto/1": true });
+    click(root.querySelector('button[aria-label="Collapse Guides"]'));
+    await flushAll();
+    expect(stored().expansion).toEqual({ "auto/0": false, "auto/1": true });
+    view!.dispose();
+    view = undefined;
+    // Same-page reload keeps the explicit collapse.
+    const reloaded = await mount({ ...data, currentSlug: "guides/second" });
+    expect(reloaded.querySelector('button[aria-label="Expand Guides"]')).not.toBeNull();
+    expect(reloaded.querySelector('button[aria-label="Collapse Other"]')).not.toBeNull();
+  });
+
+  it("keeps two controllers in agreement and Restore resets both but keeps the query", async () => {
+    const data = build();
+    const root = await mount({ ...data, currentSlug: "guides/first" });
+    const second = await renderIsland(SidebarTree, { ...data, ...toSidebarClientData(data.nodes, data.navigation), currentSlug: "guides/first" }, {
+      identity: { component: "SidebarTree", build: "second-controller" },
+    });
+    try {
+      click(second.root.querySelector('button[aria-label="Collapse Guides"]'));
+      await flushAll();
+      click(root.querySelector('button[aria-label="Show only this branch: Other"]'));
+      await flushAll();
+      for (const treeRoot of [root, second.root]) {
+        expect(treeRoot.querySelector('a[href="/docs/other/page"]')).not.toBeNull();
+        expect(treeRoot.querySelector('a[href="/docs/about"]')).toBeNull();
+      }
+      expect(stored().expansion).toEqual({ "auto/0": false });
+      await navigateTo("/docs/other/page");
+      expect(stored().expansion).toEqual({ "auto/0": false });
+      const input = second.root.querySelector<HTMLInputElement>("input")!;
+      input.value = "page";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await flushAll();
+      click(second.root.querySelector('[data-sidebar-restore]'));
+      await flushAll();
+      expect(stored()).toMatchObject({ selected: null, query: "page", expansion: {} });
+      for (const treeRoot of [root, second.root]) {
+        expect(treeRoot.querySelector<HTMLInputElement>("input")?.value).toBe("page");
+        expect(treeRoot.querySelector('[data-sidebar-restore]')).toBeNull();
+      }
+    } finally { second.dispose(); }
+  });
+
+  it("migrates ambiguous legacy expansion once while preserving scope and query", async () => {
+    const data = build();
+    sessionStorage.setItem("zd-sidebar-scope", JSON.stringify({ context: data.navigation.id, page: "about", selected: "auto/1", query: "page", expansion: { "auto/0": true, "auto/0/0": true } }));
+    const root = await mount({ ...data, currentSlug: "about" });
+    expect(root.querySelector('a[href="/docs/other/page"]')).not.toBeNull();
+    expect(root.querySelector<HTMLInputElement>("input")?.value).toBe("page");
+    expect(stored()).toMatchObject({ version: 2, selected: "auto/1", query: "page", expansion: {} });
+    click(root.querySelector('[data-sidebar-broaden]'));
+    await flushAll();
+    root.querySelector<HTMLInputElement>("input")!.value = "";
+    root.querySelector<HTMLInputElement>("input")!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flushAll();
+    click(root.querySelector('button[aria-label="Expand Guides"]'));
+    await flushAll();
+    view!.dispose();
+    view = undefined;
+    const again = await mount({ ...data, currentSlug: "about" });
+    expect(again.querySelector('button[aria-label="Collapse Guides"]')).not.toBeNull();
+    expect(stored().expansion).toEqual({ "auto/0": true });
+  });
+
+  it("fails safe on malformed or unavailable storage", async () => {
+    const data = build();
+    for (const value of ["not json", "5", "[]", JSON.stringify({ version: 2, context: data.navigation.id, page: "about", selected: 7, query: 3, expansion: { "auto/0": "yes", stale: true, "auto/1": false } })]) {
+      sessionStorage.setItem("zd-sidebar-scope", value);
+      const root = await mount({ ...data, currentSlug: "about" });
+      expect(root.querySelector('[data-sidebar-restore]')).toBeNull();
+      expect(root.querySelector<HTMLInputElement>("input")?.value).toBe("");
+      expect(stored()).toMatchObject({ version: 2, selected: null, query: "" });
+      expect(Object.keys(stored().expansion).every((id) => id === "auto/1")).toBe(true);
+      view!.dispose();
+      view = undefined;
+    }
+    const getItem = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("denied"); });
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("denied"); });
+    try {
+      const root = await mount({ ...data, currentSlug: "about" });
+      click(root.querySelector('button[aria-label="Expand Guides"]'));
+      await flushAll();
+      expect(root.querySelector('button[aria-label="Collapse Guides"]')).not.toBeNull();
+    } finally { getItem.mockRestore(); setItem.mockRestore(); }
+  });
+
+  it("canonicalizes a stored scope equal to the node-mode baseline and keeps different scopes", async () => {
+    const tree: SidebarNavNode[] = [{ slug: "wind", label: "Wind", position: 0, href: "/docs/wind", hasPage: true, children: [
+      { slug: "wind/surfaces", label: "Surfaces", position: 0, href: "/docs/wind/surfaces", hasPage: true, children: [
+        { slug: "wind/surfaces/background", label: "Background", position: 0, href: "/docs/wind/surfaces/background", hasPage: true, children: [] },
+      ] },
+    ] }];
+    const data = buildSidebarNavigation([], "en", "wind", undefined, { wind: { items: [{ type: "autogenerated" }], initialPath: [0, 0], initialPathMode: "node" } }, () => tree, ["wind"]);
+    sessionStorage.setItem("zd-sidebar-scope", JSON.stringify({ version: 2, context: data.navigation.id, page: "wind", selected: data.nodes[0]!.occurrenceId, query: "", expansion: {} }));
+    const root = await mount({ ...data, currentSlug: "wind/surfaces/background" });
+    expect(stored().selected).toBeNull();
+    expect(root.querySelector('[data-sidebar-restore]')).toBeNull();
+    expect(root.querySelector('[data-sidebar-tree-root] a')?.getAttribute("href")).toBe("/docs/wind/surfaces");
+    expect(root.querySelector('a[href="/docs/wind"]')).toBeNull();
+    click(root.querySelector('[data-sidebar-broaden]'));
+    await flushAll();
+    expect(root.querySelector('a[href="/docs/wind"]')).not.toBeNull();
+    view!.dispose();
+    view = undefined;
+    const remounted = await mount({ ...data, currentSlug: "wind/surfaces/background" });
+    expect(remounted.querySelector('a[href="/docs/wind"]')).not.toBeNull();
+    expect(stored().selected).toBe(data.navigation.roots[0]!.occurrenceId);
+  });
 });

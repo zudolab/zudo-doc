@@ -659,7 +659,7 @@ function TrayGroupNode({
     group.value.items.some((item) => item.slug === currentSlug.value),
   );
   const occurrenceKey = computed(() => `${trayOccurrence.value}#${group.value.key}`);
-  const open = signal(scopeControls?.expansion.value[occurrenceKey.value] ?? (scopeControls?.defaultGroupOpen(group.value.items) ?? containsCurrent.value));
+  const open = signal(scopeControls ? scopeControls.isOpen(occurrenceKey.value, scopeControls.defaultGroupOpen(group.value.items)) : containsCurrent.value);
   const storageKey = computed(() =>
     noteTrayGroupStorageKey(traySlug.value, group.value.key),
   );
@@ -672,7 +672,7 @@ function TrayGroupNode({
     if (!scopeControls && getOpenSet().has(storageKey.value)) open.value = true;
   });
   scope.effect(() => {
-    if (containsCurrent.value) open.value = true;
+    if (!scopeControls && containsCurrent.value) open.value = true;
   });
   scope.effect(() => {
     if (!scopeControls && open.value) {
@@ -684,20 +684,18 @@ function TrayGroupNode({
     }
   });
   const toggle = () => {
-    open.value = !open.value;
     if (scopeControls) {
-      scopeControls.expansion.value = { ...scopeControls.expansion.value, [occurrenceKey.value]: open.value };
-      scopeControls.save();
+      scopeControls.setOpen(occurrenceKey.value, !open.value);
       return;
     }
+    open.value = !open.value;
     const stored = getOpenSet();
     if (open.value) stored.add(storageKey.value);
     else stored.delete(storageKey.value);
     saveOpenSet(stored);
   };
   scope.effect(() => {
-    const stored = scopeControls?.expansion.value[occurrenceKey.value];
-    if (scopeControls) open.value = stored ?? scopeControls.defaultGroupOpen(group.value.items);
+    if (scopeControls) open.value = scopeControls.isOpen(occurrenceKey.value, scopeControls.defaultGroupOpen(group.value.items));
   });
   const expanded = computed(() => forceOpen.value || open.value);
   const items = computed(() => group.value.items);
@@ -827,15 +825,13 @@ function CategoryNode({
   );
   const active = computed(() => node.value.slug === currentSlug.value);
   const occurrenceKey = () => node.value.occurrenceId ?? node.value.slug;
-  const open = signal(scopeControls?.expansion.value[occurrenceKey()] ?? (scopeControls?.defaultOpen(node.value) ?? (containsCurrent.value || !node.value.collapsed)));
+  const open = signal(scopeControls ? scopeControls.isOpen(occurrenceKey(), scopeControls.defaultOpen(node.value)) : containsCurrent.value || !node.value.collapsed);
   scope.onActivate(() => {
     if (!scopeControls && getOpenSet().has(node.value.slug)) open.value = true;
   });
   scope.effect(() => {
     const slug = currentSlug.value;
-    const revision = scopeControls?.reveal.value;
-    if (slug !== undefined && subtreeContainsSlug(node.value, slug)) open.value = true;
-    void revision;
+    if (!scopeControls && slug !== undefined && subtreeContainsSlug(node.value, slug)) open.value = true;
   });
   scope.effect(() => {
     if (!scopeControls && open.value) {
@@ -847,20 +843,18 @@ function CategoryNode({
     }
   });
   const toggle = () => {
-    open.value = !open.value;
     if (scopeControls) {
-      scopeControls.expansion.value = { ...scopeControls.expansion.value, [occurrenceKey()]: open.value };
-      scopeControls.save();
+      scopeControls.setOpen(occurrenceKey(), !open.value);
       return;
     }
+    open.value = !open.value;
     const stored = getOpenSet();
     if (open.value) stored.add(node.value.slug);
     else stored.delete(node.value.slug);
     saveOpenSet(stored);
   };
   scope.effect(() => {
-    const stored = scopeControls?.expansion.value[occurrenceKey()];
-    if (scopeControls) open.value = stored ?? scopeControls.defaultOpen(node.value);
+    if (scopeControls) open.value = scopeControls.isOpen(occurrenceKey(), scopeControls.defaultOpen(node.value));
   });
   const expanded = computed(() => forceOpen.value || open.value);
   const focusButton = scopeControls ? (

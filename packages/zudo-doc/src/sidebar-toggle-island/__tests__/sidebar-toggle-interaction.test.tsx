@@ -16,6 +16,7 @@ import type { SidebarNavNode } from "../../sidebar/types.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 import { BEFORE_SWAP_EVENT } from "../../transitions/page-events.js";
 import { SidebarToggle, type SidebarToggleProps } from "../index.js";
+import { SidebarTree } from "../../sidebar-tree-island/index.js";
 
 const NODES: SidebarNavNode[] = [
   {
@@ -365,4 +366,48 @@ it("keeps the mobile drawer open for focus, broaden and restore; native navigati
   await flushAll();
   expect(hamburger.getAttribute("aria-expanded")).toBe("false");
   expect(document.body.style.overflow).toBe("");
+});
+
+
+it("agrees with the desktop tree through soft navigation while the drawer was never opened", async () => {
+  const tree: SidebarNavNode[] = [
+    { slug: "guides", label: "Guides", position: 0, hasPage: false, collapsed: true, children: [
+      { slug: "guides/first", label: "First", position: 0, href: "/docs/guides/first", hasPage: true, children: [] },
+      { slug: "guides/second", label: "Second", position: 1, href: "/docs/guides/second", hasPage: true, children: [] },
+    ] },
+    ...NODES,
+  ];
+  const data = buildSidebarNavigation([], "en", undefined, undefined, {}, () => tree, []);
+  const stored = () => JSON.parse(sessionStorage.getItem("zd-sidebar-scope")!);
+  const navigateTo = async (path: string) => {
+    document.documentElement.dataset.zdCurrentPath = path;
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    await flushAll();
+  };
+  const { root: mobile } = await mount({ ...data, currentSlug: "introduction" });
+  const desktop = await renderIsland(SidebarTree, { ...data, ...toSidebarClientData(data.nodes, data.navigation), currentSlug: "introduction" }, {
+    identity: { component: "SidebarTree", build: "desktop" },
+  });
+  try {
+    expect(mobile.querySelector('button[aria-label="Open sidebar"]')?.getAttribute("aria-expanded")).toBe("false");
+    for (const path of ["/docs/guides/first", "/docs/guides/second", "/docs/introduction", "/docs/guides/second"]) {
+      await navigateTo(path);
+      expect(stored().expansion).toEqual({});
+    }
+    for (const root of [mobile, desktop.root]) expect(root.querySelector('button[aria-label="Collapse Guides"]')).not.toBeNull();
+    click(desktop.root.querySelector('button[aria-label="Collapse Guides"]'));
+    await flushAll();
+    for (const root of [mobile, desktop.root]) expect(root.querySelector('button[aria-label="Expand Guides"]')).not.toBeNull();
+    // A destination remount of one controller must not make the other treat it as same-page.
+    desktop.dispose();
+    document.documentElement.dataset.zdCurrentPath = "/docs/guides/first";
+    const remounted = await renderIsland(SidebarTree, { ...data, ...toSidebarClientData(data.nodes, data.navigation), currentSlug: "guides/first" }, {
+      identity: { component: "SidebarTree", build: "desktop-next" },
+    });
+    try {
+      await navigateTo("/docs/guides/first");
+      for (const root of [mobile, remounted.root]) expect(root.querySelector('button[aria-label="Collapse Guides"]')).not.toBeNull();
+      expect(stored().expansion).toEqual({});
+    } finally { remounted.dispose(); }
+  } finally { desktop.dispose(); }
 });
