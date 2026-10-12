@@ -62,7 +62,10 @@ describe("tsconfig.base.json (#2656)", () => {
     expect(base.compilerOptions.moduleResolution).toBe("Bundler");
     expect(base.compilerOptions.jsx).toBe("react-jsx");
     expect(base.compilerOptions.jsxImportSource).toBe("@takazudo/zfb/zudo-react");
-    expect(base.compilerOptions.baseUrl).toBe(".");
+  });
+
+  it("does NOT carry baseUrl (TypeScript 7 rejects it with TS5102 in every extending project — #4558)", () => {
+    expect(base.compilerOptions).not.toHaveProperty("baseUrl");
   });
 
   it("does NOT carry compatibility or project-alias paths", () => {
