@@ -1,0 +1,12 @@
+---
+title: 6.1.1
+description: 6.1.1のリリースノート。
+sidebar_position: 1043
+---
+
+リリース日: 2026-10-12
+
+### その他の変更
+
+- 新しいプロジェクトは zfb ファミリー（`@takazudo/zfb`、`zfb-runtime`、`zfb-md-wasm`、MCP 機能を有効にした場合は `zfb-adapter-cloudflare`）を 4.3.3 に固定し、RUSTSEC-2026-0333 の frontmatter パーサー修正を取り込みます。また `@takazudo/zudo-doc` と `@takazudo/zudo-doc-history-server` を `^6.1.1` に固定します。(bbc70837e)
+- `create-zudo-doc` 6.1.0 は npm に公開されていません（公開中に zfb 4.3.3 がリリースされたため公開を停止しました）。そのため、6.1.0 のサイドバーの変更（`initialPathMode` オプションと、明示的な操作のみを保存する展開状態の保持）を含むプロジェクトを生成する最初の `create-zudo-doc` リリースになります。生成されるプロジェクトの設定変更は不要です。

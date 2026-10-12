@@ -8,6 +8,13 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [6.1.1] - 2026-10-12
+
+### Other Changes
+
+- New projects pin the zfb family (`@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, and `zfb-adapter-cloudflare` when the MCP feature is enabled) at 4.3.3, picking up the RUSTSEC-2026-0333 frontmatter parser fix, and pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^6.1.1`. (bbc70837e)
+- `create-zudo-doc` 6.1.0 was not published to npm (its publish was stopped because zfb 4.3.3 was released meanwhile), so this is the first `create-zudo-doc` release whose projects include the 6.1.0 sidebar changes: the `initialPathMode` option and explicit-only disclosure persistence. No scaffold configuration change is required.
+
 ## [6.1.0] - 2026-10-12
 
 ### Other Changes
