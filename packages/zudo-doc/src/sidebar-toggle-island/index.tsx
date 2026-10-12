@@ -9,6 +9,7 @@ import { computed, getScope, signal, type Ref } from "@takazudo/zfb/zudo-react";
 // collapse into duplicate import statements in an ejected copy.
 import { AFTER_NAVIGATE_EVENT, ensureNestedIslandPropsRefresh } from "../transitions/index.js";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
+import { notifySidebarScrollReady } from "../sidebar-tree-island/sidebar-scroll-preserve.js";
 import type { ThemeToggleLabels } from "../theme-toggle/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink, SidebarNavigationContext } from "../sidebar/types.js";
 import type { ResolvedDateFormats } from "../settings.js";
@@ -93,6 +94,10 @@ export function SidebarToggle({
     document.body.style.overflow = isOpen ? "hidden" : "";
     if (isOpen) closeIconRef.current?.style.removeProperty("display");
     else closeIconRef.current?.style.setProperty("display", "none");
+    if (isOpen) {
+      const scroller = document.querySelector("aside[data-zd-mobile-sidebar] .flex-1.overflow-y-auto");
+      if (scroller) notifySidebarScrollReady(scroller);
+    }
     if (isOpen) menuIconRef.current?.style.setProperty("display", "none");
     else menuIconRef.current?.style.removeProperty("display");
     return () => {

@@ -287,6 +287,37 @@ describe("Broader tree controls", () => {
     expect(restored.querySelector('a[href="/docs/about"]')).not.toBeNull();
   });
 
+  it("configured section ignores a stored full-forest scope", async () => {
+    const editorial = buildSidebarNavigation([], "en", "guides", undefined, {}, () => NODES, ["guides"]);
+    const configured = buildSidebarNavigation([], "en", "guides", undefined, {
+      guides: { items: [], scopeRoot: "configured" },
+    }, () => NODES, ["guides"]);
+    expect(configured.navigation.id).not.toBe(editorial.navigation.id);
+    expect(configured.navigation.roots.map((node) => node.slug)).toEqual(["guides"]);
+    sessionStorage.setItem("zd-sidebar-scope", JSON.stringify({
+      version: 2,
+      context: configured.navigation.id,
+      page: "guides/first",
+      selected: "@forest",
+      query: "",
+      expansion: {},
+    }));
+    const root = await mount({ ...configured, currentSlug: "guides/first" });
+    expect(root.textContent).not.toContain("About");
+    expect(root.querySelector("[data-sidebar-broaden]")).toBeNull();
+    sessionStorage.setItem("zd-sidebar-scope", JSON.stringify({
+      version: 2,
+      context: configured.navigation.id,
+      page: "guides/first",
+      selected: editorial.navigation.roots.find((node) => node.slug === "about")?.occurrenceId,
+      query: "",
+      expansion: {},
+    }));
+    view?.dispose();
+    const again = await mount({ ...configured, currentSlug: "guides/first" });
+    expect(again.textContent).not.toContain("About");
+  });
+
   it("widens for native cross-branch navigation and ignores invalid stored scope", async () => {
     const data = build();
     sessionStorage.setItem("zd-sidebar-scope", JSON.stringify({ context: data.navigation.id, selected: "deleted", query: "" }));
