@@ -37,7 +37,9 @@ function fixture(options: { version?: string; css?: string; token?: string; tran
     writeFileSync(join(repo, path), value);
   }
   function git(...args: string[]) {
-    const r = spawnSync("git", args, { cwd: repo, encoding: "utf8" });
+    // Same detached auto-maintenance vs afterEach rmSync race as select-a2-parity.test.ts.
+    const quiet = ["-c", "maintenance.auto=false", "-c", "gc.auto=0"];
+    const r = spawnSync("git", [...quiet, ...args], { cwd: repo, encoding: "utf8" });
     expect(r.status, r.stderr).toBe(0);
     return r.stdout.trim();
   }

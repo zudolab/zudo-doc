@@ -21,7 +21,10 @@ function repo(initial: string[]) {
   const dir = mkdtempSync(join(tmpdir(), "a2-selection-"));
   dirs.push(dir);
   const git = (...args: string[]) => {
-    const run = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+    // git >= 2.47 detaches auto-maintenance after commit; a background pack write
+    // into .git/objects/pack then races afterEach's rmSync (ENOTEMPTY, PR #4544).
+    const quiet = ["-c", "maintenance.auto=false", "-c", "gc.auto=0"];
+    const run = spawnSync("git", [...quiet, ...args], { cwd: dir, encoding: "utf8" });
     expect(run.status, run.stderr).toBe(0);
     return run.stdout.trim();
   };
