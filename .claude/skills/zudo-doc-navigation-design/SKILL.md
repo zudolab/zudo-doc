@@ -60,6 +60,7 @@ The sidebar is generated from the filesystem. The rules are about how you organi
 - **Nesting depth: 2–3 levels max.** Deep nesting hides content. If you need more, the header nav is probably missing a category — split it out.
 - **Each sidebar section should cover one cohesive topic.** Do not mix unrelated themes in the same sidebar (e.g. "Hardware" and "Community Events" under the same section).
 - **Use kebab-case directory and file names.** `my-article.mdx`, not `myArticle.mdx`.
+- A header section keeps the full editorial tree unless its sidebar definition sets `scopeRoot: "configured"`. That cap is the highest Broaden can reach. It does not replace `initialPath`. Omit it to preserve the default. Do not add the cap to invent a directory boundary the filesystem does not have.
 
 ## Checklist for Adding a New Page
 

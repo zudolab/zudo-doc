@@ -85,6 +85,7 @@ export const settings = {
     { label: "Editorial", path: "/docs/editorial", categoryMatch: "editorial" },
     { label: "Wind", path: "/docs/wind", categoryMatch: "wind" },
     { label: "Notes", path: "/docs/notes", categoryMatch: "notes" },
+    { label: "Bounded", path: "/docs/bounded", categoryMatch: "bounded" },
     { label: "Journal", path: "/docs/journal", categoryMatch: "journal" },
     {
       label: "Series by Year",

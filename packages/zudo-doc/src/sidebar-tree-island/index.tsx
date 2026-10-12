@@ -34,7 +34,9 @@ import {
   CURRENT_PATH_DATASET_KEY,
   readCurrentPath,
 } from "../current-path/index.js";
-import { ensureSidebarScrollPreserve } from "./sidebar-scroll-preserve.js";
+import { ensureSidebarScrollPreserve, notifySidebarScrollReady } from "./sidebar-scroll-preserve.js";
+
+export { notifySidebarScrollReady } from "./sidebar-scroll-preserve.js";
 import {
   formatYearLabel,
   formatYearMonthLabel,
@@ -309,6 +311,15 @@ export function SidebarTree({
   const filteredNodes = computed(() =>
     query.value ? filterTree(selectedNodes.value, query.value) : selectedNodes.value,
   );
+  // Notify after scope, filter, and disclosure have committed. The controller
+  // restores only while a navigation is waiting, so later edits do not scroll.
+  scope.effect(() => {
+    void selected.value;
+    void selectedNodes.value;
+    void query.value;
+    const nav = navRef.current;
+    if (nav) notifySidebarScrollReady(nav);
+  });
   const locale =
     localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en";
   const footer = (
@@ -333,7 +344,12 @@ export function SidebarTree({
             () => activeSlug.value === undefined && !!rootMenuItems,
           )}
           fallback={() => (
-            <nav ref={navRef} tabindex={-1}>
+            <nav
+              ref={navRef}
+              tabindex={-1}
+              data-sidebar-context={navigation?.id}
+              data-sidebar-scope={computed(() => selected.value ?? "")}
+            >
               {rootMenuItems ? (
                 <button
                   type="button"
