@@ -19,7 +19,7 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 ## Commands
 
 Current state (2026-10-11): the zfb 4 migration PR #4477 is merged (`b9dd43b0d`) and
-production-deployed. Pins: published zfb family 4.3.1, peers ^4.3.1 (adopted by #4516); zdtp 0.8.6;
+production-deployed. Pins: published zfb family 4.3.2, peers ^4.3.2 (4.3.1 adopted by #4516; bumped to 4.3.2 by #4541); zdtp 0.8.6;
 MCP SDK 1.32.1; root/generated-MCP Wrangler 4.149.0. The coordinated 6.0.0 release (#4524) is published:
 `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` are all 6.0.0 on npm
 `latest`, and the history-server peer floor is `^6.0.0` — see the publication record

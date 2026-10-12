@@ -6,7 +6,7 @@ description: Upgrade a 5.x consumer to the zudo-react and Wind major release.
 
 ## Release status
 
-This guide covers the migration from 5.x to **zudo-doc 6.0.0**, the coordinated major release of `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` (see the [6.0.0 release notes](../changelog/zudo-doc/6.0.0.mdx)). All three packages are published at 6.0.0 on npm (`latest`); the [6.0.0 publication record](https://github.com/zudolab/zudo-doc/blob/43b03a7989fc5e88377860d7a400cc18b9517d6e/docs/findings/4430-zfb3-migration/release-6.0.0/README.md) lists the publish runs and the published-consumer checks. The engine target is the published, aligned **zfb 4.3.1** family, with package peer floor **^4.3.1**. Do not install historical 3.0/3.1 targets.
+This guide covers the migration from 5.x to **zudo-doc 6.0.0**, the coordinated major release of `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` (see the [6.0.0 release notes](../changelog/zudo-doc/6.0.0.mdx)). All three packages are published at 6.0.0 on npm (`latest`); the [6.0.0 publication record](https://github.com/zudolab/zudo-doc/blob/43b03a7989fc5e88377860d7a400cc18b9517d6e/docs/findings/4430-zfb3-migration/release-6.0.0/README.md) lists the publish runs and the published-consumer checks. The engine target is the published, aligned **zfb 4.3.2** family, with package peer floor **^4.3.2**. Do not install historical 3.0/3.1 targets.
 
 The fix for [#4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) first shipped in 4.3.0; the issue is resolved. The strict published-consumer browser/navigation control passed **3/3 with no failures, skips or retries** on the supported 4.3.1 tuple, as recorded in the [source-bound verification](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/zfb-4.3.1/verification.md). That is Linux Chromium evidence, not native macOS WebKit or Apple IME acceptance. The [migration status record](https://github.com/zudolab/zudo-doc/blob/7f5cacb01a246e44d9468fa8023fd0f6ee327a40/docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md) preserves the platform limits and the owner's cancellation of the remaining manual IME check.
 
@@ -14,7 +14,7 @@ For a 3.x consumer, start with [Migrating from zudo-doc 3](./migrating-from-zudo
 
 ## Dependencies and TypeScript
 
-To upgrade an existing project, edit the project's own `package.json` and reinstall with your package manager. Set `@takazudo/zudo-doc` to `^6.0.0`, and set `@takazudo/zudo-doc-history-server` to `^6.0.0` if the project declares it (it is needed only when doc history or the asset viewer is enabled). Align every installed engine package (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm`, and the Cloudflare adapter when used) to 4.3.1. Core rendering no longer requires Preact.
+To upgrade an existing project, edit the project's own `package.json` and reinstall with your package manager. Set `@takazudo/zudo-doc` to `^6.0.0`, and set `@takazudo/zudo-doc-history-server` to `^6.0.0` if the project declares it (it is needed only when doc history or the asset viewer is enabled). Align every installed engine package (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm`, and the Cloudflare adapter when used) to 4.3.2. Core rendering no longer requires Preact.
 
 `create-zudo-doc` is the initializer, not an application dependency: do not add it to an existing project, and do not rerun it over one. To compare against the matching 6.0.0 output, generate a separate new or reference scaffold with `pnpm dlx create-zudo-doc@6.0.0` in another directory and copy only what you need.
 
@@ -85,7 +85,7 @@ Run `pnpm exec zfb wind audit --project-root . --fail-on error`. The error exit 
 
 `ThemeToggle` retains `defaultMode`, `respectPrefersColorScheme`, `labels`, and `pendingUntilHydrated`. Keep other domain prop names: the `class` change is for intrinsic-compatible APIs, not a blanket rename of custom `className` props (for example, `SidebarTree` retains its custom `className`).
 
-`ENLARGE_DIALOG_STYLE` remains exported from `./island-types`. On the actual 4.3.1 target it is the literal style object `{ position: "fixed", inset: 0, margin: "auto" }`, and `EnlargeDialogProps.style` is `typeof ENLARGE_DIALOG_STYLE`. The earlier 3.x plan for a string is superseded by native style support. Use supported CSS property names and explicit units for nonzero lengths; strings remain valid for complete CSS declarations.
+`ENLARGE_DIALOG_STYLE` remains exported from `./island-types`. On the actual 4.3.2 target it is the literal style object `{ position: "fixed", inset: 0, margin: "auto" }`, and `EnlargeDialogProps.style` is `typeof ENLARGE_DIALOG_STYLE`. The earlier 3.x plan for a string is superseded by native style support. Use supported CSS property names and explicit units for nonzero lengths; strings remain valid for complete CSS declarations.
 
 ## Ejected and host components
 
@@ -158,7 +158,7 @@ The installed **zdtp 0.8.6** manifest carries **Preact ^10.29.1** as its own dep
 
 Use native ordered lists, leading-line-feed handling and unchanged-root persistence from the current engine. Unchanged island identity/props preserve live scope state; changed identity/props recreate it. The package's `zfb:before-swap` adapter updates only the detached incoming document, honors live `data-zd-props-preserve`, and removes incoming persistence for unsafe structure changes. Do not restore blanket remounts.
 
-Parser rules are part of the owned JSX contract. Keep legal table/select structure; use explicit `tbody` and do not place `Show`/`For`/component regions directly at table structural levels. `rawHtml` accepts trusted strings and is mutually exclusive with children; it does not sanitize. Do not insert island wrappers or runtime protocol markers through raw HTML. Script/style payloads require static raw text with closing-tag guards. Native support has evolved since the 3.x spike: consult the published 4.3.1 declarations/contract rather than copying old iframe/head/style shims.
+Parser rules are part of the owned JSX contract. Keep legal table/select structure; use explicit `tbody` and do not place `Show`/`For`/component regions directly at table structural levels. `rawHtml` accepts trusted strings and is mutually exclusive with children; it does not sanitize. Do not insert island wrappers or runtime protocol markers through raw HTML. Script/style payloads require static raw text with closing-tag guards. Native support has evolved since the 3.x spike: consult the published 4.3.2 declarations/contract rather than copying old iframe/head/style shims.
 
 Follow the supported [fixed-target composition #4004](https://github.com/Takazudo/zudo-front-builder/issues/4004) contract and the [Wind coverage #3371](https://github.com/Takazudo/zudo-front-builder/issues/3371) limits. Earlier issues are historical context, not evidence that current release gates passed.
 
