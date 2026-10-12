@@ -18,15 +18,14 @@ description: 5.x の利用側を zudo-react・Wind のメジャーリリース�
 
 `create-zudo-doc` はプロジェクトを生成する initializer で、アプリケーションの依存パッケージではありません。既存のプロジェクトに追加したり、既存のプロジェクトに対して再実行したりしないでください。6.0.0 の生成結果と比較したい場合は、別のディレクトリで `pnpm dlx create-zudo-doc@6.0.0` を実行して新規または参照用の scaffold を作り、必要な部分だけを取り込みます。
 
-次のようにパッケージのベース設定を継承します。ベースが `jsx: "react-jsx"` と `jsxImportSource: "@takazudo/zfb/zudo-react"` を所有します。`react`、`react-dom`、`react/jsx-runtime` から Preact への互換パスを削除し、React/Preact の型 import も変更します。必要なプロジェクト固有のエイリアスだけを残し、プロジェクト側の `baseUrl` で基準を指定してください。config と仮想モジュールの宣言を読み込むベースのトップレベル `files` を上書きしないでください。
+次のようにパッケージのベース設定を継承します。ベースが `jsx: "react-jsx"` と `jsxImportSource: "@takazudo/zfb/zudo-react"` を所有します。`react`、`react-dom`、`react/jsx-runtime` から Preact への互換パスを削除し、React/Preact の型 import も変更します。必要なプロジェクト固有のエイリアスだけを残し、`./src/*` のように明示的な相対パスで指定してください。各 `paths` エントリは、それを宣言した tsconfig を基準に解決されます。ベースは `baseUrl` を設定しません（TypeScript 7 ではこのオプションが TS5102 で拒否されます）。そのため、同じプロジェクト設定が TypeScript 5.9 と 7.0 の両方で型チェックを通ります。TypeScript 5 を使い続ける既存プロジェクトは、独自の `baseUrl` を残してもかまいません。config と仮想モジュールの宣言を読み込むベースのトップレベル `files` を上書きしないでください。
 
 ```json
 {
   "extends": "@takazudo/zudo-doc/tsconfig.base.json",
   "include": ["src", "pages", "zfb.config.ts"],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": { "@/*": ["./src/*"] }
   }
 }
 ```

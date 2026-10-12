@@ -272,12 +272,11 @@ base" section for the full contract):
   "extends": "@takazudo/zudo-doc/tsconfig.base.json",
   "include": ["src", "pages", "zfb.config.ts"],
   "compilerOptions": {
-    // REQUIRED, not cosmetic — see the GOTCHA in packages/zudo-doc/CLAUDE.md:
-    // a project-local baseUrl is needed so "." resolves against THIS file's
-    // directory, not the base tsconfig's (which lives inside node_modules).
-    "baseUrl": ".",
+    // No baseUrl (TypeScript 7 rejects it with TS5102 — #4558): an explicitly
+    // relative target resolves against THIS file's directory. See
+    // packages/zudo-doc/CLAUDE.md "Owned JSX and project-local aliases".
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   }
 }

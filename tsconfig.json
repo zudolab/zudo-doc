@@ -9,10 +9,11 @@
   "include": ["src", "pages", "scripts", "zfb.config.ts"],
   "exclude": ["src/**/__tests__"],
   "compilerOptions": {
-    // Re-declaring baseUrl here is REQUIRED, not cosmetic — see the GOTCHA in
-    // packages/zudo-doc/CLAUDE.md: the base's own baseUrl resolves relative to
-    // the base file's directory (inside node_modules), so a project-local
-    // baseUrl is needed to anchor "." at the project root.
+    // Showcase-local TS5 choice: anchors the bare "src/*" and
+    // ".zfb/doc-history-meta.json" alias targets below. The shared base no
+    // longer sets baseUrl (TypeScript 7 rejects it with TS5102 — #4558); a
+    // project dropping it must make every target explicitly relative
+    // ("./src/*"), as the generated template does.
     "baseUrl": ".",
     // Stricter than the base — a deliberate project choice (see this file's
     // "TypeScript" note in the repo-root CLAUDE.md); not part of the shared

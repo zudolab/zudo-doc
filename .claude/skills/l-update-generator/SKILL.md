@@ -143,7 +143,7 @@ Compare the 6 source-code base template files against their showcase / package c
 - `templates/base/pages/index.tsx` — 1-line re-export
 - `templates/base/pages/docs/[[...slug]].tsx` — self-contained doc-route stub (compare against the showcase's `pages/docs/[[...slug]].tsx`, which the `.template-drift-allowlist` allows to diverge — the showcase adds `chromeBindingsModule` wiring the minimal stub doesn't need)
 - `templates/base/src/styles/global.css` — fixed ~20-line `@import` chain (compare against the showcase's `src/styles/global.css`, also allowlisted — the showcase's is a superset)
-- `templates/base/tsconfig.json` — 5-line extends form (compare against the showcase's `tsconfig.json`, allowlisted — the showcase's is a superset per the `paths`/`baseUrl` GOTCHA documented in `packages/zudo-doc/CLAUDE.md`)
+- `templates/base/tsconfig.json` — 5-line extends form (compare against the showcase's `tsconfig.json`, allowlisted — the showcase's is a superset that keeps a TS5-only `baseUrl`, while the template must stay `baseUrl`-free with an explicit `"./src/*"` target — see "Owned JSX and project-local aliases" in `packages/zudo-doc/CLAUDE.md`)
 - `templates/base/scripts/setup-doc-skill.sh` — should be byte-identical to the root `scripts/setup-doc-skill.sh` (the root copy IS the source template; not allowlisted, must match exactly)
 - `templates/base/scripts/check-links.js` — source-first counterpart to the showcase checker; allowlisted because generated projects read literal settings from `zfb.config.ts` instead of the showcase's `src/config/settings.ts`, so validation-core changes require manual parity review
 

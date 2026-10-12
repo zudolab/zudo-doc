@@ -23,8 +23,7 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "useUnknownInCatchVariables": true,
-    "alwaysStrict": true,
-    "baseUrl": "."
+    "alwaysStrict": true
   },
   "files": ["./zfb-config-shim.d.ts", "./virtual-modules.d.ts"]
 }

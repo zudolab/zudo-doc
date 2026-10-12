@@ -38,11 +38,13 @@ scripts/check-links.js
 # packages/zudo-doc/CLAUDE.md's "Shipped ambient type shims + tsconfig base"
 # section: `extends: "@takazudo/zudo-doc/tsconfig.base.json"`, `include:
 # ["src", "pages", "zfb.config.ts"]`, and a `compilerOptions` block carrying
-# only `baseUrl` + the `@/*` `paths` alias (see that file's GOTCHA for why
-# project aliases live here). The package base owns the zfb zudo-react JSX
-# source; the template has no React/Preact compatibility aliases. The
-# showcase's own tsconfig.json is a genuine superset, not accidental drift:
-# `$schema`, an `include` that adds `scripts` (typechecks the contrast/tags
+# only the explicitly relative `"@/*": ["./src/*"]` `paths` alias and no
+# `baseUrl` (TypeScript 7 rejects it with TS5102 — #4558; see that file's
+# "Owned JSX and project-local aliases" section). The package base owns the
+# zfb zudo-react JSX source; the template has no React/Preact compatibility
+# aliases. The showcase's own tsconfig.json is a genuine superset, not
+# accidental drift: `$schema`, a TS5-only `baseUrl` anchoring its bare alias
+# targets, an `include` that adds `scripts` (typechecks the contrast/tags
 # audit CLIs) plus an `exclude` for `src/**/__tests__`, `noUncheckedIndexedAccess`
 # (a deliberate project-only strictness choice — see the root CLAUDE.md's
 # "TypeScript" note), and a `#doc-history-meta` path alias (needed only by a

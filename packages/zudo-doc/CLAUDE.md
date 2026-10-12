@@ -549,19 +549,26 @@ compatibility paths and React/Preact type imports. Use `Child`, `Description`,
 only as zdtp 0.8.6's own dependency (`^10.29.1`; a peer through 0.8.5) for its opaque subtree; zdtp's
 internal Tailwind browser dependency does not become a host engine dependency.
 
-A host alias still needs a project-local `baseUrl` because inherited relative
-paths resolve against the file that declares them:
+The base sets no `baseUrl`: TypeScript 7 removed the option (TS5102 in every
+project extending a config that sets it — #4558). Declare host aliases in the
+project tsconfig with explicitly relative targets; each `paths` entry resolves
+against the file that declares it, so no `baseUrl` is needed under TS 5.9 or
+7.0, and zfb's native resolver maps the same targets for server code and island
+dependencies:
 
 ```json
 {
   "extends": "@takazudo/zudo-doc/tsconfig.base.json",
   "include": ["src", "pages", "zfb.config.ts"],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": { "@/*": ["./src/*"] }
   }
 }
 ```
+
+An existing TS5 host may keep its own `baseUrl` (this showcase does); only the
+shared base and the generated template must stay free of it. Regression proof
+lives in `create-zudo-doc`'s `tsconfig-compat.slow.test.ts`.
 
 Do not override the base's top-level `files`: it owns the config and virtual
 module declarations. A showcase importing `#doc-history-meta` adds its own path

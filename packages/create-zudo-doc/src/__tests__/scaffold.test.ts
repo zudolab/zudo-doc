@@ -1568,8 +1568,10 @@ describe("scaffold — tsconfig.json extends the package base config", () => {
     const tsconfig = await fs.readJson(projectPath("test-doc", "tsconfig.json"));
     expect(tsconfig.extends).toBe("@takazudo/zudo-doc/tsconfig.base.json");
     expect(tsconfig.include).toEqual(["src", "pages", "zfb.config.ts"]);
-    expect(tsconfig.compilerOptions.baseUrl).toBe(".");
-    expect(tsconfig.compilerOptions.paths["@/*"]).toEqual(["src/*"]);
+    // No baseUrl (TS5102 under TypeScript 7 — #4558): the alias target is
+    // explicitly relative, so it resolves against this tsconfig's directory.
+    expect(tsconfig.compilerOptions).not.toHaveProperty("baseUrl");
+    expect(tsconfig.compilerOptions.paths["@/*"]).toEqual(["./src/*"]);
     expect(tsconfig.compilerOptions.paths).not.toHaveProperty("react");
     expect(tsconfig.compilerOptions.paths).not.toHaveProperty("react/jsx-runtime");
     expect(tsconfig.compilerOptions.paths).not.toHaveProperty("react-dom");

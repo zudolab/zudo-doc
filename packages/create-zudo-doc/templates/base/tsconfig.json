@@ -2,9 +2,8 @@
   "extends": "@takazudo/zudo-doc/tsconfig.base.json",
   "include": ["src", "pages", "zfb.config.ts"],
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   }
 }

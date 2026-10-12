@@ -18,15 +18,14 @@ To upgrade an existing project, edit the project's own `package.json` and reinst
 
 `create-zudo-doc` is the initializer, not an application dependency: do not add it to an existing project, and do not rerun it over one. To compare against the matching 6.0.0 output, generate a separate new or reference scaffold with `pnpm dlx create-zudo-doc@6.0.0` in another directory and copy only what you need.
 
-Extend the package base below. It owns `jsx: "react-jsx"` and `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove `react`, `react-dom`, and `react/jsx-runtime` → Preact compatibility paths and replace type imports from React/Preact. Retain project aliases only when needed; a project-local `baseUrl` anchors them. Do not replace the base's top-level `files`, which loads the config and virtual-module declarations.
+Extend the package base below. It owns `jsx: "react-jsx"` and `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove `react`, `react-dom`, and `react/jsx-runtime` → Preact compatibility paths and replace type imports from React/Preact. Retain project aliases only when needed, with explicitly relative targets such as `./src/*`: each `paths` entry resolves against the tsconfig that declares it. The base sets no `baseUrl` (TypeScript 7 rejects the option with TS5102), so the same project config typechecks under TypeScript 5.9 and 7.0. An existing project may keep its own `baseUrl` while it stays on TypeScript 5. Do not replace the base's top-level `files`, which loads the config and virtual-module declarations.
 
 ```json
 {
   "extends": "@takazudo/zudo-doc/tsconfig.base.json",
   "include": ["src", "pages", "zfb.config.ts"],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": { "@/*": ["./src/*"] }
   }
 }
 ```
