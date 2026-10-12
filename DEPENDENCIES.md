@@ -86,8 +86,9 @@ Manual interactive smoke was skipped; browser E2E is outside this local suite.
 ## Current migration dependency contract
 
 The released 6.0.0 tuple: `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`
-and `create-zudo-doc` are published at 6.0.0 (npm `latest`); the published zfb family is
-pinned to 4.3.2 with peers ^4.3.2; zdtp 0.8.6; MCP SDK 1.32.1; root and generated-MCP
+and `create-zudo-doc` are published at 6.0.0 (npm `latest`) with the published zfb family
+pinned to 4.3.1 and peers ^4.3.1. The workspace now pins zfb 4.3.2 with peers ^4.3.2
+(#4541, unreleased until the next lockstep release); zdtp 0.8.6; MCP SDK 1.32.1; root and generated-MCP
 Wrangler 4.149.0. The history-server peer floor is ^6.0.0 (a minimum compatibility
 floor — see "First-party peer floor" in `RELEASE.md`). Publication and consumer
 evidence: [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
