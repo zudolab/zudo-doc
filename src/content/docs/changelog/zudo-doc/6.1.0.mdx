@@ -1,0 +1,15 @@
+---
+title: 6.1.0
+description: Release notes for 6.1.0.
+sidebar_position: 1136
+---
+
+Released: 2026-10-12
+
+### Features
+
+- Adds `SidebarDefinition.initialPathMode?: "children" | "node"` (default `"children"`, unchanged behavior). With `"node"`, the node selected by `initialPath` is itself the fresh/Restore baseline: a page-backed section keeps its linked overview row together with its pages, while the complete editorial tree stays available, so Broaden moves to its real parent with no duplicate or invented row. Applies equally to `buildSidebarForSection` and `buildSidebarNavigation`, and to the desktop sidebar and mobile drawer. An unknown mode fails the build. (6fc2200a4)
+
+### Bug Fixes
+
+- The sidebar now saves only the reader's explicit expand/collapse choices in `sessionStorage`. Automatically opening the current page's path on soft navigation, Back/Forward or at narrow viewports is no longer persisted, so later hard loads no longer show unrelated branches expanded. The reader can collapse the branch containing the current page; it stays collapsed for that page (hash changes, filtering and same-page reload included) and the next page reveals its own path. Restore clears the selected scope and saved choices, keeps the filter text, and updates the desktop sidebar and mobile drawer together. Expansion saved by earlier versions is discarded once on first load; a saved scope and filter text are kept. (98d1d223b, 1bbaa5f26, fbd694422)
