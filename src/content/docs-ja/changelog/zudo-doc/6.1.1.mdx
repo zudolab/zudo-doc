@@ -1,0 +1,11 @@
+---
+title: 6.1.1
+description: 6.1.1のリリースノート。
+sidebar_position: 1137
+---
+
+リリース日: 2026-10-12
+
+### その他の変更
+
+- zfb 4.3.3 が必要になりました。`@takazudo/zfb`、`zfb-runtime`、`zfb-md-wasm` の peer 下限を `^4.3.2` から `^4.3.3` に引き上げます。zfb 4.3.3 は YAML frontmatter パーサーを [RUSTSEC-2026-0333](https://rustsec.org/advisories/RUSTSEC-2026-0333) の修正版に更新しています。4.3.2 で受け付けた frontmatter は引き続き受け付けられます。このリリースと合わせて zfb ファミリー（使用する場合は `zfb-adapter-cloudflare` も）を 4.3.3 に更新してください。(bbc70837e)

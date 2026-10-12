@@ -1,0 +1,11 @@
+---
+title: 6.1.1
+description: Release notes for 6.1.1.
+sidebar_position: 1137
+---
+
+Released: 2026-10-12
+
+### Other Changes
+
+- Requires zfb 4.3.3: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.3.2` to `^4.3.3`. zfb 4.3.3 moves its YAML frontmatter parser past [RUSTSEC-2026-0333](https://rustsec.org/advisories/RUSTSEC-2026-0333); frontmatter accepted by 4.3.2 is still accepted. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 4.3.3 together with this release. (bbc70837e)
