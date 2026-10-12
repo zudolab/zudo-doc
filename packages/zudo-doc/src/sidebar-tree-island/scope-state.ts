@@ -7,7 +7,7 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 export interface ScopeControls {
   focus: (node: SidebarNavNode) => void;
   focusLabel: string;
-  /** Effective disclosure: transient scope reveal, then the user's explicit choice, then `baseline`. */
+  /** Effective disclosure: the user's explicit choice, else revealed/scope root, else `baseline`. */
   isOpen: (key: string, baseline: boolean) => boolean;
   /** Records an explicit user disclosure choice. */
   setOpen: (key: string, open: boolean) => void;
@@ -24,8 +24,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 /** One controller shared by the real desktop tree and mobile drawer. SSR always
  * starts with configured roots; session state is applied only on activation.
- * `expansion` holds explicit user choices only. Route arrival is derived from
- * the active slug, and scope-change reveal stays in memory. */
+ * `expansion` holds explicit user choices only. The active path and the
+ * visible scope's sole root are derived, other scope-change reveal stays in
+ * memory, and a reveal removes conflicting explicit collapses instead of
+ * writing automatic entries. */
 export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }: {
   nodes: SidebarNavNode[];
   navigation?: SidebarNavigationContext;
@@ -64,11 +66,13 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     const group = trayGroups.find((candidate) => candidate.key === key);
     return group ? defaultGroupOpen(group.items) : undefined;
   };
+  const scopeRoot = computed(() => selectedNodes.value.length === 1 ? selectedNodes.value[0]!.occurrenceId : undefined);
+  const automaticOpen = (key: string, baseline: boolean) => revealed.value.has(key) || key === scopeRoot.value || baseline;
   const canRestore = computed(() => {
     if (JSON.stringify(selectedNodes.value) !== JSON.stringify(nodes)) return true;
     return Object.entries(expansion.value).some(([key, open]) => {
       const baseline = baselineOf(key);
-      return baseline !== undefined && !revealed.value.has(key) && open !== baseline;
+      return baseline !== undefined && open !== automaticOpen(key, baseline);
     });
   });
   // A stored or chosen scope whose view equals the destination baseline is the baseline.
@@ -79,14 +83,20 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     for (let ancestor = id; ancestor && ancestor !== SIDEBAR_FOREST_SCOPE; ancestor = navigation?.parents[ancestor] ?? null) chain.push(ancestor);
     return chain;
   };
-  // Destination arrival reveals the active path: explicit collapses on it yield
-  // to the active-path baseline. Deterministic, so every controller converges.
-  const arrive = () => {
+  const withoutCollapses = (keys: Iterable<string>) => {
     const next = { ...expansion.value };
-    for (const [key, node] of occurrenceIndex) if (next[key] === false && containsActive(node)) delete next[key];
-    for (const group of trayGroups) if (next[group.key] === false && group.items.some((item) => item.slug === activeSlug.value)) delete next[group.key];
+    for (const key of keys) if (next[key] === false) delete next[key];
     expansion.value = next;
-    revealed.value = new Set(withAncestors(selected.value));
+  };
+  // Destination arrival reveals the active path and scope root by dropping
+  // explicit collapses there. Deterministic, so every controller converges.
+  const arrive = () => {
+    revealed.value = new Set();
+    withoutCollapses([
+      ...[...occurrenceIndex].filter(([, node]) => containsActive(node)).map(([key]) => key),
+      ...trayGroups.filter((group) => group.items.some((item) => item.slug === activeSlug.value)).map((group) => group.key),
+      ...(scopeRoot.value ? [scopeRoot.value] : []),
+    ]);
   };
   const save = () => {
     if (!navigation) return;
@@ -102,7 +112,9 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
       expansion.value = {};
       revealed.value = new Set();
     } else {
-      revealed.value = new Set([...revealed.value, ...withAncestors(previous), ...withAncestors(id)]);
+      const shown = [...withAncestors(previous), ...withAncestors(id)];
+      withoutCollapses(shown);
+      revealed.value = new Set([...revealed.value, ...shown]);
     }
     save();
     // Scroll only the sidebar's own viewport; never scrollIntoView, which also
@@ -133,11 +145,8 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
   const scopeControls: ScopeControls | undefined = navigation ? {
     focus: (node) => { if (node.occurrenceId) changeScope(node.occurrenceId); },
     focusLabel: labels.focus, defaultOpen, defaultGroupOpen,
-    isOpen: (key, baseline) => revealed.value.has(key) || (expansion.value[key] ?? baseline),
+    isOpen: (key, baseline) => expansion.value[key] ?? automaticOpen(key, baseline),
     setOpen: (key, open) => {
-      const next = new Set(revealed.value);
-      next.delete(key);
-      revealed.value = next;
       expansion.value = { ...expansion.value, [key]: open };
       save();
     },
@@ -160,8 +169,7 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
       }
     } catch { /* Stale or unavailable storage uses the configured baseline. */ }
     // Same-page remount/reload keeps explicit choices, including an active-path collapse.
-    if (samePage) revealed.value = new Set(withAncestors(selected.value));
-    else arrive();
+    if (!samePage) arrive();
     save();
     const sync = (event: Event) => {
       const state = (event as CustomEvent).detail;
