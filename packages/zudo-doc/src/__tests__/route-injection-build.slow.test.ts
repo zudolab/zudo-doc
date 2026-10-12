@@ -37,6 +37,7 @@ import { execSync, spawn, type ExecSyncOptions, type ChildProcess } from "node:c
 import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync, renameSync, readlinkSync, realpathSync, lstatSync } from "node:fs";
 import { join, resolve, dirname, relative } from "node:path";
 import { tmpdir } from "node:os";
+import { parse, type DefaultTreeAdapterMap } from "parse5";
 
 // ---------------------------------------------------------------------------
 // Parity helpers — imported from the shared, side-effect-free module also
@@ -2508,15 +2509,18 @@ type SerializedSidebar = {
   nodes: SerializedSidebarNode[];
   navigation: { id: string; roots: SerializedSidebarNode[]; parents: Record<string, string | null>; localParentId?: string };
 };
-/** Decode the native sidebar islands' `data-props` from built HTML. */
+/** Decode the native sidebar islands' `data-props` from built (minified) HTML. */
 function sidebarIslandProps(html: string): Record<string, SerializedSidebar> {
   const result: Record<string, SerializedSidebar> = {};
-  for (const [tag] of html.matchAll(/<[^>]*data-zfb-island="(?:SidebarTree|SidebarToggle)"[^>]*>/g)) {
-    const component = /data-zfb-island="([^"]+)"/.exec(tag)![1]!;
-    const encoded = /data-props="([^"]*)"/.exec(tag)![1]!;
-    result[component] = JSON.parse(encoded.replaceAll("&quot;", '"').replaceAll("&lt;", "<")
-      .replaceAll("&gt;", ">").replaceAll("&#39;", "'").replaceAll("&amp;", "&"));
-  }
+  const walk = (node: DefaultTreeAdapterMap["node"]): void => {
+    if ("attrs" in node) {
+      const attrs = Object.fromEntries(node.attrs.map(({ name, value }) => [name, value]));
+      const component = attrs["data-zfb-island"];
+      if (component === "SidebarTree" || component === "SidebarToggle") result[component] = JSON.parse(attrs["data-props"]!);
+    }
+    if ("childNodes" in node) node.childNodes.forEach(walk);
+  };
+  walk(parse(html));
   return result;
 }
 
