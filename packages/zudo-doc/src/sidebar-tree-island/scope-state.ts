@@ -59,7 +59,6 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
   const groupKeys = new Set(trayGroups.map((group) => group.key));
   const defaultOpen = (node: SidebarNavNode) => sidebarBaselineOpen(node, navigation ? sidebarInitialExpansion(navigation, activeSlug.value) : undefined, activeSlug.value);
   const defaultGroupOpen = (items: SidebarNavNode[]) => items.some((item) => item.slug === activeSlug.value) || (!!navigation && sidebarInitialExpansion(navigation, activeSlug.value) === "expanded");
-  const containsActive = (node: SidebarNavNode): boolean => node.slug === activeSlug.value || node.children.some(containsActive);
   const baselineOf = (key: string) => {
     const node = occurrenceIndex.get(key);
     if (node) return node.children.length ? defaultOpen(node) : undefined;
@@ -70,14 +69,16 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
   const automaticOpen = (key: string, baseline: boolean) => revealed.value.has(key) || key === scopeRoot.value || baseline;
   const canRestore = computed(() => {
     if (JSON.stringify(selectedNodes.value) !== JSON.stringify(nodes)) return true;
-    return Object.entries(expansion.value).some(([key, open]) => {
+    const differs = Object.entries(expansion.value).some(([key, open]) => {
       const baseline = baselineOf(key);
       return baseline !== undefined && open !== automaticOpen(key, baseline);
     });
+    return differs || [...revealed.value].some((key) => expansion.value[key] === undefined && baselineOf(key) === false);
   });
   // A stored or chosen scope whose view equals the destination baseline is the baseline.
   const canonicalScope = (id: string | null) =>
-    id !== null && navigation && JSON.stringify(sidebarScopeNodes(navigation, nodes, id)) === JSON.stringify(nodes) ? null : id;
+    id !== null && navigation && ((nodes.length === 1 && nodes[0]!.occurrenceId === id)
+      || JSON.stringify(sidebarScopeNodes(navigation, nodes, id)) === JSON.stringify(nodes)) ? null : id;
   const withAncestors = (id: string | null) => {
     const chain: string[] = [];
     for (let ancestor = id; ancestor && ancestor !== SIDEBAR_FOREST_SCOPE; ancestor = navigation?.parents[ancestor] ?? null) chain.push(ancestor);
@@ -93,16 +94,16 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
   const arrive = () => {
     revealed.value = new Set();
     withoutCollapses([
-      ...[...occurrenceIndex].filter(([, node]) => containsActive(node)).map(([key]) => key),
+      ...[...occurrenceIndex].filter(([, node]) => node.slug === activeSlug.value).flatMap(([key]) => withAncestors(key)),
       ...trayGroups.filter((group) => group.items.some((item) => item.slug === activeSlug.value)).map((group) => group.key),
       ...(scopeRoot.value ? [scopeRoot.value] : []),
     ]);
   };
-  const save = () => {
+  const save = (broadcast = true) => {
     if (!navigation) return;
     const state = { version: STATE_VERSION, context: navigation.id, page: activeSlug.value, selected: selected.value, query: query.value, expansion: expansion.value };
     try { sessionStorage.setItem(stateKey, JSON.stringify(state)); } catch { /* Optional persistence. */ }
-    document.dispatchEvent(new CustomEvent(syncEvent, { detail: { ...state, revealed: [...revealed.value] } }));
+    if (broadcast) document.dispatchEvent(new CustomEvent(syncEvent, { detail: { ...state, revealed: [...revealed.value] } }));
   };
   const changeScope = (id: string | null) => {
     const previous = selected.value;
@@ -112,9 +113,9 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
       expansion.value = {};
       revealed.value = new Set();
     } else {
-      const shown = [...withAncestors(previous), ...withAncestors(id)];
-      withoutCollapses(shown);
-      revealed.value = new Set([...revealed.value, ...shown]);
+      // Focus opens its target; the scope being left keeps explicit choices.
+      withoutCollapses(withAncestors(id));
+      revealed.value = new Set([...revealed.value, ...withAncestors(previous), ...withAncestors(id)]);
     }
     save();
     // Scroll only the sidebar's own viewport; never scrollIntoView, which also
@@ -170,7 +171,9 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     } catch { /* Stale or unavailable storage uses the configured baseline. */ }
     // Same-page remount/reload keeps explicit choices, including an active-path collapse.
     if (!samePage) arrive();
-    save();
+    // Persist without broadcasting: a late-activating controller must not reset
+    // a live peer's in-memory reveal; peers handle arrival themselves.
+    save(false);
     const sync = (event: Event) => {
       const state = (event as CustomEvent).detail;
       if (state?.context !== navigation.id || state.page !== activeSlug.value) return;

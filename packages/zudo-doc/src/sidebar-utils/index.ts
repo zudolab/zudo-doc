@@ -245,6 +245,8 @@ function followInitialPath(
   definition: SidebarDefinition | undefined,
   sectionKey: string,
 ): { nodes: SidebarNavNode[]; target?: SidebarNavNode } {
+  const mode = definition?.initialPathMode;
+  if (mode !== undefined && mode !== "children" && mode !== "node") throw new Error(`Invalid sidebar initialPathMode for ${sectionKey}`);
   let nodes = forest;
   let target: SidebarNavNode | undefined;
   for (const index of definition?.initialPath ?? []) {
