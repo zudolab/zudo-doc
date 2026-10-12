@@ -223,3 +223,49 @@ describe("initialPathMode node baseline", () => {
     expect(buildSidebarForSection([], "en", "utility", undefined, config, () => tree, [])).toEqual(strip(nodes));
   });
 });
+
+describe("empty-items object definition fallback", () => {
+  const deep = [leaf("wind", [leaf("wind/utility", [leaf("wind/utility/surfaces", [leaf("wind/utility/surfaces/background")])])])];
+  const visible = (nodes: SidebarNavNode[]) => nodes.map((node) => node.slug);
+  const both = (config: SidebarsConfig, categoryMatch = "wind", source = deep) => ({
+    section: buildSidebarForSection([], "en", categoryMatch, undefined, config, () => source, [categoryMatch]),
+    navigation: buildSidebarNavigation([], "en", categoryMatch, undefined, config, () => source, [categoryMatch]).nodes,
+  });
+
+  it("applies initialPath in every mode identically in both helpers", () => {
+    const cases: Array<[SidebarDefinition, string[]]> = [
+      [{ items: [], initialPath: [0, 0, 0] }, ["wind/utility/surfaces/background"]],
+      [{ items: [], initialPath: [0, 0, 0], initialPathMode: "children" }, ["wind/utility/surfaces/background"]],
+      [{ items: [], initialPath: [0, 0, 0], initialPathMode: "node" }, ["wind/utility/surfaces"]],
+      [{ items: [], initialPath: [], initialPathMode: "node" }, ["wind"]],
+      [{ items: [], initialPathMode: "node" }, ["wind"]],
+      [{ items: [] }, ["wind"]],
+    ];
+    for (const [definition, expected] of cases) {
+      const { section, navigation } = both({ wind: definition });
+      expect(visible(section)).toEqual(expected);
+      expect(visible(navigation)).toEqual(expected);
+    }
+  });
+
+  it("rejects invalid paths and modes in both helpers", () => {
+    for (const initialPath of [[9], [-1], [0.5]]) {
+      expect(() => both({ wind: { items: [], initialPath } })).toThrow("Invalid sidebar initialPath");
+    }
+    const config = { wind: { items: [], initialPath: [0], initialPathMode: "self" } } as unknown as SidebarsConfig;
+    expect(() => buildSidebarForSection([], "en", "wind", undefined, config, () => deep, ["wind"])).toThrow("Invalid sidebar initialPathMode");
+    expect(() => buildSidebarNavigation([], "en", "wind", undefined, config, () => deep, ["wind"])).toThrow("Invalid sidebar initialPathMode");
+  });
+
+  it("keeps category filtering and the missing-config and empty-array fallback unchanged", () => {
+    const mixed = [...deep, leaf("other", [leaf("other/page")])];
+    const filtered = both({ wind: { items: [], initialPath: [0] } }, "wind", mixed);
+    expect(visible(filtered.section)).toEqual(["wind/utility"]);
+    expect(visible(filtered.navigation)).toEqual(["wind/utility"]);
+    for (const config of [{}, { wind: [] }] as SidebarsConfig[]) {
+      const { section, navigation } = both(config, "wind", mixed);
+      expect(visible(section)).toEqual(["wind"]);
+      expect(visible(navigation)).toEqual(["wind"]);
+    }
+  });
+});
