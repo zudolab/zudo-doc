@@ -80,7 +80,8 @@ export default defineConfig(
   const lock = hash(path.join(consumer, "pnpm-lock.yaml"));
   run("pnpm", ["install", "--frozen-lockfile"]);
   expect(hash(path.join(consumer, "pnpm-lock.yaml"))).toBe(lock);
-  run("pnpm", ["install"]);
+  // CI otherwise defaults to frozen installation whenever a lockfile exists.
+  run("pnpm", ["install", "--no-frozen-lockfile"]);
   expect(hash(path.join(consumer, "pnpm-lock.yaml"))).toBe(lock);
   const realpaths = Object.fromEntries(Object.keys(dependencies).map((name) => [name, realpathSync(path.join(consumer, "node_modules", name))]));
   for (const resolved of Object.values(realpaths)) expect(resolved.startsWith(consumer + path.sep)).toBe(true);
