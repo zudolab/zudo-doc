@@ -122,8 +122,15 @@ test("Back to a browser-created fragment entry restores page A, and Forward is r
   await openPageA(page);
   await followNativeFragment(page);
 
+  // Leave A through the link beside the target so the click needs no scroll:
+  // Back restores the scroll position A was left at, which is then the fragment.
+  const continueLink = page.getByRole("link", { name: "Continue to fragment page B" });
+  await expect(continueLink).toBeInViewport();
+  const departureScrollY = await page.evaluate(() => scrollY);
+  expect(departureScrollY, "the fragment entry is scrolled past the first viewport").toBeGreaterThan(0);
+
   const beforeSoftNav = await currentSequence(page);
-  await page.getByRole("link", { name: "Navigate to fragment page B" }).click();
+  await continueLink.click();
   await waitForPageLoadAfter(page, beforeSoftNav);
   await expect(page).toHaveURL(new RegExp(`${PAGE_B}/?$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADING_B);
@@ -134,6 +141,12 @@ test("Back to a browser-created fragment entry restores page A, and Forward is r
   await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#fragment-target$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADING_A);
   await expect(page.getByRole("heading", { name: "Fragment target" })).toBeInViewport();
+  // scrollY is fractional; the restored value may round to the neighbouring pixel.
+  const restoredScrollY = await page.evaluate(() => scrollY);
+  expect(
+    Math.abs(restoredScrollY - departureScrollY),
+    "Back restores the departure scroll",
+  ).toBeLessThanOrEqual(1);
   const backPreparation = (await eventsAfter(page, beforeBack)).filter(
     (event) => event.name === "zfb:before-preparation",
   );
