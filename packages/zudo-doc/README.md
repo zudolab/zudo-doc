@@ -108,8 +108,8 @@ If your project renders **semi-trusted or user-submitted** HTML in a preview, ov
 ## 6.0 migration and peers
 
 **6.0.0** is the coordinated major release of `@takazudo/zudo-doc`,
-`@takazudo/zudo-doc-history-server` and `create-zudo-doc`. It targets the
-published **zfb 4.3.3** family (peer floor **^4.3.3**).
+`@takazudo/zudo-doc-history-server` and `create-zudo-doc`. The current workspace
+targets the published **zfb 4.4.0** family (peer floor **^4.4.0**).
 [Upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) is
 resolved; its strict published 4.3.1 consumer control passed 3/3 with no skips or
 retries in the [source-bound verification](../../docs/findings/zfb-4.3.1/verification.md).

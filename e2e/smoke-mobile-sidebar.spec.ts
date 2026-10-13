@@ -179,6 +179,10 @@ test.describe("Mobile sidebar", () => {
       const active = document.activeElement as HTMLElement | null;
       return active ? `${active.tagName}|${active.getAttribute("aria-label") ?? ""}|${active.textContent?.trim().slice(0, 40)}` : "";
     });
+    // Opening moves focus into the menu after the click resolves; a key pressed
+    // before that lands on the trigger instead of the menu.
+    const expectFocusInsideMenu = () =>
+      expect.poll(() => menu.evaluate((node) => node.contains(document.activeElement))).toBe(true);
     await appearanceTrigger.scrollIntoViewIfNeeded();
     const before = await readScrollState(page);
 
@@ -191,6 +195,7 @@ test.describe("Mobile sidebar", () => {
     await appearanceTrigger.click();
     await expect(menu).toBeVisible();
     expectNaturalFit(await measureAppearanceMenu(menu, appearanceTrigger), "Dark");
+    await expectFocusInsideMenu();
     await page.keyboard.press("Tab");
     await expect(menu).toHaveCount(0);
     expect(await activeMarker()).toBe(afterTrigger);
@@ -198,6 +203,7 @@ test.describe("Mobile sidebar", () => {
 
     await appearanceTrigger.click();
     await expect(menu).toBeVisible();
+    await expectFocusInsideMenu();
     await page.keyboard.press("Shift+Tab");
     await expect(menu).toHaveCount(0);
     await expect(appearanceTrigger).toBeFocused();
