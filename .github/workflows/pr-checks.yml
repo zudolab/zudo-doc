@@ -1121,6 +1121,19 @@ jobs:
       - name: Run E2E & smoke tests
         run: pnpm test:e2e:ci
 
+      # #4573: reuse the built fixture for real CDN/SPA/theme/enlarge repetitions.
+      # Keep the full-suite report and retry traces intact for the existing
+      # flake reporter and artifact uploads below. This step is blocking.
+      - name: Repeat Mermaid browser acceptance without retries
+        run: >-
+          pnpm exec playwright test
+          e2e/smoke-mermaid-spa.spec.ts e2e/smoke-mermaid-enlarge.spec.ts
+          --project smoke --retries=0 --repeat-each=3 --workers=1
+          --output=test-results/mermaid-repeat
+        env:
+          E2E_FIXTURES: smoke
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-report/mermaid-repeat.json
+
       - name: Report retry flakes
         if: always()
         run: node scripts/report-retry-flakes.mjs
