@@ -1256,6 +1256,13 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // preserved every normalized byte. References therefore live outside the
   // linked package, retaining all native metadata/comments in the fingerprint.
   // This is a bounded A2 review, not final browser/release acceptance.
+  //
+  // 2026-10-13 rebaseline intent (#4573), pending capture review:
+  // the exact browser Mermaid URL changes from 11.15.0 to 11.17.2, and
+  // tracked-package changes also change native build identity. Any reference
+  // update requires per-page causal evidence at
+  // docs/findings/4573-mermaid/a2-causal-review.md. This comment records intent,
+  // not completed review; retain strict normalization and approvedBaseline.
   it.each(["404.html", "docs/getting-started/index.html", "docs/getting-started/coverage/index.html"])(
     "native transport: %s retains coherent owned-runtime metadata",
     (page) => {
