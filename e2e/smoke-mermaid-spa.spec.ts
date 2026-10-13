@@ -37,6 +37,39 @@ const POST_DEBOUNCE_WAIT_MS = 700;
 const DIAGRAM_SVG = "svg.flowchart";
 
 test.describe("Mermaid: SPA soft-navigation regression (#2181)", () => {
+  test("does not request Mermaid on a diagram-free page (#4573)", async ({ page, assertNoConsoleErrors }) => {
+    const requests: string[] = [];
+    page.on("request", (request) => {
+      if (/esm\.sh\/mermaid@/.test(request.url())) requests.push(request.url());
+    });
+    await page.goto(AWAY_PAGE, { waitUntil: "load" });
+    await expect(page.locator("main")).toContainText("Writing Docs");
+    await expect(page.locator("[data-mermaid]")).toHaveCount(0);
+    expect(requests).toEqual([]);
+    assertNoConsoleErrors();
+  });
+
+  test("repeated theme and token changes regenerate genuine diagrams (#4573)", async ({ page, assertNoConsoleErrors }) => {
+    const moduleResponse = page.waitForResponse("https://esm.sh/mermaid@11.17.2");
+    await page.goto(MERMAID_PAGE, { waitUntil: "load" });
+    expect((await moduleResponse).ok()).toBe(true);
+    const svg = page.locator("[data-mermaid-rendered] svg.flowchart");
+    await expect(svg).toBeVisible({ timeout: 30_000 });
+    for (const [theme, color, fill] of [["light", "#123456", "rgb(18, 52, 86)"], ["dark", "#abcdef", "rgb(171, 205, 239)"], ["light", "#654321", "rgb(101, 67, 33)"]] as const) {
+      const previousId = await svg.getAttribute("id");
+      await page.evaluate(({ theme, color }) => {
+        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.style.setProperty("--zd-mermaid-node-bg", color);
+      }, { theme, color });
+      await expect(svg).toHaveCount(1);
+      await expect(svg).not.toHaveAttribute("id", previousId!);
+      await expect(svg.locator(".node")).not.toHaveCount(0);
+      await expect(svg).toContainText("Start");
+      await expect(svg.locator(".node rect").first()).toHaveCSS("fill", fill);
+      await expect(page.locator("[data-mermaid-rendered] .zd-enlarge-btn")).toHaveCount(1);
+    }
+    assertNoConsoleErrors();
+  });
   test("mermaid diagram stays rendered after SPA nav away-and-back", async ({
     page,
     assertNoConsoleErrors,

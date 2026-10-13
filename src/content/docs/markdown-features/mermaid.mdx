@@ -103,6 +103,12 @@ At build time the markdown pipeline replaces the `<pre><code class="language-mer
 
 See the [Mermaid documentation](https://mermaid.js.org/) for every supported diagram type (flowcharts, sequence, state, class, gantt, and more).
 
+## Browser delivery
+
+The unreleased default imports `https://esm.sh/mermaid@11.17.2` only when a page contains a diagram. This exact 11.x pin includes the fixes released in Mermaid 11.16.1; it does not change the copy in the published zudo-doc 6.1.1 package. Source integration and npm publication are separate.
+
+Rendering requires access to esm.sh and its remote dependencies. A host’s npm audit cannot inspect that graph, including Mermaid’s separate KaTeX dependency; upgrading the host’s KaTeX does not update the CDN copy. The exact Mermaid pin does not lock every transitive URL. A custom URL passed to `buildMermaidInitScript` remains the host’s responsibility.
+
 ## See also
 
 - [Mermaid Diagrams component](../components/mermaid-diagrams.mdx) — the visual/interaction showcase for the enlarge and zoom/pan dialog
