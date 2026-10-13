@@ -11,3 +11,7 @@ sidebar_position: 1138
 ### Bug Fixes
 
 - The desktop sidebar and the mobile drawer each keep their scroll offset across client navigation, a full document load, reload, and Back/Forward, including after Broaden. Restoration runs after the destination tree can hold the offset, so a replaced sidebar or a temporary empty tree does not snap back to the top. A saved zero is restored. A missing snapshot is not written as zero. A closed drawer keeps its saved offset in history until it opens again. Article scroll, focus, filtering, and disclosure are left unchanged. (418b2f29c)
+
+### Other Changes
+
+- Requires zfb 4.4.0: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.3.3` to `^4.4.0`. zfb 4.4.0 updates its YAML frontmatter parser, and its client router now restores the right page after a same-page fragment link, a client navigation to another page, and Back; Forward keeps its direction. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 4.4.0 together with this release.
