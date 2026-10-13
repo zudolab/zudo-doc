@@ -94,7 +94,7 @@ test.describe("smart-break: visual wrapping on narrow viewports", () => {
     ).toBeVisible();
 
     const link = page.locator(
-      `header aside a[href$="/docs/guides/smart-break-test"]`,
+      `header aside a[href="${TEST_PAGE}"]`,
     );
     await expect(link).toBeVisible();
 
@@ -299,7 +299,7 @@ test.describe("smart-break: copy-paste byte-identity", () => {
     // Select the smart-broken label span inside the test-page link.
     await tagFirst(
       page,
-      `header aside a[href$="/docs/guides/smart-break-test"] span`,
+      `header aside a[href="${TEST_PAGE}"] span`,
       `return el.querySelectorAll("wbr").length > 0;`,
       "sb-sidebar-label",
     );
