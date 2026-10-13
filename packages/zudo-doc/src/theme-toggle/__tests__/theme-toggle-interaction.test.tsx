@@ -46,6 +46,7 @@ afterEach(() => {
   localStorage.clear();
   delete (window as unknown as Record<string, unknown>)[COLOR_SCHEME_RUNTIME_GLOBAL];
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("ThemeToggle appearance menu", () => {

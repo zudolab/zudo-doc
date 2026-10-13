@@ -83,6 +83,18 @@ function AppearanceMenu({ id, labels, preference, deviceMode, activeIndex, trigg
   const systemDescriptionId = `${id}-system-desc`;
   const placement = signal({ visibility: "hidden", left: "0px", top: "0px", right: "auto", bottom: "auto", margin: "0", width: `${MENU_WIDTH_REM}rem`, "max-height": "none", overflow: "visible" });
 
+  // preventScroll keeps the document still, so reveal the row inside a last-resort scrolling menu by hand.
+  const focusItem = (index: number) => {
+    const item = itemRefs[index]?.current;
+    const menu = menuRef.current;
+    if (!item) return;
+    item.focus({ preventScroll: true });
+    if (!menu || menu.scrollHeight <= menu.clientHeight) return;
+    const bottom = item.offsetTop + item.offsetHeight;
+    if (item.offsetTop < menu.scrollTop) menu.scrollTop = item.offsetTop;
+    else if (bottom > menu.scrollTop + menu.clientHeight) menu.scrollTop = bottom - menu.clientHeight;
+  };
+
   scope.onActivate(() => {
     const menu = menuRef.current;
     if (!menu) return;
@@ -94,10 +106,10 @@ function AppearanceMenu({ id, labels, preference, deviceMode, activeIndex, trigg
       const viewport = viewportSize();
       const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const width = Math.max(0, Math.min(MENU_WIDTH_REM * rootFontSize, viewport.width - gap * 2));
-      // Measure the natural border-box height at the final width before placing.
+      // Measure the natural border-box height at the final width before placing. Read it as
+      // content + chrome instead of lifting max-height, which would clamp a scrolled menu to 0.
       menu.style.width = `${width}px`;
-      menu.style.maxHeight = "none";
-      const height = menu.offsetHeight;
+      const height = menu.scrollHeight + menu.offsetHeight - menu.clientHeight;
       const roomBelow = viewport.height - rect.bottom - gap * 2;
       const roomAbove = rect.top - gap * 2;
       const above = height > roomBelow && roomAbove > roomBelow;
@@ -117,17 +129,18 @@ function AppearanceMenu({ id, labels, preference, deviceMode, activeIndex, trigg
       if (!rootRef.current?.contains(event.target as Node) && !menu.contains(event.target as Node)) close();
     };
     const onNavigate = () => close();
+    const onScroll = (event: Event) => { if (event.target !== menu) position(); };
     position();
     // The placement signal commits visibility after this activation callback.
     // Focus only after the visible popover has reached the browser layout.
     const focusFrame = requestAnimationFrame(() => {
-      if (!scope.abortSignal.aborted) itemRefs[activeIndex.value]?.current?.focus({ preventScroll: true });
+      if (!scope.abortSignal.aborted) focusItem(activeIndex.value);
     });
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => position());
     resizeObserver?.observe(menu);
     document.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("resize", position);
-    window.addEventListener("scroll", position, true);
+    window.addEventListener("scroll", onScroll, true);
     document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
     return () => {
       cancelAnimationFrame(focusFrame);
@@ -135,7 +148,7 @@ function AppearanceMenu({ id, labels, preference, deviceMode, activeIndex, trigg
       if (menu.hidePopover && menu.matches(":popover-open")) menu.hidePopover();
       document.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("resize", position);
-      window.removeEventListener("scroll", position, true);
+      window.removeEventListener("scroll", onScroll, true);
       document.removeEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
     };
   });
@@ -153,7 +166,7 @@ function AppearanceMenu({ id, labels, preference, deviceMode, activeIndex, trigg
       keyboard.preventDefault();
       const next = keyboard.key === "Home" ? 0 : keyboard.key === "End" ? 2 : activeIndex.value + (keyboard.key === "ArrowDown" ? 1 : -1);
       move(next);
-      itemRefs[(next + preferences.length) % preferences.length]?.current?.focus({ preventScroll: true });
+      focusItem((next + preferences.length) % preferences.length);
     }
   };
 
