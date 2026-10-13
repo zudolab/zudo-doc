@@ -162,7 +162,7 @@ function AppearanceMenu({ id, labels, preference, deviceMode, activeIndex, trigg
     class="fixed z-tooltip flex flex-col gap-hsp-2xs rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
     style={placement} popover="manual">
     {preferences.map((option, index) => <button ref={itemRefs[index]} type="button"
-      role="menuitemradio" aria-checked={computed(() => preference.value === option)}
+      role="menuitemradio" tabindex={-1} aria-checked={computed(() => preference.value === option)}
       aria-describedby={option === "system" ? systemDescriptionId : undefined}
       on:focus={() => move(index)} on:click={() => select(option)}
       class={computed(() => `flex min-h-[44px] w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small ${preference.value === option ? "bg-accent/10" : "hover:bg-accent/5"} focus-visible:outline-2 focus-visible:outline-accent`)}>

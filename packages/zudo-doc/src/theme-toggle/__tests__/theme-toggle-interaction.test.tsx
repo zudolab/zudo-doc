@@ -79,6 +79,8 @@ describe("ThemeToggle appearance menu", () => {
     expect(systemDescription(root)?.textContent?.trim()).toBe("Follows device · currently Dark");
     expect(systemDescription(root)?.hasAttribute("hidden")).toBe(true);
     expect(light!.hasAttribute("aria-describedby")).toBe(false);
+    // Rows are reached with arrows; Tab / Shift+Tab leave the menu instead of cycling rows.
+    expect(items(root).map((item) => item.getAttribute("tabindex"))).toEqual(["-1", "-1", "-1"]);
     // Selected state is a subtle fill + check; focus is a separate focus-visible outline.
     expect(system!.className).toContain("bg-accent/10");
     expect(light!.className).not.toContain("bg-accent/10");

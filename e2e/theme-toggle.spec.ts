@@ -13,8 +13,16 @@ import {
 } from "./theme-helpers";
 
 import { spaClick } from "./nav-helpers";
+import {
+  classicScrollbarGutter,
+  expectNaturalFit,
+  measureAppearanceMenu,
+  readScrollState,
+  visibleAppearanceTrigger,
+} from "./appearance-geometry";
 
 const HOME = "/";
+const DOC = "/docs/getting-started";
 
 test.describe("Appearance menu", () => {
   // Use the shared `page` fixture so assertNoConsoleErrors() observes the
@@ -76,7 +84,12 @@ test.describe("Appearance menu", () => {
     expect(triggerBox!.width).toBe(40);
     expect(triggerBox!.height).toBe(40);
     expect(optionBox!.height).toBeGreaterThanOrEqual(44);
-    await expect(appearanceMenu(page)).toContainText("Follows device · currently Dark");
+    // R1-A: no visible footer; the device mode is inline in the System row and
+    // the full helper is the System option's accessible description.
+    await expect(appearanceMenu(page)).not.toContainText("Follows device");
+    await expect(selectedSystemOption).toHaveAccessibleName("System");
+    await expect(selectedSystemOption).toHaveAccessibleDescription("Follows device · currently Dark");
+    await expect(selectedSystemOption.locator("[data-zd-device-mode]")).toHaveText("Dark");
     await page.keyboard.press("Escape");
     await expect(appearanceMenu(page)).toBeHidden();
     await expect(trigger).toBeFocused();
@@ -170,4 +183,104 @@ test.describe("Appearance menu", () => {
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     assertNoConsoleErrors();
   });
+
+  test("keeps the inline device status truthful under a manual preference", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.addInitScript((key) => {
+      localStorage.setItem(key, "light");
+    }, THEME_STORAGE_KEY);
+    await page.goto(HOME, { waitUntil: "load" });
+    await waitForAllThemePreferences(page, "light");
+
+    await openAppearanceMenu(page);
+    const system = appearanceOption(page, "system");
+    await expect(appearanceOption(page, "light")).toHaveAttribute("aria-checked", "true");
+    await expect(system.locator("[data-zd-device-mode]")).toHaveText("Dark");
+
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(system.locator("[data-zd-device-mode]")).toHaveText("Light");
+    await expect(system).toHaveAccessibleDescription("Follows device · currently Light");
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(system.locator("[data-zd-device-mode]")).toHaveText("Dark");
+    // The device change never touches the manual page theme or preference.
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await waitForAllThemePreferences(page, "light");
+    await waitForStoredThemePreference(page, "light");
+    assertNoConsoleErrors();
+  });
+
+  test("open, arrow, select and Escape keep the document scroll position", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(DOC, { waitUntil: "load" });
+    await waitForThemePreference(page, "system");
+    await page.evaluate(() => window.scrollTo(0, 200));
+    const before = await readScrollState(page);
+    const trigger = appearanceTrigger(page);
+
+    await openAppearanceMenu(page, trigger);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Escape");
+    await expect(appearanceMenu(page)).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(appearanceMenu(page)).toBeVisible();
+    await page.keyboard.press("Home");
+    await page.keyboard.press("Enter");
+    await expect(appearanceMenu(page)).toBeHidden();
+    await waitForThemePreference(page, "light");
+    await openAppearanceMenu(page, trigger);
+    await appearanceOption(page, "system").click();
+    await expect(appearanceMenu(page)).toBeHidden();
+    expect(await readScrollState(page)).toEqual(before);
+  });
+
+  test("sizes naturally with enlarged root text", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto(DOC, { waitUntil: "load" });
+    await waitForThemePreference(page, "system");
+    // 200% root text: rem-based rows and the rem-based menu width grow naturally.
+    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+    const trigger = await visibleAppearanceTrigger(page);
+    await openAppearanceMenu(page, trigger);
+    const geometry = await measureAppearanceMenu(appearanceMenu(page), trigger);
+    expectNaturalFit(geometry, "Dark");
+    expect(geometry.menu.width).toBeGreaterThan(236);
+  });
+});
+
+test.describe("Appearance popup geometry with classic scrollbars", () => {
+  // Playwright's headless Chromium hides scrollbars by default; drop that flag
+  // so the popup and page render real space-taking scrollbars (#4567).
+  test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
+
+  for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [568, 320]] as const) {
+    for (const scheme of ["light", "dark"] as const) {
+      test(`${width}x${height} ${scheme}: all rows fit without an inner scrollbar`, async ({ page }) => {
+        await page.setViewportSize({ width, height });
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.goto(DOC, { waitUntil: "load" });
+        expect(await classicScrollbarGutter(page)).toBeGreaterThan(0);
+        await expect(appearanceTriggers(page).first()).not.toHaveAttribute("aria-disabled", "true", { timeout: 10000 });
+
+        const trigger = await visibleAppearanceTrigger(page);
+        const before = await readScrollState(page);
+        await openAppearanceMenu(page, trigger);
+        const geometry = await measureAppearanceMenu(appearanceMenu(page), trigger);
+        expectNaturalFit(geometry, scheme === "dark" ? "Dark" : "Light");
+        if (height === 320) {
+          // The drawer's sidebar-footer trigger sits at the bottom edge here,
+          // so the menu must open above it rather than be clipped below.
+          expect(geometry.menu.bottom).toBeLessThanOrEqual(geometry.trigger.top);
+        }
+        await page.keyboard.press("Escape");
+        await expect(appearanceMenu(page)).toBeHidden();
+        await expect(trigger).toBeFocused();
+        expect(await readScrollState(page)).toEqual(before);
+      });
+    }
+  }
 });

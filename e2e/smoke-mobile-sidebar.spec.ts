@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { openMobileDrawer } from "./mobile-drawer-helpers";
+import { expectNaturalFit, measureAppearanceMenu, readScrollState } from "./appearance-geometry";
 
 /**
  * E2E tests for the mobile sidebar (SidebarToggle React island).
@@ -156,6 +157,46 @@ test.describe("Mobile sidebar", () => {
     await expect(menu).toHaveCount(0);
     await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
     await expect(appearanceTrigger).toBeFocused();
+  });
+
+  // zudolab/zudo-doc#4567: the sidebar-footer Appearance instance fits the
+  // drawer viewport naturally, and Tab / Shift+Tab out of it close the menu
+  // without escaping the drawer or scrolling it.
+  test("sidebar-footer Appearance fits, and Tab / Shift+Tab stay inside the drawer", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+    await openMobileDrawer(page);
+
+    const drawerFocus = () => page.evaluate(() => {
+      const active = document.activeElement;
+      return Boolean(active && (active.closest("[data-zd-mobile-sidebar]") || active.getAttribute("aria-label") === "Close sidebar"));
+    });
+    const appearanceTrigger = page.locator(
+      '[data-zd-mobile-sidebar] [data-zd-theme-menu] > button[aria-haspopup="menu"]',
+    );
+    const menu = page.getByRole("menu", { name: "Appearance", exact: true });
+    await appearanceTrigger.scrollIntoViewIfNeeded();
+    const before = await readScrollState(page);
+
+    await appearanceTrigger.click();
+    await expect(menu).toBeVisible();
+    expectNaturalFit(await measureAppearanceMenu(menu, appearanceTrigger), "Dark");
+
+    await page.keyboard.press("Tab");
+    await expect(menu).toHaveCount(0);
+    expect(await drawerFocus()).toBe(true);
+    await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
+
+    await appearanceTrigger.click();
+    await expect(menu).toBeVisible();
+    await page.keyboard.press("Shift+Tab");
+    await expect(menu).toHaveCount(0);
+    expect(await drawerFocus()).toBe(true);
+    await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
+    expect(await readScrollState(page)).toEqual(before);
   });
 
   // zudolab/zudo-doc#4369: the open drawer's toggle shows the X and is the
