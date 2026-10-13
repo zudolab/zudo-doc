@@ -56,6 +56,9 @@ test.beforeAll(async ({}, testInfo) => {
     }
     writeFileSync(path.join(target, "getting-started.mdx"), "---\ntitle: Getting Started\n---\n\nConsumer mount control.\n");
   }
+  cpSync(path.join(root, "packages/create-zudo-doc/templates/base/public"), path.join(consumer, "public"), { recursive: true });
+  mkdirSync(path.join(consumer, "src/styles"), { recursive: true });
+  cpSync(path.join(root, "packages/create-zudo-doc/templates/base/src/styles/global.css"), path.join(consumer, "src/styles/global.css"));
   writeFileSync(path.join(consumer, "tsconfig.json"), JSON.stringify({ extends: "@takazudo/zudo-doc/tsconfig.base.json", include: ["src", "zfb.config.ts"] }));
   writeFileSync(path.join(consumer, "zfb.config.ts"), `import { defineConfig } from "@takazudo/zfb/config";
 import { zudoDoc } from "@takazudo/zudo-doc/config";
@@ -96,20 +99,46 @@ export default defineConfig(
   origin = `http://127.0.0.1:${port}`;
   server = spawn(process.execPath, [path.join(root, "scripts/zfb3-parity/installed-consumer/static-mount-server.mjs"), docroot, String(port)], { stdio: ["ignore", "pipe", "pipe"] });
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error("mount server did not become ready")), 10_000);
-    server!.once("error", reject);
-    server!.once("exit", (code) => reject(new Error(`mount server exited: ${code}`)));
-    server!.stdout!.once("data", () => { clearTimeout(timeout); resolve(); });
+    const finish = (error?: Error) => {
+      clearTimeout(timeout);
+      if (error) reject(error); else resolve();
+    };
+    const timeout = setTimeout(() => finish(new Error("mount server did not become ready")), 10_000);
+    server!.once("error", finish);
+    server!.once("exit", (code) => finish(new Error(`mount server exited: ${code}`)));
+    server!.stdout!.once("data", () => finish());
   });
 });
 
 test.afterAll(async () => {
-  if (server && server.exitCode === null) {
+  if (server?.pid && server.exitCode === null && server.signalCode === null) {
     const stopped = new Promise<void>((resolve) => server!.once("exit", () => resolve()));
     server.kill("SIGTERM");
     await stopped;
   }
   if (temp) rmSync(temp, { recursive: true, force: true });
+});
+
+let failedResponses: string[] = [];
+let assets: string[] = [];
+let documents: string[] = [];
+test.beforeEach(async ({ page }) => {
+  failedResponses = [];
+  assets = [];
+  documents = [];
+  page.on("response", (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+  page.on("request", (request) => {
+    if (["script", "stylesheet"].includes(request.resourceType())) assets.push(request.url());
+    if (request.resourceType() === "document") documents.push(request.url());
+  });
+});
+test.afterEach(() => {
+  expect(failedResponses, "the mounted consumer serves every requested resource").toEqual([]);
+  expect(assets.length).toBeGreaterThan(0);
+  for (const asset of assets) expect(asset.startsWith(`${origin}/manual/`)).toBe(true);
+  expect(documents, "history and soft navigation retain the original document").toHaveLength(1);
 });
 
 registerFragmentHistoryTests("/manual", () => origin);

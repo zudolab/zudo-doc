@@ -29,6 +29,9 @@ test.describe("Appearance popup geometry with classic scrollbars", () => {
           await openAppearanceMenu(page, trigger, locale);
           const geometry = await measureAppearanceMenu(appearanceMenu(page, locale), trigger);
           expectNaturalFit(geometry, locale === "ja" ? (scheme === "dark" ? "ダーク" : "ライト") : (scheme === "dark" ? "Dark" : "Light"));
+          if (width === 1440 && height === 900) {
+            expect(geometry.menu.top).toBeGreaterThanOrEqual(geometry.trigger.bottom);
+          }
           if (height === 320) {
             // The drawer's sidebar-footer trigger sits at the bottom edge here,
             // so the menu must open above it rather than be clipped below.

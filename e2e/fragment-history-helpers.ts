@@ -25,6 +25,7 @@ export function registerFragmentHistoryTests(base = "", origin: () => string = (
       const labels = fragmentLocales[locale];
       const PAGE_A = `${base}${locale === "ja" ? "/ja" : ""}/docs/router-fragment-a`;
       const PAGE_B = `${base}${locale === "ja" ? "/ja" : ""}/docs/router-fragment-b`;
+      const FRAGMENT_HASH = locale === "ja" ? encodeURIComponent("フラグメントの移動先") : "fragment-target";
       const HEADING_A = labels.headingA;
       const HEADING_B = labels.headingB;
 
@@ -102,7 +103,7 @@ export function registerFragmentHistoryTests(base = "", origin: () => string = (
 
       async function followNativeFragment(page: Page): Promise<void> {
         await page.getByRole("link", { name: labels.jump }).click();
-        await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#fragment-target$`));
+        await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#${FRAGMENT_HASH}$`));
         await expect(page.getByRole("heading", { name: labels.target })).toBeInViewport();
       }
 
@@ -136,10 +137,14 @@ export function registerFragmentHistoryTests(base = "", origin: () => string = (
         // Leave A through the link beside the target so the click needs no scroll:
         // Back restores the scroll position A was left at, which is then the fragment.
         const continueLink = page.getByRole("link", { name: labels.continue });
-        await expect(continueLink).toBeInViewport();
+        await expect(continueLink).toBeInViewport({ ratio: 1 });
         const departureScrollY = await page.evaluate(() => scrollY);
         expect(departureScrollY, "the fragment entry is scrolled past the first viewport").toBeGreaterThan(0);
 
+        // Verify the actual input-event departure, not only a pre-click sample.
+        await continueLink.evaluate((link) => link.addEventListener("pointerdown", () => {
+          (window as Window & { __actualDepartureScrollY?: number }).__actualDepartureScrollY = scrollY;
+        }, { once: true }));
         const beforeSoftNav = await currentSequence(page);
         await continueLink.click();
         await waitForPageLoadAfter(page, beforeSoftNav);
@@ -150,14 +155,17 @@ export function registerFragmentHistoryTests(base = "", origin: () => string = (
         const beforeBack = await currentSequence(page);
         await page.goBack();
         await waitForPageLoadAfter(page, beforeBack);
-        await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#fragment-target$`));
+        await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#${FRAGMENT_HASH}$`));
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADING_A);
         await expect(page.getByText(labels.contentA, { exact: true })).toBeVisible();
         await expect(page.getByRole("heading", { name: labels.target })).toBeInViewport();
         // scrollY is fractional; the restored value may round to the neighbouring pixel.
         const restoredScrollY = await page.evaluate(() => scrollY);
+        const actualDepartureScrollY = await page.evaluate(() =>
+          (window as Window & { __actualDepartureScrollY?: number }).__actualDepartureScrollY);
+        expect(actualDepartureScrollY, "the adjacent link click must not auto-scroll").toBe(departureScrollY);
         expect(
-          Math.abs(restoredScrollY - departureScrollY),
+          Math.abs(restoredScrollY - actualDepartureScrollY!),
           "Back restores the departure scroll",
         ).toBeLessThanOrEqual(1);
         const backPreparation = (await eventsAfter(page, beforeBack)).filter(
@@ -191,7 +199,7 @@ export function registerFragmentHistoryTests(base = "", origin: () => string = (
         await page.goBack();
         await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?$`));
         await page.goForward();
-        await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#fragment-target$`));
+        await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#${FRAGMENT_HASH}$`));
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADING_A);
         await expect(page.getByText(labels.contentA, { exact: true })).toBeVisible();
         await expectOnlyKnownNavigationAfter(page, before);
