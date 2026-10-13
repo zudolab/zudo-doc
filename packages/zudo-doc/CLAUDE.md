@@ -296,8 +296,9 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 ## Shipped CSS artifacts and Wind manifest
 
 The current engine tuple is published zfb family **4.4.0**, peers **^4.4.0**.
-The coordinated zudo-doc/create-zudo-doc **6.0.0 is published** (all three packages at
-6.0.0 on npm `latest`; history-server peer floor `^6.0.0`) — see the
+The three lockstep packages are **6.1.1 on npm `latest`**, requiring ZFB 4.3.3.
+Main's ZFB 4.4.0 adoption is unreleased; the history-server peer floor remains
+`^6.0.0`. The original 6.0.0 migration evidence is in the
 [6.0.0 publication record](../../docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
 Upstream zfb #4097 is resolved; its strict published
 4.3.1 consumer control passed 3/3 with no skips or retries in the
