@@ -96,6 +96,25 @@ async function followNativeFragment(page: Page): Promise<void> {
   await expect(page.getByRole("heading", { name: "Fragment target" })).toBeInViewport();
 }
 
+/**
+ * Proves the preceding browser-owned traversal produced no router work. A
+ * negative check read straight after a URL assertion could miss a late
+ * (fetch- or microtask-deferred) preparation, so instead drive one known soft
+ * navigation and wait for its page-load: any stale router work queued before it
+ * would appear in the log ahead of B's single preparation.
+ */
+async function expectOnlyKnownNavigationAfter(page: Page, before: number): Promise<void> {
+  await page.getByRole("link", { name: "Navigate to fragment page B" }).click();
+  await waitForPageLoadAfter(page, before);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADING_B);
+  const preparations = (await eventsAfter(page, before)).filter(
+    (event) => event.name === "zfb:before-preparation",
+  );
+  expect(preparations.map((event) => event.to), "only the known navigation prepares").toEqual([
+    expect.stringMatching(new RegExp(`^${PAGE_B}/?$`)),
+  ]);
+}
+
 test("Back to a browser-created fragment entry restores page A, and Forward is reported forward", async ({
   page,
   assertNoConsoleErrors,
@@ -147,7 +166,7 @@ test("same-page native fragment Back/Forward stays browser-owned", async ({
   await page.goForward();
   await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?#fragment-target$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADING_A);
-  expect(await eventsAfter(page, before), "no preparation, swap or page-load").toEqual([]);
+  await expectOnlyKnownNavigationAfter(page, before);
   assertNoConsoleErrors();
 });
 
@@ -173,7 +192,7 @@ test("app-owned null-state query entries on the same pathname stay no-fetch/no-s
   await page.goForward();
   await expect(page).toHaveURL(new RegExp(`${PAGE_A}/?\\?q=second$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADING_A);
-  expect(await eventsAfter(page, before), "no preparation, swap or page-load").toEqual([]);
+  await expectOnlyKnownNavigationAfter(page, before);
   expect(
     documentRequests.filter((url) => new URL(url).pathname.startsWith(PAGE_A)),
     "no page fetch",
