@@ -5,7 +5,6 @@ import { hydrationPending } from "../hydration-pending.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import {
   applyThemePreference,
-  readColorSchemeFromDom,
   readThemePreference,
   subscribeColorSchemeChanged,
   subscribeThemePreferenceChanged,
@@ -56,7 +55,7 @@ interface AppearanceMenuProps {
   id: string;
   labels: ThemeToggleLabels;
   preference: ReadonlySignal<ThemePreference>;
-  resolved: ReadonlySignal<ColorSchemeMode>;
+  deviceMode: ReadonlySignal<ColorSchemeMode>;
   activeIndex: ReadonlySignal<number>;
   triggerRef: Ref<HTMLButtonElement>;
   rootRef: Ref<HTMLDivElement>;
@@ -65,11 +64,36 @@ interface AppearanceMenuProps {
   move: (index: number) => void;
 }
 
-function AppearanceMenu({ id, labels, preference, resolved, activeIndex, triggerRef, rootRef, close, select, move }: AppearanceMenuProps) {
+const MENU_WIDTH_REM = 14.75;
+const VIEWPORT_GAP = 8;
+
+function viewportSize() {
+  const root = document.documentElement;
+  // clientWidth/Height exclude classic scrollbars; innerWidth/Height include them.
+  return {
+    width: Math.min(window.innerWidth, root.clientWidth || window.innerWidth),
+    height: Math.min(window.innerHeight, root.clientHeight || window.innerHeight),
+  };
+}
+
+function AppearanceMenu({ id, labels, preference, deviceMode, activeIndex, triggerRef, rootRef, close, select, move }: AppearanceMenuProps) {
   const scope = getScope();
   const menuRef: Ref<HTMLDivElement> = { current: null };
   const itemRefs: Ref<HTMLButtonElement>[] = preferences.map(() => ({ current: null }));
-  const placement = signal({ visibility: "hidden", left: "0px", top: "0px", right: "auto", bottom: "auto", margin: "0", width: "260px", "max-height": "none" });
+  const systemDescriptionId = `${id}-system-desc`;
+  const placement = signal({ visibility: "hidden", left: "0px", top: "0px", right: "auto", bottom: "auto", margin: "0", width: `${MENU_WIDTH_REM}rem`, "max-height": "none", overflow: "visible" });
+
+  // preventScroll keeps the document still, so reveal the row inside a last-resort scrolling menu by hand.
+  const focusItem = (index: number) => {
+    const item = itemRefs[index]?.current;
+    const menu = menuRef.current;
+    if (!item) return;
+    item.focus({ preventScroll: true });
+    if (!menu || menu.scrollHeight <= menu.clientHeight) return;
+    const bottom = item.offsetTop + item.offsetHeight;
+    if (item.offsetTop < menu.scrollTop) menu.scrollTop = item.offsetTop;
+    else if (bottom > menu.scrollTop + menu.clientHeight) menu.scrollTop = bottom - menu.clientHeight;
+  };
 
   scope.onActivate(() => {
     const menu = menuRef.current;
@@ -78,37 +102,53 @@ function AppearanceMenu({ id, labels, preference, resolved, activeIndex, trigger
     const position = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const gap = 8;
-      const width = Math.max(0, Math.min(260, window.innerWidth - gap * 2));
-      const desiredHeight = menu.scrollHeight || 280;
-      const roomBelow = window.innerHeight - rect.bottom - gap * 2;
+      const gap = VIEWPORT_GAP;
+      const viewport = viewportSize();
+      const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const width = Math.max(0, Math.min(MENU_WIDTH_REM * rootFontSize, viewport.width - gap * 2));
+      // Measure the natural border-box height at the final width before placing. Read it as
+      // content + chrome instead of lifting max-height, which would clamp a scrolled menu to 0.
+      menu.style.width = `${width}px`;
+      const height = menu.scrollHeight + menu.offsetHeight - menu.clientHeight;
+      const roomBelow = viewport.height - rect.bottom - gap * 2;
       const roomAbove = rect.top - gap * 2;
-      const above = roomBelow < desiredHeight && roomAbove > roomBelow;
-      const maxHeight = Math.max(80, Math.min(desiredHeight, above ? roomAbove : roomBelow));
-      const left = Math.max(gap, Math.min(rect.right - width, window.innerWidth - width - gap));
-      const top = above ? Math.max(gap, rect.top - gap - maxHeight) : rect.bottom + gap;
-      placement.value = { visibility: "visible", left: `${left}px`, top: `${top}px`, right: "auto", bottom: "auto", margin: "0", width: `${width}px`, "max-height": `${maxHeight}px` };
+      const above = height > roomBelow && roomAbove > roomBelow;
+      const room = above ? roomAbove : roomBelow;
+      const fits = height <= viewport.height - gap * 2;
+      const shownHeight = fits ? height : viewport.height - gap * 2;
+      const preferredTop = above ? rect.top - gap - Math.min(height, room) : rect.bottom + gap;
+      const top = Math.max(gap, Math.min(preferredTop, viewport.height - gap - shownHeight));
+      const left = Math.max(gap, Math.min(rect.right - width, viewport.width - width - gap));
+      placement.value = {
+        visibility: "visible", left: `${left}px`, top: `${top}px`, right: "auto", bottom: "auto", margin: "0", width: `${width}px`,
+        // Scrolling is only a last resort when the natural menu is taller than the viewport.
+        "max-height": fits ? "none" : `${shownHeight}px`, overflow: fits ? "visible" : "auto",
+      };
     };
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node) && !menu.contains(event.target as Node)) close();
     };
     const onNavigate = () => close();
+    const onScroll = (event: Event) => { if (event.target !== menu) position(); };
     position();
     // The placement signal commits visibility after this activation callback.
     // Focus only after the visible popover has reached the browser layout.
     const focusFrame = requestAnimationFrame(() => {
-      if (!scope.abortSignal.aborted) itemRefs[activeIndex.value]?.current?.focus();
+      if (!scope.abortSignal.aborted) focusItem(activeIndex.value);
     });
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => position());
+    resizeObserver?.observe(menu);
     document.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("resize", position);
-    window.addEventListener("scroll", position, true);
+    window.addEventListener("scroll", onScroll, true);
     document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
     return () => {
       cancelAnimationFrame(focusFrame);
+      resizeObserver?.disconnect();
       if (menu.hidePopover && menu.matches(":popover-open")) menu.hidePopover();
       document.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("resize", position);
-      window.removeEventListener("scroll", position, true);
+      window.removeEventListener("scroll", onScroll, true);
       document.removeEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
     };
   });
@@ -126,26 +166,29 @@ function AppearanceMenu({ id, labels, preference, resolved, activeIndex, trigger
       keyboard.preventDefault();
       const next = keyboard.key === "Home" ? 0 : keyboard.key === "End" ? 2 : activeIndex.value + (keyboard.key === "ArrowDown" ? 1 : -1);
       move(next);
-      itemRefs[(next + preferences.length) % preferences.length]?.current?.focus();
+      focusItem((next + preferences.length) % preferences.length);
     }
   };
 
   return <div ref={menuRef} id={id} role="menu" aria-label={labels.appearance}
     on:keydown={onMenuKeyDown}
-    class="fixed z-tooltip overflow-y-auto rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
+    class="fixed z-tooltip flex flex-col gap-hsp-2xs rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
     style={placement} popover="manual">
-    <div class="px-hsp-sm py-vsp-xs text-small font-semibold" aria-hidden="true">{labels.appearance}</div>
     {preferences.map((option, index) => <button ref={itemRefs[index]} type="button"
-      role="menuitemradio" aria-checked={computed(() => preference.value === option)}
+      role="menuitemradio" tabindex={-1} aria-checked={computed(() => preference.value === option)}
+      aria-describedby={option === "system" ? systemDescriptionId : undefined}
       on:focus={() => move(index)} on:click={() => select(option)}
-      class={computed(() => `flex min-h-[44px] w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small ${preference.value === option ? "bg-accent/10" : ""} hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent`)}>
+      class={computed(() => `flex min-h-[44px] w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small ${preference.value === option ? "bg-accent/10" : "hover:bg-accent/5"} focus-visible:outline-2 focus-visible:outline-accent`)}>
       <PreferenceIcon preference={option} />
-      <span class="flex-1">{labels[option]}</span>
-      <span aria-hidden="true" class="text-accent">{computed(() => preference.value === option ? "✓" : "")}</span>
+      <span class="min-w-0 flex-1 break-words">{labels[option]}</span>
+      {option === "system"
+        ? <span aria-hidden="true" data-zd-device-mode="" class="shrink-0 text-caption text-muted">{computed(() => labels[deviceMode.value])}</span>
+        : null}
+      <span aria-hidden="true" class="w-[1.25rem] shrink-0 text-center text-accent">{computed(() => preference.value === option ? "✓" : "")}</span>
     </button>)}
-    <div class="px-hsp-sm py-vsp-xs text-small text-muted">
-      {computed(() => labels.systemHelper.replace("{mode}", labels[resolved.value]))}
-    </div>
+    <span id={systemDescriptionId} hidden>
+      {computed(() => labels.systemHelper.replace("{mode}", labels[deviceMode.value]))}
+    </span>
   </div>;
 }
 
@@ -156,34 +199,35 @@ export function ThemeToggle({ defaultMode = "dark", respectPrefersColorScheme = 
   const rootRef: Ref<HTMLDivElement> = { current: null };
   const triggerRef: Ref<HTMLButtonElement> = { current: null };
   const preference = signal<ThemePreference>(respectPrefersColorScheme ? "system" : defaultMode);
-  const resolved = signal<ColorSchemeMode>(defaultMode);
+  const deviceMode = signal<ColorSchemeMode>(defaultMode);
   const open = signal(false);
   const activeIndex = signal(0);
   let menuId = "";
   const ensureMenuId = () => { if (!menuId) menuId = `zd-appearance-${++menuSequence}`; };
 
   scope.onActivate(() => {
-    const sync = () => {
-      preference.value = readThemePreference(defaultMode, respectPrefersColorScheme);
-      resolved.value = readColorSchemeFromDom(defaultMode);
-    };
+    const sync = () => { preference.value = readThemePreference(defaultMode, respectPrefersColorScheme); };
     sync();
+    // The device mode is independent of the page theme: it stays truthful under a manual Light/Dark choice.
+    const deviceQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+    const syncDevice = () => { deviceMode.value = deviceQuery?.matches ? "dark" : "light"; };
+    if (deviceQuery) syncDevice();
+    deviceQuery?.addEventListener?.("change", syncDevice);
     const unsubscribePreference = subscribeThemePreferenceChanged(() => { sync(); open.value = false; });
     const unsubscribeScheme = subscribeColorSchemeChanged(sync);
-    return () => { unsubscribePreference(); unsubscribeScheme(); };
+    return () => { unsubscribePreference(); unsubscribeScheme(); deviceQuery?.removeEventListener?.("change", syncDevice); };
   });
 
   const close = (restoreFocus = false) => {
     open.value = false;
     if (restoreFocus) requestAnimationFrame(() => {
-      if (!scope.abortSignal.aborted && !open.value) triggerRef.current?.focus();
+      if (!scope.abortSignal.aborted && !open.value) triggerRef.current?.focus({ preventScroll: true });
     });
   };
   const select = (next: ThemePreference) => {
     close(true);
     applyThemePreference(next);
     preference.value = next;
-    resolved.value = readColorSchemeFromDom(defaultMode);
   };
   const move = (index: number) => { activeIndex.value = (index + preferences.length) % preferences.length; };
   const show = (index: number) => { ensureMenuId(); move(index); open.value = true; };
@@ -210,7 +254,7 @@ export function ThemeToggle({ defaultMode = "dark", respectPrefersColorScheme = 
       <Show when={computed(() => preference.value === "dark")}>{() => <PreferenceIcon preference="dark" />}</Show>
       <Show when={computed(() => preference.value === "system")}>{() => <PreferenceIcon preference="system" />}</Show>
     </button>
-    <Show when={open}>{() => <AppearanceMenu id={menuId} labels={labels} preference={preference} resolved={resolved} activeIndex={activeIndex} triggerRef={triggerRef} rootRef={rootRef} close={close} select={select} move={move} />}</Show>
+    <Show when={open}>{() => <AppearanceMenu id={menuId} labels={labels} preference={preference} deviceMode={deviceMode} activeIndex={activeIndex} triggerRef={triggerRef} rootRef={rootRef} close={close} select={select} move={move} />}</Show>
   </div>;
 }
 ThemeToggle.displayName = "ThemeToggle";
