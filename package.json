@@ -126,7 +126,7 @@
     "@takazudo/zfb-runtime": "4.4.0",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
-    "katex": "^0.16.38",
+    "katex": "^0.19.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

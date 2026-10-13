@@ -283,7 +283,7 @@ pre.hi-root .line .highlighted-word {
 }
 
 /* Make KaTeX respect our color scheme */
-.katex .base {
+.katex .katex-base {
   color: var(--zd-fg);
 }
 

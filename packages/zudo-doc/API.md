@@ -530,7 +530,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `llmsTxt` | `boolean` | Enable llms.txt generation |
 | `agentExport?` | `boolean` | Generate the package-owned static agent documentation feed; defaults to `false` |
 | `mcp?` | `boolean` | Enable the stateless read-only MCP endpoint; requires `agentExport: true` and defaults to `false` |
-| `math` | `boolean` | Enable KaTeX math rendering. Requires the optional peer `katex`; without it the build still succeeds, but rendering a `<MathBlock>` throws |
+| `math` | `boolean` | Enable KaTeX math rendering. Requires optional `katex` (`^0.18.2 || ^0.19.0`) and its local CSS; math-disabled builds succeed without it, but rendering a `<MathBlock>` throws during SSR/build |
 | `cjkFriendly` | `boolean` | Enable CJK-friendly typography |
 | `onBrokenMarkdownLinks` | `"warn" \| "error" \| "ignore"` | Severity for broken markdown links and site-absolute raw `<img src>` references: `warn` reports, `error` fails the build, and `ignore` skips checking. `srcset` is not checked. |
 | `aiAssistant` | `boolean` | Enable AI chat assistant |

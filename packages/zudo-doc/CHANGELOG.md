@@ -18,6 +18,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Other Changes
 
 - Requires zfb 4.4.0: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.3.3` to `^4.4.0`. zfb 4.4.0 updates its YAML frontmatter parser, and its client router now restores the right page after a same-page fragment link, a client navigation to another page, and Back; Forward keeps its direction. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 4.4.0 together with this release.
+- Raises the optional KaTeX peer floor to `^0.18.2 || ^0.19.0` for the GHSA-238p-pmpm-9mq7 patch; 0.16.x is no longer supported. Updates the internal KaTeX color selector while preserving server-only rendering, error fallback and math-disabled builds without KaTeX. Math-enabled hosts must install a supported version and import its local CSS. This compatibility-floor change requires release-policy review before publication; the npm fix remains unreleased.
 
 ## [6.1.1] - 2026-10-12
 

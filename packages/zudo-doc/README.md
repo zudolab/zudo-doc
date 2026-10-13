@@ -160,3 +160,18 @@ zfb CSS generation. Do not use physical package `dist/*.css` import paths.
 This package is published to npm as `@takazudo/zudo-doc` (since `0.2.0`, `latest` tracks the current line). Inside this repo the host site consumes it as a workspace package through its compiled `dist/` — `pnpm dev` at the repo root runs two watchers in parallel, `tsup --watch` for the JS and `tsc -p tsconfig.build.json --watch` for the `.d.ts`, so edits under `src/` rebuild both halves automatically; for a one-off rebuild use `pnpm --filter @takazudo/zudo-doc build`.
 
 zfb itself comes from npm (versions pinned in the root `package.json`). To develop against a local zfb checkout, use the temporary `pnpm.overrides` link escape hatch documented in root `CONTRIBUTING.md` — do not commit the override.
+
+### Optional math peer (unreleased compatibility floor)
+
+Math-enabled consumers install `katex@^0.19.0` (supported peer range:
+`^0.18.2 || ^0.19.0`) and import `katex/dist/katex.min.css` before
+`@takazudo/zudo-doc/features.css` in their CSS entry. CSS and fonts are bundled
+locally. The consumer matrix covers 0.18.2, 0.18.11 and 0.19.0. The old 0.16
+branch is excluded because GHSA-238p-pmpm-9mq7 is patched from 0.18.2.
+KaTeX 0.18's `.katex-base` selector replaces `.base` in the package color rule.
+
+`MathBlock` remains server-rendered, with inline/display wrappers, safe defaults
+and visible malformed-input fallback. A math-disabled consumer needs neither
+KaTeX nor its stylesheet; module evaluation succeeds without it, and explicit
+`MathBlock` rendering reports a useful missing-peer error. This source change
+raises the compatibility floor and is not yet published to npm.
