@@ -14,7 +14,7 @@ const hash = (file: string) => createHash("sha256").update(readFileSync(file)).d
 function run(command: string, args: string[], cwd: string) {
   const result = spawnSync(command, args, {
     cwd, encoding: "utf8", timeout: 180_000, maxBuffer: 16 * 1024 * 1024,
-    env: { ...process.env, NODE_PATH: "", SKIP_DOC_HISTORY: "1" },
+    env: { ...process.env, NODE_PATH: "" },
   });
   if (result.error || result.status !== 0) throw new Error(`${command} ${args.join(" ")} (${cwd})\n${result.error ?? ""}\n${result.stdout}\n${result.stderr}`);
   return result.stdout;
@@ -125,6 +125,28 @@ describe("packed math consumers", () => {
         expect(html).toContain("katex-error");
         expect(html).toContain("日本語の文中にも");
         expect(html).toContain(`${base === "/" ? "" : base}/assets/`);
+        const origin = "https://consumer.invalid";
+        const assetPrefix = `${base === "/" ? "" : base}/assets/`;
+        const styles = [...html.matchAll(/<link\b[^>]*href=["']?([^"'\s>]+\.css)["']?[^>]*>/g)].map((match) => match[1]);
+        expect(styles.length).toBeGreaterThan(0);
+        const mathStyles = styles.map((href) => {
+          const url = new URL(href, `${origin}${base === "/" ? "" : base}/docs/math/`);
+          expect(url.origin).toBe(origin);
+          expect(url.pathname.startsWith(assetPrefix)).toBe(true);
+          const file = path.join(dir, "dist", url.pathname.slice(base === "/" ? 1 : base.length + 1));
+          return { url, css: readFileSync(file, "utf8") };
+        }).filter(({ css }) => css.includes("KaTeX_Main") && css.includes(".katex-mathml"));
+        expect(mathStyles.length).toBeGreaterThan(0);
+        for (const { url, css } of mathStyles) {
+          const fonts = [...css.matchAll(/url\(["']?([^"')]*KaTeX[^"')]+)["']?\)/g)];
+          expect(fonts.length).toBeGreaterThan(0);
+          for (const [, href] of fonts) {
+            const font = new URL(href, url);
+            expect(font.origin).toBe(origin);
+            expect(font.pathname.startsWith(assetPrefix)).toBe(true);
+            expect(readFileSync(path.join(dir, "dist", font.pathname.slice(base === "/" ? 1 : base.length + 1))).length).toBeGreaterThan(0);
+          }
+        }
         console.log(JSON.stringify({ version, base, built: true, htmlSha256: hash(path.join(dir, "dist/docs/math/index.html")) }));
       }
     }, 240_000);

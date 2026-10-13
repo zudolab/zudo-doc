@@ -46,7 +46,7 @@ for (const width of [1280, 375]) {
       expect(measurement.scrollWidth).toBeGreaterThan(measurement.wideWidth);
       expect(measurement.scrollLeft).toBeGreaterThan(0);
       expect(measurement.loadedFonts.some((family) => family.includes("KaTeX"))).toBe(true);
-      expect(fontResponses.some((url) => new URL(url).origin === new URL(page.url()).origin)).toBe(true);
+      expect(fontResponses.some((url) => new URL(url).origin === new URL(page.url()).origin && /KaTeX.*\.(woff2?|ttf)$/.test(new URL(url).pathname))).toBe(true);
       assertNoConsoleErrors();
     });
   }
