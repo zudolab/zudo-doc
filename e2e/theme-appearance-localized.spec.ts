@@ -51,7 +51,7 @@ for (const locale of ["en", "ja"] as const) {
         const option = (name: string) => menu.getByRole("menuitemradio", { name, exact: true });
         if (!drawer) await page.evaluate(() => window.scrollTo(0, 200));
         const before = await readScrollState(page);
-        if (!drawer && locale === "ja") expect(before.windowY).toBeGreaterThan(0);
+        if (!drawer) expect(before.windowY).toBeGreaterThan(0);
         const activeMarker = () => page.evaluate(() => {
           const active = document.activeElement;
           return active ? `${active.tagName}|${active.getAttribute("aria-label")}|${active.textContent}` : "";
