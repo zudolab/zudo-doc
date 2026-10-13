@@ -1,0 +1,56 @@
+{
+  "source": {
+    "baseline": {
+      "sha": "05e3fb5e71dcd3897a64c7be047f972971b7f444",
+      "tree": "1bc2a9ad75aaf48de5898b792673483c707c4eef"
+    },
+    "candidate": {
+      "sha": "c1ed69de7f4b90552587b98b816289a2f4e85832",
+      "tree": "1939945157415799955d24bad554ecad18d0c17d"
+    },
+    "reference": {
+      "sha": "05e3fb5e71dcd3897a64c7be047f972971b7f444",
+      "tree": "1bc2a9ad75aaf48de5898b792673483c707c4eef"
+    }
+  },
+  "normalizer": "0c769b0c4c2e86ac950dcafc0a5866d9740ac68a90796f3cc7b4b3d3203a3b82",
+  "stylesheetChanges": [],
+  "packsEqual": true,
+  "pages": [
+    {
+      "page": "404.html",
+      "candidateFingerprint": "215b695e12c5635826f959cb703def72babed0bbebb9adb093ce2361a260e46c",
+      "observedBuildBefore": "cedb3762bce406fc",
+      "observedBuildAfter": "f3d954abe30b123f",
+      "islands": 1,
+      "residualDiff": "--- 404.html:baseline:residual\n+++ 404.html:candidate:residual\n@@ -996,7 +996,7 @@\n       // browser without a bundler \u2014 bare specifiers like \"mermaid\"\n       // cannot be resolved at runtime. See the file header for the\n       // full trade-off rationale.\n-      var mod = await import(\"https://esm.sh/mermaid@11.15.0\");\n+      var mod = await import(\"https://esm.sh/mermaid@11.17.2\");\n       var mermaid = mod.default;\n       var s = getComputedStyle(document.documentElement);\n       // Read the active theme attribute that the color-scheme-provider\n",
+      "urlCount": 1,
+      "sourceURLReversalEqualsBaseline": true,
+      "restoredIdentityAttributes": 1
+    },
+    {
+      "page": "docs/getting-started/index.html",
+      "candidateFingerprint": "f31f2ac19506a76f4abbcd14f13264ac04f2831f8f563861285c5efdebd64db0",
+      "observedBuildBefore": "cedb3762bce406fc",
+      "observedBuildAfter": "f3d954abe30b123f",
+      "islands": 2,
+      "residualDiff": "--- docs/getting-started/index.html:baseline:residual\n+++ docs/getting-started/index.html:candidate:residual\n@@ -996,7 +996,7 @@\n       // browser without a bundler \u2014 bare specifiers like \"mermaid\"\n       // cannot be resolved at runtime. See the file header for the\n       // full trade-off rationale.\n-      var mod = await import(\"https://esm.sh/mermaid@11.15.0\");\n+      var mod = await import(\"https://esm.sh/mermaid@11.17.2\");\n       var mermaid = mod.default;\n       var s = getComputedStyle(document.documentElement);\n       // Read the active theme attribute that the color-scheme-provider\n",
+      "urlCount": 1,
+      "sourceURLReversalEqualsBaseline": true,
+      "restoredIdentityAttributes": 2
+    },
+    {
+      "page": "docs/getting-started/coverage/index.html",
+      "candidateFingerprint": "4fcedefe33d4e2871a8b1ad4d1df0cab441e418be6b04774788f4c32b85dcc2e",
+      "observedBuildBefore": "cedb3762bce406fc",
+      "observedBuildAfter": "f3d954abe30b123f",
+      "islands": 4,
+      "residualDiff": "--- docs/getting-started/coverage/index.html:baseline:residual\n+++ docs/getting-started/coverage/index.html:candidate:residual\n@@ -996,7 +996,7 @@\n       // browser without a bundler \u2014 bare specifiers like \"mermaid\"\n       // cannot be resolved at runtime. See the file header for the\n       // full trade-off rationale.\n-      var mod = await import(\"https://esm.sh/mermaid@11.15.0\");\n+      var mod = await import(\"https://esm.sh/mermaid@11.17.2\");\n       var mermaid = mod.default;\n       var s = getComputedStyle(document.documentElement);\n       // Read the active theme attribute that the color-scheme-provider\n",
+      "urlCount": 1,
+      "sourceURLReversalEqualsBaseline": true,
+      "restoredIdentityAttributes": 4
+    }
+  ],
+  "lockSHA256": "8159313ba75f1299e56e841a95a2ae40ff72b8a6a858b551274e26450586cf0f",
+  "candidatePackageTree": "4272335fd074c94970116892da02aa1a05d1577e"
+}
