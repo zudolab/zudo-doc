@@ -127,7 +127,7 @@ describe("packed math consumers", () => {
         expect(html).toContain(`${base === "/" ? "" : base}/assets/`);
         const origin = "https://consumer.invalid";
         const assetPrefix = `${base === "/" ? "" : base}/assets/`;
-        const styles = [...html.matchAll(/<link\b[^>]*href=["']?([^"'\s>]+\.css)["']?[^>]*>/g)].map((match) => match[1]);
+        const styles = [...html.matchAll(/<link\b[^>]*href=["']?([^"'\s>]+\.css)["']?[^>]*>/g)].map((match) => match[1]!);
         expect(styles.length).toBeGreaterThan(0);
         const mathStyles = styles.map((href) => {
           const url = new URL(href, `${origin}${base === "/" ? "" : base}/docs/math/`);
@@ -141,7 +141,7 @@ describe("packed math consumers", () => {
           const fonts = [...css.matchAll(/url\(["']?([^"')]*KaTeX[^"')]+)["']?\)/g)];
           expect(fonts.length).toBeGreaterThan(0);
           for (const [, href] of fonts) {
-            const font = new URL(href, url);
+            const font = new URL(href!, url);
             expect(font.origin).toBe(origin);
             expect(font.pathname.startsWith(assetPrefix)).toBe(true);
             expect(readFileSync(path.join(dir, "dist", font.pathname.slice(base === "/" ? 1 : base.length + 1))).length).toBeGreaterThan(0);
