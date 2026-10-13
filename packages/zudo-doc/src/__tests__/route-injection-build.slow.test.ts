@@ -1256,6 +1256,13 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // preserved every normalized byte. References therefore live outside the
   // linked package, retaining all native metadata/comments in the fingerprint.
   // This is a bounded A2 review, not final browser/release acceptance.
+  //
+  // 2026-10-13 re-baseline review (#4575, compatible audit maintenance):
+  // Hono/fast-uri/smol-toml resolution and tracked package documentation change
+  // native source identity. Every replacement reference requires per-page causal
+  // comparison with accepted main, preserved raw/normalized captures and source
+  // provenance in docs/findings/4575-toolchain-hardening/a2-causal-review.md.
+  // Keep native metadata, normalization and all functional assertions intact.
   it.each(["404.html", "docs/getting-started/index.html", "docs/getting-started/coverage/index.html"])(
     "native transport: %s retains coherent owned-runtime metadata",
     (page) => {
