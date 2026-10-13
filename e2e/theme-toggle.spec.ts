@@ -220,13 +220,17 @@ test.describe("Appearance menu", () => {
     const trigger = appearanceTrigger(page);
 
     await openAppearanceMenu(page, trigger);
+    await expect(appearanceOption(page, "system")).toBeFocused();
     await page.keyboard.press("ArrowDown");
+    await expect(appearanceOption(page, "light")).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(appearanceMenu(page)).toBeHidden();
     await expect(trigger).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(appearanceMenu(page)).toBeVisible();
+    await expect(appearanceOption(page, "system")).toBeFocused();
     await page.keyboard.press("Home");
+    await expect(appearanceOption(page, "light")).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(appearanceMenu(page)).toBeHidden();
     await waitForThemePreference(page, "light");
