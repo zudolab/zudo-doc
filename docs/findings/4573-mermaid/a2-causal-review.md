@@ -1,7 +1,8 @@
 # Mermaid A2 causal review — 2026-10-13
 
-Pending manager review and successful final-head CI. This record explains the
-proposed strict reference update; it does not approve a merge or release.
+Original isolated-candidate causal review, approved by the manager and followed
+by passing CI at abc7d953. For refreshed-main evidence and final references, see
+[the combined-main review](combined-main-a2-review.md). No release is approved.
 
 The accepted baseline is `657bf97f6eda70382a715bb5940e0afc169f2205`
 (tree `75a9bfeca676604d5f105dcad01658ad77edf022`). The captured candidate is
