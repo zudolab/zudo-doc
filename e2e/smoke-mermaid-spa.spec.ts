@@ -49,26 +49,49 @@ test.describe("Mermaid: SPA soft-navigation regression (#2181)", () => {
     assertNoConsoleErrors();
   });
 
-  test("repeated theme and token changes regenerate genuine diagrams (#4573)", async ({ page, assertNoConsoleErrors }) => {
-    const moduleResponse = page.waitForResponse("https://esm.sh/mermaid@11.17.2");
-    await page.goto(MERMAID_PAGE, { waitUntil: "load" });
-    expect((await moduleResponse).ok()).toBe(true);
-    const svg = page.locator("[data-mermaid-rendered] svg.flowchart");
-    await expect(svg).toBeVisible({ timeout: 30_000 });
-    for (const [theme, color, fill] of [["light", "#123456", "rgb(18, 52, 86)"], ["dark", "#abcdef", "rgb(171, 205, 239)"], ["light", "#654321", "rgb(101, 67, 33)"]] as const) {
-      const previousId = await svg.getAttribute("id");
-      await page.evaluate(({ theme, color }) => {
-        document.documentElement.setAttribute("data-theme", theme);
-        document.documentElement.style.setProperty("--zd-mermaid-node-bg", color);
-      }, { theme, color });
-      await expect(svg).toHaveCount(1);
-      await expect(svg).not.toHaveAttribute("id", previousId!);
-      await expect(svg.locator(".node")).not.toHaveCount(0);
-      await expect(svg).toContainText("Start");
-      await expect(svg.locator(".node rect").first()).toHaveCSS("fill", fill);
-      await expect(page.locator("[data-mermaid-rendered] .zd-enlarge-btn")).toHaveCount(1);
+  test("repeated theme and token changes regenerate genuine diagrams (#4573)", async ({ page, assertNoConsoleErrors }, testInfo) => {
+    const responses: Array<{ url: string; status: number }> = [];
+    const failures: Array<{ url: string; error: string | null }> = [];
+    page.on("response", (response) => {
+      if (new URL(response.url()).hostname === "esm.sh") {
+        responses.push({ url: response.url(), status: response.status() });
+      }
+    });
+    page.on("requestfailed", (request) => {
+      if (new URL(request.url()).hostname === "esm.sh") {
+        failures.push({ url: request.url(), error: request.failure()?.errorText ?? null });
+      }
+    });
+    try {
+      const moduleResponse = page.waitForResponse("https://esm.sh/mermaid@11.17.2");
+      await page.goto(MERMAID_PAGE, { waitUntil: "load" });
+      expect((await moduleResponse).ok()).toBe(true);
+      const svg = page.locator("[data-mermaid-rendered] svg.flowchart");
+      await expect(svg).toBeVisible({ timeout: 30_000 });
+      for (const [theme, color, fill] of [["light", "#123456", "rgb(18, 52, 86)"], ["dark", "#abcdef", "rgb(171, 205, 239)"], ["light", "#654321", "rgb(101, 67, 33)"]] as const) {
+        const previousId = await svg.getAttribute("id");
+        await page.evaluate(({ theme, color }) => {
+          document.documentElement.setAttribute("data-theme", theme);
+          document.documentElement.style.setProperty("--zd-mermaid-node-bg", color);
+        }, { theme, color });
+        await expect(svg).toHaveCount(1);
+        await expect(svg).not.toHaveAttribute("id", previousId!);
+        await expect(svg.locator(".node")).not.toHaveCount(0);
+        await expect(svg).toContainText("Start");
+        await expect(svg.locator(".node rect").first()).toHaveCSS("fill", fill);
+        await expect(page.locator("[data-mermaid-rendered] .zd-enlarge-btn")).toHaveCount(1);
+      }
+      assertNoConsoleErrors();
+    } finally {
+      const katexResponses = responses.filter(({ url }) => /\/katex@/.test(url));
+      // Observed module responses are delivery evidence, not a complete audit.
+      // No KaTeX response means only that this flowchart did not request one.
+      console.log("Mermaid CDN KaTeX responses:", JSON.stringify(katexResponses));
+      await testInfo.attach("mermaid-cdn-delivery", {
+        body: JSON.stringify({ responses, failures, katexResponses }, null, 2),
+        contentType: "application/json",
+      });
     }
-    assertNoConsoleErrors();
   });
   test("mermaid diagram stays rendered after SPA nav away-and-back", async ({
     page,
