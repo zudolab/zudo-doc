@@ -13,6 +13,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Bug Fixes
 
 - The desktop sidebar and the mobile drawer each keep their scroll offset across client navigation, a full document load, reload, and Back/Forward, including after Broaden. Restoration runs after the destination tree can hold the offset, so a replaced sidebar or a temporary empty tree does not snap back to the top. A saved zero is restored. A missing snapshot is not written as zero. A closed drawer keeps its saved offset in history until it opens again. Article scroll, focus, filtering, and disclosure are left unchanged. (418b2f29c)
+- The Appearance menu is a compact list of three rows (Light, Dark, System). The visible heading and the bottom helper are removed. The System row shows the device's current Light/Dark mode inline, and that status stays truthful while a manual Light or Dark preference is selected. The full localized helper remains the System option's accessible description. The popup is sized from its natural height at its final width, so its border no longer creates a spurious inner scrollbar. It opens above the trigger near the bottom edge and repositions when its content size changes. Opening, arrow keys, and focus return no longer scroll the page, and Tab / Shift+Tab leave the menu instead of cycling its rows. (37e3b8b42)
 
 ### Other Changes
 
