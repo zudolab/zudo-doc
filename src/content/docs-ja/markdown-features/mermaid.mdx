@@ -6,19 +6,15 @@ sidebar_position: 11
 
 **Mermaid** 機能は、`mermaid` 言語を指定したフェンスコードブロックを描画済みの図に変換します。ビルド時にコードブロックがラッパー要素に置き換えられ、小さなクライアントサイドアイランドが必要に応じて Mermaid ライブラリを読み込んで図を描画します。mermaid ブロックを含まないページにはオーバーヘッドがありません。
 
-:::note Opt-in 機能
+:::note 設定
 
-`zfb.config.ts` の `mermaid` キーで有効化します。
+Mermaid はデフォルトで有効です。無効にする場合は、`zudoDoc()` に `mermaid: false` を指定します。
 
 ```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      mermaid: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({ mermaid: false }));
 ```
 
 :::

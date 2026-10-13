@@ -6,19 +6,15 @@ sidebar_position: 11
 
 The **Mermaid** feature turns fenced code blocks tagged with the `mermaid` language into rendered diagrams. The build replaces the code block with a wrapper element, and a small client-side island loads the Mermaid library on demand to draw the diagram — pages without a mermaid block incur no overhead.
 
-:::note Opt-in feature
+:::note Configuration
 
-Enable it with the `mermaid` key in `zfb.config.ts`:
+Mermaid is enabled by default. Set `mermaid: false` in `zudoDoc()` to disable it:
 
 ```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      mermaid: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({ mermaid: false }));
 ```
 
 :::
