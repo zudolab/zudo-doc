@@ -35,7 +35,7 @@ test.beforeAll(async ({}, testInfo) => {
     }
     delete manifest.scripts;
     writeFileSync(path.join(snapshot, "package.json"), JSON.stringify(manifest));
-    const packed = JSON.parse(execFileSync("npm", ["pack", "--json", "--ignore-scripts"], { cwd: snapshot, encoding: "utf8" })) as { filename: string }[];
+    const packed = JSON.parse(execFileSync("npm", ["pack", "--json", "--ignore-scripts"], { cwd: snapshot, encoding: "utf8" })) as { filename: string }[]; // dist-mutation-ok: packs only an owned throwaway snapshot whose lifecycle scripts were removed above.
     const tarball = path.join(snapshot, packed[0]!.filename);
     tarballs[manifest.name] = { path: tarball, sha256: hash(tarball) };
   }
