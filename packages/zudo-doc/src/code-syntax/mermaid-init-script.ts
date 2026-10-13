@@ -51,7 +51,7 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
  * resolves npm package specifiers to publishable ESM modules.
  *
  * Pinned to a specific minor.patch (not the bare `@11` major) so the
- * runtime version is byte-stable across deploys; floating on the major
+ * top-level package version is stable across deploys; floating on the major
  * would silently pull in upstream theme-API or behaviour changes. Bump
  * policy: there is no `mermaid` package.json dependency to keep in sync
  * with — this constant is the sole source of truth for the mermaid
@@ -63,7 +63,9 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
  * tests can override the URL — e.g. self-hosted mirrors, version-
  * locked deployments — without re-templating the whole script.
  */
-export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11.15.0";
+// #4573: 11.16.1 is the advisory floor; 11.17.2 also restores edgePaths.
+// An exact package pin does not lock esm.sh's remote transitive graph.
+export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11.17.2";
 
 /**
  * Build the inline init script with a caller-supplied module URL.

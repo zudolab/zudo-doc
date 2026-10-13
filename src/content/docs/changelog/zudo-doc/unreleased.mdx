@@ -10,9 +10,11 @@ sidebar_position: 1138
 
 ### Bug Fixes
 
+- Updates the lazy browser Mermaid URL from 11.15.0 to the exact 11.17.2 release, including the advisory fixes introduced in 11.16.1. Local npm audit does not cover the separately delivered CDN graph. This is unreleased; published 6.1.1 retains its old URL. (#4573)
 - The desktop sidebar and the mobile drawer each keep their scroll offset across client navigation, a full document load, reload, and Back/Forward, including after Broaden. Restoration runs after the destination tree can hold the offset, so a replaced sidebar or a temporary empty tree does not snap back to the top. A saved zero is restored. A missing snapshot is not written as zero. A closed drawer keeps its saved offset in history until it opens again. Article scroll, focus, filtering, and disclosure are left unchanged. (418b2f29c)
 - The Appearance menu is a compact list of three rows (Light, Dark, System). The visible heading and the bottom helper are removed. The System row shows the device's current Light/Dark mode inline, and that status stays truthful while a manual Light or Dark preference is selected. The full localized helper remains the System option's accessible description. The popup is sized from its natural height at its final width, so its border no longer creates a spurious inner scrollbar. It opens above the trigger near the bottom edge and repositions when its content size changes. Opening, arrow keys, and focus return no longer scroll the page, and Tab / Shift+Tab leave the menu instead of cycling its rows. (37e3b8b42)
 
 ### Other Changes
 
+- Updates the Codex resource TOML parser to smol-toml `^1.9.1`, preserving configuration dates and agent metadata while including its bounded key-scanning fix. The showcase also resolves compatible Hono 4 and fast-uri 3 security patches. These source changes are unreleased; the separate KaTeX and browser-delivered Mermaid paths have their own acceptance.
 - Requires zfb 4.4.0: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.3.3` to `^4.4.0`. zfb 4.4.0 updates its YAML frontmatter parser, and its client router now restores the right page after a same-page fragment link, a client navigation to another page, and Back; Forward keeps its direction. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 4.4.0 together with this release.

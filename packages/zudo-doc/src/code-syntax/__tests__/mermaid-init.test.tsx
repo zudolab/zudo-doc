@@ -48,6 +48,16 @@ describe("<MermaidInit />", () => {
 });
 
 describe("MERMAID_INIT_SCRIPT", () => {
+  it("pins a stable patched 11.x release independently of script generation (#4573)", () => {
+    const match = /^https:\/\/esm\.sh\/mermaid@(11)\.(\d+)\.(\d+)$/.exec(MERMAID_CDN_MODULE_URL);
+    expect(match, "default must remain an exact stable Mermaid 11.x URL").not.toBeNull();
+    const minor = Number(match![2]);
+    const patch = Number(match![3]);
+    // GHSA-c4c3-pg64-4m4v / 6x64-9x62-f2gx / 3rrr-jr9j-h3q3 /
+    // 2v8p-3f2j-5mp7 / rhh3-jpg6-66xh were patched in 11.16.1.
+    expect(minor > 16 || (minor === 16 && patch >= 1)).toBe(true);
+  });
+
   it("is a non-empty string", () => {
     expect(typeof MERMAID_INIT_SCRIPT).toBe("string");
     expect(MERMAID_INIT_SCRIPT.length).toBeGreaterThan(0);
