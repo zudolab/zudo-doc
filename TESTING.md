@@ -79,6 +79,30 @@ job family, not as `*.spec.ts` files.
 - **Pixel-level layout, computed CSS, visual regression** → L5 `/verify-ui`.
 - **Deeply reproduced user flows that L4 struggles to replicate reliably** → L6 test-flow skills (rare — reserve for known-hard flows).
 
+### Localized Appearance and fragment history (#4574)
+
+The existing theme fixture composes EN/JA Appearance coverage without changing its
+Dark SSR default or theme-pack order. `theme-appearance-geometry.spec.ts` covers
+classic-scrollbar geometry in both device modes at 1440×900, 390×844, 320×568 and
+568×320. `theme-appearance-localized.spec.ts` covers localized accessible names,
+live device status under manual Light, keyboard and surrounding drawer focus
+order, scroll preservation, dismissal and 200% root text. Emergency internal
+scrolling remains available for genuinely constrained menus.
+
+`fragment-history-helpers.ts` runs the same EN/JA fragment, Back/Forward and
+null-state query contracts against the smoke fixture and a real `/manual`
+consumer. `smoke-manual-fragment-history.spec.ts` packs immutable built public
+package snapshots, independently installs them outside the workspace, checks
+frozen and stable normal reinstalls, and uses the existing installed-consumer
+mount build/server. Its attachment records source HEAD, tarball and lock hashes
+and dependency realpaths. It runs in the existing blocking smoke project; no
+seventh fixture or quarantine lane is added. Build fixtures before running these
+specs and use `--retries=0 --repeat-each=3` for focused repetition.
+
+These contracts exercise the workspace candidate, not an npm publication.
+Chromium mobile viewport emulation does not establish Safari/iOS or Apple IME
+acceptance; those platforms require separate evidence.
+
 ### Deliberate visual-regression skip
 
 The Playwright `toHaveScreenshot` matcher appears nowhere in executable test
