@@ -12,7 +12,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Require the published zfb 4.5.1 family (`zfb`, `zfb-runtime`, `zfb-md-wasm`); the peer floors move to `^4.5.1`. This picks up live `public/assets/` delivery in development and explicit MDX table fixes. Upgrade the family together.
+- Require the published zfb 4.5.1 family, including its live `public/assets/` development serving and explicit MDX table fixes. The zfb peer floor is now `^4.5.1`; upgrade the family together.
 
 ## [6.2.0] - 2026-10-14
 

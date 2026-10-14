@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Generated projects pin the published zfb 4.5.1 family, including `zfb-adapter-cloudflare` when MCP is enabled. This includes live `public/assets/` delivery in development and explicit MDX table fixes.
+- New projects pin the published zfb 4.5.1 family, including the optional Cloudflare adapter when MCP is enabled.
 
 ## [6.2.0] - 2026-10-14
 
