@@ -6,9 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [6.2.0] - 2026-10-14
+
+### Bug Fixes
+
+- The generated `tsconfig.json` no longer sets `baseUrl` and declares its alias as `"@/*": ["./src/*"]`, so a new project typechecks under both TypeScript 5.9 and TypeScript 7 (which rejects `baseUrl` with TS5102). (4d5e801ed)
+
 ### Other Changes
 
-- New projects pin the zfb family (`@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, and `zfb-adapter-cloudflare` when the MCP feature is enabled) at 4.5.0.
+- New projects pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^6.2.0`, and the zfb family (`@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, and `zfb-adapter-cloudflare` when the MCP feature is enabled) at 4.5.0. (48a224468, 4f9d0c26f)
+- The `--mcp-deploy cloudflare` preset pins `wrangler` 4.150.0.
 
 ## [6.1.1] - 2026-10-12
 

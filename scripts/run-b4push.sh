@@ -496,7 +496,12 @@ fi
 # dist/ is already built by step 25 — no extra prep needed.
 step "Package tests + subpath resolution"
 # Single acquisition for both commands — see the note on the unit-test step.
-if (cd "$ROOT_DIR" && heavy bash -c 'pnpm test:packages && pnpm --filter @takazudo/zudo-doc test:plugin-resolution'); then
+# --workspace-concurrency=1 runs the four package suites one at a time instead of
+# test:packages' default 4-way fan-out, where every suite starts its own full
+# vitest worker pool and the oversubscribed host times out create-zudo-doc's
+# scaffold hooks with no assertion failing (same reliability-over-wall-clock
+# trade as the unit-test step's --maxWorkers=4, #2563). CI keeps test:packages.
+if (cd "$ROOT_DIR" && heavy bash -c "pnpm ensure:workspace-build && pnpm -r --workspace-concurrency=1 --filter './packages/*' run test && pnpm --filter @takazudo/zudo-doc test:plugin-resolution"); then
   pass "Package tests + subpath resolution passed"
 else
   fail "Package tests + subpath resolution"

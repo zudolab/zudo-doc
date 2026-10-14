@@ -1,0 +1,16 @@
+---
+title: 6.2.0
+description: 6.2.0のリリースノート。
+sidebar_position: 1044
+---
+
+リリース日: 2026-10-14
+
+### バグ修正
+
+- 生成される `tsconfig.json` は `baseUrl` を設定せず、エイリアスを `"@/*": ["./src/*"]` と宣言するようになりました。新しいプロジェクトは TypeScript 5.9 でも TypeScript 7（`baseUrl` を TS5102 として拒否します）でも型チェックが通ります。(4d5e801ed)
+
+### その他の変更
+
+- 新しいプロジェクトは `@takazudo/zudo-doc` と `@takazudo/zudo-doc-history-server` を `^6.2.0` に、zfb ファミリー（`@takazudo/zfb`、`zfb-runtime`、`zfb-md-wasm`、MCP 機能を有効にした場合は `zfb-adapter-cloudflare`）を 4.5.0 に固定します。(48a224468, 4f9d0c26f)
+- `--mcp-deploy cloudflare` プリセットは `wrangler` 4.150.0 を固定します。
