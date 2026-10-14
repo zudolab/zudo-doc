@@ -20,7 +20,6 @@
 
 import {
   AFTER_NAVIGATE_EVENT,
-  AFTER_PREPARATION_EVENT,
   BEFORE_NAVIGATE_EVENT,
   NAVIGATION_ABORTED_EVENT,
 } from "../transitions/page-events.js";
@@ -62,8 +61,6 @@ document.addEventListener(${before},show);
 document.addEventListener(${after},hide);
 document.addEventListener(${before},setPending);
 document.addEventListener(${after},clearPending);
-// Remove loading pixels before the native old snapshot, not during the swap.
-document.addEventListener(${JSON.stringify(AFTER_PREPARATION_EVENT)},hide);
 document.addEventListener(${JSON.stringify(NAVIGATION_ABORTED_EVENT)},function(){hide();clearPending();});
 })();`;
 }

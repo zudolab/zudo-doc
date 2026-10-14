@@ -20,12 +20,24 @@ const GUIDES_INDEX = "/docs/guides/";
 const GUIDES_PAGE_1 = "/docs/guides/page-1";
 const header = { name: "zfb-header", selector: "header" };
 const sidebar = { name: "zfb-sidebar", selector: "#desktop-sidebar" };
+const sidebarToggle = { name: "zfb-sidebar-toggle", selector: ".zd-desktop-sidebar-toggle" };
+const tocToggle = { name: "zfb-toc-toggle", selector: ".zd-desktop-toc-toggle" };
+
+function expectPairedSnapshots(nodes: Awaited<ReturnType<typeof nativeSnapshots>>, names: string[]) {
+  for (const name of names) {
+    expect(nodes.filter((node) => node.name === name && /view-transition-(old|new)$/.test(node.type))
+      .map((node) => node.type).sort(), `${name} has two actual native snapshots`)
+      .toEqual(["view-transition-new", "view-transition-old"]);
+  }
+  expect(stationarySnapshots(nodes, names)).toBe(true);
+}
 
 test("visual names survive removal of persistence metadata", async ({ page }) => {
-  await page.goto(GUIDES_INDEX);
+  // This page actually renders both toggles; the short guides index has no TOC.
+  await page.goto("/docs/guides/toc-test");
   await waitForSidebarHydration(page);
   const names = await page.evaluate(() => {
-    const selectors = ["header", "#desktop-sidebar", "footer", '[data-zfb-transition-persist="desktop-sidebar-toggle"]'];
+    const selectors = ["header", "#desktop-sidebar", "footer", ".zd-desktop-sidebar-toggle", ".zd-desktop-toc-toggle"];
     return selectors.map((selector) => {
       const element = document.querySelector(selector);
       if (!element) throw new Error(`Required chrome is missing: ${selector}`);
@@ -34,7 +46,7 @@ test("visual names survive removal of persistence metadata", async ({ page }) =>
       return { before, after: getComputedStyle(element).viewTransitionName };
     });
   });
-  expect(names).toEqual(["zfb-header", "zfb-sidebar", "zfb-footer", "zfb-sidebar-toggle"].map((name) => ({ before: name, after: name })));
+  expect(names).toEqual(["zfb-header", "zfb-sidebar", "zfb-footer", "zfb-sidebar-toggle", "zfb-toc-toggle"].map((name) => ({ before: name, after: name })));
 });
 
 for (const colorScheme of ["light", "dark"] as const) {
@@ -47,10 +59,26 @@ for (const colorScheme of ["light", "dark"] as const) {
     const nodes = await proveActiveNativeTransition(page, testInfo, {
       label: `same-category-${colorScheme}`, regions: [header, sidebar],
     });
-    expect(stationarySnapshots(nodes, ["zfb-footer", "zfb-sidebar-toggle"])).toBe(true);
+    expectPairedSnapshots(nodes, ["zfb-footer", "zfb-sidebar-toggle"]);
     await finishNativeTransition(page);
-    });
+  });
 }
+
+test("real footer and both desktop toggles retain paired stationary snapshots", async ({ page }, testInfo) => {
+  await page.goto("/docs/guides/toc-test");
+  await waitForSidebarHydration(page);
+  await expect(page.locator(sidebarToggle.selector)).toBeVisible();
+  await expect(page.locator(tocToggle.selector)).toBeVisible();
+  await installNativeTransitionProbe(page);
+  await navigateNativeTransition(page, "/docs/guides/tables-test");
+  const nodes = await proveActiveNativeTransition(page, testInfo, {
+    label: "actual-desktop-toggles", regions: [header, sidebarToggle, tocToggle],
+  });
+  // Footer is below the viewport on these long pages. Require its actual paired
+  // pseudo nodes and stationary policy; a nonexistent pseudo must never pass.
+  expectPairedSnapshots(nodes, ["zfb-footer", sidebarToggle.name, tocToggle.name]);
+  await finishNativeTransition(page);
+});
 
 test("category changes and Back/Forward retain stationary header snapshots", async ({ page }, testInfo) => {
   await page.goto(GUIDES_INDEX);
@@ -72,15 +100,25 @@ test("sidebar exit and entry are named one-sided snapshots while header stays st
   await page.goto(GUIDES_INDEX);
   await waitForSidebarHydration(page);
   await installNativeTransitionProbe(page);
-  for (const [label, selector, expectedType] of [
-    ["exit", 'header a[href="/"]', "view-transition-old"],
-    ["entry", 'a[href^="/docs/guides"]', "view-transition-new"],
+  // A real same-category hide_sidebar page keeps an sr-only ARIA landmark.
+  // That landmark must not create a new named snapshot or a stationary pair.
+  for (const [label, href, expectedType, title] of [
+    ["exit", "/docs/guides/hidden-sidebar", "view-transition-old", "Hidden Sidebar"],
+    ["entry", GUIDES_PAGE_1, "view-transition-new", "Writing Docs"],
   ] as const) {
-    await navigateNativeTransition(page, { selector });
+    await navigateNativeTransition(page, href);
     const nodes = await proveActiveNativeTransition(page, testInfo, { label, regions: [header] });
     const images = nodes.filter((node) => node.name === "zfb-sidebar" && /view-transition-(old|new)$/.test(node.type));
     expect(images.map((node) => node.type)).toEqual([expectedType]);
     expect(images[0]!.style["animation-name"]).not.toBe("none");
+    await expect(page.locator("html")).toHaveAttribute("data-zd-sidebar-transition", "changing");
+    await expect(page.locator("[data-zd-nav-section]")).toHaveAttribute("data-zd-nav-section", "guides");
+    await expect(page).toHaveTitle(new RegExp(title));
+    await expect(page.locator("h1")).toContainText(title);
+    if (label === "exit") {
+      await expect(page.locator("#desktop-sidebar")).toHaveClass(/sr-only/);
+      expect(await page.locator("#desktop-sidebar").evaluate((element) => getComputedStyle(element).viewTransitionName)).toBe("none");
+    }
     await finishNativeTransition(page);
   }
 });
@@ -96,7 +134,7 @@ for (const layer of ["old", "new", "group"] as const) {
       label: `missing-${layer}`, regions: [header], expectedStationary: false,
     });
     await finishNativeTransition(page);
-    });
+  });
 }
 
 test("mobile replacement keeps native header snapshots stationary and destination metadata fresh", async ({ page }, testInfo) => {

@@ -55,4 +55,15 @@ describe("chrome snapshot policy", () => {
     expect(next.document.documentElement.getAttribute("data-zd-sidebar-transition")).toBe("changing");
     expect(() => live.document.dispatchEvent(new live.Event(BEFORE_SWAP_EVENT))).not.toThrow();
   });
+
+  it("treats hide_sidebar as visual absence even when its landmark and context remain", () => {
+    const live = documentWith();
+    const next = documentWith();
+    next.document.querySelector("main")!.setAttribute("data-zd-nosidebar", "");
+    new Function("document", buildChromeTransitionBootstrap())(live.document);
+    const event = new live.Event(BEFORE_SWAP_EVENT);
+    Object.assign(event, { newDocument: next.document });
+    live.document.dispatchEvent(event);
+    expect(next.document.documentElement.getAttribute("data-zd-sidebar-transition")).toBe("changing");
+  });
 });

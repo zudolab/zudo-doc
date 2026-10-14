@@ -1045,6 +1045,7 @@ a.text-accent.underline {
 
 .page-loading-overlay {
   position: fixed;
+  view-transition-name: zfb-loading;
   inset: 0;
   z-index: var(--z-index-modal, 100);
   display: flex;
@@ -1099,6 +1100,14 @@ a[data-zd-nav-pending], button[data-zd-nav-pending] {
     animation: none;
     border-bottom-color: var(--color-page-loading-spinner, #fff);
   }
+}
+
+::view-transition-group(zfb-loading) {
+  animation: none;
+}
+
+::view-transition-old(zfb-loading), ::view-transition-new(zfb-loading) {
+  display: none;
 }
 
 header[data-header] {
@@ -1408,7 +1417,7 @@ body > header {
   view-transition-name: zfb-header;
 }
 
-#desktop-sidebar {
+#desktop-sidebar:not(.sr-only) {
   view-transition-name: zfb-sidebar;
 }
 
@@ -1416,11 +1425,11 @@ body > header {
   view-transition-name: zfb-footer;
 }
 
-[data-zfb-transition-persist="desktop-sidebar-toggle"] {
+.zd-desktop-sidebar-toggle {
   view-transition-name: zfb-sidebar-toggle;
 }
 
-[data-zfb-transition-persist="desktop-toc-toggle"] {
+.zd-desktop-toc-toggle {
   view-transition-name: zfb-toc-toggle;
 }
 

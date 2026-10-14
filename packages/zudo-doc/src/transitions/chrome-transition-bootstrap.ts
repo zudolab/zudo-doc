@@ -9,7 +9,7 @@ function identity(doc){
 var sidebar=doc.getElementById("desktop-sidebar");
 var context=sidebar&&sidebar.querySelector("[data-sidebar-context]");
 var band=doc.querySelector("[data-zd-nav-section]");
-return {section:band&&band.getAttribute("data-zd-nav-section"),context:context&&context.getAttribute("data-sidebar-context")};
+return {section:band&&band.getAttribute("data-zd-nav-section"),context:band&&!band.hasAttribute("data-zd-nosidebar")&&context&&context.getAttribute("data-sidebar-context")};
 }
 document.addEventListener(${JSON.stringify(BEFORE_SWAP_EVENT)},function(ev){
 var incoming=ev.newDocument;

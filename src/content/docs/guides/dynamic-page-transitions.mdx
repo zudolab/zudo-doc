@@ -30,7 +30,7 @@ A dynamic navigation combines three pieces:
 
 The header stays still across categories, locale changes, and version changes, including when its markup is replaced or it exists on only one of the two pages. Its text and controls always reflect the destination.
 
-The desktop sidebar stays still when both pages resolve to the same navigation category and the same locale, version, and navigation tree. Changing the active article or the focused branch does not by itself trigger a sidebar animation. Moving to a different category or context, or entering or leaving a page with a sidebar, allows the sidebar to animate with the content. No additional configuration is needed.
+The desktop sidebar stays still when both pages resolve to the same navigation category and the same locale, version, and navigation tree. Changing the active article or the focused branch does not by itself trigger a sidebar animation. Moving to a different category or context, or entering or leaving a page with a visible sidebar (including pages using `hide_sidebar`), allows the sidebar to animate with the content. No additional configuration is needed.
 
 </Info>
 
@@ -42,13 +42,13 @@ Retaining a chrome ancestor does not freeze every nested island. When effective 
 
 ## The Loading Overlay
 
-While the target page is being fetched, zudo-doc shows a **loading overlay** with a centered spinner over the content area. In the standard layout, it starts below the header and beside the desktop sidebar, so loading feedback does not dim those navigation regions. It disappears when the destination is prepared, before the browser captures transition snapshots. This gives useful feedback on slower connections without carrying the loading scrim into the page animation.
+While the target page is being fetched, zudo-doc shows a **loading overlay** with a centered spinner over the content area. In the standard layout, it starts below the header and beside the desktop sidebar, so loading feedback does not dim those navigation regions. It remains visible until the content swap or navigation cancellation. The loading scrim and spinner are excluded from the page animation, so useful feedback on slower connections does not leave the destination dimmed during its transition.
 
 The link or button you clicked remains highlighted until the content swap completes. If navigation is aborted, including a failed or superseded request, the loading overlay and pending highlight are cleared.
 
 <Tip>
 
-The overlay only shows while the destination is being prepared. For fast local navigations it may flash by almost instantly — that's expected. Its job is to cover the perceptible delay on slower fetches, not to add an artificial pause.
+The overlay only shows between the start of navigation and the content swap or cancellation. For fast local navigations it may flash by almost instantly — that's expected. Its job is to cover the perceptible delay on slower fetches, not to add an artificial pause.
 
 </Tip>
 
@@ -114,7 +114,7 @@ The overlay ships from `@takazudo/zudo-doc` as two pieces you wire yourself: the
 
 ### Mount the component
 
-Import `PageLoadingOverlay` and render it **once per layout**, in a body-end slot (the same place you mount your other body-end providers). It is server-rendered with **no hydration** — it emits a small inline script that listens to the navigation lifecycle, so there is no island to register and no `client:*` directive to add. The overlay appears on `zfb:before-preparation` and hides on `zfb:after-preparation`, before native snapshots are captured. The pending-link highlight clears on `zfb:after-swap`; `zfb:navigation-aborted` clears both.
+Import `PageLoadingOverlay` and render it **once per layout**, in a body-end slot (the same place you mount your other body-end providers). It is server-rendered with **no hydration** — it emits a small inline script that listens to the navigation lifecycle, so there is no island to register and no `client:*` directive to add. The overlay and pending-link highlight appear on `zfb:before-preparation`. Both clear on `zfb:after-swap` or `zfb:navigation-aborted`. The shipped stylesheet keeps the loading feedback out of the page animation.
 
 The script uses the existing content wrapper and header bounds to position the overlay. In a standalone layout without those elements, it falls back to the viewport edges.
 

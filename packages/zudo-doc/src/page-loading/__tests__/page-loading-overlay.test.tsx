@@ -78,7 +78,7 @@ describe("<PageLoadingOverlay />", () => {
 });
 
 describe("loading lifecycle cleanup", () => {
-  it("clears loading pixels before capture, pending links after swap, and both after abort", async () => {
+  it("retains newer loading across unscoped preparation completion and clears after swap or abort", async () => {
     const { Window } = await import("happy-dom");
     const window = new Window();
     const doc = window.document;
@@ -95,7 +95,7 @@ describe("loading lifecycle cleanup", () => {
     expect(overlay.hasAttribute("data-visible")).toBe(true);
     expect(link.hasAttribute("data-zd-nav-pending")).toBe(true);
     doc.dispatchEvent(new window.Event(AFTER_PREPARATION_EVENT));
-    expect(overlay.hasAttribute("data-visible")).toBe(false);
+    expect(overlay.hasAttribute("data-visible")).toBe(true);
     expect(link.hasAttribute("data-zd-nav-pending")).toBe(true);
     doc.dispatchEvent(new window.Event(AFTER_NAVIGATE_EVENT));
     expect(link.hasAttribute("data-zd-nav-pending")).toBe(false);

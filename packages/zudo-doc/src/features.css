@@ -463,10 +463,10 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
  * Never name an ancestor of these regions: it would move their whole layer.
  */
 body > header                                        { view-transition-name: zfb-header; }
-#desktop-sidebar                                     { view-transition-name: zfb-sidebar; }
+#desktop-sidebar:not(.sr-only)                       { view-transition-name: zfb-sidebar; }
 [data-zfb-transition-persist^="footer-"]               { view-transition-name: zfb-footer; }
-[data-zfb-transition-persist="desktop-sidebar-toggle"] { view-transition-name: zfb-sidebar-toggle; }
-[data-zfb-transition-persist="desktop-toc-toggle"]     { view-transition-name: zfb-toc-toggle; }
+.zd-desktop-sidebar-toggle                          { view-transition-name: zfb-sidebar-toggle; }
+.zd-desktop-toc-toggle                              { view-transition-name: zfb-toc-toggle; }
 
 /* Header snapshots and every chrome group stay at their authored geometry.
  * Footer and toggle pairs keep their established stationary policy. */

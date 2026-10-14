@@ -140,7 +140,7 @@ export async function nativeSnapshots(page: Page): Promise<NativeSnapshot[]> {
     for (const node of nodes) {
       const { computedStyle } = await cdp.send("CSS.getComputedStyleForNode", { nodeId: node.id });
       node.style = Object.fromEntries(computedStyle
-        .filter(({ name }) => ["animation-name", "opacity", "transform", "translate", "mix-blend-mode", "width", "height"].includes(name))
+        .filter(({ name }) => ["animation-name", "display", "opacity", "transform", "translate", "mix-blend-mode", "width", "height"].includes(name))
         .map(({ name, value }) => [name, value]));
     }
     return nodes;
@@ -214,6 +214,16 @@ export async function proveActiveNativeTransition(page: Page, testInfo: TestInfo
     }, progress);
     const nodes = await nativeSnapshots(page);
     expect(nodes.some((node) => node.name === "root" && node.type === "view-transition-new")).toBe(true);
+    // A slow navigation may capture its pending scrim. The package extracts
+    // that image so it cannot dim chrome or the article during the transition.
+    // Fast navigations need not create this optional region at all.
+    for (const node of nodes.filter((candidate) => candidate.name === "zfb-loading")) {
+      if (/view-transition-(old|new)$/.test(node.type)) {
+        expect(node.style.display, "Captured loading feedback must be invisible").toBe("none");
+      } else if (node.type === "view-transition-group") {
+        expect(node.style["animation-name"], "Loading group must not animate").toBe("none");
+      }
+    }
     for (const region of regions) {
       const images = nodes.filter((node) => node.name === region.name && /view-transition-(old|new)$/.test(node.type));
       expect(images.map((node) => node.type).sort(), `${region.name} must have the expected actual snapshots`)
