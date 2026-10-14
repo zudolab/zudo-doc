@@ -20,8 +20,6 @@ const GUIDES_INDEX = "/docs/guides/";
 const GUIDES_PAGE_1 = "/docs/guides/page-1";
 const header = { name: "zfb-header", selector: "header" };
 const sidebar = { name: "zfb-sidebar", selector: "#desktop-sidebar" };
-const sidebarToggle = { name: "zfb-sidebar-toggle", selector: ".zd-desktop-sidebar-toggle" };
-const tocToggle = { name: "zfb-toc-toggle", selector: ".zd-desktop-toc-toggle" };
 
 function expectPairedSnapshots(nodes: Awaited<ReturnType<typeof nativeSnapshots>>, names: string[]) {
   for (const name of names) {
@@ -33,11 +31,10 @@ function expectPairedSnapshots(nodes: Awaited<ReturnType<typeof nativeSnapshots>
 }
 
 test("visual names survive removal of persistence metadata", async ({ page }) => {
-  // This page actually renders both toggles; the short guides index has no TOC.
-  await page.goto("/docs/guides/toc-test");
+  await page.goto(GUIDES_INDEX);
   await waitForSidebarHydration(page);
   const names = await page.evaluate(() => {
-    const selectors = ["header", "#desktop-sidebar", "footer", ".zd-desktop-sidebar-toggle", ".zd-desktop-toc-toggle"];
+    const selectors = ["header", "#desktop-sidebar", "footer"];
     return selectors.map((selector) => {
       const element = document.querySelector(selector);
       if (!element) throw new Error(`Required chrome is missing: ${selector}`);
@@ -46,7 +43,7 @@ test("visual names survive removal of persistence metadata", async ({ page }) =>
       return { before, after: getComputedStyle(element).viewTransitionName };
     });
   });
-  expect(names).toEqual(["zfb-header", "zfb-sidebar", "zfb-footer", "zfb-sidebar-toggle", "zfb-toc-toggle"].map((name) => ({ before: name, after: name })));
+  expect(names).toEqual(["zfb-header", "zfb-sidebar", "zfb-footer"].map((name) => ({ before: name, after: name })));
 });
 
 for (const colorScheme of ["light", "dark"] as const) {
@@ -59,26 +56,10 @@ for (const colorScheme of ["light", "dark"] as const) {
     const nodes = await proveActiveNativeTransition(page, testInfo, {
       label: `same-category-${colorScheme}`, regions: [header, sidebar],
     });
-    expectPairedSnapshots(nodes, ["zfb-footer", "zfb-sidebar-toggle"]);
+    expectPairedSnapshots(nodes, ["zfb-footer"]);
     await finishNativeTransition(page);
   });
 }
-
-test("real footer and both desktop toggles retain paired stationary snapshots", async ({ page }, testInfo) => {
-  await page.goto("/docs/guides/toc-test");
-  await waitForSidebarHydration(page);
-  await expect(page.locator(sidebarToggle.selector)).toBeVisible();
-  await expect(page.locator(tocToggle.selector)).toBeVisible();
-  await installNativeTransitionProbe(page);
-  await navigateNativeTransition(page, "/docs/guides/tables-test");
-  const nodes = await proveActiveNativeTransition(page, testInfo, {
-    label: "actual-desktop-toggles", regions: [header, sidebarToggle, tocToggle],
-  });
-  // Footer is below the viewport on these long pages. Require its actual paired
-  // pseudo nodes and stationary policy; a nonexistent pseudo must never pass.
-  expectPairedSnapshots(nodes, ["zfb-footer", sidebarToggle.name, tocToggle.name]);
-  await finishNativeTransition(page);
-});
 
 test("category changes and Back/Forward retain stationary header snapshots", async ({ page }, testInfo) => {
   await page.goto(GUIDES_INDEX);

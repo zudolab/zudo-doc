@@ -484,6 +484,10 @@ body > header                                        { view-transition-name: zfb
 ::view-transition-new(zfb-toc-toggle),
 ::view-transition-group(zfb-toc-toggle) { animation: none; }
 
+/* A translating incoming sidebar/root must not paint over the header's lower
+ * edge. Named snapshot groups have their own stacking order above the live DOM. */
+::view-transition-group(zfb-header) { z-index: var(--z-index-toolbar, 20); }
+
 /* A category/context change or a one-sided sidebar uses the content animation.
  * The header remains stationary even when replaced or present on only one side.
  * Other chrome retains its established entry/exit behavior. */

@@ -10,7 +10,7 @@ import { registerFragmentHistoryTests } from "./fragment-history-helpers";
 import { spaClick } from "./nav-helpers";
 import {
   finishNativeTransition, installNativeTransitionProbe, navigateNativeTransition,
-  proveActiveNativeTransition,
+  proveActiveNativeTransition, readNativeTransitionRecord,
 } from "./native-transition-helpers";
 
 // One install per file worker; immutable enabled/disabled builds share the same
@@ -89,6 +89,10 @@ export default defineConfig(
   zudoDoc({
     siteName: "Fragment history consumer",
     locales: { ja: { label: "JA", dir: "src/content/docs-ja" } },
+    headerNav: [
+      { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
+      { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+    ],
     dynamicPageTransition: true,
     mermaid: false,
     math: false,
@@ -274,6 +278,21 @@ test.describe("installed public transition delivery", () => {
     await finishNativeTransition(page);
     await expect(page.locator("main h1")).toHaveText("Guide B");
     await expect(page.locator("#desktop-sidebar")).not.toBeVisible();
+  });
+
+  test("reduced motion completes the public native lifecycle without article motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(`${origin}${guideA}`);
+    await expect(page.locator(sidebarContext)).toHaveAttribute("data-sidebar-context", /.+/);
+    await installNativeTransitionProbe(page, false);
+    await navigateNativeTransition(page, guideB);
+    await page.waitForFunction(() => window.__zdNativeTransitionProof!.records.at(-1)?.finished === "fulfilled");
+    const record = await readNativeTransitionRecord(page);
+    expect(record.native).toBe(true);
+    expect([record.ready, record.update, record.finished]).toEqual(["fulfilled", "fulfilled", "fulfilled"]);
+    expect(record.animations.some(({ name }) => /contentFade(In|Out)/.test(name))).toBe(false);
+    await expect(page.locator("main h1")).toHaveText("Guide B");
+    await expect(page.locator("#page-loading-overlay")).toHaveAttribute("aria-hidden", "true");
   });
 
   test("no-native fallback keeps the same document and fresh destination content", async ({ page }) => {

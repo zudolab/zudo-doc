@@ -1437,6 +1437,10 @@ body > header {
   animation: none;
 }
 
+::view-transition-group(zfb-header) {
+  z-index: var(--z-index-toolbar, 20);
+}
+
 ::view-transition-old(zfb-sidebar), ::view-transition-old(zfb-footer):only-child, ::view-transition-old(zfb-sidebar-toggle):only-child, ::view-transition-old(zfb-toc-toggle):only-child {
   animation: var(--default-transition-duration) ease-in both contentFadeOut;
 }

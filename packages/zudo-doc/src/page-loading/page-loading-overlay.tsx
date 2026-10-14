@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-// Server-rendered, zero-hydration full-page loading overlay.
+// Server-rendered, zero-hydration content loading overlay.
 //
 // Renders the overlay and its bootstrap into the document:
 //
@@ -15,7 +15,7 @@
 //      `zfb:after-swap` (AFTER_NAVIGATE_EVENT); see
 //      `transitions/page-events.ts` for rationale.
 //
-// Its CSS stays in the host's global stylesheet, and the component is not
+// Its package CSS is imported by the host, and the component is not
 // hydrated: the static script owns its navigation listeners.
 
 import {
@@ -66,13 +66,13 @@ document.addEventListener(${JSON.stringify(NAVIGATION_ABORTED_EVENT)},function()
 }
 
 /**
- * Full-page loading overlay shown during view-transition navigations.
+ * Content loading overlay shown while a dynamic navigation is pending.
  *
  * Mount this once per layout (typically inside `DocLayoutWithDefaults`'s
  * `bodyEnd` slot, alongside the existing body-end providers). It is
  * server-rendered and self-wires its visibility — no hydration needed.
  *
- * CSS lives in the host project's `src/styles/global.css` (`.page-loading-overlay`,
+ * CSS ships in `@takazudo/zudo-doc/page-loading.css` (`.page-loading-overlay`,
  * `.page-loading-spinner`, `[data-zd-nav-pending]` rules) rather than in an
  * inline `<style>` block here — a `<style>` inside `<body>` violates HTML5
  * element-permitted-content and fails html-validate (same fix applied to the
