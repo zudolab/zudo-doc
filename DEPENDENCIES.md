@@ -88,7 +88,7 @@ Manual interactive smoke was skipped; browser E2E is outside this local suite.
 The released 6.0.0 tuple: `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`
 and `create-zudo-doc` were published at 6.0.0 with the published zfb family
 pinned to 4.3.1 and peers ^4.3.1. zudo-doc 6.0.2 moved to zfb 4.3.2 with peers ^4.3.2 (#4541). zudo-doc 6.1.1 shipped zfb
-4.3.3 with peers ^4.3.3 (RUSTSEC-2026-0333 frontmatter parser fix). zudo-doc 6.2.0 shipped zfb 4.5.0 with peers ^4.5.0 (#4569, #4581); zdtp 0.8.6; MCP SDK 1.32.1; root and generated-MCP
+4.3.3 with peers ^4.3.3 (RUSTSEC-2026-0333 frontmatter parser fix). zudo-doc 6.2.0 shipped zfb 4.5.0 with peers ^4.5.0 (#4569, #4581). The unreleased workspace now targets zfb 4.5.1 with peers ^4.5.1; zdtp 0.8.6; MCP SDK 1.32.1; root and generated-MCP
 Wrangler 4.150.0. The history-server peer floor is ^6.0.0 (a minimum compatibility
 floor — see "First-party peer floor" in `RELEASE.md`). Publication and consumer
 evidence: [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
