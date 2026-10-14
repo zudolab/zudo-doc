@@ -118,3 +118,72 @@ test(
     expect(pointerEvents).toBe("none");
   },
 );
+
+// #4580: distinguish pending feedback from captured/animated chrome.
+test("slow navigation scopes feedback to content and removes it before native capture", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/docs/guides/page-1/");
+  await page.waitForFunction(() => Number.isFinite(history.state?.index));
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/docs/guides/page-2*", async (route) => { await gate; await route.continue(); });
+  await page.evaluate(() => {
+    document.addEventListener("zfb:before-swap", () => {
+      const overlay = document.getElementById("page-loading-overlay")!;
+      sessionStorage.setItem("loading-at-capture", JSON.stringify({ visible: overlay.hasAttribute("data-visible"), opacity: getComputedStyle(overlay).opacity }));
+    }, { once: true });
+    document.querySelector<HTMLAnchorElement>('a[href^="/docs/guides/page-2"]')!.click();
+  });
+  const overlay = page.locator("#page-loading-overlay");
+  try {
+    await expect(overlay).toHaveAttribute("data-visible", "");
+    await expect(overlay).toHaveCSS("opacity", "1");
+    const bounds = await overlay.boundingBox();
+    const header = await page.locator("body > header").boundingBox();
+    const sidebar = await page.locator("#desktop-sidebar").boundingBox();
+    expect(bounds!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
+    expect(bounds!.x).toBeGreaterThanOrEqual(sidebar!.x + sidebar!.width);
+    await expect(page.locator("[data-zd-nav-pending]")).toHaveCount(1);
+  } finally { release(); }
+  await expect(page).toHaveURL(/\/docs\/guides\/page-2\/?$/);
+  await expect(overlay).not.toHaveAttribute("data-visible");
+  await expect(page.locator("[data-zd-nav-pending]")).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem("loading-at-capture")!))).toEqual({ visible: false, opacity: "0" });
+});
+
+test("failed fetch clears pending feedback before the browser fallback", async ({ page }) => {
+  await page.goto("/docs/guides/page-1/");
+  await page.waitForFunction(() => Number.isFinite(history.state?.index));
+  await page.route("**/docs/guides/page-2*", async (route) => {
+    if (route.request().resourceType() === "fetch") await route.abort("failed");
+    else await route.continue();
+  });
+  await page.evaluate(() => {
+    document.addEventListener("zfb:navigation-aborted", () => {
+      sessionStorage.setItem("loading-after-abort", JSON.stringify({
+        visible: document.getElementById("page-loading-overlay")!.hasAttribute("data-visible"),
+        pending: document.querySelectorAll("[data-zd-nav-pending]").length,
+      }));
+    }, { once: true });
+    document.querySelector<HTMLAnchorElement>('a[href^="/docs/guides/page-2"]')!.click();
+  });
+  await page.waitForURL(/\/docs\/guides\/page-2\/?$/);
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem("loading-after-abort")!))).toEqual({ visible: false, pending: 0 });
+});
+
+test("superseded slow navigation cannot leave loading or pending markers", async ({ page }) => {
+  await page.goto("/docs/guides/page-1/");
+  await page.waitForFunction(() => Number.isFinite(history.state?.index));
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/docs/guides/page-2*", async (route) => { await gate; await route.continue(); });
+  await page.evaluate(() => document.querySelector<HTMLAnchorElement>('a[href^="/docs/guides/page-2"]')!.click());
+  await expect(page.locator("#page-loading-overlay")).toHaveAttribute("data-visible", "");
+  try {
+    await page.evaluate(() => document.querySelector<HTMLAnchorElement>('header a[href^="/docs/getting-started"]')!.click());
+    await expect(page).toHaveURL(/\/docs\/getting-started\/?$/);
+    await expect(page.locator("#page-loading-overlay")).not.toHaveAttribute("data-visible");
+    await expect(page.locator("[data-zd-nav-pending]")).toHaveCount(0);
+  } finally { release(); }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Getting Started");
+});

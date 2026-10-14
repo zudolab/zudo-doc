@@ -1053,11 +1053,12 @@ a.text-accent.underline {
   background: var(--color-page-loading-overlay, color-mix(in oklch, var(--color-overlay, #000) 60%, transparent));
   opacity: 0;
   pointer-events: none;
-  transition: opacity .15s ease-out;
+  transition: none;
 }
 
 .page-loading-overlay[data-visible] {
   opacity: 1;
+  transition: opacity .15s ease-out;
 }
 
 a[data-zd-nav-pending], button[data-zd-nav-pending] {
@@ -1403,11 +1404,11 @@ pre.hi-root .line .highlighted-word {
   }
 }
 
-[data-zfb-transition-persist^="header-"] {
+body > header {
   view-transition-name: zfb-header;
 }
 
-[data-zfb-transition-persist^="sidebar-"] {
+#desktop-sidebar {
   view-transition-name: zfb-sidebar;
 }
 
@@ -1423,16 +1424,20 @@ pre.hi-root .line .highlighted-word {
   view-transition-name: zfb-toc-toggle;
 }
 
-::view-transition-old(zfb-header), ::view-transition-new(zfb-header), ::view-transition-group(zfb-header), ::view-transition-old(zfb-sidebar), ::view-transition-new(zfb-sidebar), ::view-transition-group(zfb-sidebar), ::view-transition-old(zfb-footer), ::view-transition-new(zfb-footer), ::view-transition-group(zfb-footer), ::view-transition-old(zfb-sidebar-toggle), ::view-transition-new(zfb-sidebar-toggle), ::view-transition-group(zfb-sidebar-toggle), ::view-transition-old(zfb-toc-toggle), ::view-transition-new(zfb-toc-toggle), ::view-transition-group(zfb-toc-toggle) {
+::view-transition-old(zfb-header), ::view-transition-new(zfb-header), ::view-transition-group(zfb-header), ::view-transition-group(zfb-sidebar), ::view-transition-old(zfb-footer), ::view-transition-new(zfb-footer), ::view-transition-group(zfb-footer), ::view-transition-old(zfb-sidebar-toggle), ::view-transition-new(zfb-sidebar-toggle), ::view-transition-group(zfb-sidebar-toggle), ::view-transition-old(zfb-toc-toggle), ::view-transition-new(zfb-toc-toggle), ::view-transition-group(zfb-toc-toggle) {
   animation: none;
 }
 
-::view-transition-old(zfb-header):only-child, ::view-transition-old(zfb-sidebar):only-child, ::view-transition-old(zfb-footer):only-child, ::view-transition-old(zfb-sidebar-toggle):only-child, ::view-transition-old(zfb-toc-toggle):only-child {
+::view-transition-old(zfb-sidebar), ::view-transition-old(zfb-footer):only-child, ::view-transition-old(zfb-sidebar-toggle):only-child, ::view-transition-old(zfb-toc-toggle):only-child {
   animation: var(--default-transition-duration) ease-in both contentFadeOut;
 }
 
-::view-transition-new(zfb-header):only-child, ::view-transition-new(zfb-sidebar):only-child, ::view-transition-new(zfb-footer):only-child, ::view-transition-new(zfb-sidebar-toggle):only-child, ::view-transition-new(zfb-toc-toggle):only-child {
+::view-transition-new(zfb-sidebar), ::view-transition-new(zfb-footer):only-child, ::view-transition-new(zfb-sidebar-toggle):only-child, ::view-transition-new(zfb-toc-toggle):only-child {
   animation: var(--zd-transition-slower) ease-out both contentFadeIn;
+}
+
+:root[data-zd-sidebar-transition="stationary"]::view-transition-old(zfb-sidebar), :root[data-zd-sidebar-transition="stationary"]::view-transition-new(zfb-sidebar) {
+  animation: none;
 }
 
 ::view-transition-old(root) {
@@ -1444,7 +1449,7 @@ pre.hi-root .line .highlighted-word {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root), ::view-transition-new(root), ::view-transition-group(root), ::view-transition-old(zfb-header):only-child, ::view-transition-old(zfb-sidebar):only-child, ::view-transition-old(zfb-footer):only-child, ::view-transition-old(zfb-sidebar-toggle):only-child, ::view-transition-old(zfb-toc-toggle):only-child, ::view-transition-new(zfb-header):only-child, ::view-transition-new(zfb-sidebar):only-child, ::view-transition-new(zfb-footer):only-child, ::view-transition-new(zfb-sidebar-toggle):only-child, ::view-transition-new(zfb-toc-toggle):only-child {
+  ::view-transition-old(root), ::view-transition-new(root), ::view-transition-group(root), ::view-transition-old(zfb-sidebar), ::view-transition-old(zfb-footer):only-child, ::view-transition-old(zfb-sidebar-toggle):only-child, ::view-transition-old(zfb-toc-toggle):only-child, ::view-transition-new(zfb-sidebar), ::view-transition-new(zfb-footer):only-child, ::view-transition-new(zfb-sidebar-toggle):only-child, ::view-transition-new(zfb-toc-toggle):only-child {
     animation: none;
   }
 }

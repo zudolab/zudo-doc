@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   AFTER_NAVIGATE_EVENT,
+  AFTER_PREPARATION_EVENT,
+  NAVIGATION_ABORTED_EVENT,
   BEFORE_NAVIGATE_EVENT,
 } from "../../transitions/page-events.js";
 import PageLoadingOverlay, {
@@ -72,5 +74,35 @@ describe("<PageLoadingOverlay />", () => {
     const html = render(<PageLoadingOverlay />);
     expect(html).toContain("data-zd-nav-pending");
     expect(html).not.toContain("pointer-events: auto");
+  });
+});
+
+describe("loading lifecycle cleanup", () => {
+  it("clears loading pixels before capture, pending links after swap, and both after abort", async () => {
+    const { Window } = await import("happy-dom");
+    const window = new Window();
+    const doc = window.document;
+    doc.body.innerHTML = '<div id="loading" aria-hidden="true"></div><a href="/next">Next</a>';
+    new Function("document", "Element", buildPageLoadingOverlayBootstrap("loading"))(doc, window.Element);
+    const overlay = doc.getElementById("loading")!;
+    const link = doc.querySelector("a")!;
+    const start = () => {
+      const event = new window.Event(BEFORE_NAVIGATE_EVENT);
+      Object.assign(event, { sourceElement: link });
+      doc.dispatchEvent(event);
+    };
+    start();
+    expect(overlay.hasAttribute("data-visible")).toBe(true);
+    expect(link.hasAttribute("data-zd-nav-pending")).toBe(true);
+    doc.dispatchEvent(new window.Event(AFTER_PREPARATION_EVENT));
+    expect(overlay.hasAttribute("data-visible")).toBe(false);
+    expect(link.hasAttribute("data-zd-nav-pending")).toBe(true);
+    doc.dispatchEvent(new window.Event(AFTER_NAVIGATE_EVENT));
+    expect(link.hasAttribute("data-zd-nav-pending")).toBe(false);
+    start();
+    doc.dispatchEvent(new window.Event(NAVIGATION_ABORTED_EVENT));
+    expect(overlay.getAttribute("aria-hidden")).toBe("true");
+    expect(overlay.hasAttribute("data-visible")).toBe(false);
+    expect(link.hasAttribute("data-zd-nav-pending")).toBe(false);
   });
 });

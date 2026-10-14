@@ -32,7 +32,7 @@
 .page-loading-overlay {
   position: fixed;
   inset: 0;
-  /* Full-screen blocking load overlay — modal tier.
+  /* Pending-content overlay — the bootstrap excludes the layout's chrome.
      --z-index-modal fallback (100) ensures the overlay stacks on top even for
      bare consumers that have not defined the token. */
   z-index: var(--z-index-modal, 100);
@@ -45,11 +45,14 @@
   );
   opacity: 0;
   pointer-events: none;
-  transition: opacity 150ms ease-out;
+  /* Hide synchronously before native snapshot capture. A fade-out would be
+     baked into the old root snapshot and dim the finished destination. */
+  transition: none;
 }
 
 .page-loading-overlay[data-visible] {
   opacity: 1;
+  transition: opacity 150ms ease-out;
 }
 
 a[data-zd-nav-pending],
