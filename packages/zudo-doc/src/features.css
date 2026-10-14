@@ -457,56 +457,22 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
   }
 }
 
-/* Root cross-fade for same-document View Transitions (Strategy B).
- *
- * @view-transition { navigation: auto; } (Strategy A, cross-document) is
- * deleted — Strategy B uses <ClientRouter /> which drives same-document
- * transitions via document.startViewTransition on each navigation.
- *
- * Chrome extraction via view-transition-name (Strategy B+, zudolab/zudo-doc#1558):
- * <header>, <aside id="desktop-sidebar">, <footer>, the desktop-sidebar-toggle
- * button, and (since #3254) the desktop-toc-toggle button each carry a
- * data-zfb-transition-persist attribute whose value is keyed by locale and
- * nav-section. The five attribute selectors below assign a stable
- * view-transition-name based on the attribute value prefix, extracting those
- * elements from the root snapshot into their own named layers:
- *   - header-{lang}          → zfb-header
- *   - sidebar-{locale}-…     → zfb-sidebar
- *   - footer-{lang}          → zfb-footer
- *   - desktop-sidebar-toggle → zfb-sidebar-toggle
- *   - desktop-toc-toggle     → zfb-toc-toggle
- *
- * Once extracted, the root cross-fade animates only non-chrome content (main,
- * article, TOC, etc.). The ::view-transition-{old,new,group}(<name>) rules
- * disable animation for all five chrome layers. The group pseudo must be
- * neutralised too — even when old/new are static the group container can still
- * produce a geometry-morph animation when snapshot size/position differs.
- *
- * Entry/exit cross-fade (zudolab/zudo-doc#2072): animation: none is only
- * correct when the chrome element exists on BOTH pages of a navigation.
- * When it exists on one side only (docs page with sidebar → top page
- * without), the named group holds a single snapshot — frozen at full
- * opacity for the whole transition, then dropped abruptly at finish. The
- * :only-child rules below detect that one-sided case and cross-fade the
- * lone snapshot in sync with the root content fade (spec-standard
- * entry/exit pattern; :only-child outranks the animation: none rules via
- * the extra pseudo-class specificity). */
-
-/* Chrome extraction — assign view-transition-name from data-zfb-transition-persist */
-[data-zfb-transition-persist^="header-"]               { view-transition-name: zfb-header; }
-[data-zfb-transition-persist^="sidebar-"]              { view-transition-name: zfb-sidebar; }
+/* Visual region identity is independent of persistence/remount policy. The
+ * layout's header slot is a direct body header, including consumer overrides.
+ * A sidebar keeps its name even when incoming island props require replacement.
+ * Never name an ancestor of these regions: it would move their whole layer.
+ */
+body > header                                        { view-transition-name: zfb-header; }
+#desktop-sidebar:not(.sr-only)                       { view-transition-name: zfb-sidebar; }
 [data-zfb-transition-persist^="footer-"]               { view-transition-name: zfb-footer; }
-[data-zfb-transition-persist="desktop-sidebar-toggle"] { view-transition-name: zfb-sidebar-toggle; }
-[data-zfb-transition-persist="desktop-toc-toggle"]     { view-transition-name: zfb-toc-toggle; }
+.zd-desktop-sidebar-toggle                          { view-transition-name: zfb-sidebar-toggle; }
+.zd-desktop-toc-toggle                              { view-transition-name: zfb-toc-toggle; }
 
-/* Disable animation for all four chrome layers (old, new, and group), plus
- * the desktop-toc-toggle button (#3254 — mirrors desktop-sidebar-toggle so
- * it doesn't animate on SPA swaps). */
+/* Header snapshots and every chrome group stay at their authored geometry.
+ * Footer and toggle pairs keep their established stationary policy. */
 ::view-transition-old(zfb-header),
 ::view-transition-new(zfb-header),
 ::view-transition-group(zfb-header),
-::view-transition-old(zfb-sidebar),
-::view-transition-new(zfb-sidebar),
 ::view-transition-group(zfb-sidebar),
 ::view-transition-old(zfb-footer),
 ::view-transition-new(zfb-footer),
@@ -518,22 +484,33 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
 ::view-transition-new(zfb-toc-toggle),
 ::view-transition-group(zfb-toc-toggle) { animation: none; }
 
-/* Entry/exit: chrome element present on one side only (#2072).
- * Exit — lone old snapshot fades out with the content cross-fade. */
-::view-transition-old(zfb-header):only-child,
-::view-transition-old(zfb-sidebar):only-child,
+/* A translating incoming sidebar/root must not paint over the header's lower
+ * edge. Named snapshot groups have their own stacking order above the live DOM. */
+::view-transition-group(zfb-header) { z-index: var(--z-index-toolbar, 20); }
+
+/* A category/context change or a one-sided sidebar uses the content animation.
+ * The header remains stationary even when replaced or present on only one side.
+ * Other chrome retains its established entry/exit behavior. */
+::view-transition-old(zfb-sidebar),
 ::view-transition-old(zfb-footer):only-child,
 ::view-transition-old(zfb-sidebar-toggle):only-child,
 ::view-transition-old(zfb-toc-toggle):only-child {
   animation: var(--default-transition-duration) ease-in both contentFadeOut;
 }
 /* Entry — lone new snapshot fades in with the content cross-fade. */
-::view-transition-new(zfb-header):only-child,
-::view-transition-new(zfb-sidebar):only-child,
+::view-transition-new(zfb-sidebar),
 ::view-transition-new(zfb-footer):only-child,
 ::view-transition-new(zfb-sidebar-toggle):only-child,
 ::view-transition-new(zfb-toc-toggle):only-child {
   animation: var(--zd-transition-slower) ease-out both contentFadeIn;
+}
+
+/* Resolved navSection AND the existing navigation context must agree. The
+ * context already isolates locale, version and custom-tree topology; article,
+ * focused subtree and DOM identity are deliberately irrelevant here. */
+:root[data-zd-sidebar-transition="stationary"]::view-transition-old(zfb-sidebar),
+:root[data-zd-sidebar-transition="stationary"]::view-transition-new(zfb-sidebar) {
+  animation: none;
 }
 
 /* Root cross-fade rules — animate only the non-chrome snapshot */
@@ -559,13 +536,11 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
   ::view-transition-old(root),
   ::view-transition-new(root),
   ::view-transition-group(root),
-  ::view-transition-old(zfb-header):only-child,
-  ::view-transition-old(zfb-sidebar):only-child,
+  ::view-transition-old(zfb-sidebar),
   ::view-transition-old(zfb-footer):only-child,
   ::view-transition-old(zfb-sidebar-toggle):only-child,
   ::view-transition-old(zfb-toc-toggle):only-child,
-  ::view-transition-new(zfb-header):only-child,
-  ::view-transition-new(zfb-sidebar):only-child,
+  ::view-transition-new(zfb-sidebar),
   ::view-transition-new(zfb-footer):only-child,
   ::view-transition-new(zfb-sidebar-toggle):only-child,
   ::view-transition-new(zfb-toc-toggle):only-child {

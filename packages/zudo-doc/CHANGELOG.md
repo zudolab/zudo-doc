@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Bug Fixes
+
+- Keep the header stationary during dynamic page transitions, including when destination markup replaces it, and keep the desktop sidebar stationary within the same navigation category and locale/version/tree context. Fresh destination content and existing sidebar state handling are preserved; changing articles and table-of-contents content still animate. Sidebar entry and exit also cover `hide_sidebar` pages. Loading feedback now covers the content area without dimming the header or desktop sidebar, stays out of the page animation, and clears on the content swap or navigation cancellation. (#4580)
 
 ## [6.2.0] - 2026-10-14
 
