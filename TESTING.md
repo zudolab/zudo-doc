@@ -334,10 +334,10 @@ threshold. Use `pnpm b4push` to reproduce the lane and its timings.
 
 ### CI runtime parity (#3485)
 
-The heavy local lane must use CI's runtime: `.nvmrc` is the Node 22 selector, and
-every `pr-checks.yml` job uses `actions/setup-node` with `node-version-file:
-.nvmrc`. Run `node --version && npm --version && pnpm --version` before T4 and
-use the Node 22/npm 10 pairing used by CI. A local T4 pass under another Node/npm
+The heavy local lane must use CI's runtime: `.nvmrc` selects Node 24 LTS, and
+the dependency-installing `pr-checks.yml` jobs use `actions/setup-node` with
+`node-version-file: .nvmrc`. Run `node --version && npm --version && pnpm --version`
+before T4 and use the Node 24/pnpm 10 pairing used by CI. A local T4 pass under another Node/npm
 major is blind to runtime-dependent lifecycle behavior by construction; that is
 why `pnpm b4push` once passed while the release path died (#3485).
 

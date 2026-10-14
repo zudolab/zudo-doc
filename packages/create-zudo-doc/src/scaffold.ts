@@ -154,7 +154,7 @@ sidebar_position: 2
 
 ## Requirements
 
-- Node.js 22 or later
+- Node.js 24 LTS
 - pnpm (recommended), npm, yarn, or bun
 
 ## Create a New Project
@@ -183,7 +183,7 @@ sidebar_position: 2
 
 ## 動作要件
 
-- Node.js 22 以降
+- Node.js 24 LTS
 - pnpm（推奨）、npm、yarn、または bun
 
 ## 新しいプロジェクトを作成する

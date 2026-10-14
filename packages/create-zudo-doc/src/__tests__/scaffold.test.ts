@@ -1922,7 +1922,7 @@ describe("scaffold — generated package.json", () => {
       ),
       "utf-8",
     );
-    expect(en).toContain("Node.js 22 or later");
+    expect(en).toContain("Node.js 24 LTS");
     expect(en).not.toContain("Node.js 18");
     const ja = await fs.readFile(
       projectPath(
@@ -1931,7 +1931,7 @@ describe("scaffold — generated package.json", () => {
       ),
       "utf-8",
     );
-    expect(ja).toContain("Node.js 22 以降");
+    expect(ja).toContain("Node.js 24 LTS");
     expect(ja).not.toContain("Node.js 18");
   });
 

@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
+- Generated projects and the initializer now require Node.js 24 LTS (`>=24 <25`); Node 22 is no longer supported.
 - New projects pin the zfb family (`@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, and `zfb-adapter-cloudflare` when the MCP feature is enabled) at 4.4.0.
 
 ## [6.1.1] - 2026-10-12

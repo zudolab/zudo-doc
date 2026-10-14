@@ -112,7 +112,13 @@ peer becomes `^0.18.2 || ^0.19.0`. The consumer matrix covers 0.18.2, 0.18.11
 and 0.19.0, excluding affected versions below 0.18.2 and unreviewed 0.20+.
 KaTeX remains absent from generated defaults. Math-enabled hosts import the
 installed KaTeX stylesheet before package feature CSS. The lockfile also moves
-KaTeX's Commander dependency to 15.0.0, whose engine requires Node >=22.12.0;
-this workspace uses Node 22. Removing 0.16 support raises the consumer
-compatibility floor and needs breaking-change release review under stable SemVer.
+KaTeX's Commander dependency to 15.0.0, whose engine requires Node >=22.12.0.
+That minimum alone does not define the supported runtime. As of 2026-10-14,
+[Node's release table](https://nodejs.org/en/about/previous-releases) lists
+Node 24 as LTS (latest 24.22.0) and Node 26 as Current (latest 26.12.0);
+this workspace, initializer and framework package select the Node 24 LTS line
+(`>=24 <25`) for a single production runtime and CI lane. Node 26 support has
+not been verified. Removing 0.16 support and raising the Node floor raise the
+consumer compatibility floor and need breaking-change release review under
+stable SemVer.
 No package version is changed or published by this work.
