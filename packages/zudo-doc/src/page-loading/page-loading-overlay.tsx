@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-// Server-rendered, zero-hydration full-page loading overlay.
+// Server-rendered, zero-hydration content loading overlay.
 //
 // Renders the overlay and its bootstrap into the document:
 //
@@ -15,12 +15,13 @@
 //      `zfb:after-swap` (AFTER_NAVIGATE_EVENT); see
 //      `transitions/page-events.ts` for rationale.
 //
-// Its CSS stays in the host's global stylesheet, and the component is not
+// Its package CSS is imported by the host, and the component is not
 // hydrated: the static script owns its navigation listeners.
 
 import {
   AFTER_NAVIGATE_EVENT,
   BEFORE_NAVIGATE_EVENT,
+  NAVIGATION_ABORTED_EVENT,
 } from "../transitions/page-events.js";
 
 /** Default `id` for the overlay element. Stable so test rigs can target it. */
@@ -52,7 +53,7 @@ export function buildPageLoadingOverlayBootstrap(overlayId: string): string {
   const after = JSON.stringify(AFTER_NAVIGATE_EVENT);
   return `(function(){
 var id=${id};
-function show(){var el=document.getElementById(id);if(!el)return;el.setAttribute("data-visible","");el.setAttribute("aria-hidden","false");}
+function show(){var el=document.getElementById(id);if(!el)return;var content=document.querySelector(".zd-sidebar-content-wrapper");var header=document.querySelector("body > header");el.style.left=Math.max(0,content?content.getBoundingClientRect().left:0)+"px";el.style.top=Math.max(0,header?header.getBoundingClientRect().bottom:0)+"px";el.setAttribute("data-visible","");el.setAttribute("aria-hidden","false");}
 function hide(){var el=document.getElementById(id);if(!el)return;el.removeAttribute("data-visible");el.setAttribute("aria-hidden","true");}
 function setPending(ev){document.querySelectorAll("[data-zd-nav-pending]").forEach(function(el){el.removeAttribute("data-zd-nav-pending");});var src=ev&&ev.sourceElement;if(src&&src instanceof Element)src.setAttribute("data-zd-nav-pending","");}
 function clearPending(){document.querySelectorAll("[data-zd-nav-pending]").forEach(function(el){el.removeAttribute("data-zd-nav-pending");});}
@@ -60,17 +61,18 @@ document.addEventListener(${before},show);
 document.addEventListener(${after},hide);
 document.addEventListener(${before},setPending);
 document.addEventListener(${after},clearPending);
+document.addEventListener(${JSON.stringify(NAVIGATION_ABORTED_EVENT)},function(){hide();clearPending();});
 })();`;
 }
 
 /**
- * Full-page loading overlay shown during view-transition navigations.
+ * Content loading overlay shown while a dynamic navigation is pending.
  *
  * Mount this once per layout (typically inside `DocLayoutWithDefaults`'s
  * `bodyEnd` slot, alongside the existing body-end providers). It is
  * server-rendered and self-wires its visibility — no hydration needed.
  *
- * CSS lives in the host project's `src/styles/global.css` (`.page-loading-overlay`,
+ * CSS ships in `@takazudo/zudo-doc/page-loading.css` (`.page-loading-overlay`,
  * `.page-loading-spinner`, `[data-zd-nav-pending]` rules) rather than in an
  * inline `<style>` block here — a `<style>` inside `<body>` violates HTML5
  * element-permitted-content and fails html-validate (same fix applied to the

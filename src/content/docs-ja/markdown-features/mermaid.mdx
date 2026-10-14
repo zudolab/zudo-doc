@@ -6,19 +6,15 @@ sidebar_position: 11
 
 **Mermaid** 機能は、`mermaid` 言語を指定したフェンスコードブロックを描画済みの図に変換します。ビルド時にコードブロックがラッパー要素に置き換えられ、小さなクライアントサイドアイランドが必要に応じて Mermaid ライブラリを読み込んで図を描画します。mermaid ブロックを含まないページにはオーバーヘッドがありません。
 
-:::note Opt-in 機能
+:::note 設定
 
-`zfb.config.ts` の `mermaid` キーで有効化します。
+Mermaid はデフォルトで有効です。無効にする場合は、`zudoDoc()` に `mermaid: false` を指定します。
 
 ```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      mermaid: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({ mermaid: false }));
 ```
 
 :::
@@ -102,6 +98,12 @@ flowchart TB
 ビルド時に、Markdown パイプラインは `<pre><code class="language-mermaid">` ブロックを `<div class="mermaid">` ラッパーに置き換え、図のソースをエスケープせずに残すため、レンダラーは生の Mermaid DSL を受け取ります。mermaid パスは構文ハイライトより前に実行されるため、コードハイライターは図のソースに触れません。実行時にはクライアントアイランドがラッパーを検出して図を描画します。
 
 サポートされるすべての図の種類（フローチャート、シーケンス、ステート、クラス、ガントなど）については [Mermaid のドキュメント](https://mermaid.js.org/) を参照してください。
+
+## ブラウザーでの配信
+
+未リリースのデフォルトは、図があるページでのみ `https://esm.sh/mermaid@11.17.2` を読み込みます。この固定 11.x バージョンには Mermaid 11.16.1 の修正が含まれますが、公開済みの zudo-doc 6.1.1 に含まれる URL は変わりません。ソースの統合と npm 公開は別の工程です。
+
+描画には esm.sh とそのリモート依存関係へのアクセスが必要です。ホストの npm audit は、Mermaid が別途読み込む KaTeX を含むリモート依存グラフを検査できません。ホストの KaTeX 更新では CDN 側は更新されません。Mermaid のバージョン固定は、すべての推移的依存 URL の固定を意味しません。`buildMermaidInitScript` に渡すカスタム URL はホスト側で管理してください。
 
 ## 関連ページ
 

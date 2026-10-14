@@ -1,6 +1,6 @@
 ---
 title: Dynamic Page Transition
-description: SPA-style soft navigation with a cross-fade, a loading overlay, and preserved chrome between pages.
+description: SPA-style soft navigation with animated content, stationary navigation regions, and loading feedback.
 sidebar_position: 10
 tags:
   - customization
@@ -8,7 +8,7 @@ tags:
 
 ## Overview
 
-By default, zudo-doc navigates between pages without a full browser reload. Instead of fetching a brand-new document and repainting the whole window, it swaps only the page body in place, keeps the surrounding chrome (header, sidebar, footer) untouched, and animates the change with a cross-fade. The result feels like a single-page app (SPA): fast, smooth, and free of the white flash that a hard navigation produces.
+By default, zudo-doc navigates between pages without a full browser reload. It fetches the destination document, swaps the page body in place, and animates the changing article and table of contents. The header stays still, and the desktop sidebar stays still when you move between pages in the same navigation category and context. Destination labels, links, and metadata still update.
 
 This behaviour is called **Dynamic page transition**, and it is **on by default**.
 
@@ -22,29 +22,33 @@ Dynamic page transition is purely a presentational enhancement. The site is stil
 
 A dynamic navigation combines three pieces:
 
-1. **Same-document body swap.** When you click an internal link, the router fetches the target page in the background, then replaces the current page's body content with the new page's content — without tearing down and rebuilding the entire document. The header, sidebar, and footer DOM nodes persist across the navigation, so their scroll position and state are preserved.
+1. **Same-document body swap.** When you click an internal link, the router fetches the target page in the background, then replaces the current page's body content with the new page's content — without tearing down and rebuilding the entire document. Compatible navigation state is preserved, while markup and interactive components are refreshed when the destination requires it. A region can remain visually still even when its DOM is replaced.
 2. **History handling.** The router updates the browser history with `pushState` so the URL changes and the Back/Forward buttons work exactly as they would with a normal navigation. Pressing Back fires a `popstate` event, which the router handles by swapping back to the previous page — again without a full reload.
-3. **View Transitions API cross-fade.** The swap is wrapped in the browser's [View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API), which captures a snapshot of the old and new states and animates between them. The non-chrome content cross-fades, while the header, sidebar, and footer are extracted into their own transition layers and held static so they don't flicker.
+3. **View Transitions API cross-fade.** The swap is wrapped in the browser's [View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API), which captures a snapshot of the old and new states and animates between them. The article and table of contents animate while stationary navigation regions use separate snapshots. Browsers without this API still perform the same-document swap, without the snapshot animation.
 
 <Info>
 
-The chrome elements (`<header>`, the desktop sidebar, `<footer>`, and the sidebar-toggle button) are pinned with a stable `view-transition-name`, which is what lets the cross-fade animate only the article area. When a chrome element exists on one page but not the next (for example, moving from a docs page with a sidebar to a top page without one), that element fades in or out in sync with the content instead of snapping.
+The header stays still across categories, locale changes, and version changes, including when its markup is replaced or it exists on only one of the two pages. Its text and controls always reflect the destination.
+
+The desktop sidebar stays still when both pages resolve to the same navigation category and the same locale, version, and navigation tree. Changing the active article or the focused branch does not by itself trigger a sidebar animation. Moving to a different category or context, or entering or leaving a page with a visible sidebar (including pages using `hide_sidebar`), allows the sidebar to animate with the content. No additional configuration is needed.
 
 </Info>
 
 ## Island state during navigation
 
+Visual stability and state retention are separate. Within the same navigation context, the sidebar keeps its scroll position, filter, and disclosure choices through the existing sidebar state handling. Locale, version, and custom navigation trees keep their own state boundaries. These guarantees do not require every sidebar DOM node to survive the swap.
+
 Retaining a chrome ancestor does not freeze every nested island. When effective identity and serialized props are unchanged, the native runtime retains its DOM, handle, and scope-local state. Changed identity or props recreate the render scope; changed topology or scheduling invalidates the affected persistence boundary. Session-owned host props can opt into `data-zd-props-preserve`; keep page-derived props fresh. See [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
 
 ## The Loading Overlay
 
-While the target page is being fetched, zudo-doc shows a full-screen **loading overlay** with a centered spinner. It appears when the navigation begins and disappears as soon as the new content is swapped in, giving immediate feedback that a click was registered — especially useful on slower connections where the fetch takes a moment.
+While the target page is being fetched, zudo-doc shows a **loading overlay** with a centered spinner over the content area. In the standard layout, it starts below the header and beside the desktop sidebar, so loading feedback does not dim those navigation regions. It remains visible until the content swap or navigation cancellation. The loading scrim and spinner are excluded from the page animation, so useful feedback on slower connections does not leave the destination dimmed during its transition.
 
-The link or button you clicked is also briefly highlighted while its navigation is pending, so it's clear which action is in flight.
+The link or button you clicked remains highlighted until the content swap completes. If navigation is aborted, including a failed or superseded request, the loading overlay and pending highlight are cleared.
 
 <Tip>
 
-The overlay only shows for the brief window between click and swap. For fast local navigations it may flash by almost instantly — that's expected. Its job is to cover the perceptible delay on slower fetches, not to add an artificial pause.
+The overlay only shows between the start of navigation and the content swap or cancellation. For fast local navigations it may flash by almost instantly — that's expected. Its job is to cover the perceptible delay on slower fetches, not to add an artificial pause.
 
 </Tip>
 
@@ -53,7 +57,7 @@ The overlay only shows for the brief window between click and swap. For fast loc
 zudo-doc respects the user's `prefers-reduced-motion` setting. When a visitor has reduced motion enabled at the OS level:
 
 - The cross-fade animation is collapsed to an **instant swap** — the new page appears immediately with no fade or slide.
-- The spinner stops rotating and is shown as a **static** dimmed ring instead of an animated one.
+- The spinner stops rotating and is shown as a **static** ring without reducing its contrast.
 
 The navigation itself still works the same way (same-document swap, history handling); only the motion is removed. This keeps the experience comfortable for users who are sensitive to animation while preserving the performance benefit of soft navigation.
 
@@ -110,7 +114,9 @@ The overlay ships from `@takazudo/zudo-doc` as two pieces you wire yourself: the
 
 ### Mount the component
 
-Import `PageLoadingOverlay` and render it **once per layout**, in a body-end slot (the same place you mount your other body-end providers). It is server-rendered with **no hydration** — it emits a small inline script that self-wires its visibility to the navigation lifecycle (`zfb:before-preparation` / `zfb:after-swap`), so there is no island to register and no `client:*` directive to add.
+Import `PageLoadingOverlay` and render it **once per layout**, in a body-end slot (the same place you mount your other body-end providers). It is server-rendered with **no hydration** — it emits a small inline script that listens to the navigation lifecycle, so there is no island to register and no `client:*` directive to add. The overlay and pending-link highlight appear on `zfb:before-preparation`. Both clear on `zfb:after-swap` or `zfb:navigation-aborted`. The shipped stylesheet keeps the loading feedback out of the page animation.
+
+The script uses the existing content wrapper and header bounds to position the overlay. In a standalone layout without those elements, it falls back to the viewport edges.
 
 ```tsx
 import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";

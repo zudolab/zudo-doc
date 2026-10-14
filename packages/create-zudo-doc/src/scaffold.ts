@@ -60,7 +60,7 @@ export function deriveDocSkillName(projectName: string): string {
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^6.1.1";
+export const ZUDO_DOC_PIN = "^6.2.0";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -710,7 +710,7 @@ function generatePackageJson(
   const deps: Record<string, string> = {
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
-    // @takazudo/zfb-<platform>); pinned to the exact stable 4.4.0 package
+    // @takazudo/zfb-<platform>); pinned to the exact stable 4.5.1 package
     // family required by the zfb v4 migration lock.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
@@ -988,9 +988,9 @@ function generatePackageJson(
     // 2.22.1: zfb fixes dev live reload and lazy boot; md-wasm retains
     // workerd-specific parse/highlight exports while retaining browser paths.
     // No scaffold config migration is required.
-    "@takazudo/zfb": "4.4.0",
-    "@takazudo/zfb-runtime": "4.4.0",
-    "@takazudo/zfb-md-wasm": "4.4.0",
+    "@takazudo/zfb": "4.5.1",
+    "@takazudo/zfb-runtime": "4.5.1",
+    "@takazudo/zfb-md-wasm": "4.5.1",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -1056,7 +1056,7 @@ function generatePackageJson(
     // barebone sites remain provider-independent.
     // Keep the adapter in lockstep with the zfb family (and root pin), checked
     // by scripts/check-pin-parity.mjs.
-    deps["@takazudo/zfb-adapter-cloudflare"] = "4.4.0";
+    deps["@takazudo/zfb-adapter-cloudflare"] = "4.5.1";
     // Match @takazudo/zudo-doc's optional peer exactly. The package-owned MCP
     // route imports the SDK only when this feature is enabled.
     deps["@modelcontextprotocol/sdk"] = "1.32.1";
@@ -1075,7 +1075,7 @@ function generatePackageJson(
   if (choices.features.includes("mcp")) {
     // Match the root Wrangler dev pin. Wrangler is never installed or invoked
     // by scaffolding itself; preview and deployment remain owner-controlled.
-    devDeps["wrangler"] = "4.149.0";
+    devDeps["wrangler"] = "4.150.0";
   }
 
   // search ships as @takazudo/zudo-doc's own self-contained generated
@@ -1129,7 +1129,7 @@ function generatePackageJson(
     // `/exclude` at module scope from the always-bundled chrome graph; #3110
     // moved compileExclude into @takazudo/zudo-doc, so projects with both
     // docHistory and assetViewer off no longer need the package at all.
-    deps["@takazudo/zudo-doc-history-server"] = "^6.1.1";
+    deps["@takazudo/zudo-doc-history-server"] = "^6.2.0";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).

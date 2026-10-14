@@ -31,8 +31,9 @@
 
 .page-loading-overlay {
   position: fixed;
+  view-transition-name: zfb-loading;
   inset: 0;
-  /* Full-screen blocking load overlay — modal tier.
+  /* Pending-content overlay — the bootstrap excludes the layout's chrome.
      --z-index-modal fallback (100) ensures the overlay stacks on top even for
      bare consumers that have not defined the token. */
   z-index: var(--z-index-modal, 100);
@@ -45,11 +46,13 @@
   );
   opacity: 0;
   pointer-events: none;
-  transition: opacity 150ms ease-out;
+  /* Hidden loading feedback must disappear synchronously. */
+  transition: none;
 }
 
 .page-loading-overlay[data-visible] {
   opacity: 1;
+  transition: opacity 150ms ease-out;
 }
 
 a[data-zd-nav-pending],
@@ -90,3 +93,11 @@ button[data-zd-nav-pending] {
     border-bottom-color: var(--color-page-loading-spinner, #fff);
   }
 }
+
+/* Pending feedback belongs to the fetch, not the page cross-fade. Extract it
+ * from the root snapshot, then suppress its snapshot layer. This also avoids
+ * an unscoped after-preparation event from an older fetch hiding newer feedback.
+ */
+::view-transition-group(zfb-loading) { animation: none; }
+::view-transition-old(zfb-loading),
+::view-transition-new(zfb-loading) { display: none; }

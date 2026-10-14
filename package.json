@@ -1,6 +1,6 @@
 {
   "name": "zudo-doc",
-  "version": "6.1.1",
+  "version": "6.2.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -112,7 +112,8 @@
       "ws": ">=8.20.1",
       "yaml@2": ">=2.8.3 <3",
       "brace-expansion@5": ">=5.0.9 <6",
-      "fast-uri@3": ">=3.1.5 <4",
+      "fast-uri@3": ">=3.1.8 <4",
+      "hono@4": ">=4.13.7 <5",
       "nanoid@3": ">=3.3.18 <4",
       "sharp": ">=0.35.0 <1"
     }
@@ -120,10 +121,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
     "@takazudo/zdtp": "0.8.6",
-    "@takazudo/zfb": "4.4.0",
-    "@takazudo/zfb-adapter-cloudflare": "4.4.0",
-    "@takazudo/zfb-md-wasm": "4.4.0",
-    "@takazudo/zfb-runtime": "4.4.0",
+    "@takazudo/zfb": "4.5.1",
+    "@takazudo/zfb-adapter-cloudflare": "4.5.1",
+    "@takazudo/zfb-md-wasm": "4.5.1",
+    "@takazudo/zfb-runtime": "4.5.1",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "katex": "^0.19.0",
@@ -150,6 +151,6 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.2",
     "vitest": "^4.1.0",
-    "wrangler": "4.149.0"
+    "wrangler": "4.150.0"
   }
 }

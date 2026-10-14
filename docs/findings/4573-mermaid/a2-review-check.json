@@ -1,0 +1,23 @@
+[
+  {
+    "page": "404.html",
+    "candidateIdentityOccurrences": 1,
+    "cdnReplacementCount": 1,
+    "restoredEqualsBaseline": true,
+    "restoredSha256": "6fa5c9d3ccdbccf673051922dd8a856d0d119a159ebebf88959e3bf3bfe26a73"
+  },
+  {
+    "page": "docs/getting-started/index.html",
+    "candidateIdentityOccurrences": 2,
+    "cdnReplacementCount": 1,
+    "restoredEqualsBaseline": true,
+    "restoredSha256": "9b0ae51729b8aafcf5d03b9321f936cee153c478c900dc6037b24674523388a5"
+  },
+  {
+    "page": "docs/getting-started/coverage/index.html",
+    "candidateIdentityOccurrences": 4,
+    "cdnReplacementCount": 1,
+    "restoredEqualsBaseline": true,
+    "restoredSha256": "cc986132a37ab617f9cc596fc5b3fd40ccc22088711ea176b2936607e37b091d"
+  }
+]

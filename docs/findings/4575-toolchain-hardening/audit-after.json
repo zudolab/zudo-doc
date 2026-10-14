@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 1,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "dependencies": 245,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 245
+  },
+  "advisories": [
+    {
+      "id": "GHSA-238p-pmpm-9mq7",
+      "module": "katex",
+      "severity": "low",
+      "vulnerable": ">=0.11.0 <0.18.2",
+      "patched": ">=0.18.2",
+      "findings": [
+        {
+          "version": "0.16.38",
+          "paths": [
+            ".>katex"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-238p-pmpm-9mq7"
+    }
+  ]
+}

@@ -6,19 +6,15 @@ sidebar_position: 11
 
 The **Mermaid** feature turns fenced code blocks tagged with the `mermaid` language into rendered diagrams. The build replaces the code block with a wrapper element, and a small client-side island loads the Mermaid library on demand to draw the diagram — pages without a mermaid block incur no overhead.
 
-:::note Opt-in feature
+:::note Configuration
 
-Enable it with the `mermaid` key in `zfb.config.ts`:
+Mermaid is enabled by default. Set `mermaid: false` in `zudoDoc()` to disable it:
 
 ```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      mermaid: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({ mermaid: false }));
 ```
 
 :::
@@ -102,6 +98,12 @@ flowchart TB
 At build time the markdown pipeline replaces the `<pre><code class="language-mermaid">` block with a `<div class="mermaid">` wrapper, leaving the diagram source unescaped so the renderer receives the raw Mermaid DSL. The mermaid pass runs before syntax highlighting, so the code highlighter never touches the diagram source. At runtime a client island detects the wrapper and renders the diagram.
 
 See the [Mermaid documentation](https://mermaid.js.org/) for every supported diagram type (flowcharts, sequence, state, class, gantt, and more).
+
+## Browser delivery
+
+The unreleased default imports `https://esm.sh/mermaid@11.17.2` only when a page contains a diagram. This exact 11.x pin includes the fixes released in Mermaid 11.16.1; it does not change the copy in the published zudo-doc 6.1.1 package. Source integration and npm publication are separate.
+
+Rendering requires access to esm.sh and its remote dependencies. A host’s npm audit cannot inspect that graph, including Mermaid’s separate KaTeX dependency; upgrading the host’s KaTeX does not update the CDN copy. The exact Mermaid pin does not lock every transitive URL. A custom URL passed to `buildMermaidInitScript` remains the host’s responsibility.
 
 ## See also
 

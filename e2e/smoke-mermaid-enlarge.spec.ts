@@ -63,7 +63,10 @@ test.describe("Mermaid Enlarge: browser behavior", () => {
 
     const dialog = page.locator("dialog.zd-mermaid-dialog");
     await expect(dialog).toBeVisible({ timeout: 3000 });
-    await expect(dialog.locator(".zd-mermaid-transform svg")).toBeVisible();
+    const diagram = dialog.locator(".zd-mermaid-transform svg.flowchart");
+    await expect(diagram).toBeVisible();
+    await expect(diagram.locator(".node")).not.toHaveCount(0);
+    await expect(diagram).toContainText("Start");
   });
 
   test("zoom controls enablement: −/pan start disabled, + enabled; after + they enable; − clamps and re-disables", async ({

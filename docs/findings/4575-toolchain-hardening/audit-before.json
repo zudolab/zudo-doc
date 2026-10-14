@@ -1,0 +1,161 @@
+{
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 1,
+      "moderate": 6,
+      "high": 2,
+      "critical": 0
+    },
+    "dependencies": 245,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 245
+  },
+  "advisories": [
+    {
+      "id": "GHSA-gqvv-2mrq-wpjv",
+      "module": "hono",
+      "severity": "moderate",
+      "vulnerable": "<4.13.5",
+      "patched": ">=4.13.5",
+      "findings": [
+        {
+          "version": "4.13.1",
+          "paths": [
+            ".>@modelcontextprotocol/sdk>hono"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-gqvv-2mrq-wpjv"
+    },
+    {
+      "id": "GHSA-g6gw-c38x-mqfc",
+      "module": "hono",
+      "severity": "moderate",
+      "vulnerable": "<4.13.5",
+      "patched": ">=4.13.5",
+      "findings": [
+        {
+          "version": "4.13.1",
+          "paths": [
+            ".>@modelcontextprotocol/sdk>hono"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-g6gw-c38x-mqfc"
+    },
+    {
+      "id": "GHSA-crvj-82cr-hjcx",
+      "module": "hono",
+      "severity": "moderate",
+      "vulnerable": "<4.13.5",
+      "patched": ">=4.13.5",
+      "findings": [
+        {
+          "version": "4.13.1",
+          "paths": [
+            ".>@modelcontextprotocol/sdk>hono"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-crvj-82cr-hjcx"
+    },
+    {
+      "id": "GHSA-qw65-cvwx-89v3",
+      "module": "fast-uri",
+      "severity": "high",
+      "vulnerable": ">=3.0.0 <3.1.7",
+      "patched": ">=3.1.7",
+      "findings": [
+        {
+          "version": "3.1.6",
+          "paths": [
+            ".>@modelcontextprotocol/sdk>ajv>fast-uri"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-qw65-cvwx-89v3"
+    },
+    {
+      "id": "GHSA-58mr-gqgx-xq4g",
+      "module": "fast-uri",
+      "severity": "high",
+      "vulnerable": "=3.1.6",
+      "patched": ">=3.1.7",
+      "findings": [
+        {
+          "version": "3.1.6",
+          "paths": [
+            ".>@modelcontextprotocol/sdk>ajv>fast-uri"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-58mr-gqgx-xq4g"
+    },
+    {
+      "id": "GHSA-hrr3-gc8f-f4qj",
+      "module": "fast-uri",
+      "severity": "moderate",
+      "vulnerable": ">=3.0.0 <3.1.8",
+      "patched": ">=3.1.8",
+      "findings": [
+        {
+          "version": "3.1.6",
+          "paths": [
+            ".>@modelcontextprotocol/sdk>ajv>fast-uri"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-hrr3-gc8f-f4qj"
+    },
+    {
+      "id": "GHSA-hxh3-vqpv-xpqv",
+      "module": "hono",
+      "severity": "moderate",
+      "vulnerable": "<4.13.7",
+      "patched": ">=4.13.7",
+      "findings": [
+        {
+          "version": "4.13.1",
+          "paths": [
+            ".>@modelcontextprotocol/sdk>hono"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-hxh3-vqpv-xpqv"
+    },
+    {
+      "id": "GHSA-r4xh-jqrq-34v2",
+      "module": "smol-toml",
+      "severity": "moderate",
+      "vulnerable": "<=1.8.0",
+      "patched": ">=1.9.0",
+      "findings": [
+        {
+          "version": "1.8.0",
+          "paths": [
+            "packages__zudo-doc>smol-toml"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-r4xh-jqrq-34v2"
+    },
+    {
+      "id": "GHSA-238p-pmpm-9mq7",
+      "module": "katex",
+      "severity": "low",
+      "vulnerable": ">=0.11.0 <0.18.2",
+      "patched": ">=0.18.2",
+      "findings": [
+        {
+          "version": "0.16.38",
+          "paths": [
+            ".>katex"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-238p-pmpm-9mq7"
+    }
+  ]
+}

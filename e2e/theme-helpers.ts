@@ -22,8 +22,8 @@ export function appearanceTriggers(page: Page): Locator {
   return page.locator(APPEARANCE_TRIGGERS);
 }
 
-export function appearanceMenu(page: Page): Locator {
-  return page.getByRole("menu", { name: "Appearance", exact: true });
+export function appearanceMenu(page: Page, locale: "en" | "ja" = "en"): Locator {
+  return page.getByRole("menu", { name: locale === "ja" ? "外観" : "Appearance", exact: true });
 }
 
 export function appearanceOption(page: Page, preference: ThemePreference): Locator {
@@ -70,10 +70,11 @@ export async function waitForStoredThemePreference(
 export async function openAppearanceMenu(
   page: Page,
   trigger: Locator = appearanceTrigger(page),
+  locale: "en" | "ja" = "en",
 ): Promise<void> {
   await expect(trigger).not.toHaveAttribute("aria-disabled", "true", { timeout: 10000 });
   await trigger.click();
-  await expect(appearanceMenu(page)).toBeVisible();
+  await expect(appearanceMenu(page, locale)).toBeVisible();
 }
 
 export async function selectThemePreference(

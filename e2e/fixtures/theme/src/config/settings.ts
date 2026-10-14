@@ -57,7 +57,9 @@ export const settings = {
   // Mirrors the showcase default — see /docs/guides/configuration.
   dateFormat: "locale" as DateFormatSetting,
   defaultLocale: "en" as const,
-  locales: {} satisfies Record<string, LocaleConfig>,
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  } satisfies Record<string, LocaleConfig>,
   mermaid: false,
   transclude: false,
   noindex: true as boolean,

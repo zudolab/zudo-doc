@@ -51,6 +51,12 @@
  */
 export const BEFORE_NAVIGATE_EVENT = "zfb:before-preparation";
 
+/** Fetch/preparation finished, before the native old snapshot is captured. */
+export const AFTER_PREPARATION_EVENT = "zfb:after-preparation";
+
+/** A navigation was abandoned before committing the destination DOM. */
+export const NAVIGATION_ABORTED_EVENT = "zfb:navigation-aborted";
+
 /**
  * Event name fired after a SPA body swap. Today resolves to
  * `"zfb:after-swap"`. The initial page load uses `zfb:page-load` instead;
