@@ -357,6 +357,29 @@ not just pass", before merging or tagging:
    Pending, missing, failed or cancelled applicable runs block tags. Do not manually
    dispatch a deployment as verification.
 
+### Expect the first A2 run to fail on the build identity
+
+Every lockstep release so far (6.0.2, 6.1.0, 6.1.1, 6.2.0) failed the three strict A2
+fingerprints on the release PR's first run. The version bump changes the native
+`data-zfb-build` identity embedded in the captured pages. The hashes depend on the
+hosted build environment, so they cannot be pre-computed locally. Budget one extra
+CI round and rebaseline on the still-open PR as follows:
+
+1. Download the failing run's `a2-route-parity-diagnostics` artifact. Also download the
+   artifact from the run that accepted the current
+   `scripts/__tests__/fixtures/a2-route-reference.json`; its `manifest.json` hashes must
+   equal the reference.
+2. Byte-compare each `*.normalized.html` pair. Rebaseline only if lengths are equal, the
+   sole difference is the `data-zfb-build` value(s), and substituting the old value back
+   into the new capture reproduces the accepted bytes exactly. Any other residual is a
+   real regression: fix it, do not rebaseline.
+3. Update the three hashes in `a2-route-reference.json` and add a causal review under
+   `docs/findings/` recording both runs, artifact IDs, checkouts, old/new identities, and
+   per-page occurrence counts. Use `docs/findings/4582-release-6.2.0-a2-causal-review.md`
+   as the template. Commit as `test: rebaseline strict A2 identities for the
+   <NEW_VERSION> release`, push, and collect the evidence above from the fresh run. The
+   failing run explains the rebaseline; only the fresh run certifies it.
+
 If an unchanged transient main CI failure occurs, inspect its failed logs and rerun at
 that same recorded SHA, retaining the successful attempt. **After merge, any source
 repair requires a new corrective PR against refreshed main**, fresh PR checks with A2
@@ -494,6 +517,11 @@ gh release edit "v<NEW_VERSION>" --draft=false --prerelease
 #    watch publish-create-zudo-doc.yml run to success, then:
 until npm view create-zudo-doc@<NEW_VERSION> version 2>/dev/null; do sleep 10; done
 ```
+
+GitHub's "Latest release" badge belongs on the bare `v<NEW_VERSION>` (create-zudo-doc)
+release for a stable version. Do not pass `--latest=false` when publishing. Afterwards,
+check `gh release list --limit 4 --json tagName,isLatest` and, if needed, run
+`gh release edit "v<NEW_VERSION>" --latest`. A prerelease never takes the badge.
 
 ## Step 10 — Report
 
