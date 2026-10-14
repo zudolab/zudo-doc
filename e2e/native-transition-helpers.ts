@@ -11,6 +11,15 @@ export interface NativeTransitionRecord {
   update: string;
   finished: string;
   animations: Array<{ name: string; pseudo: string | null; duration: number | string }>;
+  clock?: {
+    status: "advanced" | "stopped" | "missing";
+    first: number | null;
+    second: number | null;
+    state: AnimationPlayState | "missing";
+    ready: string;
+    update: string;
+    finished: string;
+  };
 }
 interface BrowserProof {
   records: NativeTransitionRecord[];
@@ -64,6 +73,31 @@ export async function installNativeTransitionProbe(page: Page, hold = true): Pro
         if (proof.hold) for (const animation of proof.animations) {
           animation.pause();
           animation.currentTime = 0;
+        }
+        else {
+          // Observe the unmodified browser clock here, before test-driver
+          // round trips can consume the short active transition window.
+          const content = proof.animations.find((animation) =>
+            (animation.effect as KeyframeEffect | null)?.pseudoElement === "::view-transition-new(root)");
+          let first = typeof content?.currentTime === "number" ? content.currentTime : null;
+          const observe = () => {
+            const second = typeof content?.currentTime === "number" ? content.currentTime : null;
+            const state = content?.playState ?? "missing";
+            const advanced = first !== null && second !== null && second > first;
+            if (!content || state !== "running" || advanced) {
+              record.clock = {
+                status: !content ? "missing" : advanced && state === "running" ? "advanced" : "stopped",
+                first, second, state,
+                ready: record.ready, update: record.update, finished: record.finished,
+              };
+              return;
+            }
+            // A newly ready animation may not yet have a resolved start time.
+            // Establish its first sample on the first numeric browser frame.
+            if (first === null) first = second;
+            requestAnimationFrame(observe);
+          };
+          requestAnimationFrame(observe);
         }
       }, (reason: Error) => { record.ready = reason.name; });
     };

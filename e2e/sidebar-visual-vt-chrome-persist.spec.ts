@@ -17,6 +17,42 @@ const TO = "/docs/guides/sub-a/page-2";
 const sidebarToggle = { name: "zfb-sidebar-toggle", selector: ".zd-desktop-sidebar-toggle" };
 const tocToggle = { name: "zfb-toc-toggle", selector: ".zd-desktop-toc-toggle" };
 
+/** Rounded antialiased corners include the animated article behind the button.
+ * Compare pixels owned by the opaque button, including its entire icon and both
+ * straight borders. Native geometry still covers the full snapshot below. */
+async function opaqueToggleClip(page: import("@playwright/test").Page, selector: string) {
+  return page.locator(selector).evaluate((button) => {
+    const style = getComputedStyle(button);
+    const bounds = button.getBoundingClientRect();
+    const radii = [style.borderTopLeftRadius, style.borderTopRightRadius,
+      style.borderBottomLeftRadius, style.borderBottomRightRadius].map((value) => {
+      const vertical = value.trim().split(/\s+/).at(-1)!;
+      if (!/^\d+(\.\d+)?px$/.test(vertical)) throw new Error("Expected resolved pixel corner radius");
+      return Number.parseFloat(vertical);
+    });
+    // Theme tokens may resolve to oklch()/color(), not only rgb(). Ask the
+    // browser to resolve alpha without changing or approximating that color.
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext("2d")!;
+    context.fillStyle = style.backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    if (style.opacity !== "1" || context.getImageData(0, 0, 1, 1).data[3] !== 255) {
+      throw new Error("Toggle must have an opaque background");
+    }
+    const inset = Math.ceil(Math.max(...radii));
+    const clip = { x: Math.ceil(bounds.left), y: Math.ceil(bounds.top) + inset,
+      width: Math.floor(bounds.right) - Math.ceil(bounds.left),
+      height: Math.floor(bounds.bottom) - Math.ceil(bounds.top) - 2 * inset };
+    const icon = button.querySelector("svg")?.getBoundingClientRect();
+    if (!icon || clip.height <= 0 || icon.left < clip.x || icon.right > clip.x + clip.width ||
+      icon.top < clip.y || icon.bottom > clip.y + clip.height) {
+      throw new Error("Opaque snapshot band must contain the entire toggle icon");
+    }
+    return clip;
+  });
+}
+
 test("enabled desktop toggles have independent visual names", async ({ page }) => {
   await page.goto(FROM);
   await waitForSidebarHydration(page);
@@ -41,9 +77,12 @@ test("real footer and both desktop toggles retain paired stationary snapshots", 
   await expect(page.locator(tocToggle.selector)).toBeVisible();
   await installNativeTransitionProbe(page);
   await navigateNativeTransition(page, TO);
+  const toggles = await Promise.all([sidebarToggle, tocToggle].map(async (toggle) => ({
+    ...toggle, clip: await opaqueToggleClip(page, toggle.selector),
+  })));
   const nodes = await proveActiveNativeTransition(page, testInfo, {
     label: "actual-desktop-toggles",
-    regions: [{ name: "zfb-header", selector: "header" }, sidebarToggle, tocToggle],
+    regions: [{ name: "zfb-header", selector: "header" }, ...toggles],
   });
   // The footer is below the viewport. Require its actual paired pseudo nodes
   // and stationary policy; the helper additionally proves toggle pixel equality.

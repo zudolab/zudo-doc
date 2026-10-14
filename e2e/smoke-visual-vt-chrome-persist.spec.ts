@@ -170,30 +170,20 @@ test("native content animation advances on the browser clock", async ({ page }, 
   await waitForSidebarHydration(page);
   await installNativeTransitionProbe(page, false);
   await navigateNativeTransition(page, GUIDES_PAGE_1);
-  const sample = await page.evaluate(async () => {
-    const proof = window.__zdNativeTransitionProof!;
-    const animation = proof.animations.find((candidate) =>
-      (candidate.effect as KeyframeEffect | null)?.pseudoElement === "::view-transition-new(root)");
-    if (!animation || animation.playState !== "running" || typeof animation.currentTime !== "number") {
-      throw new Error("A real running native content animation is required");
-    }
-    const first = animation.currentTime;
-    await new Promise<void>((resolve) => {
-      const frame = () => {
-        if (typeof animation.currentTime === "number" && animation.currentTime > first) resolve();
-        else requestAnimationFrame(frame);
-      };
-      requestAnimationFrame(frame);
-    });
-    return { first, second: animation.currentTime, state: animation.playState, record: proof.records.at(-1) };
-  });
-  expect(sample.second).toBeGreaterThan(sample.first);
+  await page.waitForFunction(() => window.__zdNativeTransitionProof!.records.at(-1)?.clock !== undefined);
+  const record = await readNativeTransitionRecord(page);
+  const sample = record.clock!;
+  expect(record.native).toBe(true);
+  expect(record.animations.some(({ name, pseudo }) =>
+    name === "contentFadeIn" && pseudo === "::view-transition-new(root)")).toBe(true);
+  expect(sample.status).toBe("advanced");
+  expect(sample.first).not.toBeNull();
+  expect(sample.second).toBeGreaterThan(sample.first!);
   expect(sample.state).toBe("running");
-  expect(sample.record?.ready).toBe("fulfilled");
-  expect(sample.record?.finished).toBe("pending");
-  const nodes = await nativeSnapshots(page);
-  expect(nodes.some((node) => node.name === "root" && node.type === "view-transition-new" && node.style["animation-name"] === "contentFadeIn")).toBe(true);
-  await testInfo.attach("native-browser-clock.json", { body: JSON.stringify({ sample, nodes }, null, 2), contentType: "application/json" });
+  expect([sample.ready, sample.update, sample.finished]).toEqual(["fulfilled", "fulfilled", "pending"]);
+  // Actual pseudo-node and active-pixel proof is covered by the held tests.
+  // Querying CDP here would race the natural completion we are observing.
+  await testInfo.attach("native-browser-clock.json", { body: JSON.stringify({ record, sample }, null, 2), contentType: "application/json" });
   await page.waitForFunction(() => window.__zdNativeTransitionProof!.records.at(-1)?.finished === "fulfilled");
   expect((await readNativeTransitionRecord(page)).update).toBe("fulfilled");
 });
