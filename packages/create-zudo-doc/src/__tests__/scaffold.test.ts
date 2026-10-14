@@ -1903,13 +1903,13 @@ describe("scaffold — generated package.json", () => {
     });
   });
 
-  it("emits engines.node >=22 to match zfb's Node floor (#2702)", async () => {
+  it("emits the supported Node 24 LTS engine range", async () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(pkg.engines).toEqual({ node: ">=22" });
+    expect(pkg.engines).toEqual({ node: ">=24 <25" });
   });
 
-  it("seeds the installation doc with the real Node floor (>=22), both locales (#2702)", async () => {
+  it("seeds the installation doc with the supported Node 24 LTS line, both locales", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-node-floor",

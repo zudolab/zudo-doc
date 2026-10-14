@@ -1251,9 +1251,9 @@ function generatePackageJson(
     version: "0.0.1",
     private: true,
     type: "module",
-    // @takazudo/zfb + @takazudo/zfb-runtime declare engines.node ">=22.0.0";
-    // emit the floor so `<pm> install` warns early on an unsupported Node.
-    engines: { node: ">=22" },
+    // Match the supported @takazudo/zudo-doc Node 24 LTS line so installs
+    // warn before a framework dependency runs on an unsupported Node.
+    engines: { node: ">=24 <25" },
     scripts,
     dependencies: deps,
     devDependencies: devDeps,
