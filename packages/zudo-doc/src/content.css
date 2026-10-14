@@ -52,6 +52,9 @@
   color: var(--color-fg);
   font-size: var(--text-body);
   line-height: var(--leading-relaxed);
+  /* Let ordinary prose and navigation labels reflow at narrow widths (#4585).
+   * Preformatted code keeps its white-space contract and local scrolling. */
+  overflow-wrap: anywhere;
 }
 
 /* ── Flow spacing (vertical rhythm) ── */
