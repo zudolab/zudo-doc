@@ -1903,13 +1903,13 @@ describe("scaffold — generated package.json", () => {
     });
   });
 
-  it("emits engines.node >=22 to match zfb's Node floor (#2702)", async () => {
+  it("emits the supported Node 24 LTS engine range", async () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(pkg.engines).toEqual({ node: ">=22" });
+    expect(pkg.engines).toEqual({ node: ">=24 <25" });
   });
 
-  it("seeds the installation doc with the real Node floor (>=22), both locales (#2702)", async () => {
+  it("seeds the installation doc with the supported Node 24 LTS line, both locales", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-node-floor",
@@ -1922,7 +1922,7 @@ describe("scaffold — generated package.json", () => {
       ),
       "utf-8",
     );
-    expect(en).toContain("Node.js 22 or later");
+    expect(en).toContain("Node.js 24 LTS");
     expect(en).not.toContain("Node.js 18");
     const ja = await fs.readFile(
       projectPath(
@@ -1931,7 +1931,7 @@ describe("scaffold — generated package.json", () => {
       ),
       "utf-8",
     );
-    expect(ja).toContain("Node.js 22 以降");
+    expect(ja).toContain("Node.js 24 LTS");
     expect(ja).not.toContain("Node.js 18");
   });
 

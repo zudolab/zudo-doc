@@ -36,7 +36,7 @@ interface Builtins {
 
 /**
  * Resolve `node:fs`/`node:path` at call time via `process.getBuiltinModule`
- * (Node >= 22.3; CI's setup-node 22 and local dev Node 24 both satisfy this)
+ * (Node >= 22.3; the supported Node 24 LTS runtime satisfies this)
  * instead of top-level `import fs from "node:fs"`. This was this module's
  * only static `node:*` import in the chrome render graph (#3394 companion 2).
  *

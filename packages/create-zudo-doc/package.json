@@ -22,7 +22,7 @@
     "cli"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=24 <25"
   },
   "publishConfig": {
     "access": "public",

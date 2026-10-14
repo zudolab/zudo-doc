@@ -8,7 +8,7 @@ When `math` is enabled in settings (default: `false`), you can render mathematic
 
 <Note>
 
-`math: true` requires installing the optional peer `katex` (`pnpm add katex`) — `create-zudo-doc` does not add it for you. See [Configuration — math](../guides/configuration.mdx#content-and-i18n-math) for the full optional-peer contract (`katex` for math, `diff` for [Document History](../guides/doc-history.mdx)).
+`math: true` requires installing the optional peer `katex` (`pnpm add katex@^0.19.0`) — `create-zudo-doc` does not add it for you. See [Configuration — math](../guides/configuration.mdx#content-and-i18n-math) for the full optional-peer contract (`katex` for math, `diff` for [Document History](../guides/doc-history.mdx)).
 
 </Note>
 
@@ -38,6 +38,25 @@ Add the `block` prop to render a centered display equation.
 <MathBlock latex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}" block />
 ```
 
+## Patched KaTeX setup
+
+The unreleased package supports the optional peer `^0.18.2 || ^0.19.0`; the consumer matrix covers 0.18.2, 0.18.11 and 0.19.0. This raises the compatibility floor from 0.16.x. Versions below 0.18.2 are affected by [GHSA-238p-pmpm-9mq7](https://github.com/KaTeX/KaTeX/security/advisories/GHSA-238p-pmpm-9mq7); 0.20 and later are not part of this contract. This source change has not yet been published to npm.
+
+Install KaTeX only in a math-enabled project:
+
+```sh
+pnpm add katex@^0.19.0
+```
+
+Import the installed version's stylesheet in `src/styles/global.css`, before the existing `features.css` import. The build bundles its CSS and fonts locally; no CDN or client renderer is needed.
+
+```css
+@import "katex/dist/katex.min.css";
+@import "@takazudo/zudo-doc/features.css";
+```
+
+KaTeX 0.18 renamed its internal `.base` class to `.katex-base`; the package styles follow that change while preserving token colors and local display-equation scrolling. Rendering remains server-side, with trust disabled by default and malformed expressions shown as error text. A project that does not use `MathBlock` needs neither KaTeX nor its stylesheet. Module loading and math-disabled builds work without the peer; rendering `MathBlock` without it reports a missing-peer error during SSR/build.
+
 ## Configuration
 
 Math support is controlled by the `math` field in `zfb.config.ts`:
@@ -46,7 +65,7 @@ Math support is controlled by the `math` field in `zfb.config.ts`:
 export default defineConfig(
   zudoDoc({
     // ...
-    math: true, // disabled by default; also `pnpm add katex`
+    math: true, // disabled by default; also `pnpm add katex@^0.19.0`
   }),
 );
 ```

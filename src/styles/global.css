@@ -11,6 +11,8 @@
    See zudolab/zudo-doc#2188. */
 @import "@takazudo/zudo-doc/content.css";
 @import "@takazudo/zudo-doc/page-loading.css";
+/* This showcase opts into math; generated math-disabled sites omit this import. */
+@import "katex/dist/katex.min.css";
 /* Non-island feature CSS (code block buttons, syntect light-dark token rule,
    .zd-html-preview-code, KaTeX, sidebar toggle geometry, view-transition chrome).
    Moved from global.css into the package so downstream projects inherit updates

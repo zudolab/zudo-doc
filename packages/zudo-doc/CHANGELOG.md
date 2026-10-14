@@ -12,6 +12,8 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
+- The supported Node.js runtime moves to the current production LTS line, Node 24 (`>=24 <25`). Node 22 is no longer supported. This runtime floor change requires release-policy review before publication.
+- Raises the optional KaTeX peer floor to `^0.18.2 || ^0.19.0` for the GHSA-238p-pmpm-9mq7 patch; 0.16.x is no longer supported. Updates the internal KaTeX color selector while preserving server-only rendering, error fallback and math-disabled builds without KaTeX. Math-enabled hosts must install a supported version and import its local CSS. This compatibility-floor change requires release-policy review before publication; the npm fix remains unreleased.
 - Require the published zfb 4.5.1 family, including its live `public/assets/` development serving and explicit MDX table fixes. The zfb peer floor is now `^4.5.1`; upgrade the family together.
 
 ## [6.2.0] - 2026-10-14

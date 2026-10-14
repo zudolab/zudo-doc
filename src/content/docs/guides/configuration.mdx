@@ -655,11 +655,11 @@ See [Transclude](../markdown-features/transclude.mdx) for the directive syntax, 
 
 ### math
 
-Enable KaTeX math rendering (`$…$`, `$$…$$`, fenced `math`).
+Enable server-rendered KaTeX via JSX `MathBlock`. Dollar notation and fenced `math` are not supported.
 
 Default: `false`
 
-`math: true` requires installing the optional peer dependency `katex` (`pnpm add katex`) — `create-zudo-doc` does not add it for you, and it is absent from a fresh scaffold's `package.json`. `katex` is an optional peer of `@takazudo/zudo-doc`: the build stays green without it, but rendering a `<MathBlock>` throws at request time. See [Math Equations](../components/math-equations.mdx) for the component. `docHistory`'s Compare view has the matching contract with `diff` — see [docHistory](#site-settings-dochistory) below.
+`math: true` requires installing the optional peer dependency `katex` (`pnpm add katex@^0.19.0`) — `create-zudo-doc` does not add it for you, and it is absent from a fresh scaffold's `package.json`. `katex` is an optional peer of `@takazudo/zudo-doc`: the build stays green without it, but rendering a `<MathBlock>` throws during SSR/build. See [Math Equations](../components/math-equations.mdx) for the component. `docHistory`'s Compare view has the matching contract with `diff` — see [docHistory](#site-settings-dochistory) below.
 
 ### cjkFriendly
 

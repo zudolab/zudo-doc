@@ -1304,7 +1304,7 @@ pre.hi-root .line .highlighted-word {
   white-space: nowrap;
 }
 
-.katex .base {
+.katex .katex-base {
   color: var(--zd-fg);
 }
 

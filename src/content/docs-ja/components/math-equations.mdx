@@ -8,7 +8,7 @@ sidebar_position: 5
 
 <Note>
 
-`math: true` にするにはオプショナルピア `katex` のインストールが必要です（`pnpm add katex`）— `create-zudo-doc` は自動で追加しません。オプショナルピアの契約全体（数式には `katex`、[ドキュメント履歴](../guides/doc-history.mdx)には `diff`）については、[設定 — math](../guides/configuration.mdx#コンテンツと-i18n-math) を参照してください。
+`math: true` にするにはオプショナルピア `katex` のインストールが必要です（`pnpm add katex@^0.19.0`）— `create-zudo-doc` は自動で追加しません。オプショナルピアの契約全体（数式には `katex`、[ドキュメント履歴](../guides/doc-history.mdx)には `diff`）については、[設定 — math](../guides/configuration.mdx#コンテンツと-i18n-math) を参照してください。
 
 </Note>
 
@@ -38,6 +38,25 @@ sidebar_position: 5
 <MathBlock latex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}" block />
 ```
 
+## 修正済み KaTeX のセットアップ
+
+未リリースのパッケージはオプショナルピア `^0.18.2 || ^0.19.0` をサポートし、コンシューマーの検証対象は 0.18.2、0.18.11、0.19.0 です。互換性の下限は 0.16.x から引き上げられます。0.18.2 未満は [GHSA-238p-pmpm-9mq7](https://github.com/KaTeX/KaTeX/security/advisories/GHSA-238p-pmpm-9mq7) の影響を受け、0.20 以降はこの契約の対象外です。このソース変更はまだ npm に公開されていません。
+
+数式を使うプロジェクトだけに KaTeX をインストールします。
+
+```sh
+pnpm add katex@^0.19.0
+```
+
+`src/styles/global.css` の既存の `features.css` インポートより前に、インストールしたバージョンのスタイルシートを追加します。ビルドは CSS とフォントをローカルにまとめるため、CDN やクライアントレンダラーは不要です。
+
+```css
+@import "katex/dist/katex.min.css";
+@import "@takazudo/zudo-doc/features.css";
+```
+
+KaTeX 0.18 で内部クラス `.base` が `.katex-base` に変わりました。パッケージのスタイルはトークンの色とブロック数式内の横スクロールを保ちながら、この変更に対応します。レンダリングはサーバー側で行い、デフォルトで trust を無効のまま保ち、不正な数式をエラーテキストとして表示します。`MathBlock` を使わないプロジェクトには KaTeX もそのスタイルシートも不要です。ピアがなくてもモジュールの読み込みと数式なしのビルドは成功しますが、`MathBlock` をレンダリングすると SSR・ビルド時にピア不足のエラーが出ます。
+
 ## 設定
 
 数式サポートは `zfb.config.ts` の `math` フィールドで制御されます：
@@ -46,7 +65,7 @@ sidebar_position: 5
 export default defineConfig(
   zudoDoc({
     // ...
-    math: true, // デフォルトでは無効。加えて `pnpm add katex` が必要
+    math: true, // デフォルトでは無効。加えて `pnpm add katex@^0.19.0` が必要
   }),
 );
 ```
