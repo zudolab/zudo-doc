@@ -266,7 +266,7 @@ for (const base of bases) {
     try {
       expect(await documentWidth(), "the full installed layout must expose this regression").toBeGreaterThan(viewport);
     } finally {
-      await fault.evaluate((element) => element.remove());
+      await fault.evaluate((element) => element.parentNode?.removeChild(element));
     }
     expect(await documentWidth()).toBeLessThanOrEqual(viewport);
   });
