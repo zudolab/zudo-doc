@@ -286,7 +286,7 @@ that is a signal something genuinely changed — investigate rather than bumping
 ## First-party peer floor (publish-lag)
 
 `packages/zudo-doc/package.json` declares `@takazudo/zudo-doc-history-server` as a
-**peerDependency** with a caret floor (today `^6.0.0`, raised in the 6.0.0 major-bump
+**peerDependency** with a caret floor (today `^7.0.0`, raised in the 7.0.0 major-bump
 release commit under rule 4 below; see the
 [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md)).
 
@@ -343,8 +343,8 @@ Because rule 2 holds, the distance between the floor and the root version **grow
 every release and may be arbitrarily large**. Historical example from the 5.x line: the floor
 was `^5.17.2` against root `5.25.0` — eight minors — and that was the contract working, not
 drift. A same-major caret floor keeps admitting the root version however far behind it sits:
-`^5.17.2` was satisfied by a `5.25.0` install, and today's `^6.0.0` will keep admitting every
-later 6.x release.
+`^5.17.2` was satisfied by a `5.25.0` install, and today's `^7.0.0` will keep admitting every
+later 7.x release.
 
 **Do not chase the advisory — the loop does not converge.** Raising the floor to match the
 just-published version clears the note, but the next release moves the version past it again

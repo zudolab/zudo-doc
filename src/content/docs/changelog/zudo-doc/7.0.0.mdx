@@ -1,0 +1,19 @@
+---
+title: 7.0.0
+description: Release notes for 7.0.0.
+sidebar_position: 1139
+---
+
+Released: 2026-10-15
+
+### Breaking Changes
+
+- The supported Node.js runtime moves to the current production LTS line, Node 24 (`>=24 <25`). Node 22 is no longer supported. (98c94df73)
+- Raises the optional KaTeX peer floor to `^0.18.2 || ^0.19.0` for the GHSA-238p-pmpm-9mq7 patch; 0.16.x is no longer supported. Updates the internal KaTeX color selector while preserving server-only rendering, error fallback and math-disabled builds without KaTeX. Math-enabled hosts must install a supported version and import its local CSS. (9ee3950c9)
+- Requires the published zfb 4.5.2 family: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.5.0` to `^4.5.2`. This picks up live `public/assets/` development serving, explicit and compact one-line MDX table fixes, and a `zfb dev` ready banner that waits until routes are published. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) together. (e5b7de457, d5e0d7078)
+- The `@takazudo/zudo-doc-history-server` peer floor moves from `^6.0.0` to `^7.0.0` with this major release.
+
+### Bug Fixes
+
+- Keep the header stationary during dynamic page transitions, including when destination markup replaces it, and keep the desktop sidebar stationary within the same navigation category and locale/version/tree context. Fresh destination content and existing sidebar state handling are preserved; changing articles and table-of-contents content still animate. Sidebar entry and exit also cover `hide_sidebar` pages. Loading feedback now covers the content area without dimming the header or desktop sidebar, stays out of the page animation, and clears on the content swap or navigation cancellation. (ae7152ad5, 6abeadf5f, 479309f1f)
+- Ordinary documentation prose and navigation labels now wrap at narrow widths instead of overflowing horizontally (`overflow-wrap: anywhere` on content). Preformatted code keeps its local scrolling. (648e38da8)

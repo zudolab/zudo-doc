@@ -6,10 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [7.0.0] - 2026-10-15
+
+### Breaking Changes
+
+- Generated projects and the initializer now require Node.js 24 LTS (`>=24 <25`); Node 22 is no longer supported. Generated `package.json` files declare `engines.node: ">=24 <25"`. (98c94df73, 2001f82d0)
+
 ### Other Changes
 
-- Generated projects and the initializer now require Node.js 24 LTS (`>=24 <25`); Node 22 is no longer supported.
-- New projects pin the published zfb 4.5.2 family, including the optional Cloudflare adapter when MCP is enabled.
+- New projects pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^7.0.0`.
+- New projects pin the published zfb 4.5.2 family, including the optional Cloudflare adapter when MCP is enabled, and Wrangler 4.151.0 for MCP projects. (e5b7de457, d5e0d7078)
 
 ## [6.2.0] - 2026-10-14
 
