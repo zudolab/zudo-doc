@@ -295,7 +295,7 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 ## Shipped CSS artifacts and Wind manifest
 
-The current engine tuple is workspace zfb family **4.5.1**, peers **^4.5.1**.
+The current engine tuple is workspace zfb family **4.5.2**, peers **^4.5.2**.
 The three lockstep packages are **6.2.0 on npm `latest`**, requiring ZFB 4.5.0.
 The history-server peer floor remains
 `^6.0.0`. The original 6.0.0 migration evidence is in the

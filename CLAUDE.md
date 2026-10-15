@@ -19,8 +19,8 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 ## Commands
 
 Current state (2026-10-14): the zfb 4 migration PR #4477 is merged (`b9dd43b0d`) and
-production-deployed. Pins: workspace zfb family 4.5.1, peers ^4.5.1 (4.3.1 adopted by #4516; bumped to 4.3.2 by #4541; to 4.3.3 for RUSTSEC-2026-0333 in the 6.1.1 release; to 4.4.0 by #4569, then 4.5.0 by #4581, released in 6.2.0; 4.5.1 is unreleased in zudo-doc); zdtp 0.8.6;
-MCP SDK 1.32.1; root/generated-MCP Wrangler 4.150.0. The three published packages (`@takazudo/zudo-doc`,
+production-deployed. Pins: workspace zfb family 4.5.2, peers ^4.5.2 (4.3.1 adopted by #4516; bumped to 4.3.2 by #4541; to 4.3.3 for RUSTSEC-2026-0333 in the 6.1.1 release; to 4.4.0 by #4569, then 4.5.0 by #4581, released in 6.2.0; 4.5.1 then 4.5.2 are unreleased in zudo-doc); zdtp 0.8.6;
+MCP SDK 1.32.1; root/generated-MCP Wrangler 4.151.0. The three published packages (`@takazudo/zudo-doc`,
 `@takazudo/zudo-doc-history-server` and `create-zudo-doc`) are at 6.2.0 on npm
 `latest`; their published ZFB requirement is 4.5.0. The history-server peer floor remains `^6.0.0` — see the original publication record
 `docs/findings/4430-zfb3-migration/release-6.0.0/README.md`. Upstream #4097 is closed. Owner

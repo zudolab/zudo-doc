@@ -626,6 +626,7 @@ body {
   color: var(--color-fg);
   font-size: var(--text-body);
   line-height: var(--leading-relaxed);
+  overflow-wrap: anywhere;
 }
 
 @layer zd-flow {
