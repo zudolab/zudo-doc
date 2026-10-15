@@ -1,15 +1,7 @@
 ---
 title: Unreleased
 description: Changes planned for the next release.
-sidebar_position: 1139
+sidebar_position: 1140
 ---
 
-### Bug Fixes
-
-- Keep the header stationary during dynamic page transitions, including when destination markup replaces it, and keep the desktop sidebar stationary within the same navigation category and locale/version/tree context. Fresh destination content and existing sidebar state handling are preserved; changing articles and table-of-contents content still animate. Sidebar entry and exit also cover `hide_sidebar` pages. Loading feedback now covers the content area without dimming the header or desktop sidebar, stays out of the page animation, and clears on the content swap or navigation cancellation. (#4580)
-
-### Other Changes
-
-- The supported Node.js runtime moves to the current production LTS line, Node 24 (`>=24 <25`). Node 22 is no longer supported. This runtime floor change requires release-policy review before publication.
-- Raises the optional KaTeX peer floor to `^0.18.2 || ^0.19.0` for the GHSA-238p-pmpm-9mq7 patch; 0.16.x is no longer supported. Updates the internal KaTeX color selector while preserving server-only rendering, error fallback and math-disabled builds without KaTeX. Math-enabled hosts must install a supported version and import its local CSS. This compatibility-floor change requires release-policy review before publication; the npm fix remains unreleased.
-- Require the published zfb 4.5.2 family, including its live `public/assets/` development serving, explicit and compact one-line MDX table fixes, and a `zfb dev` ready banner that waits until routes are published. The zfb peer floor is now `^4.5.2`; upgrade the family together.
+No unreleased changes.
