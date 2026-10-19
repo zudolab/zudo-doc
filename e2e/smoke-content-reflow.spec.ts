@@ -137,3 +137,65 @@ test("content reflow fixture detects removal of the inherited wrapping default (
   const restored = await documentSize(page);
   expect(restored.scroll).toBeLessThanOrEqual(restored.client + 1);
 });
+
+// #4594: inline code inside table cells must keep `break-word`, not inherit the
+// inline-code `anywhere` that collapses min-content and squeezes columns.
+async function renderTable(page: Page, width: number): Promise<void> {
+  await page.setViewportSize({ width, height: 844 });
+  const description = "A fairly long description sentence that makes the column want to be wide";
+  await page.setContent(`<!doctype html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; }
+    .fixture-scroll { overflow-x: auto; }
+    .fixture-table { width: 100%; border-collapse: collapse; }
+  </style>
+</head>
+<body>
+  <main class="zd-content">
+    <div class="fixture-scroll">
+      <table class="fixture-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>slug</code></td><td><code>string</code></td><td>${description}</td></tr>
+          <tr><td><code>variants</code></td><td><code>Record&lt;string, Variant&gt;</code></td><td>${description}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>`);
+  await page.addStyleTag({ content: contentCss });
+}
+
+test("inline code in table cells keeps words intact (#4594)", async ({ page }) => {
+  await renderTable(page, 390);
+  await expect(page.locator("td code").first()).toHaveCSS("overflow-wrap", "break-word");
+
+  const words = await page.locator("td code").evaluateAll((elements) =>
+    elements.flatMap((element) => {
+      const text = element.firstChild;
+      if (!text || text.nodeType !== Node.TEXT_NODE) throw new Error("Missing code text");
+      const content = text.textContent ?? "";
+      const result: { word: string; lines: number }[] = [];
+      for (const match of content.matchAll(/[A-Za-z]+/g)) {
+        const range = document.createRange();
+        range.setStart(text, match.index);
+        range.setEnd(text, match.index + match[0].length);
+        const tops = new Set([...range.getClientRects()].map((rect) => Math.round(rect.top)));
+        result.push({ word: match[0], lines: tops.size });
+      }
+      return result;
+    }),
+  );
+  expect(words.map((entry) => entry.word)).toEqual(["slug", "string", "variants", "Record", "string", "Variant"]);
+  for (const entry of words) {
+    expect(entry.lines, `${entry.word} must not break mid-word`).toBe(1);
+  }
+
+  const doc = await documentSize(page);
+  expect(doc.scroll, "the document itself must not scroll horizontally").toBeLessThanOrEqual(doc.client + 1);
+});

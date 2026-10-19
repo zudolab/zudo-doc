@@ -751,6 +751,10 @@ body {
   overflow-wrap: break-word;
 }
 
+.zd-content :where(th code, td code) {
+  overflow-wrap: break-word;
+}
+
 .zd-content :where(th) {
   font-weight: var(--font-weight-semibold);
   text-align: left;
