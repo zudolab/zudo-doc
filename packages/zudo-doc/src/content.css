@@ -236,6 +236,12 @@
   overflow-wrap: break-word;
 }
 
+/* `anywhere` collapses min-content width, so table layout would shrink columns
+ * and split identifiers mid-word instead of scrolling the wrapper (#4594). */
+.zd-content :where(th code, td code) {
+  overflow-wrap: break-word;
+}
+
 .zd-content :where(th) {
   font-weight: var(--font-weight-semibold);
   text-align: left;
