@@ -17,15 +17,7 @@ const contentCss = readFileSync(require.resolve("@takazudo/zudo-doc/content.css"
 const WORD = "DocumentationConfigurationReferenceWithoutAnyDelimiters".repeat(3);
 const PATH = "packages/documentation/configuration/reference/".repeat(6);
 const CODE = `const value = "${WORD.repeat(4)}";`;
-
-async function renderContent(page: Page, width: number): Promise<void> {
-  await page.setViewportSize({ width, height: 900 });
-  await page.setContent(`<!doctype html>
-<html lang="en">
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    :root {
+const FIXTURE_TOKENS = `:root {
       --color-fg: black;
       --color-muted: gray;
       --text-body: 16px;
@@ -35,8 +27,19 @@ async function renderContent(page: Page, width: number): Promise<void> {
       --font-mono: monospace;
       --spacing-vsp-md: 16px;
       --spacing-vsp-sm: 8px;
+      --spacing-vsp-xs: 4px;
+      --spacing-hsp-md: 12px;
       --spacing-hsp-lg: 16px;
-    }
+    }`;
+
+async function renderContent(page: Page, width: number): Promise<void> {
+  await page.setViewportSize({ width, height: 900 });
+  await page.setContent(`<!doctype html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    ${FIXTURE_TOKENS}
     * { box-sizing: border-box; }
     body { margin: 0; padding: 16px; }
     .fixture-flex { display: flex; }
@@ -148,6 +151,7 @@ async function renderTable(page: Page, width: number): Promise<void> {
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+    ${FIXTURE_TOKENS}
     * { box-sizing: border-box; }
     body { margin: 0; padding: 16px; }
     .fixture-scroll { overflow-x: auto; }
@@ -158,7 +162,7 @@ async function renderTable(page: Page, width: number): Promise<void> {
   <main class="zd-content">
     <div class="fixture-scroll">
       <table class="fixture-table">
-        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <thead><tr><th><code>key</code></th><th>Type</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td><code>slug</code></td><td><code>string</code></td><td>${description}</td></tr>
           <tr><td><code>variants</code></td><td><code>Record&lt;string, Variant&gt;</code></td><td>${description}</td></tr>
@@ -173,9 +177,32 @@ async function renderTable(page: Page, width: number): Promise<void> {
 
 test("inline code in table cells keeps words intact (#4594)", async ({ page }) => {
   await renderTable(page, 390);
+  await expect(page.locator("th code")).toHaveCSS("overflow-wrap", "break-word");
   await expect(page.locator("td code").first()).toHaveCSS("overflow-wrap", "break-word");
 
-  const words = await page.locator("td code").evaluateAll((elements) =>
+  const words = await measureCodeWords(page);
+  expect(words.map((entry) => entry.word)).toEqual(["slug", "string", "variants", "Record", "string", "Variant"]);
+  for (const entry of words) {
+    expect(entry.lines, `${entry.word} must not break mid-word`).toBe(1);
+  }
+
+  const doc = await documentSize(page);
+  expect(doc.scroll, "the document itself must not scroll horizontally").toBeLessThanOrEqual(doc.client + 1);
+});
+
+test("table code fixture detects the inline-code anywhere regression (#4594)", async ({ page }) => {
+  await renderTable(page, 390);
+  // Fault injection: reapply the inline-code default to prove the fixture
+  // would catch a mid-word split rather than passing on unrelated geometry.
+  await page.locator("td code").evaluateAll((elements) => {
+    for (const element of elements) (element as HTMLElement).style.overflowWrap = "anywhere";
+  });
+  const words = await measureCodeWords(page);
+  expect(words.some((entry) => entry.lines > 1), "some identifier must split under anywhere").toBe(true);
+});
+
+async function measureCodeWords(page: Page): Promise<{ word: string; lines: number }[]> {
+  return page.locator("td code").evaluateAll((elements) =>
     elements.flatMap((element) => {
       const text = element.firstChild;
       if (!text || text.nodeType !== Node.TEXT_NODE) throw new Error("Missing code text");
@@ -191,11 +218,4 @@ test("inline code in table cells keeps words intact (#4594)", async ({ page }) =
       return result;
     }),
   );
-  expect(words.map((entry) => entry.word)).toEqual(["slug", "string", "variants", "Record", "string", "Variant"]);
-  for (const entry of words) {
-    expect(entry.lines, `${entry.word} must not break mid-word`).toBe(1);
-  }
-
-  const doc = await documentSize(page);
-  expect(doc.scroll, "the document itself must not scroll horizontally").toBeLessThanOrEqual(doc.client + 1);
-});
+}
