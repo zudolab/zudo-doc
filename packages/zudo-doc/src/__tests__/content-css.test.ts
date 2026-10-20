@@ -37,7 +37,8 @@ describe("src/content.css GFM task-list marker contract", () => {
 
 describe("src/content.css inline-code wrapping contract (#4596)", () => {
   function ruleBody(selectorFragment: string): string | undefined {
-    for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const uncommented = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const match of uncommented.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       if (match[1]?.includes(selectorFragment)) return match[2];
     }
     return undefined;

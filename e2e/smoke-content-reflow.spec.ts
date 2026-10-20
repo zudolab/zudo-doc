@@ -197,6 +197,7 @@ test("host-normal inline code fixture detects losing the explicit anywhere (#459
   // Fault injection: let inline code inherit the host's `normal`, proving the
   // fixture fails rather than passing on unrelated geometry.
   await code.evaluate((element) => { (element as HTMLElement).style.overflowWrap = "inherit"; });
+  await expect(code).toHaveCSS("overflow-wrap", "normal");
   expect((await documentSize(page)).scroll).toBeGreaterThan(320);
   await code.evaluate((element) => { (element as HTMLElement).style.removeProperty("overflow-wrap"); });
   await expect(code).toHaveCSS("overflow-wrap", "anywhere");
