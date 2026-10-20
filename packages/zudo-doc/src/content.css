@@ -201,6 +201,9 @@
   color: var(--color-code-fg);
   border-radius: var(--radius-DEFAULT);
   padding: 2px var(--spacing-hsp-xs);
+  /* Explicit on purpose (#3212, #4596): keeps emergency wrapping even when a
+   * host resets `.zd-content` to `overflow-wrap: normal`. A `break-word`
+   * container must override inline code itself, as th/td do below. */
   overflow-wrap: anywhere;
 }
 

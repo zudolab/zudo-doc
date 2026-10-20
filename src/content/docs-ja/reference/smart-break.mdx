@@ -98,6 +98,18 @@ packages<wbr>/zudo<wbr>-doc<wbr>/src<wbr>/smart<wbr>-break<wbr>/index<wbr>.tsx
 
 コンテナが十分広ければブラウザは1行で保ち、狭い場合は最も近い `<wbr>` の位置で折り返します。常にセグメントの境界で折り返され、セグメントの途中で切られることはありません。
 
+## インラインコードの折り返し
+
+デリミタを含まない識別子には `<wbr>` ヒントが入らないため、インラインコードの緊急折り返しは CSS が担います。同梱の `content.css` は `overflow-wrap: anywhere` を `.zd-content` だけでなく、インラインコード（`pre` の外の `code`）自体にも直接指定しています。そのため、ホスト側で `.zd-content` を `overflow-wrap: normal` に戻しても、長いインラインコードは折り返されます。
+
+表のセル内では、インラインコードを `overflow-wrap: break-word` に切り替えています。識別子は単語の途中で分割されず、幅の広い表はラッパー内でスクロールします。独自に `break-word` を使うコンテナを作る場合、インラインコードはその値を継承しないので、明示的に上書きしてください：
+
+```css
+.my-container :where(code:not(pre code)) {
+  overflow-wrap: break-word;
+}
+```
+
 ## 使わないほうがよい場面
 
 - 短いラベル（1〜2語）— そもそも折り返す箇所がありません。

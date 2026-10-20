@@ -34,3 +34,20 @@ describe("src/content.css GFM task-list marker contract", () => {
     expect(css).not.toMatch(/li:has\(\s*input\b/);
   });
 });
+
+describe("src/content.css inline-code wrapping contract (#4596)", () => {
+  function ruleBody(selectorFragment: string): string | undefined {
+    for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (match[1]?.includes(selectorFragment)) return match[2];
+    }
+    return undefined;
+  }
+
+  it("keeps an explicit overflow-wrap: anywhere on inline code", () => {
+    expect(ruleBody("code:not(pre code)")).toMatch(/overflow-wrap:\s*anywhere;/);
+  });
+
+  it("keeps the break-word override for inline code in table cells", () => {
+    expect(ruleBody("th code, td code")).toMatch(/overflow-wrap:\s*break-word;/);
+  });
+});
