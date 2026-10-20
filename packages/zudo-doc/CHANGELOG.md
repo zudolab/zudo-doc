@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Requires the published zfb 4.5.3 family: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.5.2` to `^4.5.3`. This picks up MDX compile fixes: multiline expressions such as HtmlPreview template-literal props keep their authored whitespace, and a template string that contains a decimal comparison no longer fails to compile with `Unexpected numeric literal`. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) together.
+- Requires the published zfb 4.5.4 family: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.5.2` to `^4.5.4`. This picks up the 4.5.3 MDX compile fixes: multiline expressions such as HtmlPreview template-literal props keep their authored whitespace, and a template string that contains a decimal comparison no longer fails to compile with `Unexpected numeric literal`. It also picks up the 4.5.4 islands fix: edits outside the browser graph, such as a page title or a Markdown body, no longer change the shipped islands JavaScript. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) together.
 
 ## [7.0.0] - 2026-10-15
 
