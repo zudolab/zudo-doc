@@ -141,6 +141,70 @@ test("content reflow fixture detects removal of the inherited wrapping default (
   expect(restored.scroll).toBeLessThanOrEqual(restored.client + 1);
 });
 
+// #4596: inline code sets `anywhere` itself, so a host that resets
+// `.zd-content` to `normal` must not lose the #3212 emergency wrapping.
+async function renderHostNormalInlineCode(page: Page, width: number): Promise<void> {
+  await page.setViewportSize({ width, height: 900 });
+  await page.setContent(`<!doctype html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    ${FIXTURE_TOKENS}
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; }
+  </style>
+</head>
+<body>
+  <main class="zd-content">
+    <p>Set <code data-inline-code>${WORD}</code> before building.</p>
+  </main>
+</body>
+</html>`);
+  await page.addStyleTag({ content: contentCss });
+  await page.addStyleTag({ content: ".zd-content { overflow-wrap: normal; }" });
+}
+
+async function inlineCodeOverflow(page: Page): Promise<number> {
+  return page.locator("[data-inline-code]").evaluate((element) => {
+    const main = document.querySelector(".zd-content");
+    if (!main) throw new Error("Missing content root");
+    const bounds = main.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const rects = [...range.getClientRects()];
+    if (rects.length === 0) throw new Error("Inline code is not rendered");
+    return Math.max(...rects.map((rect) => Math.max(bounds.left - rect.left, rect.right - bounds.right)));
+  });
+}
+
+for (const width of [195, 320, 390]) {
+  test(`inline code keeps anywhere when the host resets content to normal at ${width}px (#4596)`, async ({ page }) => {
+    await renderHostNormalInlineCode(page, width);
+    await expect(page.locator(".zd-content")).toHaveCSS("overflow-wrap", "normal");
+    await expect(page.locator("[data-inline-code]")).toHaveCSS("overflow-wrap", "anywhere");
+
+    expect(await inlineCodeOverflow(page), "inline code must stay inside the content box").toBeLessThanOrEqual(1);
+    const size = await documentSize(page);
+    expect(size.viewport, "the requested CSS viewport must be effective").toBe(width);
+    expect(size.scroll, "the document must not scroll horizontally").toBeLessThanOrEqual(size.client + 1);
+  });
+}
+
+test("host-normal inline code fixture detects losing the explicit anywhere (#4596)", async ({ page }) => {
+  await renderHostNormalInlineCode(page, 320);
+  const code = page.locator("[data-inline-code]");
+  // Fault injection: let inline code inherit the host's `normal`, proving the
+  // fixture fails rather than passing on unrelated geometry.
+  await code.evaluate((element) => { (element as HTMLElement).style.overflowWrap = "inherit"; });
+  await expect(code).toHaveCSS("overflow-wrap", "normal");
+  expect((await documentSize(page)).scroll).toBeGreaterThan(320);
+  await code.evaluate((element) => { (element as HTMLElement).style.removeProperty("overflow-wrap"); });
+  await expect(code).toHaveCSS("overflow-wrap", "anywhere");
+  const restored = await documentSize(page);
+  expect(restored.scroll).toBeLessThanOrEqual(restored.client + 1);
+});
+
 // #4594: inline code inside table cells must keep `break-word`, not inherit the
 // inline-code `anywhere` that collapses min-content and squeezes columns.
 async function renderTable(page: Page, width: number): Promise<void> {

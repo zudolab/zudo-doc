@@ -98,6 +98,18 @@ packages<wbr>/zudo<wbr>-doc<wbr>/src<wbr>/smart<wbr>-break<wbr>/index<wbr>.tsx
 
 The browser keeps the line intact when the container is wide enough, and breaks at the nearest `<wbr>` when it must — always between segments, never mid-segment.
 
+## Inline Code Wrapping
+
+A delimiter-free identifier gets no `<wbr>` hints, so inline code relies on CSS for emergency wrapping. The shipped `content.css` sets `overflow-wrap: anywhere` directly on inline code (`code` outside `pre`), not only on `.zd-content`. Long inline code therefore still wraps when a host resets `.zd-content` to `overflow-wrap: normal`.
+
+Table cells switch inline code to `overflow-wrap: break-word`, so identifiers stay whole and a wide table scrolls inside its wrapper instead. If you build your own container that uses `break-word`, inline code does not inherit it. Override it explicitly, in a stylesheet loaded after `content.css` (the selectors have equal specificity, so the later rule wins):
+
+```css
+.my-container :where(code:not(pre code)) {
+  overflow-wrap: break-word;
+}
+```
+
 ## When Not to Use It
 
 - Short labels (one or two words) — there is nothing to break.
