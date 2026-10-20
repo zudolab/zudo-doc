@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- New projects pin the published zfb 4.5.3 family, including the optional Cloudflare adapter when MCP is enabled.
 
 ## [7.0.0] - 2026-10-15
 
