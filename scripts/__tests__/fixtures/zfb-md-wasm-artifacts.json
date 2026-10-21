@@ -1,31 +1,31 @@
 {
   "schemaVersion": 1,
   "name": "@takazudo/zfb-md-wasm",
-  "version": "4.5.4",
+  "version": "4.6.0",
   "artifacts": [
     {
       "entry": ".",
       "path": "dist/wasm/zfb_md_wasm_bg.wasm",
       "bytes": 3388772,
-      "sha256": "e6dfbb157340db466420a7d7eb0ea9f7fa7bbd0d99e139017ae597c00df10af7"
+      "sha256": "6ac14add2fee2500cab54f70b0a9e8e2424f192a43e8ea0061298cd8e35aa0a7"
     },
     {
       "entry": "./highlight",
       "path": "dist/wasm-highlight/zfb_md_wasm_highlight_bg.wasm",
       "bytes": 1544118,
-      "sha256": "08545a6a3f7e3240a7a5c64bdb447457b10da71efd57b5abaeacaa00a2f47e99"
+      "sha256": "149a5cadf4ed18ff69db08d11d0a6dcfebdcddc8ac10de6ae55d0904a917302c"
     },
     {
       "entry": "./render",
       "path": "dist/wasm-render/zfb_md_wasm_render_bg.wasm",
       "bytes": 2208228,
-      "sha256": "14584fdb8c559fb7ee1ff5ddb3d00be2c2e1a0e6b6fe7cf3aeb7fb6e62c8f9dc"
+      "sha256": "72b01f62ce3782c9151d5111d7d98e7d398eaea5b12b38ea46926d27f0a1c21c"
     },
     {
       "entry": "./parse",
       "path": "dist/wasm-parse/zfb_md_wasm_parse_bg.wasm",
       "bytes": 701733,
-      "sha256": "c35133635d7bea3fe816cdb1adebfe7814ba3d243573bf66cd3acc1a21820472"
+      "sha256": "a9218d41418d87c0384088f083f2c9fa2ae992a22a841da805c23f29c820301b"
     }
   ]
 }
