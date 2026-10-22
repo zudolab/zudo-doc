@@ -105,16 +105,6 @@ function rewriteImports(code) {
   return out;
 }
 
-// zfb's Rolldown backend does not apply the synthetic tsconfig's jsxImportSource to
-// files under node_modules, so staged routes name it explicitly
-// (workaround for https://github.com/Takazudo/zudo-front-builder/issues/4407).
-const OWNED_JSX_PRAGMA = "/** @jsxImportSource @takazudo/zfb/zudo-react */\n";
-
-function withOwnedJsxImportSource(name, code) {
-  if (!name.endsWith(".tsx") || code.includes("@jsxImportSource")) return code;
-  return OWNED_JSX_PRAGMA + code;
-}
-
 // ── Copy + rewrite ─────────────────────────────────────────────────────────
 
 try {
@@ -150,7 +140,7 @@ for (const entry of readdirSync(SRC_ROUTES, { withFileTypes: true })) {
   // evaluates independently in the SSR and hydrated client graphs.
   const transformed = name === "_design-token-panel-bootstrap.tsx"
     ? 'export { ConfiguredDesignTokenPanelBootstrap } from "@takazudo/zudo-doc/routes/design-token-panel-bootstrap";\n'
-    : withOwnedJsxImportSource(name, rewriteImports(original));
+    : rewriteImports(original);
   writeFileSync(destFile, transformed, "utf8");
   copied++;
   if (transformed !== original) rewritten++;
