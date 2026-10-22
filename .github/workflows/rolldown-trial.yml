@@ -58,9 +58,13 @@ jobs:
           path: workspace-build.tar
 
   trial:
-    name: trial (windows-latest)
+    name: trial (${{ matrix.os }})
     needs: workspace
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 150
     defaults:
       run:
@@ -96,7 +100,7 @@ jobs:
         id: zfb-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: zfb/target/release/zfb.exe
+          path: zfb/target/release/zfb${{ runner.os == 'Windows' && '.exe' || '' }}
           key: rolldown-trial-zfb-${{ runner.os }}-${{ env.ZFB_REF }}
 
       - name: Install zfb workspace deps
@@ -114,7 +118,7 @@ jobs:
         if: steps.zfb-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: zfb/target/release/zfb.exe
+          path: zfb/target/release/zfb${{ runner.os == 'Windows' && '.exe' || '' }}
           key: rolldown-trial-zfb-${{ runner.os }}-${{ env.ZFB_REF }}
 
       - name: Download workspace build
@@ -127,10 +131,15 @@ jobs:
         run: |
           pnpm install --frozen-lockfile --ignore-scripts
           tar -xf ../workspace-build.tar
-          target="node_modules/.pnpm/@takazudo+zfb-win32-x64-msvc@4.6.0/node_modules/@takazudo/zfb-win32-x64-msvc/zfb.exe"
+          if [ "$RUNNER_OS" = Windows ]; then pkg=zfb-win32-x64-msvc; exe=zfb.exe; else pkg=zfb-linux-x64-gnu; exe=zfb; fi
+          target="node_modules/.pnpm/@takazudo+${pkg}@4.6.0/node_modules/@takazudo/${pkg}/${exe}"
           ls -la "$target"
-          cp ../zfb/target/release/zfb.exe "$target"
+          cp "../zfb/target/release/${exe}" "$target"
           pnpm exec zfb --version
+          # The .claude/.codex resource generators fail on Windows paths (a zudo-doc bug,
+          # unrelated to the bundler); turn them off on both OSes so the outputs compare.
+          node -e 'const f="src/config/settings.ts";const fs=require("fs");let s=fs.readFileSync(f,"utf8");s=s.replace(/claudeResources: \{[^}]*\}/,"claudeResources: false").replace(/codexResources: \{[^}]*\}/,"codexResources: false");fs.writeFileSync(f,s)'
+          grep -n "Resources: false" src/config/settings.ts
 
       - name: Build with esbuild
         working-directory: site
@@ -157,7 +166,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rolldown-trial-windows
+          name: rolldown-trial-${{ matrix.os }}
           path: |
             manifest-*.json
             rolldown-build.log
