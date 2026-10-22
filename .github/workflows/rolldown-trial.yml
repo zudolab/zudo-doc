@@ -1,0 +1,116 @@
+# TEMPORARY: rolldown-vs-esbuild trial on Linux and Windows. Remove before merging.
+# Builds zfb from source with the non-default `rolldown-prototype` feature, then builds
+# this site with esbuild and with Rolldown on the same binary and compares the output.
+# See Takazudo/zudo-front-builder#4407.
+name: Rolldown trial
+
+on:
+  push:
+    branches:
+      - claude/project-thread-62t43j
+    paths:
+      - .github/workflows/rolldown-trial.yml
+      - .github/rolldown-trial/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rolldown-trial-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ZFB_REF: addf681f12056d0614d1758564802f81ff1cf3e3
+  DOC_HISTORY_SKIP_POSTBUILD: "1"
+
+jobs:
+  trial:
+    name: trial (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          path: site
+
+      - name: Checkout zfb
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          repository: Takazudo/zudo-front-builder
+          ref: ${{ env.ZFB_REF }}
+          path: zfb
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          package_json_file: site/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: site/.nvmrc
+          package-manager-cache: false
+
+      - name: Install zfb workspace deps
+        working-directory: zfb
+        run: pnpm install --frozen-lockfile
+
+      - name: Build zfb with rolldown-prototype
+        working-directory: zfb
+        run: cargo build --release --locked -p zfb --features rolldown-prototype
+
+      - name: Install site deps and swap in the built zfb
+        working-directory: site
+        run: |
+          pnpm install --frozen-lockfile
+          if [ "$RUNNER_OS" = Windows ]; then pkg=zfb-win32-x64-msvc; exe=zfb.exe; else pkg=zfb-linux-x64-gnu; exe=zfb; fi
+          target="node_modules/.pnpm/@takazudo+${pkg}@4.6.0/node_modules/@takazudo/${pkg}/${exe}"
+          ls -la "$target"
+          cp "../zfb/target/release/${exe}" "$target"
+          pnpm exec zfb --version
+
+      - name: Prepare workspace packages (with the #4407 pragma workaround)
+        working-directory: site
+        run: |
+          pnpm build:workspace
+          for f in packages/zudo-doc/routes-src/*.tsx; do
+            printf '%s\n' '/** @jsxImportSource @takazudo/zfb/zudo-react */' | cat - "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+          done
+
+      - name: Build with esbuild
+        working-directory: site
+        run: |
+          start=$(date +%s); pnpm build; echo "esbuild build took $(( $(date +%s) - start ))s"
+          mv dist ../dist-esbuild
+
+      - name: Build with Rolldown
+        working-directory: site
+        env:
+          ZFB_ROLLDOWN_PROTOTYPE: "1"
+        run: |
+          start=$(date +%s); pnpm build 2>&1 | tee ../rolldown-build.log; echo "rolldown build took $(( $(date +%s) - start ))s"
+          echo "rolldown warnings: $(grep -c 'Rolldown warning' ../rolldown-build.log || true)"
+          mv dist ../dist-rolldown
+
+      - name: Compare output
+        run: |
+          node site/.github/rolldown-trial/compare.mjs manifest dist-esbuild manifest-esbuild.json
+          node site/.github/rolldown-trial/compare.mjs manifest dist-rolldown manifest-rolldown.json
+          node site/.github/rolldown-trial/compare.mjs diff manifest-esbuild.json manifest-rolldown.json
+
+      - name: Upload manifests
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rolldown-trial-${{ matrix.os }}
+          path: |
+            manifest-*.json
+            rolldown-build.log
