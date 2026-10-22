@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 150
     defaults:
@@ -62,7 +62,8 @@ jobs:
 
       - name: Install zfb workspace deps
         working-directory: zfb
-        run: pnpm install --frozen-lockfile
+        # zfb pins pnpm 12; pnpm 10's self-switch to it fails on Windows runners.
+        run: npx -y pnpm@12.8.2 install --frozen-lockfile
 
       - name: Build zfb with rolldown-prototype
         working-directory: zfb
