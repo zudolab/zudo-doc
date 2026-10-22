@@ -25,19 +25,47 @@ env:
   DOC_HISTORY_SKIP_POSTBUILD: "1"
 
 jobs:
+  # zudo-doc's workspace package build scripts are not Windows-portable, so build them on
+  # Linux and hand the platform-independent output to the Windows job.
+  workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Build workspace packages
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build:workspace
+          git ls-files -o -i --exclude-standard -- packages | grep -v node_modules > ../generated.txt
+          tar -cf workspace-build.tar -T ../generated.txt
+          wc -l ../generated.txt
+
+      - name: Upload workspace build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: workspace-build
+          path: workspace-build.tar
+
   trial:
-    name: trial (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest]
-    runs-on: ${{ matrix.os }}
+    name: trial (windows-latest)
+    needs: workspace
+    runs-on: windows-latest
     timeout-minutes: 150
     defaults:
       run:
         shell: bash
     steps:
-      # The site's CSS generators reject CRLF; keep LF checkouts on Windows.
       - name: Disable autocrlf
         run: git config --global core.autocrlf false
 
@@ -64,29 +92,45 @@ jobs:
           node-version-file: site/.nvmrc
           package-manager-cache: false
 
+      - name: Restore zfb build
+        id: zfb-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: zfb/target/release/zfb.exe
+          key: rolldown-trial-zfb-${{ runner.os }}-${{ env.ZFB_REF }}
+
       - name: Install zfb workspace deps
+        if: steps.zfb-cache.outputs.cache-hit != 'true'
         working-directory: zfb
         # zfb pins pnpm 12; pnpm 10's self-switch to it fails on Windows runners.
         run: npx -y pnpm@12.8.2 install --frozen-lockfile
 
       - name: Build zfb with rolldown-prototype
+        if: steps.zfb-cache.outputs.cache-hit != 'true'
         working-directory: zfb
         run: cargo build --release --locked -p zfb --features rolldown-prototype
+
+      - name: Save zfb build
+        if: steps.zfb-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: zfb/target/release/zfb.exe
+          key: rolldown-trial-zfb-${{ runner.os }}-${{ env.ZFB_REF }}
+
+      - name: Download workspace build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: workspace-build
 
       - name: Install site deps and swap in the built zfb
         working-directory: site
         run: |
-          pnpm install --frozen-lockfile
-          if [ "$RUNNER_OS" = Windows ]; then pkg=zfb-win32-x64-msvc; exe=zfb.exe; else pkg=zfb-linux-x64-gnu; exe=zfb; fi
-          target="node_modules/.pnpm/@takazudo+${pkg}@4.6.0/node_modules/@takazudo/${pkg}/${exe}"
+          pnpm install --frozen-lockfile --ignore-scripts
+          tar -xf ../workspace-build.tar
+          target="node_modules/.pnpm/@takazudo+zfb-win32-x64-msvc@4.6.0/node_modules/@takazudo/zfb-win32-x64-msvc/zfb.exe"
           ls -la "$target"
-          cp "../zfb/target/release/${exe}" "$target"
+          cp ../zfb/target/release/zfb.exe "$target"
           pnpm exec zfb --version
-          strings "$target" | grep -c ZFB_ROLLDOWN_PROTOTYPE || true
-
-      - name: Prepare workspace packages
-        working-directory: site
-        run: pnpm build:workspace
 
       - name: Build with esbuild
         working-directory: site
@@ -110,9 +154,10 @@ jobs:
           node site/.github/rolldown-trial/compare.mjs diff manifest-esbuild.json manifest-rolldown.json
 
       - name: Upload manifests
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rolldown-trial-${{ matrix.os }}
+          name: rolldown-trial-windows
           path: |
             manifest-*.json
             rolldown-build.log
