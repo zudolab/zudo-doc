@@ -77,19 +77,16 @@ jobs:
           ls -la "$target"
           cp "../zfb/target/release/${exe}" "$target"
           pnpm exec zfb --version
+          strings "$target" | grep -c ZFB_ROLLDOWN_PROTOTYPE || true
 
-      - name: Prepare workspace packages (with the #4407 pragma workaround)
+      - name: Prepare workspace packages
         working-directory: site
-        run: |
-          pnpm build:workspace
-          for f in packages/zudo-doc/routes-src/*.tsx; do
-            printf '%s\n' '/** @jsxImportSource @takazudo/zfb/zudo-react */' | cat - "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-          done
+        run: pnpm build:workspace
 
       - name: Build with esbuild
         working-directory: site
         run: |
-          start=$(date +%s); pnpm build; echo "esbuild build took $(( $(date +%s) - start ))s"
+          start=$(date +%s); pnpm exec zfb build; echo "esbuild build took $(( $(date +%s) - start ))s"
           mv dist ../dist-esbuild
 
       - name: Build with Rolldown
@@ -97,7 +94,7 @@ jobs:
         env:
           ZFB_ROLLDOWN_PROTOTYPE: "1"
         run: |
-          start=$(date +%s); pnpm build 2>&1 | tee ../rolldown-build.log; echo "rolldown build took $(( $(date +%s) - start ))s"
+          start=$(date +%s); pnpm exec zfb build 2>&1 | tee ../rolldown-build.log; echo "rolldown build took $(( $(date +%s) - start ))s"
           echo "rolldown warnings: $(grep -c 'Rolldown warning' ../rolldown-build.log || true)"
           mv dist ../dist-rolldown
 
