@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const archive = join(repository, 'scripts/migration-4097/fixtures/native-published-repro');
 const consumerPins = join(repository, 'scripts/migration-4097/fixtures/consumer-pins');
+const zfbPin = JSON.parse(readFileSync(join(repository, 'package.json'), 'utf8')).dependencies['@takazudo/zfb'];
+assert.match(zfbPin, /^\d+\.\d+\.\d+(-[\w.]+)?$/, 'root @takazudo/zfb pin must be an exact version');
 const [mode, destination] = process.argv.slice(2);
 assert.ok(destination, 'consumer directory required');
 const root = resolve(destination);
@@ -36,7 +38,11 @@ if (mode === 'prepare') {
     }
   }
   const lockfile = readFileSync(join(root, 'pnpm-lock.yaml'), 'utf8');
-  assert.ok(!/^\s*(?:specifier|version|tarball):\s*['"]?(?:workspace:|link:|file:)/m.test(lockfile) && !/4\.2\.1/.test(lockfile), 'registry-only 4.7.0 lockfile required');
+  const regenerate = 'regenerate scripts/migration-4097/fixtures/consumer-pins';
+  assert.ok(!/^\s*(?:specifier|version|tarball):\s*['"]?(?:workspace:|link:|file:)/m.test(lockfile) && !/4\.2\.1/.test(lockfile), `registry-only ${zfbPin} lockfile required; ${regenerate}`);
+  for (const name of ['@takazudo/zfb', '@takazudo/zfb-runtime']) assert.ok(lockfile.includes(`'${name}@${zfbPin}':`), `consumer-pins lockfile must pin ${name}@${zfbPin}; ${regenerate}`);
+  const { dependencies } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  for (const name of ['@takazudo/zfb', '@takazudo/zfb-runtime']) assert.equal(dependencies[name], zfbPin, `consumer-pins package.json ${name} must equal root pin; ${regenerate}`);
   writeFileSync(join(root, 'inputs.json'), JSON.stringify({
     sourceHashes,
     archiveSpecSha256: hash(join(archive, 'native-pending.spec.ts.txt')),
@@ -50,7 +56,7 @@ if (mode === 'prepare') {
   for (const name of ['@takazudo/zfb', '@takazudo/zfb-runtime', '@playwright/test', 'typescript']) {
     const path = realpathSync(join(root, 'node_modules', name, 'package.json'));
     assert.ok(path.startsWith(join(root, 'node_modules') + sep), `${name} must resolve inside registry consumer`);
-    const expected = name.startsWith('@takazudo/') ? '4.7.0' : name === 'typescript' ? '5.9.3' : '1.58.2';
+    const expected = name.startsWith('@takazudo/') ? zfbPin : name === 'typescript' ? '5.9.3' : '1.58.2';
     const { version } = JSON.parse(readFileSync(path, 'utf8'));
     assert.equal(version, expected, name);
     packages[name] = { version, path };
