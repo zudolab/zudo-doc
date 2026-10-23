@@ -36,6 +36,8 @@ No props are required. It self-fetches the current locale's docs collection, bui
 
 Categories hidden from the tree come from [`siteTreeNavIgnore`](../guides/configuration.mdx#home-page-sitetreenavignore) in `zfb.config.ts`. [`siteTreeNavSecondary`](../guides/configuration.mdx#home-page-sitetreenavsecondary) is home-page only and is not applied by this component, so categories listed there still appear in its tree.
 
+Categories listed in [`siteTreeNavInitiallyCollapsed`](../guides/configuration.mdx#home-page-sitetreenavinitiallycollapsed) start closed in both MDX aliases and the package-owned home pages. The category link and toggle remain visible, and visitors can expand the descendants.
+
 ### In a page module
 
 A page module that already has a `tree` in hand (e.g. built via `buildNavTree` + `groupSatelliteNodes`) can import the raw, tree-prop-driven component instead:
@@ -49,6 +51,7 @@ export default function IndexPage() {
       tree={tree}
       categoryOrder={categoryOrder}
       categoryIgnore={["inbox", "develop"]}
+      initiallyCollapsedCategorySlugs={["zudo-wind/utilities"]}
     />
   );
 }
@@ -69,13 +72,14 @@ Props below apply to the raw `SiteTreeNav` island (`@takazudo/zudo-doc/site-tree
 | `tree` | `NavNode[]` | (required) | The navigation tree built from content collection |
 | `categoryOrder` | `string[]` | — | Custom ordering of top-level categories |
 | `categoryIgnore` | `string[]` | — | Category slugs to hide from the tree (the package home page and the MDX tag pass `siteTreeNavIgnore` here) |
-| `initiallyCollapsedCategorySlugs` | `string[]` | — | Root-category slugs that should start collapsed |
+| `initiallyCollapsedCategorySlugs` | `string[]` | `[]` | Exact full category slugs at any depth that should start collapsed |
 | `ariaLabel` | `string` | `"Site index"` | Accessibility label for the nav element |
 
 ## Features
 
 - **Responsive grid layout** — uses `repeat(auto-fill, minmax(min(18rem, 100%), 1fr))` to adapt from single-column on mobile to multi-column on wider screens
 - **Expandable categories** — each category card is collapsible, open by default
+- **Initial collapse** — a selected category starts closed in server HTML and remains interactive after hydration; other categories stay open
 - **Hierarchical tree** — nested pages are indented with connector lines showing the tree structure
 - **Category links** — top-level categories display an arrow icon and link to their index page
 - **Leaf pages** — individual doc pages are rendered as clickable links

@@ -59,6 +59,10 @@ function renderImageParagraph(
 }
 
 describe("manifest image captions", () => {
+  it("maps both SiteTreeNav MDX names to the same configured wrapper", () => {
+    const components = makeComponents(manifest);
+    expect(components.SiteTreeNavDemo).toBe(components.SiteTreeNav);
+  });
   it("adds the caption and base-prefixed viewer link to an enlargeable image", () => {
     const html = renderImageParagraph(manifest, {
       src: "/media/images/diagram.png",

@@ -50,6 +50,7 @@ const veryLongExample = "${"long-example".repeat(30)}";
   colorMode: false as ColorModeConfig | false,
   siteName: "i18n Test",
   siteDescription: "Test fixture for i18n E2E tests" as string,
+  siteTreeNavInitiallyCollapsed: ["guides/sub-a"],
   logo: "auto" as string | false,
   base: "/",
   minifyHtml: true as boolean,

@@ -463,6 +463,15 @@ setup_fixture() {
     cp -RL "$REPO_ROOT/$dir" "$fixture_dir/$dir"
   done
 
+  # The i18n SiteTreeNav fixture exercises the configured home-page fallback.
+  # The showcase root page explicitly overrides collapse with ["changelog"];
+  # remove only that copied prop so the fixture can prove the site setting.
+  if [ "$fixture" = "i18n" ]; then
+    sed '/initiallyCollapsedCategorySlugs={\["changelog"\]}/d' \
+      "$fixture_dir/pages/index.tsx" > "$fixture_dir/pages/index.tsx.tmp"
+    mv "$fixture_dir/pages/index.tsx.tmp" "$fixture_dir/pages/index.tsx"
+  fi
+
   # The theme fixture intentionally exercises the package-owned docs route.
   # This lets fixture-local colorSchemes travel through the preset's virtual
   # route context instead of the showcase's legacy user-route context, which

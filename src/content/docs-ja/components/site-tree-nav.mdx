@@ -36,6 +36,8 @@ sidebar_position: 7
 
 ツリーから非表示にするカテゴリは、`zfb.config.ts` の [`siteTreeNavIgnore`](../guides/configuration.mdx#ホームページ-sitetreenavignore) で設定します。[`siteTreeNavSecondary`](../guides/configuration.mdx#ホームページ-sitetreenavsecondary) はホームページ専用の設定で、このコンポーネントには適用されません。そこに指定したカテゴリも、このコンポーネントのツリーにはそのまま表示されます。
 
+[`siteTreeNavInitiallyCollapsed`](../guides/configuration.mdx#ホームページ-sitetreenavinitiallycollapsed) に指定したカテゴリは、両方の MDX タグとパッケージ所有のホームページで最初から閉じます。カテゴリのリンクと切り替えボタンは表示され、訪問者は子要素を展開できます。
+
 ### ページモジュールでの利用
 
 すでに`tree`を持っているページモジュール（例：`buildNavTree` + `groupSatelliteNodes`で構築済み）では、代わりに`tree`プロップを直接受け取る生のコンポーネントをインポートできます：
@@ -49,6 +51,7 @@ export default function IndexPage() {
       tree={tree}
       categoryOrder={categoryOrder}
       categoryIgnore={["inbox", "develop"]}
+      initiallyCollapsedCategorySlugs={["zudo-wind/utilities"]}
     />
   );
 }
@@ -69,13 +72,14 @@ export default function IndexPage() {
 | `tree` | `NavNode[]` | （必須） | コンテンツコレクションから構築されたナビゲーションツリー |
 | `categoryOrder` | `string[]` | — | トップレベルカテゴリのカスタム並び順 |
 | `categoryIgnore` | `string[]` | — | ツリーから非表示にするカテゴリスラッグ（パッケージのホームページと MDX タグはここに `siteTreeNavIgnore` を渡します） |
-| `initiallyCollapsedCategorySlugs` | `string[]` | — | 初期状態で折りたたんでおくルートカテゴリのスラッグ |
+| `initiallyCollapsedCategorySlugs` | `string[]` | `[]` | 任意の深さで初期状態を閉じるカテゴリの完全一致スラッグ |
 | `ariaLabel` | `string` | `"Site index"` | nav要素のアクセシビリティラベル |
 
 ## 特徴
 
 - **レスポンシブグリッドレイアウト** — `repeat(auto-fill, minmax(min(18rem, 100%), 1fr))`により、モバイルの1カラムからワイドスクリーンの複数カラムまで適応
 - **展開可能なカテゴリ** — 各カテゴリカードは折りたたみ可能で、デフォルトでは開いた状態
+- **初期状態の折りたたみ** — 指定カテゴリはサーバー HTML ですでに閉じ、ハイドレーション後も操作可能です。他のカテゴリは開いたままです
 - **階層的なツリー構造** — ネストされたページはインデントとコネクタラインでツリー構造を表示
 - **カテゴリリンク** — トップレベルカテゴリは矢印アイコンとインデックスページへのリンクを表示
 - **リーフページ** — 個別のドキュメントページはクリック可能なリンクとして表示
