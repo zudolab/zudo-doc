@@ -1909,7 +1909,7 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.engines).toEqual({ node: ">=24" });
   });
 
-  it("seeds the installation doc with the supported Node 24 LTS line, both locales", async () => {
+  it("seeds the installation doc with the Node 24 LTS floor, both locales", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-node-floor",
@@ -1922,7 +1922,7 @@ describe("scaffold — generated package.json", () => {
       ),
       "utf-8",
     );
-    expect(en).toContain("Node.js 24 LTS");
+    expect(en).toContain("**Node.js 24 LTS** or later");
     expect(en).not.toContain("Node.js 18");
     const ja = await fs.readFile(
       projectPath(
@@ -1931,7 +1931,7 @@ describe("scaffold — generated package.json", () => {
       ),
       "utf-8",
     );
-    expect(ja).toContain("Node.js 24 LTS");
+    expect(ja).toContain("**Node.js 24 LTS** 以降");
     expect(ja).not.toContain("Node.js 18");
   });
 
