@@ -263,6 +263,15 @@ export interface ZudoDocConfig {
    */
   siteTreeNavIgnore?: string[];
   /**
+   * Exact full `node.slug` values of categories that start collapsed at any
+   * depth in package-owned home pages and `<SiteTreeNav />` / `<SiteTreeNavDemo />`
+   * MDX tags. Use slugs such as `"zudo-wind/utilities"`, without `/docs`, a
+   * locale prefix, or leading/trailing slashes. Visitors can toggle them normally.
+   * Does not affect sidebar expansion.
+   * @default []
+   */
+  siteTreeNavInitiallyCollapsed?: string[];
+  /**
    * Top-level category slugs moved OUT of the package-owned home-page category
    * grid on `/` and locale homes and rendered instead as one row of small
    * links directly under the grid, in this list's order. Home page only — the

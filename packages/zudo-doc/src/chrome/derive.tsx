@@ -701,6 +701,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       getCategoryOrder: ctx.getCategoryOrder,
       versionedDocsUrl: ctx.versionedDocsUrl,
       categoryIgnore: ctx.settings.siteTreeNavIgnore,
+      initiallyCollapsedCategorySlugs: ctx.settings.siteTreeNavInitiallyCollapsed,
       dateFormat: ctx.settings.dateFormat,
     }) as unknown as FactoryComponent);
 

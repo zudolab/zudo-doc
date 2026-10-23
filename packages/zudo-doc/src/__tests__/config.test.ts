@@ -395,6 +395,12 @@ describe("zudoDoc() default-merge semantics", () => {
     expect(opts?.settings.siteTreeNavIgnore).toEqual([]);
   });
 
+  it("defaults and serializes siteTreeNavInitiallyCollapsed", () => {
+    expect(DEFAULT_SETTINGS.siteTreeNavInitiallyCollapsed).toEqual([]);
+    expect(routesOptions(zudoDoc({}))?.settings.siteTreeNavInitiallyCollapsed).toEqual([]);
+    expect(routesOptions(zudoDoc({ siteTreeNavInitiallyCollapsed: ["a/utilities"] }))?.settings.siteTreeNavInitiallyCollapsed).toEqual(["a/utilities"]);
+  });
+
   it("serializes siteTreeNavIgnore into the route settings", () => {
     const opts = routesOptions(zudoDoc({ siteTreeNavIgnore: ["inbox"] }));
     expect(opts?.settings.siteTreeNavIgnore).toEqual(["inbox"]);

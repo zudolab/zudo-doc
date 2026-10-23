@@ -166,6 +166,22 @@ export default defineConfig(
 
 型: `string[]` · デフォルト: `[]`
 
+### siteTreeNavInitiallyCollapsed
+
+パッケージ所有の標準・ロケール別ホームページと `<SiteTreeNav />` / `<SiteTreeNavDemo />` MDX タグで、初期状態を閉じるカテゴリの完全一致スラッグです。`/docs`、ロケール接頭辞、前後のスラッシュを含まないナビゲーションノードのスラッグを指定します。任意の深さで一致し、`"a/utilities"` は `"b/utilities"` に影響しません。カテゴリのリンクと切り替えボタンは表示したまま、子要素だけを最初に隠します。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteTreeNavInitiallyCollapsed: ["zudo-wind/utilities"],
+  }),
+);
+```
+
+デフォルトの `[]` ではすべてのカテゴリが開きます。未知のスラッグ、重複、ページのスラッグは影響しません。`HomePageView` に明示した `initiallyCollapsedCategorySlugs` プロップはこの設定を置き換え、明示的な `[]` はすべてのカテゴリを最初から開きます。生の `SiteTreeNav` アイランドは自身のプロップのみを使います。この設定はサイドバーの `node.collapsed` や `sidebar_initial_expansion` を変更しません。
+
+型: `string[]` · デフォルト: `[]`
+
 ### siteTreeNavSecondary
 
 `/` や `/ja` のようなロケール接頭辞付きホームページで、パッケージ所有のカテゴリグリッドから外し、その直下のコンパクトなセカンダリ行へ移すトップレベルカテゴリのスラッグです。指定したカテゴリはそれぞれ、ラベル付きの小さなシェブロンリンクとして表示されます。行内の並び順はグリッドのカテゴリ順ではなく、配列の順序に従います。ホームページから辿れるようにはしておきたいものの、主要な読み進めの導線とは競合させたくないシステム系のカテゴリに使います。

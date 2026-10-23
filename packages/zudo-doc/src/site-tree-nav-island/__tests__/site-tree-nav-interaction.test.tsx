@@ -112,6 +112,37 @@ describe("SiteTreeNav hydration and interaction", () => {
     expect(root.querySelector('a[href="/docs/reference"]')).toBe(reference);
   });
 
+  it("hydrates nested collapse, toggles normally, and reinitializes a child after its parent remounts", async () => {
+    const tree: SidebarNavNode[] = [{
+      slug: "a", label: "A", position: 0, href: "/docs/a", hasPage: true,
+      children: [{ slug: "a/utilities", label: "Utilities", position: 0, href: "/docs/a/utilities", hasPage: true,
+        children: [{ slug: "a/utilities/page", label: "Utility page", position: 0, href: "/docs/a/utilities/page", hasPage: true, children: [] }],
+      }],
+    }];
+    const view = await mount({ tree, initiallyCollapsedCategorySlugs: ["a", "a/utilities"] });
+    const root = view.root;
+    expect(root.querySelector('a[href="/docs/a/utilities"]')).toBeNull();
+    root.querySelector<HTMLButtonElement>('button[aria-label="Expand A"]')!.click();
+    await flushAll();
+    expect(root.querySelector('a[href="/docs/a/utilities"]')).not.toBeNull();
+    expect(root.querySelector('button[aria-label="Expand Utilities"]')?.getAttribute("aria-expanded")).toBe("false");
+    expect(root.querySelector('a[href="/docs/a/utilities/page"]')).toBeNull();
+    root.querySelector<HTMLButtonElement>('button[aria-label="Expand Utilities"]')!.click();
+    await flushAll();
+    expect(root.querySelector('a[href="/docs/a/utilities/page"]')).not.toBeNull();
+    root.querySelector<HTMLButtonElement>('button[aria-label="Collapse A"]')!.click();
+    await flushAll();
+    expect(root.querySelector('a[href="/docs/a/utilities/page"]')).toBeNull();
+    root.querySelector<HTMLButtonElement>('button[aria-label="Expand A"]')!.click();
+    await flushAll();
+    expect(root.querySelector('button[aria-label="Expand Utilities"]')?.getAttribute("aria-expanded")).toBe("false");
+    root.querySelector<HTMLButtonElement>('button[aria-label="Expand Utilities"]')!.click();
+    await flushAll();
+    root.querySelector<HTMLButtonElement>('button[aria-label="Collapse Utilities"]')!.click();
+    await flushAll();
+    expect(root.querySelector('a[href="/docs/a/utilities/page"]')).toBeNull();
+  });
+
   it("detaches the category listener on island disposal", async () => {
     const view = await mount({ tree: TREE });
     const button = view.root.querySelector<HTMLButtonElement>(

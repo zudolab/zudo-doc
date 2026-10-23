@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   trailingSlash: false,
   home: { wide: false, introMarkdown: "", sitemapHeading: "" },
   siteTreeNavIgnore: [],
+  siteTreeNavInitiallyCollapsed: [],
   siteTreeNavSecondary: [],
   minifyHtml: true,
   docsDir: "src/content/docs",

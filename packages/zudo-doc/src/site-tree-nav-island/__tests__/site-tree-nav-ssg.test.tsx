@@ -97,7 +97,7 @@ describe("SiteTreeNav — SSG HTML presence", () => {
     expect(html).not.toContain("2xl:w-[24px]");
   });
 
-  it("starts only explicitly selected root-category slugs collapsed", () => {
+  it("starts explicitly selected root-category slugs collapsed", () => {
     const html = render(
       <SiteTreeNav
         tree={SAMPLE_TREE}
@@ -109,6 +109,31 @@ describe("SiteTreeNav — SSG HTML presence", () => {
     expect(html).not.toContain('href="/docs/changelog/1.0.0"');
     expect(html).toContain('aria-expanded="true" aria-label="Collapse Guides"');
     expect(html).toContain('href="/docs/guides/getting-started"');
+  });
+
+  it("matches full nested slugs at every depth without changing siblings or leaves", () => {
+    const branch = (root: string): SidebarNavNode => ({
+      slug: root, label: root, position: 0, href: `/base/ja/docs/${root}`, hasPage: true,
+      children: [{
+        slug: `${root}/utilities`, label: `${root} utilities`, position: 0,
+        href: `/base/ja/docs/${root}/utilities`, hasPage: true,
+        children: [{
+          slug: `${root}/utilities/deep`, label: `${root} deep`, position: 0,
+          href: `/base/ja/docs/${root}/utilities/deep`, hasPage: true,
+          children: [{ slug: `${root}/utilities/deep/page`, label: `${root} page`, position: 0, href: `/base/ja/docs/${root}/utilities/deep/page`, hasPage: true, children: [] }],
+        }],
+      }],
+    });
+    const tree = [branch("a"), branch("b")];
+    const original = structuredClone(tree);
+    const html = render(<SiteTreeNav tree={tree} initiallyCollapsedCategorySlugs={["a/utilities/deep", "unknown", "a/utilities/deep", "b/utilities/deep/page"]} />);
+    expect(html).toContain('href="/base/ja/docs/a/utilities/deep"');
+    expect(html).toContain('aria-expanded="false" aria-label="Expand a deep"');
+    expect(html).not.toContain('href="/base/ja/docs/a/utilities/deep/page"');
+    expect(html).toContain('aria-expanded="true" aria-label="Collapse b deep"');
+    expect(html).toContain('href="/base/ja/docs/b/utilities/deep/page"');
+    expect(tree).toEqual(original);
+    expect(render(<SiteTreeNav tree={tree} initiallyCollapsedCategorySlugs={[]} />)).toContain('href="/base/ja/docs/a/utilities/deep/page"');
   });
 
   it("keeps all categories expanded by default without inferring from labels", () => {

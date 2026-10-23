@@ -97,6 +97,14 @@ The `SiteTreeNav` island's `categoryIgnore` comes from
 row of small links under it, in the setting's order (`siteTreeNavIgnore` wins;
 a category with no page stays in the grid).
 
+`settings.siteTreeNavInitiallyCollapsed` (default `[]`) selects exact full
+category slugs at any depth that start closed in package-owned default and
+localized home pages and the `<SiteTreeNav />` / `<SiteTreeNavDemo />` MDX tags.
+For example, `"zudo-wind/utilities"` has no `/docs` or locale prefix. Links
+and toggles remain visible; descendants start hidden. An explicit
+`HomePageView.initiallyCollapsedCategorySlugs` prop replaces the setting,
+including `[]`. The raw island is props-only and sidebar expansion is separate.
+
 `tagCount` (together with `settings.docTags`) gates the tags section. When
 `tags` (the pre-resolved `TagItem[]` list `prepareHomeData` now also returns) is
 provided and non-empty, the section renders the tag chips — capped at `tagLimit`
@@ -238,7 +246,7 @@ its own sidebar-tree data prep and does not receive this prop.
 | `./home-page` | `createHomePageView(ctx)` — home-page (site index) view factory; see below |
 | `./category-nav` | Category navigation component |
 | `./category-tree-nav` | Category tree navigation component |
-| `./site-tree-nav` | Site tree navigation component; its `SiteTreeNavDeps.categoryIgnore` field is optional (omitted means nothing is hidden) |
+| `./site-tree-nav` | Site tree navigation component; its `SiteTreeNavDeps.categoryIgnore` and `initiallyCollapsedCategorySlugs` fields are optional (omitted means nothing is hidden or collapsed) |
 | `./html-preview-wrapper` | HTML preview wrapper component |
 | `./design-token-panel-bootstrap` | Design token panel bootstrap wiring |
 

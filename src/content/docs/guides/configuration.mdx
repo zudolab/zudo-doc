@@ -166,6 +166,22 @@ The package previously hard-coded `["inbox", "develop"]` for this showcase's own
 
 Type: `string[]` · Default: `[]`
 
+### siteTreeNavInitiallyCollapsed
+
+Exact full category slugs that start collapsed in package-owned default and localized home pages and both `<SiteTreeNav />` and `<SiteTreeNavDemo />` MDX tags. Use the navigation node slug without `/docs`, a locale prefix, or leading/trailing slashes. Matching works at every depth; `"a/utilities"` does not affect `"b/utilities"`. The selected category link and toggle remain visible, while its descendants start hidden.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteTreeNavInitiallyCollapsed: ["zudo-wind/utilities"],
+  }),
+);
+```
+
+The default `[]` leaves all categories open. Unknown slugs, duplicates, and page slugs have no effect. `HomePageView`'s explicit `initiallyCollapsedCategorySlugs` prop replaces this setting; explicit `[]` opens every category initially. The raw `SiteTreeNav` island uses only its own prop. This setting does not change sidebar `node.collapsed` or `sidebar_initial_expansion`.
+
+Type: `string[]` · Default: `[]`
+
 ### siteTreeNavSecondary
 
 Top-level category slugs to move out of the package-owned home-page category grid on `/` and locale-prefixed home pages such as `/ja`, and into a compact secondary row directly under it. Each listed category renders as a small chevron link with its label, and the row follows the array order rather than the grid's category order. Use it for system-level categories that should stay reachable from the home page without competing with the primary reading paths.
