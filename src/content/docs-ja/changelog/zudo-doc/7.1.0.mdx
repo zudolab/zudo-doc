@@ -1,0 +1,15 @@
+---
+title: 7.1.0
+description: 7.1.0のリリースノート。
+sidebar_position: 1140
+---
+
+リリース日: 2026-10-23
+
+### バグ修正
+
+- 表のセル内のインラインコードが単語の途中で折り返されなくなりました。7.0.0 で狭い幅向けに加えた `overflow-wrap: anywhere` が表の列の min-content 幅を縮めるため、表のラッパーがスクロールせずに `slug` のような短い識別子が分割されていました。`th`・`td` 内のコードは `overflow-wrap: break-word` に戻ります。（9d36a247, a30cdd85）
+
+### その他の変更
+
+- 公開済みの zfb 4.7.0 系を必須とし、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^4.5.2` から `^4.7.0` に引き上げます。4.5.3 の MDX コンパイル修正として、HtmlPreview のテンプレートリテラルのプロパティなど、複数行の式が記述どおりの空白を保つ修正と、小数の比較を含むテンプレート文字列が `Unexpected numeric literal` でコンパイルに失敗しなくなる修正を取り込みます。また 4.5.4 のアイランド修正により、ページタイトルや Markdown 本文など、ブラウザーのグラフ外の編集で出力されるアイランドの JavaScript が変わらなくなります。さらに 4.6.0 では、CLI の HTTPS クライアントに RUSTSEC-2026-0381 と RUSTSEC-2026-0382 の修正が入り、ビルド用シャドウにはページから実際に到達できる pnpm ストアのパッケージだけが配置され、SSR シャドウとプラグインの仮想モジュールに関する Windows のパス不具合 2 件が修正されます。4.7.0 では、ページ/SSR とアイランドのバンドラーが esbuild から Rolldown に変わるため、更新後の最初のビルドで出力されるアイランドのアセットハッシュが変わります（`ZFB_BUNDLER=esbuild` で esbuild に戻せます）。また、パッケージ内で配布される TSX にもプロジェクトの tsconfig の JSX 設定が適用され（zfb#4407）、`@takazudo/zfb-md-wasm/highlight` などの `?url` リソースを読み込む Windows のアイランドビルドが失敗しなくなります（zfb#4413）。Rolldown でもオプションの `katex`・`diff` peer は引き続き省略できます。新しい `optional-peers` プラグインが、インストールされていない peer や、対応する `math`・`docHistory` が無効な peer を差し替えるため、プロジェクトはビルドでき、有効な機能では従来どおり peer のインストールを促すメッセージが表示されます（zfb#4429 の回避策）。zfb 系（使用時は `zfb-adapter-cloudflare` も）をまとめて更新してください。（f118e4e0, 2b222e31, 957c252d, 81fcc982, 39f1e8a8, 2e6676db）
