@@ -4,4 +4,6 @@ description: Changes planned for the next release.
 sidebar_position: 1047
 ---
 
-No unreleased changes.
+### Other Changes
+
+- Generated projects and the initializer accept Node.js 24 or later: `engines.node` widens from `>=24 <25` to `>=24`, so Node 26 installs without an engines refusal. Node 24 LTS remains the CI-verified line. (#4614)

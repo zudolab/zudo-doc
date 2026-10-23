@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- Generated projects and the initializer accept Node.js 24 or later: `engines.node` widens from `>=24 <25` to `>=24`, so Node 26 installs without an engines refusal. Node 24 LTS remains the CI-verified line. (#4614)
 
 ## [7.1.0] - 2026-10-23
 

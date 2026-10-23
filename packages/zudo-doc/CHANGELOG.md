@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- Node.js 26 and later are no longer refused: the `engines.node` range widens from `>=24 <25` to `>=24`. Node 24 LTS remains the floor and the only CI-verified line. (#4614)
 
 ## [7.1.0] - 2026-10-23
 
