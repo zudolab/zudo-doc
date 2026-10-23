@@ -229,6 +229,9 @@ html[data-theme-pack="matcha"] .zd-content h2 {
 }
 
 /* h3: quiet, slightly tracked (weight 600 rides --zdc-doc-h3-weight) */
+html[data-theme-pack="matcha"] .zd-content h3:where(:not(.zd-compact-prose *)) {
+  border-top-width: 1px;
+}
 html[data-theme-pack="matcha"] .zd-content h3 {
   letter-spacing: 0.01em;
 }

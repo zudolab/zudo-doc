@@ -219,6 +219,9 @@ html[data-theme-pack="tidepool"] a[data-nav-active] {
 html[data-theme-pack="tidepool"] .zd-content h1 {
   color: color-mix(in srgb, var(--zd-accent) 12%, var(--zd-fg));
 }
+html[data-theme-pack="tidepool"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.5rem;
+}
 html[data-theme-pack="tidepool"] .zd-content h2 {
   border-image: none !important;
   border-top-width: 0;

@@ -264,6 +264,9 @@ html[data-theme-pack="hollow"] .zd-content h1 {
 /* h2: the SSR-inlined gradient bar is re-pointed at a fading pink
    rule (Decision 6.6's sole allowlisted !important carve-out —
    border-image only) */
+html[data-theme-pack="hollow"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.5rem;
+}
 html[data-theme-pack="hollow"] .zd-content h2 {
   border-image: linear-gradient(
       to right,

@@ -113,6 +113,10 @@
   --flow-space: var(--spacing-vsp-xs);
 }
 
+.zd-content :where(h2) + :where(h3) {
+  --flow-space: var(--spacing-vsp-md);
+}
+
 /* Content immediately after a heading: tight gap (replaces heading margin-bottom) */
 .zd-content :where(h2, h3, h4, h5, h6) + :where(:not(h2, h3, h4, h5, h6)) {
   --flow-space: var(--spacing-vsp-xs);

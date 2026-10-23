@@ -107,10 +107,16 @@ html[data-theme-pack="foundry"] .zd-content h1 {
   padding-bottom: 0.55rem;
   border-bottom: 1px solid color-mix(in srgb, var(--zd-muted) 42%, transparent);
 }
+html[data-theme-pack="foundry"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.6rem;
+}
 html[data-theme-pack="foundry"] .zd-content h2 {
   border-image: none !important;
   border-top-width: 1px;
   border-top-color: color-mix(in srgb, var(--zd-muted) 42%, transparent);
+}
+html[data-theme-pack="foundry"] .zd-content h3:where(:not(.zd-compact-prose *)) {
+  border-top-width: 1px;
 }
 
 /* inline code: neutral wash that holds up in both modes */

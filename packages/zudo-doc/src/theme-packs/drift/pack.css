@@ -314,6 +314,9 @@ html[data-theme-pack="drift"] a[data-nav-active] {
 html[data-theme-pack="drift"] .zd-content h1 {
   text-shadow: 0 0 34px color-mix(in oklch, var(--zd-accent) 32%, transparent);
 }
+html[data-theme-pack="drift"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.6rem;
+}
 html[data-theme-pack="drift"] .zd-content h2 {
   border-top-width: 1px;
   border-image: linear-gradient(
@@ -322,6 +325,9 @@ html[data-theme-pack="drift"] .zd-content h2 {
       transparent 72%
     )
     1 !important;
+}
+html[data-theme-pack="drift"] .zd-content h3:where(:not(.zd-compact-prose *)) {
+  border-top-width: 1px;
 }
 
 /* links: airy underline that brightens on approach */
