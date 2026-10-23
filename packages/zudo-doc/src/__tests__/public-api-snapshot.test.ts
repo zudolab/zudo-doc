@@ -143,6 +143,7 @@ describe("package.json exports keyset snapshot", () => {
         "./plugins/doc-history",
         "./plugins/img-src-check",
         "./plugins/llms-txt",
+        "./plugins/optional-peers",
         "./plugins/routes",
         "./plugins/search-index",
         "./plugins/theme-packs",
