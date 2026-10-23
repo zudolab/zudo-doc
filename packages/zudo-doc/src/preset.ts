@@ -142,6 +142,8 @@ export interface PresetSettings {
   trailingSlash: boolean;
   minifyHtml?: boolean;
   mermaid: boolean;
+  /** KaTeX math rendering; when off, the optional `katex` peer is shadowed. */
+  math?: boolean;
   /** Enable transclusion of other Markdown/MDX files. */
   transclude?: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
@@ -590,6 +592,11 @@ export function buildMarkdownFeatures(
 // (defaults to "public") which replaces it (#2358).
 // ---------------------------------------------------------------------------
 
+/** Optional peers whose feature is off — shadowed by the optional-peers plugin. */
+function disabledOptionalPeers(settings: PresetSettings): string[] {
+  return [...(settings.math ? [] : ["katex"]), ...(settings.docHistory ? [] : ["diff"])];
+}
+
 function buildPlugins(
   settings: PresetSettings,
   routeContext: {
@@ -857,5 +864,15 @@ function buildPlugins(
     ...(resolvesBundleZdtp(settings)
       ? []
       : [{ name: "@takazudo/zudo-doc/plugins/zdtp-loader", options: {} }]),
+    // Optional peers of disabled features → throwing shadows, so an absent
+    // katex/diff cannot fail a Rolldown build (Takazudo/zudo-front-builder#4429).
+    ...(disabledOptionalPeers(settings).length > 0
+      ? [
+          {
+            name: "@takazudo/zudo-doc/plugins/optional-peers",
+            options: { shadow: disabledOptionalPeers(settings) },
+          },
+        ]
+      : []),
   ];
 }

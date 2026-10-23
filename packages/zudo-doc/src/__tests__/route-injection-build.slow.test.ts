@@ -1445,7 +1445,8 @@ function readIslandsFileNames(dir: string): string[] {
  *    `import"./islands-chunk-X.js"`, or `export{...}from"./islands-chunk-X.js"`
  *    — anything the module graph pulls in as soon as the referencing chunk
  *    itself loads.
- *  - `dynamic`: `import("./islands-chunk-X.js")` — a call expression,
+ *  - `dynamic`: `import("./islands-chunk-X.js")` (any quote style, including
+ *    a template literal) — a call expression,
  *    evaluated only when reached at runtime. This is the lazy-load boundary.
  *
  *  Regex-based (not an AST parse) and deliberately tolerant of exact
@@ -1461,7 +1462,8 @@ function buildIslandsImportGraph(dir: string): {
   for (const file of readIslandsFileNames(dir)) {
     const content = readFileSync(join(assetsDir, file), "utf-8");
     const dynamics = new Set<string>();
-    for (const m of content.matchAll(/import\(\s*["'](\.\/islands[^"']*\.js)["']\s*\)/g)) {
+    // Rolldown (zfb 4.7.0+) spells dynamic chunk specifiers as template literals.
+    for (const m of content.matchAll(/import\(\s*["'`](\.\/islands[^"'`]*\.js)["'`]\s*\)/g)) {
       if (m[1]) dynamics.add(m[1].replace(/^\.\//, ""));
     }
     const statics = new Set<string>();

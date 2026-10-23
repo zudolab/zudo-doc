@@ -431,7 +431,23 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/changelog",
       "@takazudo/zudo-doc/plugins/img-src-check",
       "@takazudo/zudo-doc/plugins/zdtp-loader",
+      "@takazudo/zudo-doc/plugins/optional-peers",
     ]);
+  });
+
+  // Workaround for Takazudo/zudo-front-builder#4429 (Rolldown fails on an
+  // unresolvable rejection-handled import()).
+  it("shadows exactly the optional peers whose feature is off", () => {
+    const shadowFor = (overrides: Partial<typeof fixtureSettings>) =>
+      zudoDocPreset({
+        settings: { ...fixtureSettings, ...overrides },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      }).plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/optional-peers")?.options;
+    expect(shadowFor({ math: false, docHistory: false })).toEqual({ shadow: ["katex", "diff"] });
+    expect(shadowFor({ math: true, docHistory: false })).toEqual({ shadow: ["diff"] });
+    expect(shadowFor({ math: false, docHistory: true })).toEqual({ shadow: ["katex"] });
+    expect(shadowFor({ math: true, docHistory: true })).toBeUndefined();
   });
 
   it("threads the right options into each plugin", () => {
@@ -654,6 +670,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/img-src-check",
       "@takazudo/zudo-doc/plugins/zdtp-loader",
+      "@takazudo/zudo-doc/plugins/optional-peers",
     ]);
   });
 

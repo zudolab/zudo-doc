@@ -206,6 +206,10 @@
       "types": "./dist/plugins/zdtp-loader.d.ts",
       "default": "./dist/plugins/zdtp-loader.js"
     },
+    "./plugins/optional-peers": {
+      "types": "./dist/plugins/optional-peers.d.ts",
+      "default": "./dist/plugins/optional-peers.js"
+    },
     "./content-admonition": {
       "types": "./dist/content-admonition/index.d.ts",
       "default": "./dist/content-admonition/index.js"
