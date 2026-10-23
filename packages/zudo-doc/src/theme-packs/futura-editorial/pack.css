@@ -216,10 +216,16 @@ html[data-theme-pack="futura-editorial"] .zd-content > p[data-doc-description] {
    fade (signature move #2). The h2 rule needs !important to defeat the
    SSR-inlined `style="border-image:linear-gradient(...)"` (Decision
    6.6's sole allowlisted carve-out). */
+html[data-theme-pack="futura-editorial"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.6rem;
+}
 html[data-theme-pack="futura-editorial"] .zd-content h2 {
   border-image: none !important;
   border-top-width: 1px;
   border-top-color: var(--zd-fg);
+}
+html[data-theme-pack="futura-editorial"] .zd-content h3:where(:not(.zd-compact-prose *)) {
+  border-top-width: 1px;
 }
 html[data-theme-pack="futura-editorial"] .zd-content h3 {
   font-family: var(--font-display);

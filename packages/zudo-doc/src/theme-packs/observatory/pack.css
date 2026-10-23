@@ -422,6 +422,9 @@ html[data-theme-pack="observatory"] .zd-content > p[data-doc-description] {
    allowlisted carve-out) + a zeroed border-top; the node-to-line rule
    is then painted as a top-anchored background gradient, with the two
    glowing star nodes as pseudo-element dots. */
+html[data-theme-pack="observatory"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.75rem;
+}
 html[data-theme-pack="observatory"] .zd-content h2 {
   border-image: none !important;
   border-top-width: 0;

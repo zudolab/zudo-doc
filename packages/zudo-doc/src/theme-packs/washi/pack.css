@@ -314,6 +314,9 @@ html[data-theme-pack="washi"] .zd-content > p[data-doc-description] {
    SSR-inlined `style="border-image:linear-gradient(...)"` — the
    border-image !important carve-out (Decision 6.6), here re-pointing
    the gradient rather than clearing it. */
+html[data-theme-pack="washi"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.6rem;
+}
 html[data-theme-pack="washi"] .zd-content h2 {
   border-top-width: 2px;
   border-image: linear-gradient(

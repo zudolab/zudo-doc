@@ -215,6 +215,9 @@ html[data-theme-pack="solar"] main nav[aria-label="Breadcrumb"] li > span {
    bar is defeated with border-image none !important (Decision 6.6's
    sole allowlisted carve-out) + a zeroed border-top; the fade is then
    painted as a 2px top-anchored background gradient. */
+html[data-theme-pack="solar"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.5rem;
+}
 html[data-theme-pack="solar"] .zd-content h2 {
   border-image: none !important;
   border-top-width: 0;

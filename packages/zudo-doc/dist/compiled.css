@@ -662,6 +662,10 @@ body {
   --flow-space: var(--spacing-vsp-xs);
 }
 
+.zd-content :where(h2) + :where(h3) {
+  --flow-space: var(--spacing-vsp-md);
+}
+
 .zd-content :where(h2, h3, h4, h5, h6) + :where(:not(h2, h3, h4, h5, h6)) {
   --flow-space: var(--spacing-vsp-xs);
 }

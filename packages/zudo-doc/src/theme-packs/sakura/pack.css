@@ -284,6 +284,9 @@ html[data-theme-pack="sakura"] a[data-nav-active] {
    into drifting transparency. Re-points the SSR-inlined
    `style="border-image:linear-gradient(...)"` gradient — the
    border-image !important carve-out (Decision 6.6). */
+html[data-theme-pack="sakura"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  font-size: 1.6rem;
+}
 html[data-theme-pack="sakura"] .zd-content h2 {
   border-top-width: 2px;
   border-image: linear-gradient(

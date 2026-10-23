@@ -225,6 +225,9 @@ html[data-theme-pack="scandi"] .zd-content h2 {
   border-top-width: 1px;
   border-top-color: color-mix(in srgb, var(--zd-accent) 38%, transparent);
 }
+html[data-theme-pack="scandi"] .zd-content h3:where(:not(.zd-compact-prose *)) {
+  border-top-width: 1px;
+}
 
 /* links: sage ink with a soft sage underline that firms on hover */
 html[data-theme-pack="scandi"] .zd-content a {
