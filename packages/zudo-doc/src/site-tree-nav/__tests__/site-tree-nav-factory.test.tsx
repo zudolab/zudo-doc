@@ -144,6 +144,19 @@ describe("createSiteTreeNavWrapper — Island(when:idle) preserved (epic #2344 S
     expect(siteTreeNavProps(result).categoryIgnore).toBeUndefined();
   });
 
+  it("transports a copied collapse list through the idle MDX island with locale and version hrefs", () => {
+    const configured = ["guides/utilities"];
+    const wrapper = createSiteTreeNavWrapper(makeDeps({
+      initiallyCollapsedCategorySlugs: configured,
+      buildNavTree: () => [makeNode("guides", [makeNode("guides/utilities", [makeNode("guides/utilities/page")])])],
+    }));
+    const props = siteTreeNavProps(wrapper({ lang: "ja", currentVersion: "1.0" }));
+    expect(props.initiallyCollapsedCategorySlugs).toEqual(configured);
+    expect(props.initiallyCollapsedCategorySlugs).not.toBe(configured);
+    expect(props.tree[0]?.children[0]?.slug).toBe("guides/utilities");
+    expect(props.tree[0]?.children[0]?.href).toBe("/v/1.0/ja/docs/guides/utilities");
+  });
+
   it("SiteTreeNav island marker name is 'SiteTreeNav' — proxy for data-zfb-island (epic #2344 S8)", () => {
     // The Island({when:"idle", children:<SiteTreeNav ...>}) call in the factory
     // relies on SiteTreeNav.displayName === "SiteTreeNav" to emit

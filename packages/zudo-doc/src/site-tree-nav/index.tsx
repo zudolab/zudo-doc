@@ -123,6 +123,8 @@ export interface SiteTreeNavDeps {
    * package chrome passes `settings.siteTreeNavIgnore`.
    */
   categoryIgnore?: string[];
+  /** Exact full category slugs to start collapsed at any depth. Optional for existing factory callers. */
+  initiallyCollapsedCategorySlugs?: string[];
   /**
    * The raw `dateFormat` setting (`ctx.settings.dateFormat`). Resolved to
    * per-role patterns for the render locale and forwarded to the island as
@@ -161,6 +163,7 @@ export function createSiteTreeNavWrapper(
     getCategoryOrder,
     versionedDocsUrl,
     categoryIgnore,
+    initiallyCollapsedCategorySlugs,
     dateFormat,
   } = deps;
 
@@ -208,6 +211,7 @@ export function createSiteTreeNavWrapper(
       tree,
       categoryOrder,
       ...(categoryIgnore !== undefined ? { categoryIgnore } : {}),
+      ...(initiallyCollapsedCategorySlugs !== undefined ? { initiallyCollapsedCategorySlugs } : {}),
       ...(ariaLabel !== undefined ? { ariaLabel } : {}),
       locale,
       dateFormats: resolveDateFormats(dateFormat, locale),

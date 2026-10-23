@@ -5,6 +5,7 @@ export interface SiteTreeNavIslandProps {
   tree: SidebarNavNode[];
   categoryOrder: string[];
   categoryIgnore?: string[];
+  initiallyCollapsedCategorySlugs?: string[];
   ariaLabel?: string;
   locale: string;
   dateFormats: ResolvedDateFormats;
@@ -30,6 +31,12 @@ export function normalizeSiteTreeNavProps(
     normalized.categoryIgnore = normalizeStringArray(
       input.categoryIgnore,
       "categoryIgnore",
+    );
+  }
+  if (input.initiallyCollapsedCategorySlugs !== undefined) {
+    normalized.initiallyCollapsedCategorySlugs = normalizeStringArray(
+      input.initiallyCollapsedCategorySlugs,
+      "initiallyCollapsedCategorySlugs",
     );
   }
   if (input.ariaLabel !== undefined) {

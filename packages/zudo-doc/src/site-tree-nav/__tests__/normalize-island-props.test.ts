@@ -62,6 +62,7 @@ describe("normalizeSiteTreeNavProps", () => {
       },
     });
     expect(Object.hasOwn(result, "categoryIgnore")).toBe(false);
+    expect(Object.hasOwn(result, "initiallyCollapsedCategorySlugs")).toBe(false);
     expect(Object.hasOwn(result.tree[0]!, "description")).toBe(false);
     expect(Object.hasOwn(result.tree[0]!.children[0]!, "description")).toBe(false);
     expect(result.tree).not.toBe(sourceTree);
@@ -80,10 +81,12 @@ describe("normalizeSiteTreeNavProps", () => {
       rank: 4,
       children: [],
     }];
+    const collapsedSlugs = ["notes/utility"];
     const result = normalizeSiteTreeNavProps({
       tree,
       categoryOrder: ["notes"],
       categoryIgnore: ["hidden"],
+      initiallyCollapsedCategorySlugs: collapsedSlugs,
       ariaLabel: "Site index",
       locale: "en",
       dateFormats: {
@@ -95,6 +98,8 @@ describe("normalizeSiteTreeNavProps", () => {
       },
     });
     expect(result.categoryIgnore).toEqual(["hidden"]);
+    expect(result.initiallyCollapsedCategorySlugs).toEqual(["notes/utility"]);
+    expect(result.initiallyCollapsedCategorySlugs).not.toBe(collapsedSlugs);
     expect(result.ariaLabel).toBe("Site index");
     expect(result.tree[0]).toMatchObject({ shape: "note-tray", noteTrayDated: true, rank: 4 });
 
@@ -104,6 +109,15 @@ describe("normalizeSiteTreeNavProps", () => {
       locale: "en",
       dateFormats: result.dateFormats,
     })).toThrow(/position must be finite/);
+  });
+
+  it("preserves an empty list and rejects malformed collapse slugs", () => {
+    const base = {
+      tree: [], categoryOrder: [], locale: "en",
+      dateFormats: { full: "locale", monthDay: "locale", year: "locale", yearMonth: "locale", numericMonthDay: "locale" },
+    };
+    expect(normalizeSiteTreeNavProps({ ...base, initiallyCollapsedCategorySlugs: [] }).initiallyCollapsedCategorySlugs).toEqual([]);
+    expect(() => normalizeSiteTreeNavProps({ ...base, initiallyCollapsedCategorySlugs: [3] as unknown as string[] })).toThrow(/initiallyCollapsedCategorySlugs/);
   });
 
   it("rejects cyclic nav data before it reaches Island props", () => {

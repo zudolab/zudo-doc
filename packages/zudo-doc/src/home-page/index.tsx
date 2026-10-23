@@ -151,7 +151,7 @@ export interface HomePageViewProps {
   tree: DocNavNode[];
   /** Ordered category prefixes, passed through to `SiteTreeNav`. */
   categoryOrder: string[];
-  /** Root-category slugs that should start collapsed in `SiteTreeNav`. */
+  /** Exact full category slugs at any depth that should start collapsed in `SiteTreeNav`. Overrides `settings.siteTreeNavInitiallyCollapsed`, including when `[]`. */
   initiallyCollapsedCategorySlugs?: string[];
   /** Unique tag count for the current locale — gates the "Tags" section
    *  together with `settings.docTags`. Part of the documented public
@@ -234,6 +234,8 @@ export function createHomePageView<S extends Settings = Settings>(
     wide,
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
+    const effectiveInitiallyCollapsedCategorySlugs =
+      initiallyCollapsedCategorySlugs ?? settings.siteTreeNavInitiallyCollapsed;
     // Same resolution the hero paragraph below reads (locale override falls
     // back to the site-wide description), normalized so an empty/whitespace
     // value doesn't emit `content=""` — `OgTags` and `DocLayout` only check
@@ -368,7 +370,9 @@ export function createHomePageView<S extends Settings = Settings>(
                 tree={tree as unknown as SidebarNavNode[]}
                 categoryOrder={categoryOrder}
                 categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
-                {...(initiallyCollapsedCategorySlugs !== undefined ? { initiallyCollapsedCategorySlugs } : {})}
+                {...(effectiveInitiallyCollapsedCategorySlugs !== undefined
+                  ? { initiallyCollapsedCategorySlugs: effectiveInitiallyCollapsedCategorySlugs }
+                  : {})}
                 locale={locale}
                 updatedLabel={t("doc.updated", locale)}
                 dateFormats={dateFormatsFor(locale)}

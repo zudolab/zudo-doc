@@ -57,7 +57,7 @@ export interface SiteTreeNavProps {
   ariaLabel?: string;
   categoryOrder?: string[];
   categoryIgnore?: string[];
-  /** Root-category slugs that should start collapsed. */
+  /** Exact full category slugs at any depth that should start collapsed. */
   initiallyCollapsedCategorySlugs?: string[];
   /** Locale used by dated note-tray rows. */
   locale?: string;
@@ -129,7 +129,7 @@ export function SiteTreeNav({
                         node={node}
                         depth={0}
                         isLast={isLast}
-                        initiallyCollapsed={initiallyCollapsed.has(node.value.slug)}
+                        initiallyCollapsedCategorySlugs={initiallyCollapsed}
                         locale={locale}
                         dateFormats={dateFormats}
                         updatedLabel={updatedLabel}
@@ -150,9 +150,11 @@ SiteTreeNav.displayName = "SiteTreeNav";
 function NodeList({
   nodes,
   depth,
+  initiallyCollapsedCategorySlugs,
 }: {
   nodes: ReadonlySignal<readonly SidebarNavNode[]>;
   depth: number;
+  initiallyCollapsedCategorySlugs: ReadonlySet<string>;
 }) {
   return (
     <For each={nodes} by={(node) => node.slug}>
@@ -166,7 +168,7 @@ function NodeList({
             )}
           >
             {() => (
-              <CategoryNode node={node} depth={depth} isLast={isLast} />
+              <CategoryNode node={node} depth={depth} isLast={isLast} initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs} />
             )}
           </Show>
         );
@@ -179,7 +181,7 @@ function CategoryNode({
   node,
   depth,
   isLast,
-  initiallyCollapsed = false,
+  initiallyCollapsedCategorySlugs,
   locale = "en",
   dateFormats,
   updatedLabel = "Updated",
@@ -187,12 +189,12 @@ function CategoryNode({
   node: ReadonlySignal<SidebarNavNode>;
   depth: number;
   isLast: ReadonlySignal<boolean>;
-  initiallyCollapsed?: boolean;
+  initiallyCollapsedCategorySlugs: ReadonlySet<string>;
   locale?: string;
   dateFormats?: ResolvedDateFormats;
   updatedLabel?: string;
 }) {
-  const open = signal(initialCategoryOpenState(initiallyCollapsed));
+  const open = signal(initialCategoryOpenState(initiallyCollapsedCategorySlugs.has(node.value.slug)));
   const toggle = () => {
     open.value = toggleCategoryOpenState(open.value);
   };
@@ -294,7 +296,7 @@ function CategoryNode({
                 () => node.value.shape === "note-tray" && depth === 0,
               )}
               fallback={() => (
-                <NodeList nodes={children} depth={depth + 1} />
+                <NodeList nodes={children} depth={depth + 1} initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs} />
               )}
             >
               {() => (

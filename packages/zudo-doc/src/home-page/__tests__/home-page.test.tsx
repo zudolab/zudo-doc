@@ -493,6 +493,18 @@ describe("createHomePageView — SiteTreeNav island", () => {
     expect(latestSiteTreeProps().tree).toBe(CHANGELOG_TREE);
   });
 
+  it("uses configured slugs unless an explicit list replaces them, including []", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext({ settings: { siteTreeNavInitiallyCollapsed: ["guides/utilities"] } }));
+    render(<HomePageView {...makeProps()} />);
+    expect(latestSiteTreeProps().initiallyCollapsedCategorySlugs).toEqual(["guides/utilities"]);
+
+    render(<HomePageView {...makeProps({ initiallyCollapsedCategorySlugs: [] })} />);
+    expect(latestSiteTreeProps().initiallyCollapsedCategorySlugs).toEqual([]);
+
+    render(<HomePageView {...makeProps({ initiallyCollapsedCategorySlugs: ["changelog"] })} />);
+    expect(latestSiteTreeProps().initiallyCollapsedCategorySlugs).toEqual(["changelog"]);
+  });
+
   it("shows a develop category by default when no siteTreeNavIgnore setting is provided", () => {
     const HomePageView = createHomePageView(makeFakeChromeContext());
     render(<HomePageView {...makeProps({ tree: DEVELOP_TREE })} />);

@@ -277,6 +277,7 @@ describe("Settings public field set snapshot", () => {
         "trailingSlash",
         "home",
         "siteTreeNavIgnore",
+        "siteTreeNavInitiallyCollapsed",
         "siteTreeNavSecondary",
         "minifyHtml",
         "docsDir",
