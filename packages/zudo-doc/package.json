@@ -15,7 +15,7 @@
     "url": "https://github.com/zudolab/zudo-doc/issues"
   },
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=24"
   },
   "keywords": [
     "zudo-doc",

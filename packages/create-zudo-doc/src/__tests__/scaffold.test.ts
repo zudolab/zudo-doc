@@ -1903,10 +1903,10 @@ describe("scaffold — generated package.json", () => {
     });
   });
 
-  it("emits the supported Node 24 LTS engine range", async () => {
+  it("emits the Node 24 engine floor without an upper bound", async () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(pkg.engines).toEqual({ node: ">=24 <25" });
+    expect(pkg.engines).toEqual({ node: ">=24" });
   });
 
   it("seeds the installation doc with the supported Node 24 LTS line, both locales", async () => {
