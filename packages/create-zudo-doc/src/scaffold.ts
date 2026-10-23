@@ -154,7 +154,7 @@ sidebar_position: 2
 
 ## Requirements
 
-- Node.js 24 LTS
+- **Node.js 24 LTS** or later
 - pnpm (recommended), npm, yarn, or bun
 
 ## Create a New Project
@@ -183,7 +183,7 @@ sidebar_position: 2
 
 ## 動作要件
 
-- Node.js 24 LTS
+- **Node.js 24 LTS** 以降
 - pnpm（推奨）、npm、yarn、または bun
 
 ## 新しいプロジェクトを作成する
@@ -1251,9 +1251,9 @@ function generatePackageJson(
     version: "0.0.1",
     private: true,
     type: "module",
-    // Match the supported @takazudo/zudo-doc Node 24 LTS line so installs
-    // warn before a framework dependency runs on an unsupported Node.
-    engines: { node: ">=24 <25" },
+    // Node 24 LTS is the floor; no upper cap so newer Node lines (26+) install
+    // without an engines refusal.
+    engines: { node: ">=24" },
     scripts,
     dependencies: deps,
     devDependencies: devDeps,
