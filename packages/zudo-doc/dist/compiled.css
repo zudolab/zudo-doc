@@ -630,9 +630,13 @@ body {
 }
 
 @layer zd-flow {
-  .zd-content > :where(* + *) {
+  .zd-content > :where(* + *), .zd-content :where(.tab-panel) > :where(* + *) {
     margin-top: var(--flow-space, var(--spacing-vsp-md));
   }
+}
+
+.zd-content :where(.tab-panel) {
+  --flow-space: var(--spacing-vsp-md);
 }
 
 .zd-content :where(h2) {
@@ -662,7 +666,7 @@ body {
   --flow-space: var(--spacing-vsp-xs);
 }
 
-.zd-content > :first-child {
+.zd-content > :first-child, .zd-content :where(.tab-panel) > :first-child {
   margin-top: 0;
 }
 
