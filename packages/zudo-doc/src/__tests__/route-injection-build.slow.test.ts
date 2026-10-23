@@ -1286,6 +1286,19 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     },
   );
 
+  // 2026-10-24 re-baseline (#4619, recursive SiteTreeNav initial collapse):
+  // Compared the last passing PR capture (run 39942733867, source
+  // a6f5c3c1) with this PR's A2 capture (run 39997199243, source
+  // d4ec73fa). The offline causal report found residualEqual=true on each
+  // page after replacing native data-zfb-build identities only. The first
+  // difference on each normalized page is 5f0492af648969f5 ->
+  // 6f251c980356899b; removing those identity attributes makes the full
+  // normalized pages byte-identical. Each raw page also keeps its byte length:
+  // 404.html 57025, getting-started/index.html 67457, and
+  // getting-started/coverage/index.html 78909. The changed island source
+  // changes zfb's build identity globally; these routes do not render the
+  // changed SiteTreeNav, and their visible HTML and island props are stable.
+  // Keep strict hashes and native-transport assertions intact.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
