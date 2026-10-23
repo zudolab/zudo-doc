@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@takazudo/zfb": "4.7.0",
-    "@takazudo/zfb-runtime": "4.7.0"
+    "@takazudo/zfb": "5.0.0",
+    "@takazudo/zfb-runtime": "5.0.0"
   },
   "devDependencies": {
     "@playwright/test": "1.58.2",
