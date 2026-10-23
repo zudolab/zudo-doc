@@ -74,9 +74,15 @@
  * layer-independent, so the per-heading flow gaps are unaffected.
  * See zudolab/zudo-doc#2082 / #2109. */
 @layer zd-flow {
-  .zd-content > :where(* + *) {
+  .zd-content > :where(* + *),
+  .zd-content :where(.tab-panel) > :where(* + *) {
     margin-top: var(--flow-space, var(--spacing-vsp-md));
   }
+}
+
+/* Tabs can inherit a heading-following gap; start a new prose flow inside. */
+.zd-content :where(.tab-panel) {
+  --flow-space: var(--spacing-vsp-md);
 }
 
 /* ── Headings ── */
@@ -113,7 +119,8 @@
 }
 
 /* First child never needs top margin */
-.zd-content > :first-child {
+.zd-content > :first-child,
+.zd-content :where(.tab-panel) > :first-child {
   margin-top: 0;
 }
 

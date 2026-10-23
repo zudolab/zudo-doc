@@ -1,0 +1,132 @@
+---
+title: Tabs Flow Test
+description: Direct sibling rhythm inside and outside tab panels.
+---
+
+Ordinary prose control.
+
+Another ordinary paragraph.
+
+<Tip title="Control tip">
+
+First control body paragraph.
+
+Second control body paragraph.
+
+</Tip>
+
+<Note title="Control note">
+
+Control component sibling.
+
+</Note>
+
+## Tabs immediately after a heading
+
+<Tabs>
+
+<TabItem label="Basic blog" value="basic">
+
+## Scaffold a new project
+
+```bash
+pnpm create zudo-doc
+```
+
+<Tip title="See the output before you run it">
+
+First tip body paragraph.
+
+Second tip body paragraph.
+
+</Tip>
+
+<Note title="pnpm 11 note">
+
+Use the supported package manager.
+
+</Note>
+
+Read the generated project.
+
+```bash
+cd my-docs
+```
+
+Another ordinary paragraph.
+
+A second ordinary paragraph.
+
+## Section heading
+
+Section follower.
+
+### Consecutive heading
+
+#### Next heading
+
+Heading follower.
+
+##### Fifth heading
+
+Fifth follower.
+
+###### Sixth heading
+
+Sixth follower.
+
+Explicit margin override.
+
+</TabItem>
+
+<TabItem label="Node-free" value="node-free">
+
+First hidden-panel paragraph.
+
+Second hidden-panel paragraph.
+
+## Hidden section
+
+```bash
+printf 'hello'
+```
+
+<Tip title="Hidden tip">
+
+Hidden component.
+
+</Tip>
+
+<Note title="Hidden note">
+
+Another hidden component.
+
+</Note>
+
+#### Hidden subsection
+
+Hidden heading follower.
+
+</TabItem>
+
+<TabItem label="Code only" value="code-only">
+
+```bash
+printf 'only code'
+```
+
+</TabItem>
+
+</Tabs>
+
+<Tabs>
+
+<TabItem label="Default code only" value="default-code-only">
+
+```bash
+printf 'default code'
+```
+
+</TabItem>
+
+</Tabs>
