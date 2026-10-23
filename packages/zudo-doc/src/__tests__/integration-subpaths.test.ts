@@ -19,7 +19,6 @@ describe("current integration subpaths", () => {
         "./plugins/codex-resources",
         "./plugins/changelog",
         "./plugins/zdtp-loader",
-        "./plugins/optional-peers",
       ]),
     );
   });

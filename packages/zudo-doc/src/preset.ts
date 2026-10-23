@@ -592,18 +592,6 @@ export function buildMarkdownFeatures(
 // (defaults to "public") which replaces it (#2358).
 // ---------------------------------------------------------------------------
 
-/** Optional peers split by whether their feature is on, for the optional-peers plugin. */
-function optionalPeerShadows(settings: PresetSettings): { shadow: string[]; shadowIfMissing: string[] } {
-  const peers: [string, boolean][] = [
-    ["katex", Boolean(settings.math)],
-    ["diff", Boolean(settings.docHistory)],
-  ];
-  return {
-    shadow: peers.filter(([, on]) => !on).map(([name]) => name),
-    shadowIfMissing: peers.filter(([, on]) => on).map(([name]) => name),
-  };
-}
-
 function buildPlugins(
   settings: PresetSettings,
   routeContext: {
@@ -871,8 +859,5 @@ function buildPlugins(
     ...(resolvesBundleZdtp(settings)
       ? []
       : [{ name: "@takazudo/zudo-doc/plugins/zdtp-loader", options: {} }]),
-    // Absent or disabled katex/diff → throwing shadows, so they cannot fail a
-    // Rolldown build (Takazudo/zudo-front-builder#4429).
-    { name: "@takazudo/zudo-doc/plugins/optional-peers", options: optionalPeerShadows(settings) },
   ];
 }

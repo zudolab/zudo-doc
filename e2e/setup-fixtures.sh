@@ -722,12 +722,6 @@ fi
 # for non-smoke fixtures. The smoke fixture instead builds with
 # GEN_DOC_HISTORY=1 (postBuild JSON is opt-in for local builds, #1986) so its
 # per-page fixture history above actually drives history output.
-# Fixtures reach their dependencies through a `node_modules` symlink that
-# points outside the fixture root, which zfb 4.7.0's default Rolldown bundler
-# cannot resolve transitive pnpm deps through — workaround for
-# https://github.com/Takazudo/zudo-front-builder/issues/4430
-FIXTURE_ZFB_BUNDLER="${ZFB_BUNDLER:-esbuild}"
-
 echo ""
 echo "Pre-building fixtures sequentially..."
 for fixture in "${FIXTURES[@]}"; do
@@ -772,12 +766,12 @@ for fixture in "${FIXTURES[@]}"; do
     # the per-page two-/three-entry histories are generated correctly. (The previously-attempted
     # safe.directory fix targeted a different, simulated mechanism and was
     # disproven by CI; this is the confirmed cause.)
-    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && ZFB_BUNDLER="$FIXTURE_ZFB_BUNDLER" INIT_CWD="$REPO_ROOT/e2e/fixtures/$fixture" GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
+    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && INIT_CWD="$REPO_ROOT/e2e/fixtures/$fixture" GEN_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
       echo "  FAILED: $fixture build failed" >&2
       exit 1
     }
   else
-    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && ZFB_BUNDLER="$FIXTURE_ZFB_BUNDLER" SKIP_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
+    (cd "$REPO_ROOT/e2e/fixtures/$fixture" && SKIP_DOC_HISTORY=1 "$REPO_ROOT/node_modules/.bin/zfb" build 2>&1) || {
       echo "  FAILED: $fixture build failed" >&2
       exit 1
     }
