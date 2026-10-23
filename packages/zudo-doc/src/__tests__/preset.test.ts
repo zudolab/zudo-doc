@@ -437,17 +437,29 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
 
   // Workaround for Takazudo/zudo-front-builder#4429 (Rolldown fails on an
   // unresolvable rejection-handled import()).
-  it("shadows exactly the optional peers whose feature is off", () => {
+  it("shadows the optional peers whose feature is off, and the rest only if missing", () => {
     const shadowFor = (overrides: Partial<typeof fixtureSettings>) =>
       zudoDocPreset({
         settings: { ...fixtureSettings, ...overrides },
         buildDocsSchema: buildFixtureSchema,
         directiveVocabulary: fixtureDirectives,
       }).plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/optional-peers")?.options;
-    expect(shadowFor({ math: false, docHistory: false })).toEqual({ shadow: ["katex", "diff"] });
-    expect(shadowFor({ math: true, docHistory: false })).toEqual({ shadow: ["diff"] });
-    expect(shadowFor({ math: false, docHistory: true })).toEqual({ shadow: ["katex"] });
-    expect(shadowFor({ math: true, docHistory: true })).toBeUndefined();
+    expect(shadowFor({ math: false, docHistory: false })).toEqual({
+      shadow: ["katex", "diff"],
+      shadowIfMissing: [],
+    });
+    expect(shadowFor({ math: true, docHistory: false })).toEqual({
+      shadow: ["diff"],
+      shadowIfMissing: ["katex"],
+    });
+    expect(shadowFor({ math: false, docHistory: true })).toEqual({
+      shadow: ["katex"],
+      shadowIfMissing: ["diff"],
+    });
+    expect(shadowFor({ math: true, docHistory: true })).toEqual({
+      shadow: [],
+      shadowIfMissing: ["katex", "diff"],
+    });
   });
 
   it("threads the right options into each plugin", () => {

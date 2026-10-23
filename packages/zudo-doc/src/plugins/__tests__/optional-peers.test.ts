@@ -21,7 +21,12 @@ describe("optional-peers plugin", () => {
     expect(modules.get("diff")).toContain("export {};");
   });
 
-  it("registers nothing without a shadow list", () => {
+  it("shadows a feature-on peer only when it cannot be resolved", () => {
+    const modules = setupWith({ shadowIfMissing: ["diff", "not-installed-optional-peer"] });
+    expect([...modules.keys()]).toEqual(["not-installed-optional-peer"]);
+  });
+
+  it("registers nothing without peer lists", () => {
     expect(setupWith({}).size).toBe(0);
   });
 });
