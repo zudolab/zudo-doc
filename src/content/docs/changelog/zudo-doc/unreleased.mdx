@@ -1,9 +1,7 @@
 ---
 title: Unreleased
 description: Changes planned for the next release.
-sidebar_position: 1140
+sidebar_position: 1141
 ---
 
-### Other Changes
-
-- Requires the published zfb 4.7.0 family: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.5.2` to `^4.7.0`. This picks up the 4.5.3 MDX compile fixes: multiline expressions such as HtmlPreview template-literal props keep their authored whitespace, and a template string that contains a decimal comparison no longer fails to compile with `Unexpected numeric literal`. It also picks up the 4.5.4 islands fix: edits outside the browser graph, such as a page title or a Markdown body, no longer change the shipped islands JavaScript. 4.6.0 adds the RUSTSEC-2026-0381 and RUSTSEC-2026-0382 fixes in the CLI's HTTPS client, stages only the pnpm store packages a page can actually reach into the build shadow, and fixes two Windows path bugs in the SSR shadow and plugin virtual modules. 4.7.0 makes Rolldown the page/SSR and island bundler in place of esbuild, so shipped island asset hashes change on the first build after upgrading (set `ZFB_BUNDLER=esbuild` to go back); it also applies a project's tsconfig JSX options to TSX shipped inside packages (zfb#4407), and fixes Windows island builds that import a `?url` resource such as `@takazudo/zfb-md-wasm/highlight` (zfb#4413). Under Rolldown the optional `katex` and `diff` peers stay optional: a new `optional-peers` plugin shadows a peer that is not installed, or whose `math` / `docHistory` feature is off, so the project still builds and an enabled feature shows its usual "install the peer" message (workaround for zfb#4429). Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) together.
+No unreleased changes.

@@ -6,10 +6,14 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [7.1.0] - 2026-10-23
+
 ### Other Changes
 
-- New projects pin the published zfb 4.7.0 family, including the optional Cloudflare adapter when MCP is enabled.
-- MCP-enabled projects pin Wrangler 4.152.0.
+- New projects pin the published zfb 4.7.0 family, including the optional Cloudflare adapter when MCP is enabled. (f118e4e0, 2b222e31, 957c252d, 81fcc982)
+- MCP-enabled projects pin Wrangler 4.152.0. (abe8d9d9, 348a71ac)
 
 ## [7.0.0] - 2026-10-15
 
