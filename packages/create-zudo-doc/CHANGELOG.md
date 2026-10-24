@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
+- New projects pin the published zfb 5.0.0 family, including the optional Cloudflare adapter when MCP is enabled. zfb 5.0.0 requires Node.js 24, the floor generated projects already declare.
 - Generated projects and the initializer accept Node.js 24 or later: `engines.node` widens from `>=24 <25` to `>=24`, so Node 26 installs without an engines refusal. Node 24 LTS remains the CI-verified line. (#4614)
 
 ## [7.1.0] - 2026-10-23

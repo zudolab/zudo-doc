@@ -431,36 +431,9 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/changelog",
       "@takazudo/zudo-doc/plugins/img-src-check",
       "@takazudo/zudo-doc/plugins/zdtp-loader",
-      "@takazudo/zudo-doc/plugins/optional-peers",
     ]);
   });
 
-  // Workaround for Takazudo/zudo-front-builder#4429 (Rolldown fails on an
-  // unresolvable rejection-handled import()).
-  it("shadows the optional peers whose feature is off, and the rest only if missing", () => {
-    const shadowFor = (overrides: Partial<typeof fixtureSettings>) =>
-      zudoDocPreset({
-        settings: { ...fixtureSettings, ...overrides },
-        buildDocsSchema: buildFixtureSchema,
-        directiveVocabulary: fixtureDirectives,
-      }).plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/optional-peers")?.options;
-    expect(shadowFor({ math: false, docHistory: false })).toEqual({
-      shadow: ["katex", "diff"],
-      shadowIfMissing: [],
-    });
-    expect(shadowFor({ math: true, docHistory: false })).toEqual({
-      shadow: ["diff"],
-      shadowIfMissing: ["katex"],
-    });
-    expect(shadowFor({ math: false, docHistory: true })).toEqual({
-      shadow: ["katex"],
-      shadowIfMissing: ["diff"],
-    });
-    expect(shadowFor({ math: true, docHistory: true })).toEqual({
-      shadow: [],
-      shadowIfMissing: ["katex", "diff"],
-    });
-  });
 
   it("threads the right options into each plugin", () => {
     const byName = Object.fromEntries(preset().plugins.map((p) => [p.name, p.options]));
@@ -682,7 +655,6 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/img-src-check",
       "@takazudo/zudo-doc/plugins/zdtp-loader",
-      "@takazudo/zudo-doc/plugins/optional-peers",
     ]);
   });
 
