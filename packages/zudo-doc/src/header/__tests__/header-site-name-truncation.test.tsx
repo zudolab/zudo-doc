@@ -82,6 +82,19 @@ describe("header site-name truncation", () => {
     expect(html).toContain(`>${LONG_SITE_NAME}</a>`);
   });
 
+  it("keeps the same truncating class string when a headerBrand icon is rendered (#4631)", () => {
+    const plain = logoTag(render(<Header {...makeHeaderProps()} />));
+    const branded = logoTag(
+      render(<Header {...makeHeaderProps({ headerBrand: { icon: "/img/brand.svg" } })} />),
+    );
+    const classOf = (tag: string) => /class="([^"]*)"/.exec(tag)?.[1];
+
+    expect(classOf(branded)).toBe(classOf(plain));
+    expect(branded).toContain("min-w-0");
+    expect(branded).toContain("truncate");
+    expect(branded).not.toContain("shrink-0");
+  });
+
   it("pins the mobile toggle against shrinking when a host slots it in directly", () => {
     const html = render(<SidebarToggle nodes={[]} />);
     const match = /<button[^>]*aria-label="Open sidebar"[^>]*>/.exec(html);

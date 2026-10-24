@@ -9,6 +9,7 @@ import type {
   BodyFootUtilAreaConfig,
   MetaTagsConfig,
   DateFormatSetting,
+  HeaderBrandConfig,
 } from "@takazudo/zudo-doc/settings";
 import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
@@ -37,6 +38,7 @@ export const settings = {
   siteName: "Smoke Test Guide",
   siteDescription: "Test fixture for smoke E2E tests" as string,
   logo: "auto" as string | false,
+  headerBrand: { icon: "/test-images/test-brand-icon.svg" } as false | HeaderBrandConfig,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",

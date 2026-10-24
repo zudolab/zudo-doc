@@ -228,6 +228,22 @@ Run `npx zudo-doc eject logo` to materialize the generated mark as a real file: 
 
 Default: `"auto"`
 
+### headerBrand
+
+Opt-in brand icon shown before the site name in the header. It is a decorative, monochrome, square icon painted with the text colour through a CSS mask, so it follows light/dark mode and theme packs automatically. It is separate from [`logo`](#identity-and-urls-logo), which is the home hero image.
+
+Type: `false | { icon: string }` · Default: `false` (site name only)
+
+```ts title="zfb.config.ts"
+zudoDoc({
+  headerBrand: { icon: "/img/brand-icon.svg" },
+})
+```
+
+`icon` values starting with `/` receive the site [`base`](#identity-and-urls-base) exactly once; any other URL (`https://…`, protocol-relative `//…`, `data:`) is used as-is. A missing or empty `icon`, or `headerBrand: true`, throws a `TypeError` at config resolution instead of rendering a broken mask on every page — pass `false` or omit the field for no icon.
+
+The site name stays the visible text and the link's only accessible name; the icon is `aria-hidden`. See [Header Navigation → Brand icon](./header-navigation.mdx#brand-icon) for styling and layout behavior.
+
 ### favicon
 
 The `<link rel="icon">` set emitted into every page's `<head>`. Omit it and you get the four-file convention a fresh `create-zudo-doc` project ships in `public/`: `favicon.svg`, `favicon.ico` (`sizes="any"`), `favicon-32x32.png`, `favicon-16x16.png`, in that order.

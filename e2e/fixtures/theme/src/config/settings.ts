@@ -6,6 +6,7 @@ import type {
   LocaleConfig,
   MetaTagsConfig,
   DateFormatSetting,
+  HeaderBrandConfig,
 } from "@takazudo/zudo-doc/settings";
 import type { ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
 import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
@@ -50,6 +51,7 @@ export const settings = {
   siteName: "Theme Test",
   siteDescription: "Test fixture for theme toggle E2E tests" as string,
   logo: "auto" as string | false,
+  headerBrand: false as false | HeaderBrandConfig,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",

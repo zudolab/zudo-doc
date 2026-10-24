@@ -54,3 +54,42 @@
   background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
   border: 1px solid var(--color-muted);
 }
+
+/* ======== Official zudo-doc brand identity (showcase only) ======== */
+
+/* Self-hosted Jost SemiBold for live product-name text (OFL: public/fonts/OFL.txt).
+ * The URL is root-relative: correct for this showcase's base "/", but a
+ * non-root deployment would need the base-prefixed path. */
+@font-face {
+  font-family: "Zudo Brand Jost";
+  src: url("/fonts/jost-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Gated on the headerBrand opt-in: e2e fixtures copy this file, and the unbranded
+ * ones must keep each pack's authored logo fallback. Inline :root tokens still win. */
+:root:has([data-header-logo][data-header-brand]) {
+  --zdc-header-logo-font: "Zudo Brand Jost", var(--font-sans);
+  --zdc-header-logo-weight: 600;
+}
+
+/* Pack rules score (0,2,1); this scores (0,3,1) so tracked/uppercase/italic pack
+ * logos render the brand name plainly. Pack font-family/weight go through the
+ * --zdc-header-logo-* tokens above, so no direct override is needed. */
+html [data-header-logo][data-header-brand],
+html[data-theme-pack] [data-header-logo][data-header-brand] {
+  letter-spacing: normal;
+  text-transform: none;
+  font-style: normal;
+}
+
+html [data-zd-home-hero] [data-zd-site-name],
+html .zd-product-name {
+  font-family: "Zudo Brand Jost", sans-serif;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: normal;
+  text-transform: none;
+}

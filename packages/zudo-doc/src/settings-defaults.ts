@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   siteDescription: "",
   logo: "auto",
   favicon: undefined,
+  headerBrand: false,
   base: "/",
   trailingSlash: false,
   home: { wide: false, introMarkdown: "", sitemapHeading: "" },

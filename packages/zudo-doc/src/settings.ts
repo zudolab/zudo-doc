@@ -311,6 +311,20 @@ export interface FaviconConfig {
 }
 
 /**
+ * Opt-in header brand icon rendered before the site name in the header logo
+ * anchor. The icon is painted as a `currentColor` CSS mask, so it follows the
+ * site-name ink in every color scheme and theme pack; it is decorative
+ * (`aria-hidden`) and the anchor's accessible name stays the site name.
+ *
+ * `icon` values starting with `/` are passed through `withBase()`; anything
+ * else (`data:`, `https://…`) is used verbatim. The value must be a non-empty
+ * string — anything else throws a `TypeError` at config resolution.
+ */
+export interface HeaderBrandConfig {
+  icon: string;
+}
+
+/**
  * Site-wide custom `<head>` extras injected into every page via
  * {@link HeadWithDefaults}. All fields are JSON-serializable (no VNodes or
  * callables) — settings objects are `JSON.stringify`'d in the
@@ -370,6 +384,14 @@ export interface Settings {
    * resolves to the current document — pass `false` or omit instead (#3471).
    */
   favicon?: string | FaviconConfig | false;
+  /**
+   * Header brand icon shown before the site name in the header logo anchor.
+   * Omitted or `false` (the default) renders the site name alone, exactly as
+   * before; a {@link HeaderBrandConfig} renders its `icon` as a decorative
+   * `currentColor` mask. Invalid values (`true`, a non-object, an array, a
+   * missing/non-string/empty `icon`) throw a `TypeError` at config resolution.
+   */
+  headerBrand?: false | HeaderBrandConfig;
   base: string;
   trailingSlash: boolean;
   /** Package-owned home-page layout. Narrow when omitted. */

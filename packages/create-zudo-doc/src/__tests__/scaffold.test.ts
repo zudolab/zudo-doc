@@ -2570,6 +2570,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       siteDescription: "no CLI/prompt surface yet — hand-edit post-scaffold",
       logo: "no CLI/prompt surface — the \"auto\" default (generated deterministic SVG) is correct for all scaffolds; hand-edit post-scaffold to point at a real asset",
       favicon: "no CLI/prompt surface — the omitted default (the scaffold's shipped four-file public/ convention) is correct for all scaffolds; hand-edit post-scaffold",
+      headerBrand: "no CLI/prompt surface — opt-in branding, hand-edit post-scaffold",
       base: "no CLI/prompt surface yet — hand-edit post-scaffold (sub-path deploys)",
       trailingSlash: "no CLI/prompt surface yet — hand-edit post-scaffold",
       home: "no CLI/prompt surface — hand-edit post-scaffold for wide layout, introMarkdown and sitemapHeading (locale overrides live in locales)",

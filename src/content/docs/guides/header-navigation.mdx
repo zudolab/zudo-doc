@@ -123,6 +123,22 @@ If your project enables [versioning](./versioning.mdx), audit every `headerNav` 
 
 </Warning>
 
+## Brand icon
+
+Set [`headerBrand`](./configuration.mdx#identity-and-urls-headerbrand) to show a small square icon before the site name:
+
+```ts title="zfb.config.ts"
+zudoDoc({
+  headerBrand: { icon: "/img/brand-icon.svg" },
+})
+```
+
+- The icon is painted with the text colour (a CSS mask), so it follows light/dark mode and theme packs. Use a single-colour shape; colours inside the file are ignored.
+- It is decorative and `aria-hidden`. The site name remains the link's accessible name.
+- Style the name text with the `--zdc-header-logo-font` and `--zdc-header-logo-weight` tokens; see the [component tokens reference](../reference/component-tokens.mdx).
+- A long site name still truncates with an ellipsis next to the icon, and the right-hand controls stay inside the viewport.
+- Theme packs that add a leading emblem before the site name hide it while an icon is set, so the two never double up.
+
 ## Dropdown Behavior
 
 Items with `children` render as dropdown menus. The parent item itself remains a clickable link — clicking it navigates to its `path`. The dropdown provides quick access to related sub-pages.

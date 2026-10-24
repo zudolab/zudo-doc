@@ -4,6 +4,15 @@ description: Changes planned for the next release.
 sidebar_position: 1142
 ---
 
+### Features
+
+- Add the opt-in `headerBrand` setting (`false | { icon: string }`, default `false`): a decorative square icon painted with the text colour (CSS mask) before the site name in the header. `/`-prefixed paths receive the site `base` once, other URLs are used as-is, and an empty or missing `icon` (or `true`) throws at config resolution. The site name stays the link's accessible name, long names still ellipsize, and theme-pack leading emblems are hidden while an icon is set.
+- Add a `data-zd-site-name` attribute to the home hero `<h1>` as a styling hook for the site name.
+
+### Showcase
+
+- The showcase site adopts the official zudo-doc identity: the symbol as its header brand icon, the favicon set, the social card, and the brand name set in Jost 600.
+
 ### Other Changes
 
 - Requires zfb 5.1.0: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.0.1` to `^5.1.0`. zfb 5.1.0 adds an islands build guard: the build now fails if an emitted islands chunk imports the islands entry, because that import would 404 in production. Chunking is otherwise unchanged; apart from the `data-zfb-build` identity, emitted page bytes match 5.0.1. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.0 together with this release.

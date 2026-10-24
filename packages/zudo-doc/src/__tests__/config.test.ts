@@ -419,6 +419,33 @@ describe("zudoDoc() default-merge semantics", () => {
 });
 
 // ── Package opt-in settings, validation, and MCP-only bundler support ─────────
+describe("zudoDoc() headerBrand (#4631)", () => {
+  type Overrides = Parameters<typeof zudoDoc>[0];
+
+  it("defaults headerBrand to false", () => {
+    expect(DEFAULT_SETTINGS.headerBrand).toBe(false);
+  });
+
+  it("accepts omitted, false, and a non-empty icon", () => {
+    expect(() => zudoDoc({})).not.toThrow();
+    expect(() => zudoDoc({ headerBrand: false })).not.toThrow();
+    expect(() => zudoDoc({ headerBrand: { icon: "/img/icon.svg" } })).not.toThrow();
+  });
+
+  it.each([
+    ["true", true, /headerBrand/],
+    ["a string", "/img/icon.svg", /headerBrand/],
+    ["an array", [], /headerBrand/],
+    ["a missing icon", {}, /headerBrand\.icon/],
+    ["a non-string icon", { icon: 1 }, /headerBrand\.icon/],
+    ["an empty icon", { icon: "" }, /headerBrand\.icon/],
+  ])("rejects %s with a TypeError naming the field", (_label, value, pattern) => {
+    const overrides = { headerBrand: value } as unknown as Overrides;
+    expect(() => zudoDoc(overrides)).toThrow(TypeError);
+    expect(() => zudoDoc(overrides)).toThrow(pattern);
+  });
+});
+
 describe("agent documentation config", () => {
   it("defaults both opt-in settings off and carries them into resolved settings", () => {
     expect(DEFAULT_SETTINGS.agentExport).toBe(false);

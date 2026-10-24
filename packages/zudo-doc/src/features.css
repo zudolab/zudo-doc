@@ -1026,6 +1026,30 @@ nav[data-zd-toc], div[data-zd-mobile-toc] {
 
 /* END --zdc-* chrome component tokens */
 
+/* ======== Header brand icon (settings.headerBrand) ======== */
+
+/* Decorative icon inside the site-name anchor. Sized in `em` so it follows a
+ * theme pack's logo font-size inside the fixed-height header; painted as a
+ * currentColor mask so it always matches the site-name ink. The anchor stays
+ * a truncating flow box — the icon is an inline-block run-in, not a flex item. */
+[data-header-brand-icon] {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.2em;
+  margin-inline-end: var(--spacing-hsp-sm);
+  background-color: currentColor;
+  -webkit-mask: var(--zd-header-brand-icon) center/contain no-repeat;
+  mask: var(--zd-header-brand-icon) center/contain no-repeat;
+}
+
+/* A brand icon replaces a theme pack's decorative logo emblem rather than
+ * doubling it. Specificity (0,3,2) beats every pack's `[data-header-logo]::before`
+ * rule (0,2,2); `::after` marks are left alone. */
+html[data-theme-pack] [data-header-logo][data-header-brand]::before {
+  content: none;
+}
+
 button[data-zd-pending] {
   opacity: 0.7;
   pointer-events: none;
