@@ -135,3 +135,10 @@ pages/[locale]/docs/[[...slug]].tsx
 # Byte parity with the host's real brand icon is therefore neither expected
 # nor desired.
 src-tauri/icons/icon.png
+
+# ── public/favicon.{svg,ico} + public/favicon-{16x16,32x32}.png ─────────────
+# reason: the showcase now carries the official zudo-doc mark (epic #4630); the generic scaffold favicons in packages/create-zudo-doc/templates/base/public/ intentionally stay neutral for downstream projects.
+public/favicon.svg
+public/favicon.ico
+public/favicon-16x16.png
+public/favicon-32x32.png
