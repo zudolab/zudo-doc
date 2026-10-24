@@ -4,4 +4,6 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1142
 ---
 
-未リリースの変更はありません。
+### その他の変更
+
+- zfb 5.1.0 が必須になり、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^5.0.1` から `^5.1.0` に引き上げます。zfb 5.1.0 には islands のビルドガードが追加され、出力された islands チャンクが islands エントリーを import している場合にビルドが失敗するようになりました（本番ではその import が 404 になるため）。それ以外のチャンク分割は変わらず、`data-zfb-build` の識別子を除けば出力ページのバイトは 5.0.1 と同一です。このリリースと合わせて zfb 系（使用時は `zfb-adapter-cloudflare` も）を 5.1.0 にまとめて更新してください。
