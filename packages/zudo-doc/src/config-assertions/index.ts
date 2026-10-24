@@ -111,6 +111,47 @@ export function assertNoEmptyStringFaviconOrLogo(settings: EmptyStringFaviconOrL
   }
 }
 
+/** Structural subset of `Settings` {@link assertValidHeaderBrand} reads. */
+export interface HeaderBrandSubject {
+  headerBrand?: unknown;
+}
+
+/**
+ * Validate `headerBrand`: `undefined`, `false`, or `{ icon: <non-empty string> }`.
+ *
+ * The value is typed `false | HeaderBrandConfig`, but JavaScript callers and
+ * casted values can still pass `true`, a bare string, an array, or an object
+ * whose `icon` is missing/empty — each of which would render a broken mask in
+ * every page header. Fail loudly at config resolution, naming the field.
+ */
+export function assertValidHeaderBrand(settings: HeaderBrandSubject): void {
+  const value = settings.headerBrand;
+  if (value === undefined || value === false) return;
+
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError(
+      `Invalid headerBrand ${describeValue(value)}: pass false (or omit it) for no icon, or an object { icon: "/img/icon.svg" }.`,
+    );
+  }
+
+  const icon = (value as { icon?: unknown }).icon;
+  if (typeof icon !== "string" || icon === "") {
+    throw new TypeError(
+      `Invalid headerBrand.icon ${describeValue(icon)}: must be a non-empty string (a "/"-prefixed path, a data: URL, or an absolute URL).`,
+    );
+  }
+}
+
+function describeValue(value: unknown): string {
+  if (value === undefined) return "undefined";
+  if (Array.isArray(value)) return "(array)";
+  try {
+    return JSON.stringify(value) ?? String(value);
+  } catch {
+    return String(value);
+  }
+}
+
 /** Structural subset of `Settings` the zdtp-bundling helpers read. */
 export interface ZdtpBundlingSubject {
   designTokenPanel?: boolean;

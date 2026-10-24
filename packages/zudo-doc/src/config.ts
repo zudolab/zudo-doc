@@ -95,6 +95,7 @@ import type {
   BodyFootUtilAreaConfig,
   HtmlPreviewConfig,
   FaviconConfig,
+  HeaderBrandConfig,
   DateFormatSetting,
 } from "./settings.js";
 
@@ -105,6 +106,7 @@ import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
+  assertValidHeaderBrand,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -236,6 +238,17 @@ export interface ZudoDocConfig {
    * @default undefined
    */
   favicon?: string | FaviconConfig | false;
+  /**
+   * Header brand icon rendered before the site name in the header logo
+   * anchor, as a decorative `currentColor` CSS mask (`aria-hidden`; the
+   * anchor's accessible name stays `siteName`). `false` renders the site name
+   * alone. A `HeaderBrandConfig` (`{ icon }`) paints `icon`: a value starting
+   * with `/` is prefixed with `base`, anything else (`data:`, `https://…`) is
+   * used verbatim. `true`, arrays, other non-objects, and a missing,
+   * non-string or empty `icon` throw a `TypeError` at config resolution.
+   * @default false
+   */
+  headerBrand?: false | HeaderBrandConfig;
   /**
    * Public URL sub-path prefix mounted in front of every absolute asset URL
    * (e.g. `"/pj/my-site/"`). `"/"` = root-mounted.
@@ -832,6 +845,11 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // `zudoDocPreset()` itself (see that call below) since the preset is
   // separately callable as documented public API.
   assertNoEmptyStringFaviconOrLogo(settings);
+
+  // A malformed `headerBrand` would otherwise render a mask of `undefined` or
+  // an empty path in every header. Also enforced inside `zudoDocPreset()`
+  // itself since the preset is separately callable as documented public API.
+  assertValidHeaderBrand(settings);
 
   // `designTokenPanel: true` + `bundleZdtp: false` mounts the package panel on
   // top of a stubbed `zdtp-loader` — a guaranteed runtime throw (#4261). Also

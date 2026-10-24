@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assertAgentDocsConsistent,
+  assertValidHeaderBrand,
   assertValidSearchMaxBodyLength,
   warnAmbiguousDropdownCategoryMatch,
 } from "../index.js";
@@ -127,5 +128,40 @@ describe("assertValidSearchMaxBodyLength", () => {
 
   it.each([3.5, 0.1, -2.5])("throws for %s (not an integer)", (value) => {
     expect(() => assertValidSearchMaxBodyLength(value)).toThrow(/searchMaxBodyLength/);
+  });
+});
+
+describe("assertValidHeaderBrand", () => {
+  it("accepts omitted, false, and an object with a non-empty icon", () => {
+    expect(() => assertValidHeaderBrand({})).not.toThrow();
+    expect(() => assertValidHeaderBrand({ headerBrand: undefined })).not.toThrow();
+    expect(() => assertValidHeaderBrand({ headerBrand: false })).not.toThrow();
+    expect(() => assertValidHeaderBrand({ headerBrand: { icon: "/img/icon.svg" } })).not.toThrow();
+    expect(() =>
+      assertValidHeaderBrand({ headerBrand: { icon: "https://cdn.example.com/icon.svg" } }),
+    ).not.toThrow();
+    expect(() =>
+      assertValidHeaderBrand({ headerBrand: { icon: "data:image/svg+xml,%3Csvg/%3E" } }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ["true", true],
+    ["a string", "/img/icon.svg"],
+    ["a number", 1],
+    ["null", null],
+    ["an array", [{ icon: "/img/icon.svg" }]],
+  ])("rejects %s as the whole value, naming headerBrand", (_label, value) => {
+    expect(() => assertValidHeaderBrand({ headerBrand: value })).toThrow(TypeError);
+    expect(() => assertValidHeaderBrand({ headerBrand: value })).toThrow(/^Invalid headerBrand /);
+  });
+
+  it.each([
+    ["a missing icon", {}],
+    ["a non-string icon", { icon: 42 }],
+    ["an empty icon", { icon: "" }],
+  ])("rejects %s, naming headerBrand.icon", (_label, value) => {
+    expect(() => assertValidHeaderBrand({ headerBrand: value })).toThrow(TypeError);
+    expect(() => assertValidHeaderBrand({ headerBrand: value })).toThrow(/headerBrand\.icon/);
   });
 });

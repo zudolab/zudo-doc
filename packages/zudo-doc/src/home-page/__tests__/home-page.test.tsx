@@ -190,7 +190,7 @@ describe("createHomePageView — hero markup", () => {
     // Mirrors the hero <h1> assertion in route-injection-build.slow.test.ts:2214 — keep both in sync.
     // zd-wrap-anywhere (overflow-wrap: anywhere, not break-word) so a long unbreakable word (e.g. a long
     // siteName) can wrap inside the hero at narrow viewports (#4297/#4302).
-    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs zd-wrap-anywhere">Test Site</h1>');
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs zd-wrap-anywhere" data-zd-site-name="true">Test Site</h1>');
     // Scoped to the hero <h1>: a bare `not.toContain("break-words")` over the
     // whole render would fail on any unrelated home-page element that
     // legitimately carries the utility.

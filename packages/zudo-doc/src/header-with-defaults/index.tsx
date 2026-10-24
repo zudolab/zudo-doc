@@ -22,7 +22,7 @@ import { SidebarToggle } from "../sidebar-toggle-island/index.js";
 import { toSidebarClientData } from "../sidebar/client-data.js";
 import { normalizeIslandData } from "../chrome/island-data.js";
 import type { ChromeContext } from "../factory-context/index.js";
-import type { Settings } from "../settings.js";
+import type { HeaderBrandConfig, Settings } from "../settings.js";
 import { buildGitHubRepoUrl as buildGitHubRepoUrlBase } from "../github-helpers/index.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import {
@@ -80,6 +80,8 @@ export interface HeaderVersionEntry {
 /** Settings subset read by {@link createHeaderWithDefaults}. */
 export interface HeaderWithDefaultsSettings {
   siteName: string;
+  /** Optional header brand icon — forwarded verbatim to `<Header>`. */
+  headerBrand?: false | HeaderBrandConfig;
   /** Site base path — fed to the language-switcher SPA re-wire config. */
   base: string;
   /** Trailing-slash policy — fed to the language-switcher SPA re-wire config. */
@@ -334,6 +336,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         languageSwitcher={languageSwitcher}
         persistKey={persistKey}
         siteName={settings.siteName}
+        headerBrand={settings.headerBrand}
         headerNav={settings.headerNav}
         headerRightItems={headerRightItems}
         headerRightComponents={ctx.hostBindings.headerRightComponents}

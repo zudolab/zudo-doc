@@ -15,6 +15,7 @@ export type {
   TagVocabularyEntry,
   MetaTagsConfig,
   FaviconConfig,
+  HeaderBrandConfig,
   DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
 import type {
@@ -32,6 +33,7 @@ import type {
   TagGovernanceMode,
   MetaTagsConfig,
   FaviconConfig,
+  HeaderBrandConfig,
   DateFormatSetting,
   Settings,
 } from "@takazudo/zudo-doc/settings";
@@ -68,6 +70,7 @@ Start with the **essentials**, then explore the live examples.
     png32: "/favicon-32x32.png",
     png16: "/favicon-16x16.png",
   } satisfies FaviconConfig as string | FaviconConfig | false,
+  headerBrand: false as false | HeaderBrandConfig,
   base: "/",
   trailingSlash: true as boolean,
   minifyHtml: true as boolean,
