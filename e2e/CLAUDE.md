@@ -142,6 +142,8 @@ marker is only consulted when the script actually runs. The `test:e2e*` package
 scripts first run `pnpm ensure:workspace-build` so those artifacts are present and
 current before setup checks the markers.
 
+**Browser override (local only)**: `E2E_CHROMIUM_EXECUTABLE=/path/to/chrome` makes the pinned `@playwright/test` launch that Chromium instead of its bundled build (145 for 1.58.2). Use it when a regression reproduces only on a newer browser — `smoke-footer-navigation-scroll.spec.ts` fails without its guard on Chromium 151/153 but passes on 145 — and record the version the spec attaches to its results. CI never sets it.
+
 **Fast path**: `E2E_FIXTURES=<name>` scopes both `setup-fixtures.sh` (builds only that fixture) and `playwright.config.ts` (boots only its webServer, zero stagger); repeated runs skip the build when inputs are unchanged (`e2e/fixtures/<name>/.build-marker.sha256` tracks the hash); `E2E_FORCE_REBUILD=1` forces a full rebuild.
 
 ## Sidebar Test Helpers
