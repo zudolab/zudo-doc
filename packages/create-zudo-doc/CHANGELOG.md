@@ -6,10 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [8.0.0] - 2026-10-24
+
+### Breaking Changes
+
+- Generated projects now use the ZFB 5.0.1 family and zudo-doc 8.x. Upgrade existing projects' ZFB packages together; Node.js 24 remains the minimum.
+
 ### Other Changes
 
-- New projects pin the published zfb 5.0.0 family, including the optional Cloudflare adapter when MCP is enabled. zfb 5.0.0 requires Node.js 24, the floor generated projects already declare.
-- Generated projects and the initializer accept Node.js 24 or later: `engines.node` widens from `>=24 <25` to `>=24`, so Node 26 installs without an engines refusal. Node 24 LTS remains the CI-verified line. (#4614)
+- The initializer and generated projects accept Node.js 24 or later without an upper version cap. Node 24 LTS remains the CI-verified line. (d5336a24b)
+- Generated Cloudflare MCP projects use MCP SDK 1.32.2.
 
 ## [7.1.0] - 2026-10-23
 

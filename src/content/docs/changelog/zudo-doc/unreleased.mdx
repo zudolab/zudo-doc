@@ -1,17 +1,7 @@
 ---
 title: Unreleased
 description: Changes planned for the next release.
-sidebar_position: 1141
+sidebar_position: 1142
 ---
 
-### Breaking Changes
-
-- Requires the published zfb 5.0.0 family: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.7.0` to `^5.0.0`. zfb 5.0.0's only breaking change is its Node.js 24 floor, which zudo-doc already requires. Its Rolldown bundler again leaves an unresolvable, rejection-handled `import()` external (zfb#4429), so the optional `katex` and `diff` peers stay optional without a workaround. The `@takazudo/zudo-doc/plugins/optional-peers` plugin and its export are removed; a project that listed it in its own `plugins` should delete that entry. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) together.
-
-### Features
-
-- `siteTreeNavInitiallyCollapsed` can start exact nested category slugs closed in home-page and MDX site trees while keeping category links and toggles available.
-
-### Other Changes
-
-- Node.js 26 and later are no longer refused: the `engines.node` range widens from `>=24 <25` to `>=24`. Node 24 LTS remains the floor and the only CI-verified line. (#4614)
+No unreleased changes.

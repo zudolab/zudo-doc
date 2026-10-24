@@ -1,0 +1,27 @@
+---
+title: 8.0.0
+description: Release notes for 8.0.0.
+sidebar_position: 1141
+---
+
+Released: 2026-10-24
+
+### Breaking Changes
+
+- Remove the `@takazudo/zudo-doc/plugins/optional-peers` export. Remove any explicit registration of that workaround plugin; ZFB now handles rejection-handled optional imports directly.
+- Require ZFB 5.0.1 or later in the 5.x line. Upgrade the ZFB engine, runtime, and Markdown WASM packages together. When using document history, upgrade `@takazudo/zudo-doc-history-server` to 8.x as well. Node.js 24 remains the minimum.
+
+### Features
+
+- Add `siteTreeNavInitiallyCollapsed` to start exact nested category slugs collapsed in home-page and MDX site trees while preserving links and toggles. (fb4a6e3cf)
+
+### Bug Fixes
+
+- Adopt ZFB 5.0.1 to fix lazy island chunks requesting an unpublished `islands.js` asset.
+- Restore prose spacing inside tab panels. (5c2f52b92)
+- Clarify adjacent heading spacing and heading hierarchy across theme packs. (2969bd803)
+
+### Other Changes
+
+- Accept Node.js 24 or later without an upper version cap. Node 24 LTS remains the CI-verified line. (d5336a24b)
+- Update the MCP SDK to 1.32.2.

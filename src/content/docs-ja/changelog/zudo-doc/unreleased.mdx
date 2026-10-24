@@ -1,17 +1,7 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1141
+sidebar_position: 1142
 ---
 
-### 破壊的変更
-
-- 公開済みの zfb 5.0.0 系が必須になり、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^4.7.0` から `^5.0.0` に引き上げます。zfb 5.0.0 の破壊的変更は Node.js 24 の必須化のみで、zudo-doc はすでに Node 24 を必須としています。また Rolldown バンドラーが、解決できずリジェクトが処理される `import()` を再び外部のまま残すようになったため（zfb#4429）、回避策なしでもオプションの `katex`・`diff` peer は省略できます。これに伴い `@takazudo/zudo-doc/plugins/optional-peers` プラグインとそのエクスポートを削除しました。自身の `plugins` に指定していたプロジェクトは、その項目を削除してください。zfb 系（使用時は `zfb-adapter-cloudflare` も）をまとめて更新してください。
-
-### 新機能
-
-- `siteTreeNavInitiallyCollapsed` で、ホームページと MDX のサイトツリー内の任意の深さのカテゴリを初期状態で閉じられるようになりました。カテゴリのリンクと切り替えボタンは利用できます。
-
-### その他の変更
-
-- `engines.node` の範囲を `>=24 <25` から `>=24` に広げ、Node.js 26 以降を拒否しなくなりました。下限は引き続き Node 24 LTS で、CI で検証しているのも Node 24 のみです。(#4614)
+未リリースの変更はありません。
