@@ -7,6 +7,7 @@ import type {
   VersionConfig,
   MetaTagsConfig,
   DateFormatSetting,
+  HeaderBrandConfig,
 } from "@takazudo/zudo-doc/settings";
 import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
@@ -18,6 +19,7 @@ export const settings = {
   siteName: "Versioning Test",
   siteDescription: "Test fixture for versioning E2E tests" as string,
   logo: "auto" as string | false,
+  headerBrand: false as false | HeaderBrandConfig,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",

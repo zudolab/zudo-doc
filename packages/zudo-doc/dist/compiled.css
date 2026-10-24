@@ -1864,6 +1864,21 @@ nav[data-zd-toc], div[data-zd-mobile-toc] {
   font-family: var(--zdc-toc-font, var(--zdc-chrome-font, var(--font-sans)));
 }
 
+[data-header-brand-icon] {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -.2em;
+  margin-inline-end: var(--spacing-hsp-sm);
+  background-color: currentColor;
+  -webkit-mask: var(--zd-header-brand-icon) center/contain no-repeat;
+  mask: var(--zd-header-brand-icon) center/contain no-repeat;
+}
+
+html[data-theme-pack] [data-header-logo][data-header-brand]:before {
+  content: none;
+}
+
 button[data-zd-pending] {
   opacity: .7;
   pointer-events: none;

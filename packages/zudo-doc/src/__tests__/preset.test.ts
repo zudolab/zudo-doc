@@ -382,6 +382,33 @@ describe("zudoDocPreset collections", () => {
   });
 });
 
+describe("zudoDocPreset headerBrand validation, called directly (bypassing zudoDoc())", () => {
+  const callPreset = (headerBrand: unknown) =>
+    zudoDocPreset({
+      settings: { ...fixtureSettings, headerBrand } as PresetSettings,
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+
+  it("accepts omitted, false, and a non-empty icon", () => {
+    expect(() => preset()).not.toThrow();
+    expect(() => callPreset(false)).not.toThrow();
+    expect(() => callPreset({ icon: "/img/icon.svg" })).not.toThrow();
+  });
+
+  it.each([
+    ["true", true, /headerBrand/],
+    ["a number", 3, /headerBrand/],
+    ["an array", [{ icon: "/a.svg" }], /headerBrand/],
+    ["a missing icon", {}, /headerBrand\.icon/],
+    ["a non-string icon", { icon: null }, /headerBrand\.icon/],
+    ["an empty icon", { icon: "" }, /headerBrand\.icon/],
+  ])("rejects %s with a TypeError naming the field", (_label, value, pattern) => {
+    expect(() => callPreset(value)).toThrow(TypeError);
+    expect(() => callPreset(value)).toThrow(pattern);
+  });
+});
+
 describe("zudoDocPreset agent documentation config", () => {
   const callPreset = (settings: PresetSettings) =>
     zudoDocPreset({

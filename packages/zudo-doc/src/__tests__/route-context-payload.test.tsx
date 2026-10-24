@@ -191,6 +191,42 @@ describe("createRouteContextPayload", () => {
   });
 });
 
+describe("headerBrand through the serialized route payload (#4631)", () => {
+  function roundTrip<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value)) as T;
+  }
+
+  function renderHeader(payload: ReturnType<typeof createRouteContextPayload>): string {
+    const chrome = createChrome(createRouteContext(payload));
+    return render(<chrome.HeaderWithDefaults lang="en" currentPath="/docs/intro" />);
+  }
+
+  it("carries the DEFAULT_SETTINGS false through a JSON round trip and renders no icon", () => {
+    const payload = createRouteContextPayload({ siteTitle: "Plain Docs" });
+    const parsed = roundTrip(payload);
+
+    expect(payload.settings.headerBrand).toBe(false);
+    expect(parsed.settings.headerBrand).toBe(false);
+    const html = renderHeader(parsed);
+    expect(html).toContain("data-header-logo");
+    expect(html).not.toContain("data-header-brand");
+  });
+
+  it("carries a custom headerBrand through a JSON round trip into the rendered header", () => {
+    const payload = createRouteContextPayload({
+      siteTitle: "Brand Docs",
+      settings: { headerBrand: { icon: "/img/brand.svg" } },
+    });
+    const parsed = roundTrip(payload);
+
+    expect(parsed.settings.headerBrand).toEqual({ icon: "/img/brand.svg" });
+    const html = renderHeader(parsed);
+    expect(html).toMatch(/<a[^>]*data-header-logo[^>]*data-header-brand/);
+    expect(html).toContain("data-header-brand-icon");
+    expect(html).toContain("/img/brand.svg");
+  });
+});
+
 describe("createRouteContext translation precedence", () => {
   const accessibleLabelKey = "language.switcher.label";
 

@@ -41,11 +41,13 @@ import type {
   AssetViewerIndexingConfig,
   TagVocabularyEntry,
   FaviconConfig,
+  HeaderBrandConfig,
   HomeConfig,
 } from "./settings.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
+  assertValidHeaderBrand,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -136,6 +138,9 @@ export interface PresetSettings {
   /** Favicon links. Same rationale as {@link PresetSettings.logo} — carried
    *  only for `assertNoEmptyStringFaviconOrLogo` (#3474). */
   favicon?: string | FaviconConfig | false;
+  /** Header brand icon. Same rationale as {@link PresetSettings.logo} — carried
+   *  only for `assertValidHeaderBrand`; rendering happens in the header. */
+  headerBrand?: false | HeaderBrandConfig;
   /** GitHub repository URL used by asset backlink metadata. */
   githubUrl?: string | false;
   siteUrl: string;
@@ -414,6 +419,10 @@ export function zudoDocPreset({
   // `favicon` before it silently resolves to "the current document" per the
   // HTML spec (#3471, #3474).
   assertNoEmptyStringFaviconOrLogo(settings);
+
+  // Same rationale: a direct `zudoDocPreset()` caller must reject a malformed
+  // `headerBrand` exactly like `zudoDoc()` does.
+  assertValidHeaderBrand(settings);
 
   // Same rationale again: `designTokenPanel: true` + `bundleZdtp: false` mounts
   // the package panel over a stubbed `zdtp-loader` and can only throw at

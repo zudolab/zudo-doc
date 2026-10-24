@@ -60,6 +60,7 @@ import type {
   Locale,
 } from "./types.js";
 import { GitHub as GitHubIcon } from "../icons/index.js";
+import type { HeaderBrandConfig } from "../settings.js";
 
 /**
  * Boundary helpers the host injects into `<Header>`. These are the URL
@@ -168,6 +169,15 @@ export interface HeaderProps {
   /** Site-name string shown in the logo anchor (host `settings.siteName`). */
   siteName: string;
 
+  /**
+   * Optional brand icon rendered before `siteName` inside the logo anchor
+   * (host `settings.headerBrand`). Omitted or `false` renders the anchor
+   * exactly as before. The icon is a decorative `currentColor` CSS mask; an
+   * `icon` starting with `/` goes through `urlHelpers.withBase()`, anything
+   * else is used verbatim.
+   */
+  headerBrand?: false | HeaderBrandConfig;
+
   /** Header-nav items in render order (host `settings.headerNav`). */
   headerNav: HeaderNavItem[];
 
@@ -265,6 +275,7 @@ export function Header(props: HeaderProps): JSX.Element {
     search,
     persistKey,
     siteName,
+    headerBrand,
     headerNav,
     headerRightItems,
     headerRightComponents,
@@ -289,6 +300,14 @@ export function Header(props: HeaderProps): JSX.Element {
   const matchPath = pathForMatch(pathWithoutVersion, lang, i18n.defaultLocale);
 
   const activeNavPath = computeActiveNavPath(headerNav, matchPath);
+  // Direct `<Header>` consumers and raw route payloads bypass the config-time
+  // `assertValidHeaderBrand`, so a malformed value degrades to "no icon".
+  const brandIcon = headerBrand && typeof headerBrand.icon === "string" && headerBrand.icon !== ""
+    ? headerBrand.icon
+    : null;
+  const brandIconUrl = brandIcon === null
+    ? null
+    : brandIcon.startsWith("/") ? urlHelpers.withBase(brandIcon) : brandIcon;
   const rightItemDispatch = createRightItemDispatch(headerRightComponents);
   const rightItems = headerRightItems
     .map((item, i) => ({
@@ -397,7 +416,17 @@ export function Header(props: HeaderProps): JSX.Element {
         class="min-w-0 truncate text-title font-bold text-fg hover:underline focus:underline"
         title={siteName}
         data-header-logo
+        data-header-brand={brandIconUrl !== null ? true : undefined}
       >
+        {brandIconUrl !== null && (
+          // Painted by features.css as a currentColor mask so it follows the
+          // site-name ink; decorative, the anchor's name stays the site name.
+          <span
+            aria-hidden="true"
+            data-header-brand-icon
+            style={{ "--zd-header-brand-icon": cssUrl(brandIconUrl) }}
+          />
+        )}
         {siteName}
       </a>
 
@@ -907,4 +936,13 @@ function renderRightItem(
   }
 
   return null;
+}
+
+/**
+ * Serialize a URL as a quoted CSS `url()` token so paths with whitespace,
+ * parentheses or quotes survive inside the custom property. Kept local to
+ * this module because the header is ejectable (see `eject/index.ts`).
+ */
+function cssUrl(url: string): string {
+  return `url("${url.replace(/[\\"]/g, "\\$&")}")`;
 }
