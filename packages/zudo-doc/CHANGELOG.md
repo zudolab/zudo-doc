@@ -6,17 +6,29 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [8.0.0] - 2026-10-24
+
 ### Breaking Changes
 
-- Requires the published zfb 5.0.0 family: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^4.7.0` to `^5.0.0`. zfb 5.0.0's only breaking change is its Node.js 24 floor, which zudo-doc already requires. Its Rolldown bundler again leaves an unresolvable, rejection-handled `import()` external (zfb#4429), so the optional `katex` and `diff` peers stay optional without a workaround. The `@takazudo/zudo-doc/plugins/optional-peers` plugin and its export are removed; a project that listed it in its own `plugins` should delete that entry. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) together.
+- Remove the `@takazudo/zudo-doc/plugins/optional-peers` export. Remove any explicit registration of that workaround plugin; ZFB now handles rejection-handled optional imports directly.
+- Require ZFB 5.0.1 or later in the 5.x line. Upgrade the ZFB engine, runtime, and Markdown WASM packages together. When using document history, upgrade `@takazudo/zudo-doc-history-server` to 8.x as well. Node.js 24 remains the minimum.
 
 ### Features
 
-- `siteTreeNavInitiallyCollapsed` can start exact nested category slugs closed in home-page and MDX site trees while keeping category links and toggles available.
+- Add `siteTreeNavInitiallyCollapsed` to start exact nested category slugs collapsed in home-page and MDX site trees while preserving links and toggles. (fb4a6e3cf)
+
+### Bug Fixes
+
+- Adopt ZFB 5.0.1 to fix lazy island chunks requesting an unpublished `islands.js` asset.
+- Restore prose spacing inside tab panels. (5c2f52b92)
+- Clarify adjacent heading spacing and heading hierarchy across theme packs. (2969bd803)
 
 ### Other Changes
 
-- Node.js 26 and later are no longer refused: the `engines.node` range widens from `>=24 <25` to `>=24`. Node 24 LTS remains the floor and the only CI-verified line. (#4614)
+- Accept Node.js 24 or later without an upper version cap. Node 24 LTS remains the CI-verified line. (d5336a24b)
+- Update the MCP SDK to 1.32.2.
 
 ## [7.1.0] - 2026-10-23
 
