@@ -103,6 +103,19 @@ These contracts exercise the workspace candidate, not an npm publication.
 Chromium mobile viewport emulation does not establish Safari/iOS or Apple IME
 acceptance; those platforms require separate evidence.
 
+### Footer navigation scroll needs a reproducing browser
+
+`smoke-footer-navigation-scroll.spec.ts` guards the persisted-focus settle
+bootstrap (`packages/zudo-doc/src/transitions/persisted-focus-settle-bootstrap.ts`).
+The underlying Chromium focus-reveal behavior reproduces on 151 and 153 but not
+on the 145 build bundled with `@playwright/test` 1.58.2, so in CI the spec passes
+with or without the guard: it is lifecycle, persistence and focus coverage there,
+not live protection for the scroll regression. The package unit test pins the
+guard's layout read. To prove the regression, run the spec locally with
+`E2E_CHROMIUM_EXECUTABLE` pointing at a newer Chromium (see `e2e/CLAUDE.md`) and
+record the browser version it attaches. The protection gap closes when the pinned
+Playwright browser reaches a reproducing build.
+
 ### Deliberate visual-regression skip
 
 The Playwright `toHaveScreenshot` matcher appears nowhere in executable test

@@ -47,6 +47,12 @@ export default defineConfig({
     // CI artifact upload steps must include both paths (zudolab/zudo-doc#2535).
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    // Local opt-in only: run the pinned Playwright against another installed
+    // Chromium build when a regression reproduces only on newer browsers
+    // (e.g. smoke-footer-navigation-scroll.spec.ts). Ignored in CI.
+    ...(process.env.E2E_CHROMIUM_EXECUTABLE && !process.env.CI
+      ? { launchOptions: { executablePath: process.env.E2E_CHROMIUM_EXECUTABLE } }
+      : {}),
   },
   webServer: activeFixtures.map((name) => {
     const i = fixtureIndex(name);

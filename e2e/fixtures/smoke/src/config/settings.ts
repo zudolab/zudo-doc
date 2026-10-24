@@ -10,6 +10,7 @@ import type {
   MetaTagsConfig,
   DateFormatSetting,
   HeaderBrandConfig,
+  FooterConfig,
 } from "@takazudo/zudo-doc/settings";
 import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
@@ -100,6 +101,21 @@ export const settings = {
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
+  // Real footer links for smoke-footer-navigation-scroll.spec.ts: a persisted
+  // footer link keeps focus across the SPA swap, and the destination must
+  // still settle at the top. The long page gives the pair different heights.
+  footer: {
+    links: [
+      {
+        title: "Docs",
+        items: [
+          { label: "Getting Started", href: "/docs/getting-started" },
+          { label: "Guides", href: "/docs/guides" },
+          { label: "Footer Scroll Long", href: "/docs/footer-scroll-long" },
+        ],
+      },
+    ],
+  } satisfies FooterConfig as FooterConfig | false,
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
   searchMaxBodyLength: 3000 as number,

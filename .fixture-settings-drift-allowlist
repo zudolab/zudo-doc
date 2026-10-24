@@ -186,11 +186,11 @@ smoke:versions
 hostpanel:versions
 
 # ── footer ────────────────────────────────────────────────────────────────────
-# reason: footer content is not exercised in any fixture
+# reason: footer content is exercised only by the smoke fixture
+# (smoke-footer-navigation-scroll.spec.ts)
 sidebar:footer
 i18n:footer
 theme:footer
-smoke:footer
 versioning:footer
 hostpanel:footer
 

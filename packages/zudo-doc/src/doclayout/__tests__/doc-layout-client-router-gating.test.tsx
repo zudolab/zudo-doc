@@ -14,6 +14,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { DocLayoutWithDefaults } from "../doc-layout-with-defaults.js";
+import { buildPersistedFocusSettleBootstrap } from "../../transitions/persisted-focus-settle-bootstrap.js";
 
 const testGlobal = globalThis as unknown as { __zfb?: Record<string, unknown> };
 const previousZfb = testGlobal.__zfb;
@@ -40,6 +41,7 @@ describe("DocLayoutWithDefaults — ClientRouter gating", () => {
     expect(html).not.toContain('name="zfb-preserve-html-attrs"');
     // Route-announcer emitted by ClientRouter — absent when router is off.
     expect(html).not.toContain("route-announcer");
+    expect(html).not.toContain("__zdPersistedFocusSettle");
   });
 
   it("includes ClientRouter meta when enableClientRouter is omitted (default=true)", () => {
@@ -51,6 +53,7 @@ describe("DocLayoutWithDefaults — ClientRouter gating", () => {
 
     expect(html).toContain('name="zfb-view-transitions-enabled"');
     expect(html).toContain('name="zfb-preserve-html-attrs"');
+    expect(html).toContain(buildPersistedFocusSettleBootstrap());
   });
 
   it("includes ClientRouter meta when enableClientRouter={true}", () => {

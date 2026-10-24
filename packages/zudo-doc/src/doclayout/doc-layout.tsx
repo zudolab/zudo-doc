@@ -64,6 +64,7 @@ import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 // `@takazudo/zfb-runtime/client-router` side-effect import.
 import { ClientRouter } from "@takazudo/zfb-runtime";
 import { buildChromeTransitionBootstrap } from "../transitions/chrome-transition-bootstrap.js";
+import { buildPersistedFocusSettleBootstrap } from "../transitions/persisted-focus-settle-bootstrap.js";
 
 /**
  * Direction-and-mode metadata for the root `<html>` element. Keeps the
@@ -342,7 +343,10 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     );
   }
   if (head !== undefined) headChildren.push(head);
-  if (enableClientRouter !== false) headChildren.push(<script rawHtml={buildChromeTransitionBootstrap()} />);
+  if (enableClientRouter !== false) {
+    headChildren.push(<script rawHtml={buildChromeTransitionBootstrap()} />);
+    headChildren.push(<script rawHtml={buildPersistedFocusSettleBootstrap()} />);
+  }
 
   return (
     <html {...htmlAttrs}>
