@@ -38,6 +38,12 @@ import { THEME_PACK_STORAGE_KEY, waitForActivePack } from "./theme-pack-helpers"
  * Same CDP `Page.setFontSizes` lever as the truncation spec — the browser's
  * own font preference, not zoom, not injected CSS.
  *
+ * The smoke fixture opts into `headerBrand: { icon: "/img/test-brand-icon.svg" }`
+ * (zudolab/zudo-doc#4633), so the sweep also proves, for every pack, that the
+ * decorative icon is `aria-hidden`, the anchor's accessible name is still the
+ * site name, and no pack's leading `::before` emblem renders beside the icon —
+ * all while the ellipsis and in-bounds assertions keep holding.
+ *
  * `test.slow()` because activating each of the 31+ packs costs a full
  * `page.reload()`.
  */
@@ -108,6 +114,11 @@ interface PackMeasurement {
   anchorTextOverflow: string;
   anchorOverflowX: string;
   anchorWhiteSpace: string;
+  anchorBrandAttr: boolean;
+  iconCount: number;
+  iconAriaHidden: string | null;
+  iconWidth: number;
+  anchorBeforeContent: string;
 }
 
 async function measurePack(page: Page): Promise<PackMeasurement> {
@@ -130,6 +141,11 @@ async function measurePack(page: Page): Promise<PackMeasurement> {
       anchorTextOverflow: anchorStyle.textOverflow,
       anchorOverflowX: anchorStyle.overflowX,
       anchorWhiteSpace: anchorStyle.whiteSpace,
+      anchorBrandAttr: anchor.hasAttribute("data-header-brand"),
+      iconCount: anchor.querySelectorAll("[data-header-brand-icon]").length,
+      iconAriaHidden: anchor.querySelector("[data-header-brand-icon]")?.getAttribute("aria-hidden") ?? null,
+      iconWidth: anchor.querySelector("[data-header-brand-icon]")?.getBoundingClientRect().width ?? 0,
+      anchorBeforeContent: getComputedStyle(anchor, "::before").content,
     };
   });
 }
@@ -207,6 +223,27 @@ test.describe("header site-name ellipsis across every theme pack at 390px / 24px
         );
       }
 
+      // 3b. Brand icon: present and decorative, no pack emblem beside it.
+      //     The accessible name is checked once after the sweep (it needs a
+      //     Playwright locator, which cannot be read inside this loop's
+      //     evaluate without a second round trip per pack).
+      if (!m.anchorBrandAttr || m.iconCount !== 1) {
+        failures.push(
+          `${packSlug}: expected data-header-brand and exactly one icon span, got attr=${m.anchorBrandAttr} icons=${m.iconCount}`,
+        );
+      }
+      if (m.iconAriaHidden !== "true") {
+        failures.push(`${packSlug}: brand icon aria-hidden is ${JSON.stringify(m.iconAriaHidden)}, expected "true"`);
+      }
+      if (m.iconWidth <= 0) {
+        failures.push(`${packSlug}: brand icon has no rendered width`);
+      }
+      if (m.anchorBeforeContent !== "none" && m.anchorBeforeContent !== "normal") {
+        failures.push(
+          `${packSlug}: anchor ::before content is ${m.anchorBeforeContent}, expected the pack emblem to be suppressed`,
+        );
+      }
+
       // 4. Only when the anchor is actually clipped does the ellipsis
       //    mechanism need to be present — an anchor with room to spare has
       //    nothing to prove here.
@@ -235,6 +272,10 @@ test.describe("header site-name ellipsis across every theme pack at 390px / 24px
         }
       }
     }
+
+    // The icon is aria-hidden and the title is only a hover affordance, so
+    // the link's accessible name must be exactly the site name.
+    await expect(page.locator("[data-header-logo]")).toHaveAccessibleName(LONG_SITE_NAME);
 
     // Vacuous-pass guard: `swissgrid` and `riso` are the two packs already
     // known to overflow the anchor individually — "at least one pack
