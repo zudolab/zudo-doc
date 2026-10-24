@@ -70,7 +70,7 @@ Start with the **essentials**, then explore the live examples.
     png32: "/favicon-32x32.png",
     png16: "/favicon-16x16.png",
   } satisfies FaviconConfig as string | FaviconConfig | false,
-  headerBrand: false as false | HeaderBrandConfig,
+  headerBrand: { icon: "/img/brand/zudo-doc-symbol.svg" } as false | HeaderBrandConfig,
   base: "/",
   trailingSlash: true as boolean,
   minifyHtml: true as boolean,
@@ -325,7 +325,7 @@ Start with the **essentials**, then explore the live examples.
         ],
       },
     ],
-    copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://zudo-doc.takazudomodular.com/docs/getting-started/">zudo-doc</a>.`,
+    copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://zudo-doc.takazudomodular.com/docs/getting-started/"><span class="zd-product-name">zudo-doc</span></a>.`,
     /**
      * Opt-in footer tag index. Leave `enabled: false` (or omit the block
      * entirely) to render the footer unchanged from today.

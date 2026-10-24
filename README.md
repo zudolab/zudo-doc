@@ -1,4 +1,4 @@
-# zudo-doc
+<h1><picture><source media="(prefers-color-scheme: dark)" srcset="public/img/brand/zudo-doc-lockup-white.svg"><img src="public/img/brand/zudo-doc-lockup.svg" alt="zudo-doc" height="64"></picture></h1>
 
 Documentation base framework built with [zfb](https://www.npmjs.com/package/@takazudo/zfb), MDX, zudo-wind, and zudo-react islands.
 
