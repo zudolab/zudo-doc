@@ -171,6 +171,31 @@ describe("Header headerBrand", () => {
     expect(decodeAttr(iconStyle(html))).toContain('url("https://cdn.example.com/brand.svg")');
   });
 
+  it("uses a protocol-relative // icon URL verbatim (no base prefix)", () => {
+    const html = render(
+      <Header
+        {...makeHeaderProps({
+          headerBrand: { icon: "//cdn.example.com/brand.svg" },
+          urlHelpers: {
+            withBase: withBaseFor("/manual/"),
+            stripBase: (p) => p,
+            navHref: (p) => p,
+          },
+        })}
+      />,
+    );
+
+    expect(decodeAttr(iconStyle(html))).toContain('url("//cdn.example.com/brand.svg")');
+  });
+
+  it("escapes newlines so a multi-line URL stays one valid CSS string", () => {
+    const html = render(
+      <Header {...makeHeaderProps({ headerBrand: { icon: "data:image/svg+xml,a\nb" } })} />,
+    );
+
+    expect(decodeAttr(iconStyle(html))).toContain('url("data:image/svg+xml,a\\a b")');
+  });
+
   it("quotes paths containing quotes, parentheses, spaces and backslashes into one url() token", () => {
     const html = render(
       <Header {...makeHeaderProps({ headerBrand: { icon: '/img/my "brand" (1)\\x.svg' } })} />,

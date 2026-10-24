@@ -240,7 +240,7 @@ zudoDoc({
 })
 ```
 
-`icon` values starting with `/` receive the site [`base`](#identity-and-urls-base) exactly once; any other URL (`https://…`, `data:`) is used as-is. A missing or empty `icon`, or `headerBrand: true`, throws a `TypeError` at config resolution instead of rendering a broken mask on every page — pass `false` or omit the field for no icon.
+`icon` values starting with `/` receive the site [`base`](#identity-and-urls-base) exactly once; any other URL (`https://…`, protocol-relative `//…`, `data:`) is used as-is. A missing or empty `icon`, or `headerBrand: true`, throws a `TypeError` at config resolution instead of rendering a broken mask on every page — pass `false` or omit the field for no icon.
 
 The site name stays the visible text and the link's only accessible name; the icon is `aria-hidden`. See [Header Navigation → Brand icon](./header-navigation.mdx#brand-icon) for styling and layout behavior.
 

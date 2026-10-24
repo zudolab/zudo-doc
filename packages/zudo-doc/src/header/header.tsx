@@ -307,7 +307,9 @@ export function Header(props: HeaderProps): JSX.Element {
     : null;
   const brandIconUrl = brandIcon === null
     ? null
-    : brandIcon.startsWith("/") ? urlHelpers.withBase(brandIcon) : brandIcon;
+    : brandIcon.startsWith("/") && !brandIcon.startsWith("//")
+      ? urlHelpers.withBase(brandIcon)
+      : brandIcon;
   const rightItemDispatch = createRightItemDispatch(headerRightComponents);
   const rightItems = headerRightItems
     .map((item, i) => ({
@@ -944,5 +946,5 @@ function renderRightItem(
  * this module because the header is ejectable (see `eject/index.ts`).
  */
 function cssUrl(url: string): string {
-  return `url("${url.replace(/[\\"]/g, "\\$&")}")`;
+  return `url("${url.replace(/[\\"]/g, "\\$&").replace(/[\n\r\f]/g, "\\a ")}")`;
 }
