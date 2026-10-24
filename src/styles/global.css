@@ -68,7 +68,9 @@
   font-display: swap;
 }
 
-:root {
+/* Gated on the headerBrand opt-in: e2e fixtures copy this file, and the unbranded
+ * ones must keep each pack's authored logo fallback. Inline :root tokens still win. */
+:root:has([data-header-logo][data-header-brand]) {
   --zdc-header-logo-font: "Zudo Brand Jost", var(--font-sans);
   --zdc-header-logo-weight: 600;
 }
