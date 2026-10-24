@@ -38,7 +38,7 @@ import { THEME_PACK_STORAGE_KEY, waitForActivePack } from "./theme-pack-helpers"
  * Same CDP `Page.setFontSizes` lever as the truncation spec — the browser's
  * own font preference, not zoom, not injected CSS.
  *
- * The smoke fixture opts into `headerBrand: { icon: "/img/test-brand-icon.svg" }`
+ * The smoke fixture opts into `headerBrand: { icon: "/test-images/test-brand-icon.svg" }`
  * (zudolab/zudo-doc#4633), so the sweep also proves, for every pack, that the
  * decorative icon is `aria-hidden`, the anchor's accessible name is still the
  * site name, and no pack's leading `::before` emblem renders beside the icon —
