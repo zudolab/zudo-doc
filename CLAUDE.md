@@ -20,7 +20,7 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 
 Release 8.0.0 shipped the ZFB 5.0.1 family (peers `^5.0.1`), MCP SDK 1.32.2, and history-server peer floor `^8.0.0`; the unreleased workspace moves to ZFB 5.1.0 (peers `^5.1.0`, #4627). Node.js 24 remains the minimum. The publication records below describe earlier releases.
 
-Current state (2026-10-15): the zfb 4 migration PR #4477 is merged (`b9dd43b0d`) and
+Current state (2026-10-24): the zfb 4 migration PR #4477 is merged (`b9dd43b0d`) and
 production-deployed. Pins: workspace zfb family 5.1.0, peers ^5.1.0 (4.3.1 adopted by #4516; bumped to 4.3.2 by #4541; to 4.3.3 for RUSTSEC-2026-0333 in the 6.1.1 release; to 4.4.0 by #4569, then 4.5.0 by #4581, released in 6.2.0; 4.5.1 by #4586, then 4.5.2 by #4592, released in 7.0.0; 4.5.3 by #4602, then 4.5.4 by #4606, then 4.6.0 by #4607, then 4.7.0 by #4612, released in 7.1.0; 5.0.0 adopted by #4623, which dropped the zfb#4429/#4430 workarounds, then 5.0.1, released in 8.0.0; 5.1.0 adopted by #4627); zdtp 0.8.6;
 MCP SDK 1.32.2; root/generated-MCP Wrangler 4.152.0. The three published packages (`@takazudo/zudo-doc`,
 `@takazudo/zudo-doc-history-server` and `create-zudo-doc`) are at 8.0.0 on npm

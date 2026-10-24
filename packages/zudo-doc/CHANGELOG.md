@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Requires zfb 5.1.0: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.0.1` to `^5.1.0`. zfb 5.1.0 adds an islands build guard: the build now fails if an emitted islands chunk imports the islands entry, because that import would 404 in production. Chunking and emitted bytes are otherwise unchanged. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.0 together with this release.
+- Requires zfb 5.1.0: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.0.1` to `^5.1.0`. zfb 5.1.0 adds an islands build guard: the build now fails if an emitted islands chunk imports the islands entry, because that import would 404 in production. Chunking is otherwise unchanged; apart from the `data-zfb-build` identity, emitted page bytes match 5.0.1. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.0 together with this release.
 
 ## [8.0.0] - 2026-10-24
 
