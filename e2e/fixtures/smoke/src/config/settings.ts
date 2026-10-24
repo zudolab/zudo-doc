@@ -38,7 +38,7 @@ export const settings = {
   siteName: "Smoke Test Guide",
   siteDescription: "Test fixture for smoke E2E tests" as string,
   logo: "auto" as string | false,
-  headerBrand: false as false | HeaderBrandConfig,
+  headerBrand: { icon: "/test-images/test-brand-icon.svg" } as false | HeaderBrandConfig,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
