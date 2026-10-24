@@ -13,8 +13,8 @@ export function IndexList(props: NoteTrayIndexProps): JSX.Element {
           ? "relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent"
           : "relative -mt-px first:mt-0 border-y border-muted";
         const rankClass = item.href
-          ? "tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg"
-          : "tabular-nums text-heading leading-none text-muted";
+          ? "whitespace-nowrap tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg"
+          : "whitespace-nowrap tabular-nums text-heading leading-none text-muted";
         const labelClass = item.href
           ? "font-medium text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"
           : "font-medium text-fg";
@@ -26,7 +26,7 @@ export function IndexList(props: NoteTrayIndexProps): JSX.Element {
           : "mt-vsp-2xs block text-caption text-muted";
         const rowContent = (
           <>
-            <span class={rankClass} style={{ width: `${width}ch` }}>
+            <span class={rankClass} style={{ "min-width": `${width}ch` }}>
               {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
             </span>
             <span class="min-w-0">
