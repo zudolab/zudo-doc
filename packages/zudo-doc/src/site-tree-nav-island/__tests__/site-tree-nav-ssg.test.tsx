@@ -358,7 +358,10 @@ describe("SiteTreeNav — link-color rule (focus-visible accent)", () => {
       />,
     );
     expect(html).toContain(
-      'class="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"',
+      'class="group flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"',
+    );
+    expect(html).toContain(
+      'class="shrink-0 font-mono tabular-nums text-caption text-muted group-hover:text-accent group-focus-visible:text-accent"',
     );
   });
 });

@@ -13,7 +13,7 @@ export function IndexList(props: NoteTrayIndexProps): JSX.Element {
           ? "relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent"
           : "relative -mt-px first:mt-0 border-y border-muted";
         const rankClass = item.href
-          ? "whitespace-nowrap tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg"
+          ? "whitespace-nowrap tabular-nums text-heading leading-none text-muted group-hover:text-accent group-focus-visible:text-accent"
           : "whitespace-nowrap tabular-nums text-heading leading-none text-muted";
         const labelClass = item.href
           ? "font-medium text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"
@@ -39,6 +39,7 @@ export function IndexList(props: NoteTrayIndexProps): JSX.Element {
                     locale={props.locale}
                     updatedLabel={props.updatedLabel}
                     dateFormats={props.dateFormats}
+                    linked={Boolean(item.href)}
                   />
                 </span>
               )}

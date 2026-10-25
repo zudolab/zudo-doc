@@ -3609,11 +3609,6 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
   }
 }
 @media (hover: hover) {
-  :where(.group:hover) .group-hover\:text-fg {
-    color: var(--zw-color-fg);
-  }
-}
-@media (hover: hover) {
   :where(.group:hover) .group-hover\:bg-fg {
     background-color: var(--zw-color-fg);
   }
@@ -3623,9 +3618,6 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 }
 :where(.group:focus-visible) .group-focus-visible\:text-accent {
   color: var(--zw-color-accent);
-}
-:where(.group:focus-visible) .group-focus-visible\:text-fg {
-  color: var(--zw-color-fg);
 }
 @media (hover: hover) {
   :where(.peer:hover) ~ .peer-hover\:text-accent {

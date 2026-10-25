@@ -443,13 +443,13 @@ function NoteTrayRow({
         <a
           href={computed(() => href.value ?? "")}
           data-note-tray-row
-          class="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+          class="group flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
         >
           <Show
             when={computed(() => Boolean(dateLabel.value))}
             fallback={() => (
               <span
-                class="shrink-0 font-mono tabular-nums text-caption text-muted"
+                class="shrink-0 font-mono tabular-nums text-caption text-muted group-hover:text-accent group-focus-visible:text-accent"
                 style={computed(() => ({ width: `${width.value}ch` }))}
               >
                 {rankLabel}
@@ -459,7 +459,7 @@ function NoteTrayRow({
             {() => (
               <time
                 datetime={computed(() => item.value.date ?? "")}
-                class="shrink-0 font-mono tabular-nums text-caption text-muted"
+                class="shrink-0 font-mono tabular-nums text-caption text-muted group-hover:text-accent group-focus-visible:text-accent"
               >
                 {computed(() => dateLabel.value ?? "")}
               </time>

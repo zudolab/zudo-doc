@@ -11,15 +11,24 @@ export function DateLine({
   locale,
   updatedLabel,
   dateFormats,
+  linked = false,
 }: {
   item: NoteTrayIndexItem;
   locale: string;
   updatedLabel: string;
   dateFormats?: ResolvedDateFormats;
+  /** Inside a `group` link: follow that link's hover/focus-visible accent. */
+  linked?: boolean;
 }): JSX.Element | null {
   if (!item.date && !item.updated) return null;
   return (
-    <span class="tabular-nums text-caption text-muted">
+    <span
+      class={
+        linked
+          ? "tabular-nums text-caption text-muted group-hover:text-accent group-focus-visible:text-accent"
+          : "tabular-nums text-caption text-muted"
+      }
+    >
       {item.date && (
         <time datetime={item.date}>{formatDate(item.date, locale, dateFormats?.full)}</time>
       )}

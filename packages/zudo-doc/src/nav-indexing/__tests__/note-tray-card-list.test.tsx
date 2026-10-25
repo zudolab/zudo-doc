@@ -31,6 +31,28 @@ describe("NoteTrayIndex card style", () => {
     expect(card!.compareDocumentPosition(tagLink!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("links both date presentations to their own card's accent, with or without tags", () => {
+    for (const tagLinks of [undefined, [{ tag: "preact", href: "/docs/tags/preact" }]]) {
+      const root = renderNav(NoteTrayIndex({
+        ...base,
+        style: "cards",
+        showDate: true,
+        items: [
+          item("linked", { date: "2026-08-22", tagLinks }),
+          item("plain", { href: undefined, date: "2026-08-21", tagLinks }),
+        ],
+      }));
+      const card = root.querySelector('a[href="/docs/linked"]')!;
+      const stamp = card.querySelector('time[datetime="2026-08-22"].sm\\:flex')!;
+      const line = card.querySelector("h2 + span > span")!;
+      for (const date of [stamp, line]) {
+        expect(date.classList.contains("group-hover:text-accent")).toBe(true);
+        expect(date.classList.contains("group-focus-visible:text-accent")).toBe(true);
+      }
+      expect(hasClass(root.querySelector('time[datetime="2026-08-21"]')!.closest("article")!, "group-hover:text-accent")).toBe(false);
+    }
+  });
+
   it("does not create subgrid rows when the item has no tags", () => {
     const root = renderNav(NoteTrayIndex({
       ...base,

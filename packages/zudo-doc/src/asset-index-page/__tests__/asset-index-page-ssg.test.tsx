@@ -100,7 +100,9 @@ describe("asset index page SSG", () => {
     expect(html).toMatch(/<button\b(?=[^>]*\bdisabled\b)(?=[^>]*data-zd-asset-index-action="collapse")/);
     expect(html).toContain('href="/files/demo/readme.txt/"');
     expect(html).toContain('href="/files/demo/deep/logo.png/"');
-    expect(html).toMatch(/href="\/files\/demo\/readme\.txt\/"[^>]*><svg[^>]*class="h-icon-sm w-icon-sm shrink-0 text-muted"/);
+    expect(html).toMatch(/href="\/files\/demo\/readme\.txt\/"[^>]*><svg[^>]*class="h-icon-sm w-icon-sm shrink-0 text-muted group-hover:text-accent group-focus-visible:text-accent"/);
+    expect(html).toMatch(/<summary class="group [^"]*"><svg[^>]*class="[^"]*text-muted transition-transform group-hover:text-accent group-focus-visible:text-accent"/);
+    expect(html).not.toMatch(/<(?:details|li|ul)\b[^>]*class="[^"]*\bgroup\b/);
     expect(html).toContain("2 files");
     expect(html).toContain("2 folders");
     expect(html).toContain("320 × 180");
