@@ -6,23 +6,23 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [8.1.0] - 2026-10-25
+
 ### Features
 
-- Add the opt-in `headerBrand` setting (`false | { icon: string }`, default `false`): a decorative square icon painted with the text colour (CSS mask) before the site name in the header. `/`-prefixed paths receive the site `base` once, other URLs are used as-is, and an empty or missing `icon` (or `true`) throws at config resolution. The site name stays the link's accessible name, long names still ellipsize, and theme-pack leading emblems are hidden while an icon is set.
-- Add a `data-zd-site-name` attribute to the home hero `<h1>` as a styling hook for the site name.
+- Add the opt-in `headerBrand` setting (`false | { icon: string }`, default `false`): a decorative square icon painted with the text colour (CSS mask) before the site name in the header. `/`-prefixed paths receive the site `base` once, other URLs are used as-is, and an empty or missing `icon` (or `true`) throws at config resolution. The site name stays the link's accessible name, long names still ellipsize, and theme-pack leading emblems are hidden while an icon is set. (fb3358ca)
+- Add a `data-zd-site-name` attribute to the home hero `<h1>` as a styling hook for the site name. (fb3358ca)
 
 ### Bug Fixes
 
-- With dynamic page transitions enabled, navigating from a footer link (or any focused link in persisted chrome) now finishes at the top of the destination page on current Chromium builds instead of staying near the footer. A package-owned inline head script settles the browser's queued focus reveal after the persisted DOM move and before the router applies its top, hash or history scroll. Focus, persistence, transitions and scroll restoration are unchanged. Sites that pin inline-script hashes in a Content Security Policy need to add the new script's hash.
-- In `SiteTreeNav`, labels now always start a small gap after the end of their dashed branch. On wide viewports the double-width homepage branches used to run into the label text.
-
-### Showcase
-
-- The showcase site adopts the official zudo-doc identity: the symbol as its header brand icon, the favicon set, the social card, and the brand name set in Jost 600.
+- With dynamic page transitions enabled, navigating from a footer link (or any focused link in persisted chrome) now finishes at the top of the destination page on current Chromium builds instead of staying near the footer. A package-owned inline head script settles the browser's queued focus reveal after the persisted DOM move and before the router applies its top, hash or history scroll. Focus, persistence, transitions and scroll restoration are unchanged. Sites that pin inline-script hashes in a Content Security Policy need to add the new script's hash. (524a440f)
+- In `SiteTreeNav`, labels now always start a small gap after the end of their dashed branch. On wide viewports the double-width homepage branches used to run into the label text. (3e6e720f)
 
 ### Other Changes
 
-- Requires zfb 5.1.2: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.0.1` to `^5.1.2`. zfb 5.1.0 adds an islands build guard: the build now fails if an emitted islands chunk imports the islands entry, because that import would 404 in production. zfb 5.1.1 is a fix release for Windows hosts (bare-package subpath aliases and `pnpm.cmd` spawning) and for projects built from a symlinked path. zfb 5.1.2 ships rebuilt native engine and WASM binaries with no change to the JavaScript API. Chunking is otherwise unchanged. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.2 together with this release.
+- Requires zfb 5.1.2: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.0.1` to `^5.1.2`. zfb 5.1.0 adds an islands build guard: the build now fails if an emitted islands chunk imports the islands entry, because that import would 404 in production. zfb 5.1.1 is a fix release for Windows hosts (bare-package subpath aliases and `pnpm.cmd` spawning) and for projects built from a symlinked path. zfb 5.1.2 ships rebuilt native engine and WASM binaries with no change to the JavaScript API. Chunking is otherwise unchanged. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.2 together with this release. (6eef9416, 44d7684b)
 
 ## [8.0.0] - 2026-10-24
 
