@@ -4,4 +4,7 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1049
 ---
 
-未リリースの変更はありません。
+### その他の変更
+
+- 生成されるプロジェクトは zfb 5.1.3 系（`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm`、Cloudflare アダプター選択時は `zfb-adapter-cloudflare`）を固定するようになりました。
+- デザイントークンパネルを有効にすると、生成されるプロジェクトは `@takazudo/zdtp` 0.8.7 を固定するようになりました。開いた直後の復帰処理中に閉じるボタンや Escape で閉じた状態が保たれ、ページ切り替えをまたいだ早いクリックも失われなくなります。

@@ -297,7 +297,7 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 Release 8.0.0 shipped ZFB 5.0.1 (peers `^5.0.1`), MCP SDK 1.32.2, and history-server peer floor `^8.0.0`. Node.js 24 remains the minimum.
 
-The current engine tuple is workspace zfb family **5.1.2**, peers **^5.1.2** (unreleased; 5.1.0 by #4627, 5.1.1 by #4640).
+The current engine tuple is workspace zfb family **5.1.3**, peers **^5.1.3** (unreleased; 8.1.0 shipped 5.1.2).
 The three lockstep packages are **8.0.0 on npm `latest`**, requiring ZFB 5.0.1.
 The history-server peer floor is
 `^8.0.0` (raised in the 8.0.0 major). The original 6.0.0 migration evidence is in the
@@ -549,7 +549,7 @@ specifier end-to-end.
 The base owns `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove React→Preact
 compatibility paths and React/Preact type imports. Use `Child`, `Description`,
 `Component<P>` and `JSX.IntrinsicElements` from the owned runtime. Preact remains
-only as zdtp 0.8.6's own dependency (`^10.29.1`; a peer through 0.8.5) for its opaque subtree; zdtp's
+only as zdtp 0.8.7's own dependency (`^10.29.1`; a peer through 0.8.5) for its opaque subtree; zdtp's
 internal Tailwind browser dependency does not become a host engine dependency.
 
 The base sets no `baseUrl`: TypeScript 7 removed the option (TS5102 in every

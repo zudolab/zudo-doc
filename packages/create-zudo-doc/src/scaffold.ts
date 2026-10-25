@@ -710,7 +710,7 @@ function generatePackageJson(
   const deps: Record<string, string> = {
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
-    // @takazudo/zfb-<platform>); pinned to the exact stable 5.1.2 package
+    // @takazudo/zfb-<platform>); pinned to the exact stable 5.1.3 package
     // family required by the zfb v5 pin.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
@@ -988,9 +988,9 @@ function generatePackageJson(
     // 2.22.1: zfb fixes dev live reload and lazy boot; md-wasm retains
     // workerd-specific parse/highlight exports while retaining browser paths.
     // No scaffold config migration is required.
-    "@takazudo/zfb": "5.1.2",
-    "@takazudo/zfb-runtime": "5.1.2",
-    "@takazudo/zfb-md-wasm": "5.1.2",
+    "@takazudo/zfb": "5.1.3",
+    "@takazudo/zfb-runtime": "5.1.3",
+    "@takazudo/zfb-md-wasm": "5.1.3",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -1056,7 +1056,7 @@ function generatePackageJson(
     // barebone sites remain provider-independent.
     // Keep the adapter in lockstep with the zfb family (and root pin), checked
     // by scripts/check-pin-parity.mjs.
-    deps["@takazudo/zfb-adapter-cloudflare"] = "5.1.2";
+    deps["@takazudo/zfb-adapter-cloudflare"] = "5.1.3";
     // Match @takazudo/zudo-doc's optional peer exactly. The package-owned MCP
     // route imports the SDK only when this feature is enabled.
     deps["@modelcontextprotocol/sdk"] = "1.32.2";
@@ -1103,7 +1103,7 @@ function generatePackageJson(
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
     // zdtp 0.8.6+ owns Preact as a regular dependency (it was a peer through
     // 0.8.5), so a generated project no longer declares Preact itself.
-    deps["@takazudo/zdtp"] = "0.8.6";
+    deps["@takazudo/zdtp"] = "0.8.7";
   }
 
   if (
