@@ -8,7 +8,9 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 const root = resolve(__dirname, "../..");
-const temporary = mkdtempSync(join(tmpdir(), "mermaid-packed-"));
+// Canonical path: macOS tmpdir() sits behind the /var -> /private/var symlink, while
+// realpathSync and import.meta.resolve report the resolved location (#4643).
+const temporary = realpathSync(mkdtempSync(join(tmpdir(), "mermaid-packed-")));
 afterAll(() => rmSync(temporary, { recursive: true, force: true }));
 
 it("installed public code-syntax export emits the patched browser import", { timeout: 420_000 }, () => {
