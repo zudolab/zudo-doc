@@ -6,7 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- Generated projects now pin the zfb 5.1.3 family (`@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, and `zfb-adapter-cloudflare` when the Cloudflare adapter is selected).
+- With the design token panel enabled, generated projects now pin `@takazudo/zdtp` 0.8.7, which keeps the panel closed after Close/Escape during its open-recovery window and preserves early panel clicks across page swaps.
 
 ## [8.1.0] - 2026-10-25
 
