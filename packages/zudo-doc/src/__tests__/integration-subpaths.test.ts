@@ -20,6 +20,7 @@ describe("current integration subpaths", () => {
         "./plugins/changelog",
         "./plugins/zdtp-loader",
         "./plugins/katex-loader",
+        "./plugins/diff-loader",
       ]),
     );
   });

@@ -210,6 +210,10 @@
       "types": "./dist/plugins/katex-loader.d.ts",
       "default": "./dist/plugins/katex-loader.js"
     },
+    "./plugins/diff-loader": {
+      "types": "./dist/plugins/diff-loader.d.ts",
+      "default": "./dist/plugins/diff-loader.js"
+    },
     "./content-admonition": {
       "types": "./dist/content-admonition/index.d.ts",
       "default": "./dist/content-admonition/index.js"
@@ -720,6 +724,10 @@
     "./katex-loader": {
       "types": "./dist/katex-loader.d.ts",
       "default": "./dist/katex-loader.js"
+    },
+    "./diff-loader": {
+      "types": "./dist/diff-loader.d.ts",
+      "default": "./dist/diff-loader.js"
     }
   },
   "bin": {

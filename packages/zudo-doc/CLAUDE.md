@@ -288,8 +288,14 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
     build-fatal. Bare `katex` is never shadowed. The packed OPT-KATEX-MATH case
     covers `math: true` without katex (build succeeds, with a genuine katex
     warning; a `<MathBlock>` page fails at render with the missing-katex message).
-  - `diff` has no such shadow yet, so a docHistory-off build without it still
-    warns `UNRESOLVED_IMPORT 'diff'`.
+  - **diff follows the same pattern (#4652).** doc-history's Compare view lazily
+    imports `@takazudo/zudo-doc/diff-loader` (rejection-handled), and only that
+    loader holds the rejection-handled `import("diff")`. With `docHistory` falsy
+    the preset lists `@takazudo/zudo-doc/plugins/diff-loader`, which shadows the
+    loader specifier. The gate is `docHistory`, not `docHistoryUi`: dates-only
+    mode (`docHistory: true, docHistoryUi: false`) keeps the real loader, so the
+    shadow never fires in a configuration where the doc-history feature is on.
+    Bare `diff` is never shadowed.
 - **Package-owned route injection** (`settings.packageOwnedRoutes`, default
   `true` since #2404) is pinned in `docs/adr/route-injection-seam.md` — the authoritative
   seam spec for the `@takazudo/zudo-doc/plugins/routes` plugin + `routes/*`

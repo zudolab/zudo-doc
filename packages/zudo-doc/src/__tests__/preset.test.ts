@@ -684,6 +684,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/img-src-check",
       "@takazudo/zudo-doc/plugins/zdtp-loader",
       "@takazudo/zudo-doc/plugins/katex-loader",
+      "@takazudo/zudo-doc/plugins/diff-loader",
     ]);
   });
 
@@ -730,6 +731,25 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(names(undefined)).toContain(KATEX_LOADER);
     expect(names(false)).toContain(KATEX_LOADER);
     expect(names(true)).not.toContain(KATEX_LOADER);
+  });
+
+  // #4652: docHistory off → shadow doc-history's `@takazudo/zudo-doc/diff-loader`
+  // so a site without the optional diff peer gets no UNRESOLVED_IMPORT warning.
+  // Gated on `docHistory` alone: `docHistoryUi: false` (dates-only mode) keeps
+  // the feature on, so the real loader stays.
+  it("lists the diff-loader shadow plugin exactly when docHistory is off", () => {
+    const names = (overrides: { docHistory: boolean | undefined; docHistoryUi?: boolean }) =>
+      zudoDocPreset({
+        settings: { ...fixtureSettings, ...overrides },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      }).plugins.map((p) => p.name);
+
+    const DIFF_LOADER = "@takazudo/zudo-doc/plugins/diff-loader";
+    expect(names({ docHistory: undefined })).toContain(DIFF_LOADER);
+    expect(names({ docHistory: false })).toContain(DIFF_LOADER);
+    expect(names({ docHistory: true })).not.toContain(DIFF_LOADER);
+    expect(names({ docHistory: true, docHistoryUi: false })).not.toContain(DIFF_LOADER);
   });
 
   // #4261: the fourth row of the matrix is incoherent rather than a plugin-list

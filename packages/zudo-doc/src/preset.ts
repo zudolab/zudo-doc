@@ -160,6 +160,7 @@ export interface PresetSettings {
   changelogs?: PresetChangelogConfig[] | false;
   /** Metadata fields shown in the doc metadata area. */
   docMetainfoFields?: Array<"created" | "updated" | "author">;
+  /** Per-page git history; when off, `@takazudo/zudo-doc/diff-loader` is shadowed (bare `diff` is not). */
   docHistory?: boolean;
   /** Whether the doc history dropdown UI and related artifacts are enabled. */
   docHistoryUi?: boolean;
@@ -874,5 +875,14 @@ function buildPlugins(
     ...(settings.math
       ? []
       : [{ name: "@takazudo/zudo-doc/plugins/katex-loader", options: {} }]),
+    // docHistory off → shadow doc-history's `@takazudo/zudo-doc/diff-loader`
+    // the same way (#4652). Gated on `docHistory`, NOT `docHistoryUi`: the
+    // dates-only mode (`docHistory: true, docHistoryUi: false`) keeps the doc
+    // history feature on, so the shadow stays out of every configuration where
+    // the Compare view is still part of the enabled feature. Bare `diff` is
+    // untouched.
+    ...(settings.docHistory
+      ? []
+      : [{ name: "@takazudo/zudo-doc/plugins/diff-loader", options: {} }]),
   ];
 }

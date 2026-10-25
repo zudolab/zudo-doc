@@ -44,12 +44,17 @@ const repoRoot = resolve(pkgRoot, "../..");
 const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // #2342 — doc-history's diff viewer; the chrome graph always bundles the
   // doc-history path, so `diff` is reachable regardless of the docHistory
-  // setting. Since #4209 it is reachable WITHOUT being build-fatal: the only
-  // reach is a rejection-handled `import("diff").then(ok, onRejected)`, which
-  // esbuild leaves as a bare specifier when the package is absent (the #4015
-  // precedent below). Still allowlisted because this guard records dynamic
-  // specifiers too; the build-fatality property is proved by the packed-tarball
-  // OPT-KATEX-DIFF case in route-injection-build.slow.test.ts.
+  // setting, via `_chrome → doc-history → @takazudo/zudo-doc/diff-loader`.
+  // Since #4209 it is reachable WITHOUT being build-fatal, and since #4652
+  // doc-history reaches diff only through that package-owned loader (a lazy,
+  // rejection-handled dynamic import of the self-reference); the loader holds
+  // the rejection-handled `import("diff").then(ok, onRejected)`, which the
+  // bundler leaves as a bare specifier when the package is absent (the #4015
+  // precedent below). With `docHistory` off the preset's `diff-loader` plugin
+  // shadows the loader with a throwing virtual module, so the bundler never
+  // sees the bare `diff` edge. Still allowlisted because this guard records
+  // dynamic specifiers too; the build-fatality property is proved by the
+  // packed-tarball OPT-KATEX-DIFF case in route-injection-build.slow.test.ts.
   "diff",
   // #2668 — `chrome/derive`'s `deriveBodyEndIslands` statically imports the real
   // `DesignTokenPanelBootstrap` (so the island auto-mounts with zero host

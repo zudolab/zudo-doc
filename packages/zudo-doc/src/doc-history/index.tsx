@@ -180,16 +180,20 @@ async function getCachedDiff(
     return hit;
   }
   // Lazy-load diff — only needed after History → Compare. This keeps the
-  // module out of the eager islands bundle. `diff` is an optional peer: the
-  // literal `import("diff").then(onFulfilled, onRejected)` shape is what lets
-  // esbuild leave it unresolved when absent instead of failing the build
-  // (#4209). The rejection surfaces through DiffViewer's `.catch()` → diffError.
-  const { diffLines } = await import("diff").then(
-    (m) => m,
-    () => {
-      throw new Error('Compare requires the optional peer "diff": install it to use docHistory');
-    },
+  // module out of the eager islands bundle. `diff` is an optional peer reached
+  // ONLY through the package-owned `@takazudo/zudo-doc/diff-loader` (#4652):
+  // with `docHistory` off the preset's `diff-loader` plugin shadows that
+  // specifier with a throwing virtual module, so the bundler never tries to
+  // resolve an absent `diff` (no UNRESOLVED_IMPORT); with `docHistory: true`
+  // and diff missing the loader resolves `diffLines` to `null` (#4209). The
+  // thrown error surfaces through DiffViewer's `.catch()` → diffError.
+  const diffLines = await import("@takazudo/zudo-doc/diff-loader").then(
+    (m) => m.diffLines,
+    () => null,
   );
+  if (!diffLines) {
+    throw new Error('Compare requires the optional peer "diff": install it to use docHistory');
+  }
   // The module import cannot be aborted; a replaced comparison must not do
   // work or populate the cache after its owning scope has been disposed.
   if (!isCurrent()) throw new Error("Comparison cancelled");

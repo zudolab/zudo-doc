@@ -1319,6 +1319,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // raw page keeps its byte length (57025, 67457, 78909). The zfb package
   // versions are inputs to the build identity; 5.1.3 changes only version
   // pins and rebuilt native/WASM binaries.
+  //
+  // 2026-10-26 re-baseline (zudolab/zudo-doc#4652, diff-loader shadow when
+  // docHistory is off): captured this fixture at main (5dcddc84, which
+  // reproduced all three accepted references) and at this PR's source.
+  // Replacing native data-zfb-build identities only (2de73b519748bf8b ->
+  // 8cb8ae8c51978909) makes every normalized page hash to the accepted
+  // reference; raw pages additionally differ only in the islands entry
+  // (islands-01be58e3.js -> islands-a51711e7.js) and keep their byte lengths
+  // (57025, 67457, 78909). The entry changes because doc-history's lazy diff
+  // chunk is now the shadow's throwing stub instead of the bundled diff module.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
@@ -2906,9 +2916,19 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
     expect(katexLoader, "katex-loader must load katex via import(\"katex\").then(ok, onRejected)").toMatch(
       /import\("katex"\)\.then\([^;]*?,\s*\(\)\s*=>/,
     );
+    // Since #4652 doc-history reaches diff the same way, through the
+    // package-owned `@takazudo/zudo-doc/diff-loader` (shadowed when
+    // `docHistory` is off); the loader keeps the rejection-handled
+    // `import("diff")` for `docHistory: true` without diff.
     const docHistory = readFileSync(join(pkgDest, "dist/doc-history/index.js"), "utf-8");
     expect(docHistory, "doc-history must not import diff statically").not.toMatch(/from\s*["']diff["']/);
-    expect(docHistory, "doc-history must load diff via import(\"diff\").then(ok, onRejected)").toMatch(
+    expect(docHistory, "doc-history must not import bare diff at all").not.toMatch(/import\(\s*["']diff["']/);
+    expect(docHistory, "doc-history must load the diff-loader via import(...).then(ok, onRejected)").toMatch(
+      /import\("@takazudo\/zudo-doc\/diff-loader"\)\.then\([^;]*?,\s*\(\)\s*=>/,
+    );
+    const diffLoader = readFileSync(join(pkgDest, "dist/diff-loader.js"), "utf-8");
+    expect(diffLoader, "diff-loader must not import diff statically").not.toMatch(/from\s*["']diff["']/);
+    expect(diffLoader, "diff-loader must load diff via import(\"diff\").then(ok, onRejected)").toMatch(
       /import\("diff"\)\.then\([^;]*?,\s*\(\)\s*=>/,
     );
   });
@@ -2926,6 +2946,16 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
       .split("\n")
       .filter((line) => /UNRESOLVED_IMPORT|Could not resolve/.test(line) && /katex/.test(line));
     expect(katexLines, buildLog).toEqual([]);
+  });
+
+  // #4652: same for diff — with `docHistory` off the preset's diff-loader
+  // plugin shadows `@takazudo/zudo-doc/diff-loader`, so the absent `diff` is
+  // never resolved. Matching the quoted specifier avoids unrelated "diff" text.
+  it("no UNRESOLVED_IMPORT / Could not resolve warning mentions diff", () => {
+    const diffLines = buildLog
+      .split("\n")
+      .filter((line) => /UNRESOLVED_IMPORT|Could not resolve/.test(line) && /["'`]diff["'`]|diff-loader/.test(line));
+    expect(diffLines, buildLog).toEqual([]);
   });
 
   it("non-vacuous: the katex/diff-less build actually rendered a doc page", () => {
