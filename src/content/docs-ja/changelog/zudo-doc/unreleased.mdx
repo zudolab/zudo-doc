@@ -20,4 +20,4 @@ sidebar_position: 1142
 
 ### その他の変更
 
-- zfb 5.1.1 が必須になり、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^5.0.1` から `^5.1.1` に引き上げます。zfb 5.1.0 には islands のビルドガードが追加され、出力された islands チャンクが islands エントリーを import している場合にビルドが失敗するようになりました（本番ではその import が 404 になるため）。zfb 5.1.1 は Windows 環境（ベアパッケージのサブパス解決と `pnpm.cmd` の起動）と、シンボリックリンク経由のパスでビルドするプロジェクト向けの修正リリースです。それ以外のチャンク分割は変わりません。このリリースと合わせて zfb 系（使用時は `zfb-adapter-cloudflare` も）を 5.1.1 にまとめて更新してください。
+- zfb 5.1.2 が必須になり、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^5.0.1` から `^5.1.2` に引き上げます。zfb 5.1.0 には islands のビルドガードが追加され、出力された islands チャンクが islands エントリーを import している場合にビルドが失敗するようになりました（本番ではその import が 404 になるため）。zfb 5.1.1 は Windows 環境（ベアパッケージのサブパス解決と `pnpm.cmd` の起動）と、シンボリックリンク経由のパスでビルドするプロジェクト向けの修正リリースです。zfb 5.1.2 はネイティブエンジンと WASM バイナリを再ビルドしたリリースで、JavaScript API に変更はありません。それ以外のチャンク分割は変わりません。このリリースと合わせて zfb 系（使用時は `zfb-adapter-cloudflare` も）を 5.1.2 にまとめて更新してください。
