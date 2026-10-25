@@ -1329,6 +1329,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // (islands-01be58e3.js -> islands-a51711e7.js) and keep their byte lengths
   // (57025, 67457, 78909). The entry changes because doc-history's lazy diff
   // chunk is now the shadow's throwing stub instead of the bundled diff module.
+  //
+  // 2026-10-26 re-baseline (8.1.1 lockstep release, zudolab/zudo-doc#4655):
+  // the release PR's first hosted A2 run (40237932470) failed only the three
+  // strict fingerprints. Replacing native data-zfb-build identities only
+  // (1cb2cf5ca630ff99 -> 2de73b519748bf8b) makes every normalized page hash to
+  // the accepted #4652 reference; raw pages additionally differ only in the
+  // islands entry (islands-a32cac03.js -> islands-01be58e3.js) and keep their
+  // byte lengths (57025, 67457, 78909). The workspace version bump
+  // (8.1.0 -> 8.1.1) is an input to the build identity. Causal review:
+  // docs/findings/4655-release-8.1.1-a2-causal-review.md.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
