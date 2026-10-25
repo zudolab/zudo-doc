@@ -1,0 +1,29 @@
+---
+title: 8.1.1
+description: 8.1.1のリリースノート。
+sidebar_position: 1143
+---
+
+リリース日: 2026-10-26
+
+### バグ修正
+
+- 検索インデックスの本文、llms.txt の説明文、agent-export の説明文フォールバックが、地の文として読めるテキストになりました。
+  - インラインコードはバッククォートだけを除き、中身のテキストを残します。以前は `` `pnpm approve-builds` `` が丸ごと消え、「by default ()」のような断片が残っていました。
+  - 行全体のディレクティブフェンスを取り除き、ラベルやタイトルのテキストは残します。対象は `:::warning[Title]`・`:::note Title`・`:::name{attrs}`・入れ子の `::::`・単独の閉じ `:::` です。(9d0bffb5, 64cae6a6)
+- 数式を使わず任意の peer である `katex` を入れていないサイトで、ビルドのたびに Rolldown の `UNRESOLVED_IMPORT 'katex'` 警告が出なくなりました。
+  - math-block はパッケージ所有のサブパス `@takazudo/zudo-doc/katex-loader` 経由で KaTeX を読み込むようになりました。`math` がオフのときは、preset がこのサブパスをスタブに差し替えます。
+  - 自前のコードにある素の `katex` の import には影響しません。
+  - ドキュメントどおり、`<MathBlock>` には `math: true` が必要になりました。`math` がオフの場合、`katex` がたまたまインストールされていても katex 不足のエラーになります。(82c24ea5, 64cae6a6)
+- `docHistory` がオフで任意の peer である `diff` を入れていないサイトで、`UNRESOLVED_IMPORT 'diff'` 警告が出なくなりました。
+  - doc-history の Compare 表示は、パッケージ所有のサブパス `@takazudo/zudo-doc/diff-loader` 経由で `diff` を読み込みます。`docHistory` がオフのときは、preset がこのサブパスをスタブに差し替えます。
+  - 日付のみのモード（`docHistoryUi: false`）では実際のローダーをそのまま使います。(6e6434ca)
+- 次の行内要素が、通常時の色と現在項目の反転表示は保ったまま、自分の行のホバーと focus-visible のアクセントに追従するようになりました。
+  - 番号付きインデックスの順位
+  - リンク付きのノートトレイ日付（インデックス、コンパクトカード、ワイドカードの日付）
+  - サイドバーのトレイとサイトツリーのノートトレイにある順位と日付
+  - アセットツリーのフォルダー・ファイルのアイコン、名前、メタデータ (4c271316, 0efa5cbf)
+
+### その他の変更
+
+- zfb 5.1.3 が必須になり、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^5.1.2` から `^5.1.3` に引き上げます。zfb 5.1.3 はネイティブエンジンと WASM バイナリを再ビルドしたリリースで、JavaScript API に変更はありません。このリリースと合わせて zfb 系（使用時は `zfb-adapter-cloudflare` も）を 5.1.3 にまとめて更新してください。(62648582)

@@ -4,6 +4,10 @@ All notable changes to `@takazudo/zudo-doc-history-server` are documented in thi
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [8.1.1] - 2026-10-26
+
+- No package-specific changes.
+
 ## [8.1.0] - 2026-10-25
 
 - No package-specific changes.

@@ -6,9 +6,31 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [8.1.1] - 2026-10-26
+
+### Bug Fixes
+
+- Search-index bodies, llms.txt descriptions and agent-export fallback descriptions now read as plain prose.
+  - Inline code keeps its text and only the backticks are dropped. Before, `` `pnpm approve-builds` `` was deleted, leaving fragments like "by default ()".
+  - Whole-line directive fences are removed and their label or title text is kept. This covers `:::warning[Title]`, `:::note Title`, `:::name{attrs}`, nested `::::` and bare closing `:::`. (9d0bffb5, 64cae6a6)
+- Sites that don't use math and don't install the optional `katex` peer no longer get a Rolldown `UNRESOLVED_IMPORT 'katex'` warning on every build.
+  - math-block now loads KaTeX through the package-owned `@takazudo/zudo-doc/katex-loader` subpath. With `math` off, the preset replaces that subpath with a stub.
+  - Bare `katex` imports in your own code are untouched.
+  - `` now requires `math: true`, as already documented. With `math` off it reports the missing-katex error even when `katex` happens to be installed. (82c24ea5, 64cae6a6)
+- Sites with `docHistory` off that don't install the optional `diff` peer no longer get an `UNRESOLVED_IMPORT 'diff'` warning.
+  - The doc-history Compare view loads `diff` through the package-owned `@takazudo/zudo-doc/diff-loader` subpath. With `docHistory` off, the preset replaces that subpath with a stub.
+  - The dates-only mode (`docHistoryUi: false`) keeps the real loader. (6e6434ca)
+- Some row descendants now follow their own row's hover and focus-visible accent, while keeping their resting colors and the inverted current-item style. This covers:
+  - numbered index ranks
+  - linked note-tray dates (index, compact and wide card stamps)
+  - sidebar tray and site-tree note-tray ranks and dates
+  - asset-tree folder and file icons, names and metadata (4c271316, 0efa5cbf)
+
 ### Other Changes
 
-- Requires zfb 5.1.3: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.1.2` to `^5.1.3`. zfb 5.1.3 rebuilds the native engine and WASM binaries; the JavaScript API is unchanged. Update the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.3 together with this release.
+- Requires zfb 5.1.3: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.1.2` to `^5.1.3`. zfb 5.1.3 rebuilds the native engine and WASM binaries; the JavaScript API is unchanged. Update the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.3 together with this release. (62648582)
 
 ## [8.1.0] - 2026-10-25
 
