@@ -1319,6 +1319,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // raw page keeps its byte length (57025, 67457, 78909). The zfb package
   // versions are inputs to the build identity; 5.1.3 changes only version
   // pins and rebuilt native/WASM binaries.
+  //
+  // 2026-10-26 re-baseline (zudolab/zudo-doc#4652, diff-loader shadow when
+  // docHistory is off): captured this fixture at main (5dcddc84, which
+  // reproduced all three accepted references) and at this PR's source.
+  // Replacing native data-zfb-build identities only (2de73b519748bf8b ->
+  // 8cb8ae8c51978909) makes every normalized page hash to the accepted
+  // reference; raw pages additionally differ only in the islands entry
+  // (islands-01be58e3.js -> islands-a51711e7.js) and keep their byte lengths
+  // (57025, 67457, 78909). The entry changes because doc-history's lazy diff
+  // chunk is now the shadow's throwing stub instead of the bundled diff module.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
