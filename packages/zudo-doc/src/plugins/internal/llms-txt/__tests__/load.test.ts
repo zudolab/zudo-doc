@@ -92,3 +92,26 @@ describe("loadDocEntries JSX comment stripping (zudo-doc#2175)", () => {
     expect(entries[0]?.content).toContain("More prose.");
   });
 });
+
+describe("loadDocEntries description fallback (zudo-doc#4647)", () => {
+  it("emits clean text for directive fences and inline code", () => {
+    writeDoc(
+      "warn.mdx",
+      'title: "Warn"',
+      ":::warning[Heads up]\nApprove the `sharp` build script by default (`pnpm approve-builds`).\n:::",
+    );
+    writeDoc(
+      "bare.mdx",
+      'title: "Bare"',
+      ":::info\nApprove the `sharp` build script by default (`pnpm approve-builds`).\n:::",
+    );
+
+    const entries = loadDocEntries({ contentDir, locale: null, base: "" });
+    const bySlug = Object.fromEntries(entries.map((e) => [e.url, e.description]));
+    expect(bySlug["/docs/warn"]).toBe("Heads up");
+    expect(bySlug["/docs/bare"]).toBe(
+      "Approve the sharp build script by default (pnpm approve-builds).",
+    );
+    for (const d of Object.values(bySlug)) expect(d).not.toContain(":::");
+  });
+});
