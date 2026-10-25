@@ -88,14 +88,26 @@ export interface MdDocFrontmatter {
  * search excerpts and llms-txt descriptions stay byte-equal across the
  * cutover, with one deliberate divergence: it also strips JSX/MDX block
  * comments (the `{/*`-delimited MDX comment form), which the legacy
- * pipeline leaked into descriptions (zudo-doc#2175). Do not add other new
- * rules without also updating the byte-equality fixtures (topic-plugin-audit).
+ * pipeline leaked into descriptions (zudo-doc#2175), and a second one
+ * (zudo-doc#4647): inline code keeps its text (only the backticks are
+ * dropped, contents protected from the later rules) instead of being deleted,
+ * and remark-directive container fence lines (`:::name[label]{attrs}`,
+ * `:::name Title`, bare `:::` closers) are removed while the label/title
+ * text is kept. Do not add
+ * other new rules without also updating the byte-equality fixtures
+ * (topic-plugin-audit).
  */
 export function stripMarkdown(md: string): string {
+  // Inline code text is parked behind private-use placeholders so the HTML,
+  // emphasis and link rules below cannot touch it; restored at the end.
+  const inlineCode: string[] = [];
   const withoutCodeCommentsAndTags = md
     // Remove code blocks
     .replace(/```[\s\S]*?```/g, "")
-    .replace(/`[^`]+`/g, "")
+    .replace(/`([^`]+)`/g, (_m, code: string) => {
+      inlineCode.push(code);
+      return `\uE000${inlineCode.length - 1}\uE001`;
+    })
     // Remove JSX/MDX block comments ({/* ... */}) — they never render to
     // users in MDX, so a leading comment must not become a page's fallback
     // description (zudo-doc#2175). Must precede the emphasis rule below,
@@ -106,6 +118,13 @@ export function stripMarkdown(md: string): string {
 
   return (
     decodeCharacterReferences(withoutCodeCommentsAndTags)
+      // Remove container-directive fence lines (:::name[label]{attrs},
+      // `:::name Title`, bare :::), keeping the label/title text. Whole-line,
+      // horizontal whitespace only so no paragraphs are joined (zudo-doc#4647).
+      .replace(
+        /^[ \t]*:{3,}(?:[A-Za-z][\w-]*(?:\[([^\]\n]*)\])?(?:\{[^}\n]*\})?(?:[ \t]+(\S[^\n]*?))?)?[ \t]*$/gm,
+        (_m, label: string | undefined, title: string | undefined) => label ?? title ?? "",
+      )
       // Remove headings markers
       .replace(/^#{1,6}\s+/gm, "")
       // Remove emphasis/bold markers
@@ -131,6 +150,7 @@ export function stripMarkdown(md: string): string {
       .replace(/^export\s+.*$/gm, "")
       // Collapse whitespace
       .replace(/\n{3,}/g, "\n\n")
+      .replace(/\uE000(\d+)\uE001/g, (_m, i: string) => inlineCode[Number(i)] ?? "")
       .trim()
   );
 }

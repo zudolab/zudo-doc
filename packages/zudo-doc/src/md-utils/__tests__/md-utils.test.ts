@@ -105,3 +105,56 @@ describe("md-utils slugToUrl", () => {
     );
   });
 });
+
+describe("md-utils stripMarkdown directives and inline code (zudo-doc#4647)", () => {
+  it("handles the issue repro", () => {
+    const out = stripMarkdown(
+      ":::warning[Heads up]\nApprove the `sharp` build script by default (`pnpm approve-builds`).\n:::\n",
+    );
+    expect(out).toBe(
+      "Heads up\nApprove the sharp build script by default (pnpm approve-builds).",
+    );
+    expect(out).not.toContain(":::");
+  });
+
+  it("keeps the label of a labelled directive", () => {
+    expect(stripMarkdown(":::info[Note]\nBody.\n:::")).toBe("Note\nBody.");
+  });
+
+  it("drops {attrs} on a directive fence", () => {
+    const out = stripMarkdown(":::tip[Hint]{.wide id=x}\nBody.\n:::");
+    expect(out).toBe("Hint\nBody.");
+  });
+
+  it("removes a bare closer and a nested :::: fence", () => {
+    const out = stripMarkdown("::::outer\n:::inner\nBody.\n:::\n::::");
+    expect(out).toBe("Body.");
+  });
+
+  it("keeps the space-separated title of a `:::name Title` fence", () => {
+    expect(stripMarkdown(":::note Opt-in feature\n\nBody.\n:::")).toBe("Opt-in feature\n\nBody.");
+  });
+
+  it("removes :::code-group", () => {
+    expect(stripMarkdown(":::code-group\nBody.\n:::")).toBe("Body.");
+  });
+
+  it("leaves a mid-line ::: untouched", () => {
+    expect(stripMarkdown("Use ::: inside prose.")).toBe("Use ::: inside prose.");
+  });
+
+  it("keeps inline code text without backticks", () => {
+    expect(stripMarkdown("Run `pnpm dev` now.")).toBe("Run pnpm dev now.");
+  });
+
+  it("preserves tag-like and emphasis-like inline code verbatim", () => {
+    expect(stripMarkdown("Use `<Widget>` and `*literal*` here.")).toBe(
+      "Use <Widget> and *literal* here.",
+    );
+  });
+
+  it("does not join paragraphs across a removed fence line", () => {
+    const out = stripMarkdown("Before.\n\n:::note\nInside.\n:::\n\nAfter.");
+    expect(out).toBe("Before.\n\nInside.\n\nAfter.");
+  });
+});

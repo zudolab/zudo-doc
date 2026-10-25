@@ -56,14 +56,8 @@ describe("stripMarkdown (shared md-utils helper used by llms-txt)", () => {
     expect(stripMarkdown("# Heading\n## Sub")).not.toMatch(/#/);
   });
 
-  it("strips inline code (backticks and their content removed entirely)", () => {
-    // stripMarkdown removes inline code spans entirely — content inside is not preserved.
-    // This matches the source regex: /`[^`]+`/g → replaced with ""
-    const result = stripMarkdown("Use `npm install` to install");
-    expect(result).not.toContain("`");
-    expect(result).not.toContain("npm install");
-    expect(result).toContain("Use");
-    expect(result).toContain("to install");
+  it("unwraps inline code (backticks dropped, content kept — #4647)", () => {
+    expect(stripMarkdown("Use `npm install` to install")).toBe("Use npm install to install");
   });
 
   it("strips fenced code blocks entirely", () => {

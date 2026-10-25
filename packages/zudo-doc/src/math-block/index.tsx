@@ -19,27 +19,21 @@
 // rather than crashing the page.
 //
 // katex is an OPTIONAL peerDependency — needed only when `math: true`. This
-// module is always reachable (mdx-components imports it), so katex is loaded
-// through a rejection-handled dynamic import: esbuild leaves an absent
-// `import("katex").then(onFulfilled, onRejected)` as a bare specifier instead
-// of failing the build (#4015 / #4209), and evaluating this module never throws.
+// module is always reachable (mdx-components imports it), so katex is reached
+// only through the package-owned `@takazudo/zudo-doc/katex-loader`, imported
+// with a rejection-handled dynamic import. With `math` off the preset's
+// `katex-loader` plugin shadows that specifier with a throwing virtual module,
+// so the bundler never tries to resolve an absent katex (no UNRESOLVED_IMPORT,
+// #4651); with `math: true` and katex missing the loader resolves to `null`
+// (#4015 / #4209). Either way evaluating this module never throws.
 
 import type { Child } from "@takazudo/zfb/zudo-react";
+import type { KatexLike } from "../katex-loader.js";
 
-type KatexLike = typeof import("katex").default;
-
-// katex ships ESM (`default` export) and CJS builds; interop can surface the
-// API on the namespace, on `default`, or doubly wrapped — take whichever has it.
-function pickKatex(m: unknown): KatexLike | null {
-  let cur: unknown = m;
-  for (let i = 0; i < 3 && cur && typeof cur === "object"; i++) {
-    if (typeof (cur as KatexLike).renderToString === "function") return cur as KatexLike;
-    cur = (cur as { default?: unknown }).default;
-  }
-  return null;
-}
-
-const katex: KatexLike | null = await import("katex").then(pickKatex, () => null);
+const katex: KatexLike | null = await import("@takazudo/zudo-doc/katex-loader").then(
+  (m) => m.katex,
+  () => null,
+);
 
 const MISSING_KATEX_MESSAGE =
   'MathBlock requires the optional peer "katex": install it and set math: true';

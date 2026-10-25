@@ -147,7 +147,7 @@ export interface PresetSettings {
   trailingSlash: boolean;
   minifyHtml?: boolean;
   mermaid: boolean;
-  /** KaTeX math rendering; when off, the optional `katex` peer is shadowed. */
+  /** KaTeX math rendering; when off, `@takazudo/zudo-doc/katex-loader` is shadowed (bare `katex` is not). */
   math?: boolean;
   /** Enable transclusion of other Markdown/MDX files. */
   transclude?: boolean;
@@ -868,5 +868,11 @@ function buildPlugins(
     ...(resolvesBundleZdtp(settings)
       ? []
       : [{ name: "@takazudo/zudo-doc/plugins/zdtp-loader", options: {} }]),
+    // math off → shadow math-block's `@takazudo/zudo-doc/katex-loader` with a
+    // throwing virtual module so a site without the optional katex peer gets no
+    // Rolldown UNRESOLVED_IMPORT warning (#4651). The bare `katex` is untouched.
+    ...(settings.math
+      ? []
+      : [{ name: "@takazudo/zudo-doc/plugins/katex-loader", options: {} }]),
   ];
 }

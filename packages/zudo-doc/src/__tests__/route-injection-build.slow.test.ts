@@ -2876,6 +2876,7 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
   let tarballPath: string;
   let fixtureDir: string;
   let pkgDest: string;
+  let buildLog = "";
 
   it("setup: pack + install WITHOUT katex and diff, and confirm the preconditions", { timeout: 180_000 }, () => {
     tarballPath = packPackage();
@@ -2890,9 +2891,19 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
 
     // Precondition 2 — the PACKED artifacts carry the rejection-handled shape
     // (and no static edge), so a green build is attributable to the fix.
+    // Since #4651 math-block reaches katex only through the package-owned
+    // `@takazudo/zudo-doc/katex-loader` (which the preset shadows with a
+    // throwing virtual module when `math` is off); the loader itself keeps the
+    // rejection-handled `import("katex")` for `math: true` without katex.
     const mathBlock = readFileSync(join(pkgDest, "dist/math-block/index.js"), "utf-8");
     expect(mathBlock, "math-block must not import katex statically").not.toMatch(/from\s*["']katex["']/);
-    expect(mathBlock, "math-block must load katex via import(\"katex\").then(ok, onRejected)").toMatch(
+    expect(mathBlock, "math-block must not import bare katex at all").not.toMatch(/import\(\s*["']katex["']/);
+    expect(mathBlock, "math-block must load the katex-loader via import(...).then(ok, onRejected)").toMatch(
+      /import\("@takazudo\/zudo-doc\/katex-loader"\)\.then\([^;]*?,\s*\(\)\s*=>/,
+    );
+    const katexLoader = readFileSync(join(pkgDest, "dist/katex-loader.js"), "utf-8");
+    expect(katexLoader, "katex-loader must not import katex statically").not.toMatch(/from\s*["']katex["']/);
+    expect(katexLoader, "katex-loader must load katex via import(\"katex\").then(ok, onRejected)").toMatch(
       /import\("katex"\)\.then\([^;]*?,\s*\(\)\s*=>/,
     );
     const docHistory = readFileSync(join(pkgDest, "dist/doc-history/index.js"), "utf-8");
@@ -2903,13 +2914,85 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
   });
 
   it("build: `zfb build` succeeds with katex and diff absent from node_modules", { timeout: 180_000 }, () => {
-    runZfbBuild(fixtureDir);
+    buildLog = runZfbBuild(fixtureDir);
+  });
+
+  // #4651 (from #4648): with `math` off the preset's katex-loader plugin shadows
+  // `@takazudo/zudo-doc/katex-loader`, so the bundler never tries to resolve
+  // the absent `katex` — the importer sits under node_modules here, which is
+  // exactly the shape an `addAlias` (tsconfig paths) shadow would miss.
+  it("no UNRESOLVED_IMPORT / Could not resolve warning mentions katex", () => {
+    const katexLines = buildLog
+      .split("\n")
+      .filter((line) => /UNRESOLVED_IMPORT|Could not resolve/.test(line) && /katex/.test(line));
+    expect(katexLines, buildLog).toEqual([]);
   });
 
   it("non-vacuous: the katex/diff-less build actually rendered a doc page", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expect(html).toContain("Getting Started");
     expect(html).toContain("injected-route-render-proof");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case OPT-KATEX-MATH — `math: true` with the optional `katex` peer absent
+// (#4651). The preset does NOT shadow the katex-loader when math is on, so the
+// loader's rejection-handled `import("katex")` is what the bundler sees: the
+// build must still succeed for ordinary pages (no static edge makes the absent
+// peer fatal), and a page that actually renders `<MathBlock>` must fail with
+// math-block's clear missing-katex message rather than an opaque crash.
+// ---------------------------------------------------------------------------
+
+describe("OPT-KATEX-MATH math-on-no-katex: math: true with the optional katex peer absent", () => {
+  let tarballPath: string;
+  let fixtureDir: string;
+  let buildLog = "";
+
+  it("setup: pack + install WITHOUT katex, with math: true", { timeout: 180_000 }, () => {
+    tarballPath = packPackage();
+    fixtureDir = setupNoSrcFixture(FIXTURE_I18N_SRC, tarballPath, [], ["katex"]);
+    const pkgDest = join(fixtureDir, "node_modules/@takazudo/zudo-doc");
+    expect(existsSync(join(fixtureDir, "node_modules/katex")), "katex must be absent").toBe(false);
+    expect(existsSync(join(pkgDest, "node_modules/katex")), "katex must be absent (package-local)").toBe(false);
+
+    const settingsPath = join(fixtureDir, "src/config/settings.ts");
+    const settings = readFileSync(settingsPath, "utf-8");
+    expect(settings).toMatch(/math:\s*false,/);
+    writeFileSync(settingsPath, settings.replace(/math:\s*false,/, "math: true,"));
+  });
+
+  it("build: ordinary pages build with math: true and katex absent", { timeout: 180_000 }, () => {
+    buildLog = runZfbBuild(fixtureDir);
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("injected-route-render-proof");
+    // Observed (#4651): with math on, Rolldown DOES warn
+    // `[UNRESOLVED_IMPORT] Could not resolve 'katex' in …/dist/katex-loader.js`
+    // — a true signal here, since the site asked for math without the peer.
+    // The only bare katex edge it may name is the loader's, never math-block's.
+    const katexLines = buildLog
+      .split("\n")
+      .filter((line) => /UNRESOLVED_IMPORT|Could not resolve/.test(line) && /katex/.test(line));
+    for (const line of katexLines) expect(line).toContain("dist/katex-loader.js");
+  });
+
+  // Observed (#4651, unchanged from #4209): zfb treats a render throw as a
+  // failed page, so the build fails — but at the renderer step, naming the
+  // page and math-block's own message, not as a bundler resolution error.
+  it("render: a <MathBlock> page fails the build with the missing-katex message", { timeout: 180_000 }, () => {
+    writeFileSync(
+      join(fixtureDir, "src/content/docs/getting-started/math.mdx"),
+      "---\ntitle: Math\n---\n\n<MathBlock latex=\"x^2\" block />\n",
+    );
+    let failure = "";
+    try {
+      runZfbBuild(fixtureDir, "dist-math");
+    } catch (err) {
+      failure = (err as Error).message;
+    }
+    expect(failure, "the build must fail on the <MathBlock> page").not.toBe("");
+    expect(failure).toContain('MathBlock requires the optional peer "katex": install it and set math: true');
+    expect(failure).toContain("/docs/getting-started/math");
   });
 });
 
