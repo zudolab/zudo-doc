@@ -81,12 +81,16 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // design-token-panel-static-graph.test.ts). `diff` above is precedent for a
   // dynamically-imported-only optional peer staying allowlisted.
   "@takazudo/zdtp",
-  // Reached via `mdx-components → math-block`. Since #4209 the reach is a
-  // rejection-handled `import("katex").then(ok, onRejected)` (awaited at module
-  // top level), so it is reachable but no longer build-fatal when absent, like
-  // `@takazudo/zdtp` above; rendering a <MathBlock> without katex throws a clear
-  // error instead. Proved by the packed-tarball OPT-KATEX-DIFF case in
-  // route-injection-build.slow.test.ts.
+  // Reached via `mdx-components → math-block → @takazudo/zudo-doc/katex-loader`.
+  // Since #4651 math-block reaches katex only through that package-owned
+  // loader (a rejection-handled dynamic import of the self-reference), and the
+  // loader holds the rejection-handled `import("katex").then(ok, onRejected)`
+  // (awaited at module top level) — reachable but not build-fatal when absent,
+  // like `@takazudo/zdtp` above. With `math` off the preset's `katex-loader`
+  // plugin shadows the loader with a throwing virtual module, so the bundler
+  // never sees the bare `katex` edge; rendering a <MathBlock> without katex
+  // throws a clear error instead. Proved by the packed-tarball OPT-KATEX-DIFF
+  // and OPT-KATEX-MATH cases in route-injection-build.slow.test.ts.
   "katex",
   // Reached via `html-preview-wrapper → highlight-runtime` for browser-time
   // HTML/CSS/JS highlighting.
