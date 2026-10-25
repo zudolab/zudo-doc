@@ -1311,6 +1311,14 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // SiteTreeNav island sources change zfb's build identity globally; these
   // routes render no note-tray rows or asset tree, so their visible HTML and
   // island props are stable.
+  //
+  // 2026-10-25 re-baseline (zfb 5.1.2 -> 5.1.3 and zdtp 0.8.6 -> 0.8.7 bump):
+  // captured this fixture locally at the bump commit. Replacing native
+  // data-zfb-build identities only (8293c6eb3297babd -> 8cb8ae8c51978909)
+  // makes every normalized page hash to the accepted #4645 reference, and each
+  // raw page keeps its byte length (57025, 67457, 78909). The zfb package
+  // versions are inputs to the build identity; 5.1.3 changes only version
+  // pins and rebuilt native/WASM binaries.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
