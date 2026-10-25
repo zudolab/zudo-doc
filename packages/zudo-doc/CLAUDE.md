@@ -272,18 +272,24 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   Compare view. Both are reachable from the always-bundled route graph
   (`mdx-components → math-block`, `_chrome → doc-history`), so each is loaded
   ONLY through a rejection-handled `import("pkg").then(onFulfilled, onRejected)`.
-  esbuild leaves that shape unresolved when the package is absent instead of
+  The bundler leaves that shape unresolved when the package is absent instead of
   failing the build. A static import or a bare `await import()` reintroduces
   `Could not resolve` for consumers without the peer (#4206 / #4209). The
   packed-tarball OPT-KATEX-DIFF case in `route-injection-build.slow.test.ts`
-  proves it. Do not use the `addVirtualModule` shadow here: that channel
-  carries a HOST-supplied callable/path (`chromeBindingsModule` /
-  `designTokenPanelConfigModule` — see `src/plugins/routes.ts`), not a way to
-  make an optional npm peer conditional — a virtual module's loader is plain
-  ESM source, so a `katex`/`diff` import inside it would still resolve (or
-  fail) at build time exactly like a static import does today. The
-  rejection-handled `import("pkg").then(...)` pattern above is the actual
-  mechanism that keeps the peer optional.
+  proves it.
+  - **katex additionally goes through a shadowable package-owned loader
+    (#4651).** math-block imports `@takazudo/zudo-doc/katex-loader` (rejection-
+    handled), and only that loader holds the rejection-handled `import("katex")`.
+    With `math` falsy the preset lists `@takazudo/zudo-doc/plugins/katex-loader`,
+    which `addVirtualModule`s that ONE specifier with a throwing module, so a
+    math-free site's Rolldown build emits no `UNRESOLVED_IMPORT 'katex'` warning
+    — the zdtp-loader pattern (#4201). Never put a static `export … from "katex"`
+    in the loader: with `math: true` and katex absent that edge would be
+    build-fatal. Bare `katex` is never shadowed. The packed OPT-KATEX-MATH case
+    covers `math: true` without katex (build succeeds, with a genuine katex
+    warning; a `<MathBlock>` page fails at render with the missing-katex message).
+  - `diff` has no such shadow yet, so a docHistory-off build without it still
+    warns `UNRESOLVED_IMPORT 'diff'`.
 - **Package-owned route injection** (`settings.packageOwnedRoutes`, default
   `true` since #2404) is pinned in `docs/adr/route-injection-seam.md` — the authoritative
   seam spec for the `@takazudo/zudo-doc/plugins/routes` plugin + `routes/*`

@@ -206,6 +206,10 @@
       "types": "./dist/plugins/zdtp-loader.d.ts",
       "default": "./dist/plugins/zdtp-loader.js"
     },
+    "./plugins/katex-loader": {
+      "types": "./dist/plugins/katex-loader.d.ts",
+      "default": "./dist/plugins/katex-loader.js"
+    },
     "./content-admonition": {
       "types": "./dist/content-admonition/index.d.ts",
       "default": "./dist/content-admonition/index.js"
@@ -712,6 +716,10 @@
     "./zdtp-loader": {
       "types": "./dist/zdtp-loader.d.ts",
       "default": "./dist/zdtp-loader.js"
+    },
+    "./katex-loader": {
+      "types": "./dist/katex-loader.d.ts",
+      "default": "./dist/katex-loader.js"
     }
   },
   "bin": {

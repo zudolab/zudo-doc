@@ -458,6 +458,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/changelog",
       "@takazudo/zudo-doc/plugins/img-src-check",
       "@takazudo/zudo-doc/plugins/zdtp-loader",
+      "@takazudo/zudo-doc/plugins/katex-loader",
     ]);
   });
 
@@ -682,6 +683,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/img-src-check",
       "@takazudo/zudo-doc/plugins/zdtp-loader",
+      "@takazudo/zudo-doc/plugins/katex-loader",
     ]);
   });
 
@@ -712,6 +714,22 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
 
     // #4261's case: package panel off, real loader wanted.
     expect(names({ designTokenPanel: false, bundleZdtp: true })).not.toContain(ZDTP_LOADER);
+  });
+
+  // #4651: math off → shadow math-block's `@takazudo/zudo-doc/katex-loader` so
+  // a site without the optional katex peer gets no UNRESOLVED_IMPORT warning.
+  it("lists the katex-loader shadow plugin exactly when math is off", () => {
+    const names = (math: boolean | undefined) =>
+      zudoDocPreset({
+        settings: { ...fixtureSettings, math },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      }).plugins.map((p) => p.name);
+
+    const KATEX_LOADER = "@takazudo/zudo-doc/plugins/katex-loader";
+    expect(names(undefined)).toContain(KATEX_LOADER);
+    expect(names(false)).toContain(KATEX_LOADER);
+    expect(names(true)).not.toContain(KATEX_LOADER);
   });
 
   // #4261: the fourth row of the matrix is incoherent rather than a plugin-list
