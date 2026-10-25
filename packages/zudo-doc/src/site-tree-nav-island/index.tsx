@@ -12,6 +12,7 @@ import type { ResolvedDateFormats } from "../settings.js";
 import {
   INDENT,
   connectorLeft,
+  connectorLabelStart,
   ConnectorLines,
   CategoryLinkIcon,
 } from "../tree-nav-shared/index.js";
@@ -30,9 +31,15 @@ import { initialCategoryOpenState, toggleCategoryOpenState } from "./state.js";
 // site-tree-nav uses wider padding than the narrow sidebar
 const SITE_BASE_PAD = "clamp(0.5rem, 0.8vw, 1rem)";
 
+// The homepage draws its connectors at twice the sidebar width, so on wide
+// viewports the branch endpoint passes the fixed label indent. The label starts
+// at whichever is further right: that indent, or the endpoint plus a gap.
+const CONNECTOR_WIDTH_SCALE = 2;
+const CONNECTOR_LABEL_GAP = "var(--spacing-hsp-xs)";
+
 function padLeft(depth: number): string {
   if (depth === 0) return SITE_BASE_PAD;
-  return `calc(${depth} * ${INDENT} + 1.25rem + 5px)`;
+  return `max(calc(${depth} * ${INDENT} + 1.25rem + 5px), ${connectorLabelStart(depth, CONNECTOR_WIDTH_SCALE, CONNECTOR_LABEL_GAP)})`;
 }
 
 function reorderTree(tree: SidebarNavNode[], order: string[]): SidebarNavNode[] {
@@ -223,7 +230,7 @@ function CategoryNode({
             <ConnectorLines
               depth={depth}
               isLast={true}
-              widthScale={2}
+              widthScale={CONNECTOR_WIDTH_SCALE}
               topPad="calc(0.15rem + var(--spacing-vsp-xs))"
             />
           )}
@@ -233,7 +240,7 @@ function CategoryNode({
             <ConnectorLines
               depth={depth}
               isLast={false}
-              widthScale={2}
+              widthScale={CONNECTOR_WIDTH_SCALE}
               topPad="calc(0.15rem + var(--spacing-vsp-xs))"
             />
           )}
@@ -495,7 +502,7 @@ function LeafNode({
                 <ConnectorLines
                   depth={depth}
                   isLast={true}
-                  widthScale={2}
+                  widthScale={CONNECTOR_WIDTH_SCALE}
                   topPad={topPad}
                 />
               )}
@@ -505,7 +512,7 @@ function LeafNode({
                 <ConnectorLines
                   depth={depth}
                   isLast={false}
-                  widthScale={2}
+                  widthScale={CONNECTOR_WIDTH_SCALE}
                   topPad={topPad}
                 />
               )}

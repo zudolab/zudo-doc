@@ -14,6 +14,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Bug Fixes
 
 - With dynamic page transitions enabled, navigating from a footer link (or any focused link in persisted chrome) now finishes at the top of the destination page on current Chromium builds instead of staying near the footer. A package-owned inline head script settles the browser's queued focus reveal after the persisted DOM move and before the router applies its top, hash or history scroll. Focus, persistence, transitions and scroll restoration are unchanged. Sites that pin inline-script hashes in a Content Security Policy need to add the new script's hash.
+- In `SiteTreeNav`, labels now always start a small gap after the end of their dashed branch. On wide viewports the double-width homepage branches used to run into the label text.
 
 ### Showcase
 
