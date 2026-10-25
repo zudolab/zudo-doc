@@ -587,10 +587,7 @@ function TrayItem({
             >
               {rankDigits !== undefined ? (
                 <span
-                  class={computed(
-                    () =>
-                      `shrink-0 tabular-nums${active.value ? "" : " text-muted"}`,
-                  )}
+                  class="shrink-0 tabular-nums"
                 >
                   {computed(() =>
                     item.value.rank === undefined
@@ -606,10 +603,7 @@ function TrayItem({
               <Show when={computed(() => showDate && !!shortDate.value)}>
                 {() => (
                   <span
-                    class={computed(
-                      () =>
-                        `shrink-0 tabular-nums${active.value ? "" : " text-muted"}`,
-                    )}
+                    class="shrink-0 tabular-nums"
                   >
                     {shortDate}
                   </span>

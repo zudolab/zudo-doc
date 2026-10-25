@@ -106,12 +106,12 @@ export function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fil
       {node.dirs.map((dir) => (
         <li>
           <details open>
-            <summary class="flex cursor-pointer items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small hover:bg-accent/10 focus-visible:bg-accent/10">
-              <ChevronRight class="h-icon-xs w-icon-xs shrink-0 text-muted transition-transform" />
-              <Folder class="h-icon-sm w-icon-sm shrink-0 text-muted" />
-              <FolderOpen class="h-icon-sm w-icon-sm shrink-0 text-muted" />
-              <span class="min-w-0 truncate font-mono text-fg">{dir.name}/</span>
-              <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block">
+            <summary class="group flex cursor-pointer items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small hover:bg-accent/10 focus-visible:bg-accent/10">
+              <ChevronRight class="h-icon-xs w-icon-xs shrink-0 text-muted transition-transform group-hover:text-accent group-focus-visible:text-accent" />
+              <Folder class="h-icon-sm w-icon-sm shrink-0 text-muted group-hover:text-accent group-focus-visible:text-accent" />
+              <FolderOpen class="h-icon-sm w-icon-sm shrink-0 text-muted group-hover:text-accent group-focus-visible:text-accent" />
+              <span class="min-w-0 truncate font-mono text-fg group-hover:text-accent group-focus-visible:text-accent">{dir.name}/</span>
+              <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block group-hover:text-accent group-focus-visible:text-accent">
                 {countLabel(dir.fileCount, fileCountLabel, fileCountSingleLabel)} · {formatAssetBytes(dir.bytes)}
               </span>
             </summary>
@@ -125,10 +125,10 @@ export function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fil
         const meta = [kindLabel(asset), facet, formatAssetBytes(asset.bytes)].filter(Boolean).join(" · ");
         return (
           <li>
-            <a href={assetViewerHref({ base, routePrefix, path: asset.path, locale })} title={asset.name} class="flex min-w-0 items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:underline">
-              <Icon class="h-icon-sm w-icon-sm shrink-0 text-muted" />
+            <a href={assetViewerHref({ base, routePrefix, path: asset.path, locale })} title={asset.name} class="group flex min-w-0 items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:underline">
+              <Icon class="h-icon-sm w-icon-sm shrink-0 text-muted group-hover:text-accent group-focus-visible:text-accent" />
               <span class="min-w-0 truncate font-mono">{basename(asset.path)}</span>
-              <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block">{meta}</span>
+              <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block group-hover:text-accent group-focus-visible:text-accent">{meta}</span>
             </a>
           </li>
         );

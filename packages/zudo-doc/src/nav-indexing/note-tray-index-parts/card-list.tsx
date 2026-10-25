@@ -43,6 +43,7 @@ function CardBody({
               locale={props.locale}
               updatedLabel={props.updatedLabel}
               dateFormats={props.dateFormats}
+              linked={linked}
             />
           </span>
         )}
@@ -58,6 +59,7 @@ function DateStamp({
   locale,
   updatedLabel,
   positioned,
+  linked,
   dateFormats,
 }: {
   date: string;
@@ -65,17 +67,18 @@ function DateStamp({
   locale: string;
   updatedLabel: string;
   positioned: boolean;
+  linked: boolean;
   dateFormats?: ResolvedDateFormats;
 }): JSX.Element {
+  const stampClass = [
+    "hidden sm:flex w-[6.5rem] flex-col items-end self-stretch border-l border-muted pl-hsp-xl text-muted tabular-nums",
+    positioned && "sm:col-start-2 sm:row-start-1 sm:row-span-2",
+    linked && "group-hover:text-accent group-focus-visible:text-accent",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <time
-      datetime={date}
-      class={
-        positioned
-          ? "hidden sm:flex sm:col-start-2 sm:row-start-1 sm:row-span-2 w-[6.5rem] flex-col items-end self-stretch border-l border-muted pl-hsp-xl text-muted tabular-nums"
-          : "hidden sm:flex w-[6.5rem] flex-col items-end self-stretch border-l border-muted pl-hsp-xl text-muted tabular-nums"
-      }
-    >
+    <time datetime={date} class={stampClass}>
       <span class="block text-title leading-tight font-medium">
         {formatMonthDayLabel(date, locale, dateFormats?.monthDay)}
       </span>
@@ -124,6 +127,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                       updatedLabel={props.updatedLabel}
                       dateFormats={props.dateFormats}
                       positioned
+                      linked
                     />
                   )}
                 </a>
@@ -145,6 +149,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                       updatedLabel={props.updatedLabel}
                       dateFormats={props.dateFormats}
                       positioned
+                      linked={false}
                     />
                   )}
                 </div>
@@ -172,6 +177,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                   updatedLabel={props.updatedLabel}
                   dateFormats={props.dateFormats}
                   positioned={false}
+                  linked
                 />
               )}
             </a>
@@ -191,6 +197,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                   updatedLabel={props.updatedLabel}
                   dateFormats={props.dateFormats}
                   positioned={false}
+                  linked={false}
                 />
               )}
             </div>

@@ -25,6 +25,28 @@ describe("NoteTrayIndex index style", () => {
     expect(hasClass(root, "leading-none")).toBe(true);
   });
 
+  it("lets a linked row's rank and inner date text follow its accent; unlinked rows stay muted", () => {
+    const root = renderNav(NoteTrayIndex({
+      ...base,
+      showDate: true,
+      items: [
+        item("linked", { rank: 1, date: "2026-08-22" }),
+        item("plain", { rank: 2, href: undefined, date: "2026-08-21" }),
+      ],
+    }));
+    const linked = root.querySelector('a[href="/docs/linked"]')!;
+    const linkedRank = linked.querySelector(".text-heading")!;
+    const linkedDate = linked.querySelector('time[datetime="2026-08-22"]')!.parentElement!;
+    for (const el of [linkedRank, linkedDate]) {
+      expect(el.classList.contains("group-hover:text-accent")).toBe(true);
+      expect(el.classList.contains("group-focus-visible:text-accent")).toBe(true);
+    }
+    expect(linkedRank.classList.contains("group-hover:text-fg")).toBe(false);
+    const plainRow = root.querySelector('time[datetime="2026-08-21"]')!.closest("li")!;
+    expect(plainRow.querySelector(".group-hover\\:text-accent")).toBeNull();
+    expect(plainRow.querySelector("time")!.parentElement!.classList.contains("text-muted")).toBe(true);
+  });
+
   it("keeps the visible stable rank accessible and never invents rank 00", () => {
     const ranked = renderNav(NoteTrayIndex({ ...base, items: [item("sixth", { rank: 6 })] }));
     const missing = renderNav(NoteTrayIndex({ ...base, items: [item("missing", { rank: undefined })] }));
