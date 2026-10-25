@@ -147,7 +147,7 @@ export interface PresetSettings {
   trailingSlash: boolean;
   minifyHtml?: boolean;
   mermaid: boolean;
-  /** KaTeX math rendering; when off, the optional `katex` peer is shadowed. */
+  /** KaTeX math rendering; when off, `@takazudo/zudo-doc/katex-loader` is shadowed (bare `katex` is not). */
   math?: boolean;
   /** Enable transclusion of other Markdown/MDX files. */
   transclude?: boolean;

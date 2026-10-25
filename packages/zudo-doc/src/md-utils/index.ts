@@ -91,8 +91,9 @@ export interface MdDocFrontmatter {
  * pipeline leaked into descriptions (zudo-doc#2175), and a second one
  * (zudo-doc#4647): inline code keeps its text (only the backticks are
  * dropped, contents protected from the later rules) instead of being deleted,
- * and remark-directive container fence lines (`:::name[label]{attrs}`, bare
- * `:::` closers) are removed while the bracket label text is kept. Do not add
+ * and remark-directive container fence lines (`:::name[label]{attrs}`,
+ * `:::name Title`, bare `:::` closers) are removed while the label/title
+ * text is kept. Do not add
  * other new rules without also updating the byte-equality fixtures
  * (topic-plugin-audit).
  */
@@ -117,12 +118,12 @@ export function stripMarkdown(md: string): string {
 
   return (
     decodeCharacterReferences(withoutCodeCommentsAndTags)
-      // Remove container-directive fence lines (:::name[label]{attrs}, bare
-      // :::), keeping the label text. Whole-line, horizontal whitespace only
-      // so no paragraphs are joined (zudo-doc#4647).
+      // Remove container-directive fence lines (:::name[label]{attrs},
+      // `:::name Title`, bare :::), keeping the label/title text. Whole-line,
+      // horizontal whitespace only so no paragraphs are joined (zudo-doc#4647).
       .replace(
-        /^[ \t]*:{3,}(?:[A-Za-z][\w-]*)?(?:\[([^\]\n]*)\])?(?:\{[^}\n]*\})?[ \t]*$/gm,
-        "$1",
+        /^[ \t]*:{3,}(?:[A-Za-z][\w-]*(?:\[([^\]\n]*)\])?(?:\{[^}\n]*\})?(?:[ \t]+(\S[^\n]*?))?)?[ \t]*$/gm,
+        (_m, label: string | undefined, title: string | undefined) => label ?? title ?? "",
       )
       // Remove headings markers
       .replace(/^#{1,6}\s+/gm, "")

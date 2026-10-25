@@ -131,6 +131,10 @@ describe("md-utils stripMarkdown directives and inline code (zudo-doc#4647)", ()
     expect(out).toBe("Body.");
   });
 
+  it("keeps the space-separated title of a `:::name Title` fence", () => {
+    expect(stripMarkdown(":::note Opt-in feature\n\nBody.\n:::")).toBe("Opt-in feature\n\nBody.");
+  });
+
   it("removes :::code-group", () => {
     expect(stripMarkdown(":::code-group\nBody.\n:::")).toBe("Body.");
   });
