@@ -43,7 +43,7 @@ describe("NoteTrayIndex index style", () => {
     }
     expect(linkedRank.classList.contains("group-hover:text-fg")).toBe(false);
     const plainRow = root.querySelector('time[datetime="2026-08-21"]')!.closest("li")!;
-    expect(hasClass(plainRow, "group-hover:text-accent")).toBe(false);
+    expect(plainRow.querySelector(".group-hover\\:text-accent")).toBeNull();
     expect(plainRow.querySelector("time")!.parentElement!.classList.contains("text-muted")).toBe(true);
   });
 

@@ -49,7 +49,8 @@ describe("NoteTrayIndex card style", () => {
         expect(date.classList.contains("group-hover:text-accent")).toBe(true);
         expect(date.classList.contains("group-focus-visible:text-accent")).toBe(true);
       }
-      expect(hasClass(root.querySelector('time[datetime="2026-08-21"]')!.closest("article")!, "group-hover:text-accent")).toBe(false);
+      const plainCard = root.querySelector('time[datetime="2026-08-21"]')!.closest("article")!;
+      expect(plainCard.querySelector(".group-hover\\:text-accent")).toBeNull();
     }
   });
 

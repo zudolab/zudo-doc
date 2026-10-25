@@ -1299,6 +1299,18 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // changes zfb's build identity globally; these routes do not render the
   // changed SiteTreeNav, and their visible HTML and island props are stable.
   // Keep strict hashes and native-transport assertions intact.
+  //
+  // 2026-10-25 re-baseline (zudolab/zudo-doc#4645, row-scoped accent on
+  // nav/asset-tree descendants): built this fixture locally at main
+  // (e49b073a, which reproduced all three accepted references) and at this
+  // PR's source, then compared the normalized captures. Replacing native
+  // data-zfb-build identities only (a2ad1458d4c63f14 -> 8293c6eb3297babd)
+  // makes every normalized page byte-identical, and each raw page keeps its
+  // byte length: 404.html 57025, getting-started/index.html 67457, and
+  // getting-started/coverage/index.html 78909. The changed sidebar and
+  // SiteTreeNav island sources change zfb's build identity globally; these
+  // routes render no note-tray rows or asset tree, so their visible HTML and
+  // island props are stable.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);

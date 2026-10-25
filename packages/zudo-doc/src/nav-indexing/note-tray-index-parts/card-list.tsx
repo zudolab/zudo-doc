@@ -70,18 +70,15 @@ function DateStamp({
   linked: boolean;
   dateFormats?: ResolvedDateFormats;
 }): JSX.Element {
-  const layoutClass = positioned
-    ? "hidden sm:flex sm:col-start-2 sm:row-start-1 sm:row-span-2 w-[6.5rem] flex-col items-end self-stretch border-l border-muted pl-hsp-xl text-muted tabular-nums"
-    : "hidden sm:flex w-[6.5rem] flex-col items-end self-stretch border-l border-muted pl-hsp-xl text-muted tabular-nums";
+  const stampClass = [
+    "hidden sm:flex w-[6.5rem] flex-col items-end self-stretch border-l border-muted pl-hsp-xl text-muted tabular-nums",
+    positioned && "sm:col-start-2 sm:row-start-1 sm:row-span-2",
+    linked && "group-hover:text-accent group-focus-visible:text-accent",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <time
-      datetime={date}
-      class={
-        linked
-          ? `${layoutClass} group-hover:text-accent group-focus-visible:text-accent`
-          : layoutClass
-      }
-    >
+    <time datetime={date} class={stampClass}>
       <span class="block text-title leading-tight font-medium">
         {formatMonthDayLabel(date, locale, dateFormats?.monthDay)}
       </span>

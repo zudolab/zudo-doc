@@ -2,6 +2,12 @@ import { test, expect } from "./fixtures";
 import { spaClickSelector } from "./nav-helpers";
 import { THEME_STORAGE_KEY } from "./theme-helpers";
 import type { Locator, Page } from "@playwright/test";
+import {
+  clearInteraction as blur,
+  expectColors,
+  keyboardFocus,
+  resolveAccentTokens as resolveTokens,
+} from "./accent-helpers";
 
 /**
  * Asset index tree rows: hovering or keyboard-focusing a folder summary or a
@@ -9,47 +15,6 @@ import type { Locator, Page } from "@playwright/test";
  * are read from the visible descendants and compared against the live
  * `--color-accent` token, so a theme or author override still drives them.
  */
-
-type Tokens = { accent: string; fg: string; muted: string };
-
-async function resolveTokens(page: Page): Promise<Tokens> {
-  return page.evaluate(() => {
-    const probe = document.createElement("span");
-    document.body.append(probe);
-    const read = (name: string) => {
-      probe.style.color = `var(${name})`;
-      return getComputedStyle(probe).color;
-    };
-    const tokens = {
-      accent: read("--color-accent"),
-      fg: read("--color-fg"),
-      muted: read("--color-muted"),
-    };
-    probe.remove();
-    return tokens;
-  });
-}
-
-async function expectColors(locators: Locator[], expected: string) {
-  for (const locator of locators) {
-    await expect
-      .poll(() => locator.evaluate((el) => getComputedStyle(el).color))
-      .toBe(expected);
-  }
-}
-
-async function keyboardFocus(page: Page, target: Locator) {
-  await page.mouse.move(1, 1);
-  await page.keyboard.press("Shift");
-  await target.focus();
-  expect(await target.evaluate((el) => el.matches(":focus-visible"))).toBe(true);
-  expect(await target.evaluate((el) => el.matches(":hover"))).toBe(false);
-}
-
-async function blur(page: Page) {
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.mouse.move(1, 1);
-}
 
 function folderParts(summary: Locator) {
   return {

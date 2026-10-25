@@ -1,7 +1,13 @@
 import { test, expect } from "./fixtures";
 import { spaClick } from "./nav-helpers";
 import { desktopSidebar } from "./sidebar-helpers";
-import type { Locator, Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
+import {
+  clearInteraction as blur,
+  expectColor,
+  keyboardFocus,
+  resolveAccentTokens as resolveTokens,
+} from "./accent-helpers";
 
 /**
  * Hover / keyboard-focus accent for note-tray rows. Every assertion reads the
@@ -9,49 +15,6 @@ import type { Locator, Page } from "@playwright/test";
  * anchor, because the regression was descendants keeping their own muted/fg
  * color while the anchor around them turned accent.
  */
-
-type Tokens = { accent: string; fg: string; muted: string; bg: string };
-
-async function resolveTokens(page: Page): Promise<Tokens> {
-  return page.evaluate(() => {
-    const probe = document.createElement("span");
-    document.body.append(probe);
-    const read = (name: string) => {
-      probe.style.color = `var(${name})`;
-      return getComputedStyle(probe).color;
-    };
-    const tokens = {
-      accent: read("--color-accent"),
-      fg: read("--color-fg"),
-      muted: read("--color-muted"),
-      bg: read("--color-bg"),
-    };
-    probe.remove();
-    return tokens;
-  });
-}
-
-function colorOf(locator: Locator): Promise<string> {
-  return locator.evaluate((el) => getComputedStyle(el).color);
-}
-
-async function expectColor(locator: Locator, expected: string) {
-  await expect.poll(() => colorOf(locator)).toBe(expected);
-}
-
-/** Park the pointer away from every row, then keyboard-focus `target`. */
-async function keyboardFocus(page: Page, target: Locator) {
-  await page.mouse.move(1, 1);
-  await page.keyboard.press("Shift");
-  await target.focus();
-  expect(await target.evaluate((el) => el.matches(":focus-visible"))).toBe(true);
-  expect(await target.evaluate((el) => el.matches(":hover"))).toBe(false);
-}
-
-async function blur(page: Page) {
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.mouse.move(1, 1);
-}
 
 test.describe("Note-tray accent interaction", () => {
   test.beforeEach(async ({ page }) => {
@@ -187,13 +150,21 @@ test.describe("Note-tray accent interaction", () => {
     await expectColor(current.locator(":scope > span").first(), t.bg);
     expect(await current.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(t.fg);
 
-    // Client-side navigation to a dated tray: the sidebar date follows too.
+    // Client-side navigation back to the tray root.
     expect(await spaClick(page, "/docs/notes")).toBe(true);
     const root = sidebar.locator('nav a[aria-current="page"]');
     await expect(root).toHaveCount(1);
     await root.hover();
     await expectColor(root, t.bg);
     expect(await root.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(t.fg);
+    // The re-rendered tray rows keep row-scoped accent after the swap.
+    const second = sidebar.locator('nav a[href$="/second-note"], nav a[href$="/second-note/"]').first();
+    const secondRank = second.locator(":scope > span").first();
+    await expect(second).not.toHaveAttribute("aria-current", "page");
+    await expectColor(secondRank, t.muted);
+    await second.hover();
+    await expectColor(secondRank, t.accent);
+    await expectColor(first.locator(":scope > span").first(), t.muted);
 
     await page.goto("/docs/journal/journal-middle", { waitUntil: "load" });
     const july = sidebar.getByRole("button", { name: "Expand 2026 July", exact: true });
