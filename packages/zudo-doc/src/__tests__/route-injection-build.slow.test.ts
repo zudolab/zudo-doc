@@ -2906,9 +2906,19 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
     expect(katexLoader, "katex-loader must load katex via import(\"katex\").then(ok, onRejected)").toMatch(
       /import\("katex"\)\.then\([^;]*?,\s*\(\)\s*=>/,
     );
+    // Since #4652 doc-history reaches diff the same way, through the
+    // package-owned `@takazudo/zudo-doc/diff-loader` (shadowed when
+    // `docHistory` is off); the loader keeps the rejection-handled
+    // `import("diff")` for `docHistory: true` without diff.
     const docHistory = readFileSync(join(pkgDest, "dist/doc-history/index.js"), "utf-8");
     expect(docHistory, "doc-history must not import diff statically").not.toMatch(/from\s*["']diff["']/);
-    expect(docHistory, "doc-history must load diff via import(\"diff\").then(ok, onRejected)").toMatch(
+    expect(docHistory, "doc-history must not import bare diff at all").not.toMatch(/import\(\s*["']diff["']/);
+    expect(docHistory, "doc-history must load the diff-loader via import(...).then(ok, onRejected)").toMatch(
+      /import\("@takazudo\/zudo-doc\/diff-loader"\)\.then\([^;]*?,\s*\(\)\s*=>/,
+    );
+    const diffLoader = readFileSync(join(pkgDest, "dist/diff-loader.js"), "utf-8");
+    expect(diffLoader, "diff-loader must not import diff statically").not.toMatch(/from\s*["']diff["']/);
+    expect(diffLoader, "diff-loader must load diff via import(\"diff\").then(ok, onRejected)").toMatch(
       /import\("diff"\)\.then\([^;]*?,\s*\(\)\s*=>/,
     );
   });
@@ -2926,6 +2936,16 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
       .split("\n")
       .filter((line) => /UNRESOLVED_IMPORT|Could not resolve/.test(line) && /katex/.test(line));
     expect(katexLines, buildLog).toEqual([]);
+  });
+
+  // #4652: same for diff — with `docHistory` off the preset's diff-loader
+  // plugin shadows `@takazudo/zudo-doc/diff-loader`, so the absent `diff` is
+  // never resolved. Matching the quoted specifier avoids unrelated "diff" text.
+  it("no UNRESOLVED_IMPORT / Could not resolve warning mentions diff", () => {
+    const diffLines = buildLog
+      .split("\n")
+      .filter((line) => /UNRESOLVED_IMPORT|Could not resolve/.test(line) && /["'`]diff["'`]|diff-loader/.test(line));
+    expect(diffLines, buildLog).toEqual([]);
   });
 
   it("non-vacuous: the katex/diff-less build actually rendered a doc page", () => {
