@@ -14,6 +14,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Bug Fixes
 
 - With dynamic page transitions enabled, navigating from a footer link (or any focused link in persisted chrome) now finishes at the top of the destination page on current Chromium builds instead of staying near the footer. A package-owned inline head script settles the browser's queued focus reveal after the persisted DOM move and before the router applies its top, hash or history scroll. Focus, persistence, transitions and scroll restoration are unchanged. Sites that pin inline-script hashes in a Content Security Policy need to add the new script's hash.
+- In `SiteTreeNav`, labels now always start a small gap after the end of their dashed branch. On wide viewports the double-width homepage branches used to run into the label text.
 
 ### Showcase
 
@@ -21,7 +22,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Requires zfb 5.1.0: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.0.1` to `^5.1.0`. zfb 5.1.0 adds an islands build guard: the build now fails if an emitted islands chunk imports the islands entry, because that import would 404 in production. Chunking is otherwise unchanged; apart from the `data-zfb-build` identity, emitted page bytes match 5.0.1. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.0 together with this release.
+- Requires zfb 5.1.1: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.0.1` to `^5.1.1`. zfb 5.1.0 adds an islands build guard: the build now fails if an emitted islands chunk imports the islands entry, because that import would 404 in production. zfb 5.1.1 is a fix release for Windows hosts (bare-package subpath aliases and `pnpm.cmd` spawning) and for projects built from a symlinked path. Chunking is otherwise unchanged. Upgrade the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.1 together with this release.
 
 ## [8.0.0] - 2026-10-24
 
