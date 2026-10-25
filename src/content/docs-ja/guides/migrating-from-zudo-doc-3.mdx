@@ -60,7 +60,7 @@ Scaffold のソース: [3.3.0](https://github.com/zudolab/zudo-doc/blob/6cd6e06b
 
 ## 移行先の参照プロジェクトを別に生成する
 
-**2026-10-11** の確認時点で、npm の `create-zudo-doc`、`@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server` は **6.0.0** でした。現在の対象は揃えた **zfb 4.4.0** ファミリー（peer 下限 `^4.4.0`。この 2026-10-11 の確認には含まれません）で、panel 有効時は **zdtp 0.8.6** です。history-server peer 下限は `^6.0.0` です。後日移行する際は公開バージョンを再確認し、インストールする engine ファミリーを揃えてください。
+**2026-10-11** の確認時点で、npm の `create-zudo-doc`、`@takazudo/zudo-doc`、`@takazudo/zudo-doc-history-server` は **6.0.0** でした。当時の対象は揃えた **zfb 4.4.0** ファミリー（peer 下限 `^4.4.0`。この 2026-10-11 の確認には含まれません）で、panel 有効時は **zdtp 0.8.6** でした。history-server peer 下限は `^6.0.0` でした。その後 zudo-doc 8.x は zfb 5 ファミリーに移行しています。後日移行する際は公開バージョンを再確認し、インストールする engine ファミリーを揃えてください。
 
 次を既存プロジェクトの外に `upgrade-reference.json` として保存します。英語を既定にして日本語、検索、theme-pack switcher を有効にする例です。自分のサイトに使う前に、locale と機能の選択を棚卸しの結果に置き換えます。
 
