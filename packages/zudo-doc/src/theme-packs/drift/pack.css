@@ -307,27 +307,62 @@ html[data-theme-pack="drift"] a[data-nav-active] {
     0 0 18px -4px color-mix(in oklch, var(--zd-accent) 45%, transparent);
 }
 
-/* headings: quiet luminance instead of heavy rules. The h2 keeps a
-   gradient bar but fades it into the accent glow — !important
-   defeats the SSR-inlined `style="border-image:linear-gradient(...)"`
-   (Decision 6.6's sole allowlisted carve-out). */
+/* headings: quiet luminance plus a top-only rule hierarchy. h2 carries
+   a 2px accent rule, h3 a quieter 1px muted rule, h4 no rule at all.
+   The rules are top-anchored background gradients; border-image none
+   !important (Decision 6.6's sole allowlisted carve-out) keeps the
+   SSR-inlined `style="border-image:linear-gradient(...)"` from painting
+   a second bar. */
 html[data-theme-pack="drift"] .zd-content h1 {
   text-shadow: 0 0 34px color-mix(in oklch, var(--zd-accent) 32%, transparent);
 }
 html[data-theme-pack="drift"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
-  font-size: 1.6rem;
-}
-html[data-theme-pack="drift"] .zd-content h2 {
-  border-top-width: 1px;
-  border-image: linear-gradient(
-      to right,
-      color-mix(in oklch, var(--zd-accent) 55%, transparent),
-      transparent 72%
-    )
-    1 !important;
+  border-image: none !important;
+  border-top-width: 0;
+  border-bottom-width: 0;
+  padding-top: 1.25rem;
+  padding-bottom: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  background-image: linear-gradient(
+    to right,
+    var(--zd-accent) 0%,
+    var(--zd-accent) 32%,
+    color-mix(in oklch, var(--zd-accent) 58%, transparent) 72%,
+    transparent 100%
+  );
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: top left;
 }
 html[data-theme-pack="drift"] .zd-content h3:where(:not(.zd-compact-prose *)) {
-  border-top-width: 1px;
+  border-image: none !important;
+  border-top-width: 0;
+  border-bottom-width: 0;
+  padding-top: 0.875rem;
+  padding-bottom: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--zd-muted) 42%, transparent),
+    color-mix(in oklch, var(--zd-muted) 22%, transparent) 40%,
+    transparent 76%
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top left;
+}
+html[data-theme-pack="drift"] .zd-content h4:where(:not(.zd-compact-prose *)) {
+  border-width: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.45;
+  background-image: none;
 }
 
 /* links: airy underline that brightens on approach */
