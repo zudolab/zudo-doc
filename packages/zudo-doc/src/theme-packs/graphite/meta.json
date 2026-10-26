@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "graphite",
+  "name": "Graphite",
+  "description": "Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent, quiet hairline rules. The configured default.",
+  "mode": "dark",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "System",
+    "mono": "System",
+    "loaded": []
+  },
+  "preview": {
+    "light": {
+      "bg": "#F2F3F2",
+      "fg": "#3A4146",
+      "accent": "#9A4919",
+      "syntax": {
+        "keyword": "#9A4919",
+        "string": "#4E6552",
+        "comment": "#566168",
+        "callable": "#4B6373"
+      }
+    },
+    "dark": {
+      "bg": "#242629",
+      "fg": "#D3D5D9",
+      "accent": "#E9AA79",
+      "syntax": {
+        "keyword": "#E9AA79",
+        "string": "#9DBA9A",
+        "comment": "#ADB2B8",
+        "callable": "#9DB6C5"
+      }
+    }
+  }
+}

@@ -223,14 +223,15 @@ Start with the **essentials**, then explore the live examples.
    */
   designTokenPanel: true as boolean,
   /**
-   * Active theme pack — "default" is the stock zudo-doc look (no pack
-   * stylesheet loaded). Explicit here (matches the field's own default) for
-   * fixture/showcase drift-diff clarity (epic Theme Core #2812, #2826).
+   * Active theme pack — Graphite, the package's effective default for an
+   * omitted `themePack`. Explicit here for fixture/showcase drift-diff
+   * clarity (epic Theme Core #2812, #2826). "default" selects Classic, the
+   * original zudo-doc look (no pack stylesheet loaded).
    */
-  themePack: "default" as string,
+  themePack: "graphite" as string,
   /**
    * Mounts the bottom-right theme-pack switcher flyout (+ browse-all dialog)
-   * so every preview deploy demonstrates the feature with the stock look
+   * so every preview deploy demonstrates the feature with the default pack
    * active (epic Theme Core #2812, #2826).
    */
   themePackSwitcher: true as boolean,

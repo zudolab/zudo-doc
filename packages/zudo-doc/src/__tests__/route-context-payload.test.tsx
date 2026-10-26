@@ -69,6 +69,20 @@ function makeCatalog(): ThemePacksCatalogManifest {
           preview: { light: swatches, dark: swatches },
         },
       },
+      {
+        slug: "graphite",
+        hasStylesheet: true,
+        meta: {
+          schemaVersion: 1,
+          slug: "graphite",
+          name: "Graphite",
+          description: "Graphite theme",
+          mode: "dark",
+          version: "1.0.0",
+          fonts: { sans: "System", mono: "System", loaded: [] },
+          preview: { light: swatches, dark: swatches },
+        },
+      },
     ],
   };
 }
@@ -116,9 +130,52 @@ describe("createRouteContextPayload", () => {
     expect(payload.tagVocabulary).toEqual([{ id: "browser" }]);
     expect(payload.colorSchemes).toBe(customSchemes);
     expect(payload.themePackRegistry?.map((entry) => entry.slug)).toEqual([
+      "graphite",
       "default",
     ]);
     expect(payload.assetManifest?.routePrefix).toBe("files");
+  });
+
+  it("resolves an omitted themePack to graphite, or Classic for authored palettes", () => {
+    const ordinary = createRouteContextPayload({ siteTitle: "Docs", catalog: makeCatalog() });
+    expect(ordinary.settings.themePack).toBe("graphite");
+    expect(ordinary.themePackRegistry?.map((entry) => entry.slug)).toEqual(["graphite", "default"]);
+
+    expect(
+      createRouteContextPayload({ siteTitle: "Docs", colorSchemes: {} }).settings.themePack,
+    ).toBe("default");
+    expect(
+      createRouteContextPayload({ siteTitle: "Docs", settings: { colorMode: false } }).settings
+        .themePack,
+    ).toBe("default");
+    // Package defaults and an explicit null palette are not authored data.
+    expect(
+      createRouteContextPayload({ siteTitle: "Docs", colorSchemes: null }).settings.themePack,
+    ).toBe("graphite");
+    // An explicit pack always wins, including over custom schemes / fixed mode.
+    expect(
+      createRouteContextPayload({
+        siteTitle: "Docs",
+        themePack: "graphite",
+        colorSchemes: {},
+        settings: { colorMode: false },
+      }).settings.themePack,
+    ).toBe("graphite");
+    // `settings` stays last-wins over the convenience input; nullish = omitted.
+    expect(
+      createRouteContextPayload({
+        siteTitle: "Docs",
+        themePack: "graphite",
+        settings: { themePack: "default" },
+      }).settings.themePack,
+    ).toBe("default");
+    expect(
+      createRouteContextPayload({
+        siteTitle: "Docs",
+        themePack: "default",
+        settings: { themePack: undefined },
+      }).settings.themePack,
+    ).toBe("graphite");
   });
 
   it("defaults package data and makes a missing or explicitly null registry inert", () => {

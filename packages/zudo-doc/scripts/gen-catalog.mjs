@@ -5,8 +5,9 @@
 // for the `@takazudo/zudo-doc/catalog` browser-safe data export (zudolab/
 // zudo-doc#3349, epic #3345 "theme catalog single-sourcing"). Aggregates
 // EVERY bundled theme pack's validated `meta.json` into one
-// `{ schemaVersion: 2, packs: ThemePackCatalogEntry[] }` manifest, `"default"`
-// first then alphabetical (the `resolveEnabledPacks` convention — this script
+// `{ schemaVersion: 2, packs: ThemePackCatalogEntry[] }` manifest, `"graphite"`
+// first, `"default"` (Classic) second, then alphabetical (the
+// `resolveEnabledPacks` convention — this script
 // calls that same pure resolver with no settings so it resolves every pack, in
 // that canonical order). Catalog schema v2 is independent from the schema
 // version inside each pack's `meta.json` (currently v1); those two version
@@ -54,7 +55,7 @@ try {
   process.exit(1);
 }
 
-// No settings filter → every bundled pack, "default" first then alphabetical.
+// No settings filter → every bundled pack: graphite, default, then alphabetical.
 let enabled;
 try {
   enabled = resolveEnabledPacks(registry, {});

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "slug": "default",
-  "name": "Default",
-  "description": "The stock zudo-doc look. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged.",
+  "name": "Classic",
+  "description": "Classic — the original zudo-doc default look. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged.",
   "mode": "dark",
   "version": "1.0.0",
   "fonts": {

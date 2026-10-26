@@ -3,14 +3,18 @@
 // "Active-pack detection"). Read-only and best-effort: unlike
 // `applyThemePackToConfigSource` (which must refuse loudly on anything
 // noncanonical because it WRITES), this is a query used by `theme list` and
-// always resolves to SOME answer — falling back to the documented
-// `"default"` when the file is missing or not in the canonical shape, and
-// reporting that fallback via `detected: false` so callers can say so.
+// always resolves to SOME answer — falling back to the documented effective
+// default (`"graphite"`) when the file is missing or not in the canonical
+// shape, and reporting that fallback via `detected: false` so callers can say
+// so. The config is scanned, never executed.
 
 import fs from "fs-extra";
 import path from "node:path";
 
-import { DEFAULT_THEME_PACK_SLUG } from "../theme-packs-registry/index.js";
+import {
+  CONFIGURED_DEFAULT_THEME_PACK_SLUG,
+  DEFAULT_THEME_PACK_SLUG,
+} from "../theme-packs-registry/index.js";
 import {
   ConfigSyntaxError,
   findMatchingBrace,
@@ -42,7 +46,10 @@ export interface DetectActiveThemePackResult {
  */
 export async function detectActiveThemePack(cwd: string): Promise<DetectActiveThemePackResult> {
   const configPath = resolveZfbConfigPath(cwd);
-  const fallback: DetectActiveThemePackResult = { slug: DEFAULT_THEME_PACK_SLUG, detected: false };
+  const fallback: DetectActiveThemePackResult = {
+    slug: CONFIGURED_DEFAULT_THEME_PACK_SLUG,
+    detected: false,
+  };
 
   if (!(await fs.pathExists(configPath))) return fallback;
 
@@ -70,9 +77,33 @@ export async function detectActiveThemePack(cwd: string): Promise<DetectActiveTh
 
     const themePackMember = members.find((m) => m.key === "themePack");
 
-    // Field absent = the documented default genuinely applies (ADR
-    // Decision 7's `@default "default"`) — this IS a confirmed reading.
-    if (!themePackMember) return { slug: DEFAULT_THEME_PACK_SLUG, detected: true };
+    // Field absent = the documented omitted-pack rule genuinely applies —
+    // Graphite, or Classic ("default") when the config authors its own
+    // `colorSchemes` or fixes the palette with `colorMode: false`. Only a
+    // reading of literal values counts; any other expression is unconfident.
+    if (!themePackMember) {
+      const valueText = (key: string): string | null | undefined => {
+        const member = members.find((m) => m.key === key);
+        if (!member) return undefined;
+        if (member.valueStart === null || member.valueEnd === null) return null;
+        return source.slice(member.valueStart, member.valueEnd).trim();
+      };
+      const colorSchemes = valueText("colorSchemes");
+      const colorMode = valueText("colorMode");
+      if (colorSchemes === null || colorMode === null) return fallback;
+      const customSchemes =
+        colorSchemes !== undefined && colorSchemes !== "undefined" && colorSchemes !== "null";
+      if (customSchemes || colorMode === "false") {
+        return { slug: DEFAULT_THEME_PACK_SLUG, detected: true };
+      }
+      const colorModeKnownNotFalse =
+        colorMode === undefined ||
+        colorMode === "undefined" ||
+        colorMode === "true" ||
+        colorMode.startsWith("{");
+      if (!colorModeKnownNotFalse) return fallback;
+      return { slug: CONFIGURED_DEFAULT_THEME_PACK_SLUG, detected: true };
+    }
 
     if (
       themePackMember.valueStart === null ||

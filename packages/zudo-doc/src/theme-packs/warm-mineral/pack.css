@@ -1,0 +1,377 @@
+/* ============================================================
+   Warm Mineral — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Sandstone and umber stone, carrying a terracotta accent.
+   One of the three soft-tone packs (graphite, warm-mineral,
+   quiet-slate) that share the same component treatment and differ
+   only in palette. Colour only: typography, spacing, geometry and
+   heading hierarchy are the package defaults (no fonts loaded).
+
+   Roles beyond the public --zd-* tokens are inlined per mode:
+     line           decorative rules, separators and tree guides
+     control border necessary field / control / diagram boundaries
+     heading        heading ink, one step stronger than body text
+     hover bg       inactive navigation hover fill
+     active bg      current navigation fill (90% bg + 10% accent)
+     state bgs      admonition fills (90% bg + 10% state colour)
+   Classic (the reserved "default" pack) shares one muted role for
+   text, borders and comments; these packs keep muted at readable
+   text contrast and give decorative rules their own quieter line.
+
+   Production-only contrast repairs (not part of the ordinary
+   palette): diff rows use the opaque state fills instead of the
+   15% foreground tint, and code line / word highlights use opaque
+   active / hover fills (no stacked alpha) keeping the accent marker
+   and underline, so every syntax role stays >= 4.6:1.
+
+   Every rule is scoped under html[data-theme-pack="warm-mineral"]; the
+   pack never declares color-scheme and follows the mode the page
+   already resolved (light-dark()).
+   ============================================================ */
+
+html[data-theme-pack="warm-mineral"] {
+  /* Tier-2 semantic roles */
+  --zd-bg: light-dark(#F3EFE8, #2D2A27);
+  --zd-fg: light-dark(#47403A, #D6CFC6);
+  --zd-surface: light-dark(#E9E3D9, #36322E);
+  --zd-muted: light-dark(#655B52, #B7ADA2);
+  --zd-accent: light-dark(#92471C, #E5AA7D);
+  --zd-accent-hover: light-dark(#8C441B, #E7AF84);
+  --zd-code-bg: light-dark(#E9E3D9, #262320);
+  --zd-code-fg: light-dark(#47403A, #D6CFC6);
+  --zd-success: light-dark(#556047, #A9B892);
+  --zd-danger: light-dark(#824F4A, #D3A29B);
+  --zd-warning: light-dark(#70592F, #D2B482);
+  --zd-info: light-dark(#505E67, #A6B4BD);
+  --zd-selection-bg: light-dark(#92471C, #E5AA7D);
+  --zd-selection-fg: light-dark(#F9F5EF, #292522);
+  --zd-matched-keyword-bg: light-dark(#92471C, #E5AA7D);
+  --zd-matched-keyword-fg: light-dark(#F9F5EF, #292522);
+  --zd-chat-user-bg: light-dark(#92471C, #E5AA7D);
+  --zd-chat-user-text: light-dark(#F9F5EF, #292522);
+  --zd-chat-assistant-bg: light-dark(#E9E3D9, #36322E);
+  --zd-chat-assistant-text: light-dark(#47403A, #D6CFC6);
+  --zd-image-overlay-bg: light-dark(#F3EFE8, #2D2A27);
+  --zd-image-overlay-fg: light-dark(#47403A, #D6CFC6);
+  /* Mermaid: text is body text; edges are necessary diagram lines */
+  --zd-mermaid-node-bg: light-dark(#E9E3D9, #36322E);
+  --zd-mermaid-text: light-dark(#47403A, #D6CFC6);
+  --zd-mermaid-line: light-dark(#847668, #968A7E);
+  --zd-mermaid-label-bg: light-dark(#F3EFE8, #2D2A27);
+  --zd-mermaid-note-bg: light-dark(#E4DDCF, #3D3732);
+  
+  /* syntax — explicit role mapping */
+  --zd-syntax-comment: light-dark(#655B52, #B7ADA2);
+  --zd-syntax-string: light-dark(#556047, #A9B892);
+  --zd-syntax-number: light-dark(#70592F, #D2B482);
+  --zd-syntax-keyword: light-dark(#92471C, #E5AA7D);
+  --zd-syntax-callable: light-dark(#505E67, #A6B4BD);
+  --zd-syntax-type: light-dark(#70592F, #D2B482);
+  --zd-syntax-name: light-dark(#47403A, #D6CFC6);
+  --zd-syntax-inserted: light-dark(#556047, #A9B892);
+  --zd-syntax-deleted: light-dark(#824F4A, #D3A29B);
+  /* diff rows: opaque audited state fills instead of the 15% tint */
+  --zfb-hi-ins-bg: light-dark(#E3E1D8, #393832);
+  --zfb-hi-del-bg: light-dark(#E8DFD8, #3E3633);
+  
+  /* Tier-3 seams */
+  --zdc-nav-active-indicator-color: light-dark(#E9DED4, #3F3730);
+}
+
+/* ---- page, chrome surfaces and decorative rules ---- */
+
+html[data-theme-pack="warm-mineral"] header[data-header],
+html[data-theme-pack="warm-mineral"] footer[data-footer] {
+  background-color: var(--zd-surface);
+  border-color: light-dark(#D8CEC1, #4D4640);
+}
+
+html[data-theme-pack="warm-mineral"] footer[data-footer] div {
+  border-color: light-dark(#D8CEC1, #4D4640);
+}
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar],
+html[data-theme-pack="warm-mineral"] #desktop-sidebar div,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] div,
+html[data-theme-pack="warm-mineral"] #desktop-sidebar nav,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] nav {
+  border-color: light-dark(#D8CEC1, #4D4640);
+}
+
+html[data-theme-pack="warm-mineral"] nav[data-zd-toc] ul,
+html[data-theme-pack="warm-mineral"] div[data-zd-mobile-toc] ul {
+  border-color: light-dark(#D8CEC1, #4D4640);
+}
+
+html[data-theme-pack="warm-mineral"] .zd-content h1,
+html[data-theme-pack="warm-mineral"] .zd-content table,
+html[data-theme-pack="warm-mineral"] .zd-content th,
+html[data-theme-pack="warm-mineral"] .zd-content td,
+html[data-theme-pack="warm-mineral"] .zd-content hr,
+html[data-theme-pack="warm-mineral"] .zd-content pre,
+html[data-theme-pack="warm-mineral"] .zd-content .code-block-title,
+html[data-theme-pack="warm-mineral"] .zd-content > section,
+html[data-theme-pack="warm-mineral"] .zd-content > ol > li:not(:hover):not(:focus-within),
+html[data-theme-pack="warm-mineral"] .zd-content > nav[data-doc-pager] > a:not(:hover),
+html[data-theme-pack="warm-mineral"] .zd-home-rule {
+  border-color: light-dark(#D8CEC1, #4D4640);
+}
+
+/* ---- necessary control and field boundaries ---- */
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar button,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] button,
+html[data-theme-pack="warm-mineral"] header[data-header] button,
+html[data-theme-pack="warm-mineral"] [data-nav-item-dropdown] > div > div,
+html[data-theme-pack="warm-mineral"] [data-version-menu],
+html[data-theme-pack="warm-mineral"] button[data-version-toggle]:not(:hover),
+html[data-theme-pack="warm-mineral"] button[data-language-toggle]:not(:hover),
+html[data-theme-pack="warm-mineral"] button[data-doc-history-trigger]:not(:hover),
+html[data-theme-pack="warm-mineral"] button[data-switcher-launcher]:not(:hover),
+html[data-theme-pack="warm-mineral"] dialog[data-search-dialog] > div,
+html[data-theme-pack="warm-mineral"] kbd {
+  border-color: light-dark(#847668, #968A7E);
+}
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar [data-sidebar-filter-region] > div,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] [data-sidebar-filter-region] > div {
+  box-shadow: inset 0 0 0 1px light-dark(#847668, #968A7E);
+}
+
+/* ---- headings ---- */
+
+html[data-theme-pack="warm-mineral"] .zd-content h1,
+html[data-theme-pack="warm-mineral"] .zd-content h2,
+html[data-theme-pack="warm-mineral"] .zd-content h3,
+html[data-theme-pack="warm-mineral"] .zd-content h4,
+html[data-theme-pack="warm-mineral"] .zd-content h5,
+html[data-theme-pack="warm-mineral"] .zd-content h6 {
+  color: light-dark(#38322D, #E2DBD2);
+}
+
+html[data-theme-pack="warm-mineral"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  border-image: linear-gradient(to right, color-mix(in srgb, light-dark(#847668, #968A7E) 65%, light-dark(#F3EFE8, #2D2A27)), transparent) 1 !important;
+}
+
+html[data-theme-pack="warm-mineral"] .zd-content h3:where(:not(.zd-compact-prose *)),
+html[data-theme-pack="warm-mineral"] .zd-content h4:where(:not(.zd-compact-prose *)) {
+  border-image: linear-gradient(to right, light-dark(#D8CEC1, #4D4640), transparent) 1 !important;
+}
+
+/* ---- code ---- */
+
+html[data-theme-pack="warm-mineral"] .zd-content .code-block-title {
+  background-color: var(--zd-code-bg);
+  color: var(--zd-muted);
+}
+
+html[data-theme-pack="warm-mineral"] pre.hi-root .line.highlighted,
+html[data-theme-pack="warm-mineral"] pre.hi-root [data-line-highlight="true"] {
+  background-color: light-dark(#E9DED4, #3F3730);
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] pre.hi-root .line .highlighted-word {
+  background-color: light-dark(#E4DDCF, #3D3732);
+}
+
+html[data-theme-pack="warm-mineral"] .zd-content th,
+html[data-theme-pack="warm-mineral"] .zd-content thead {
+  background-color: var(--zd-surface);
+}
+
+/* ---- current navigation: active fill, accent text, 3px marker ---- */
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar a[aria-current="page"],
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] a[aria-current="page"],
+html[data-theme-pack="warm-mineral"] #desktop-sidebar div:has(> a[aria-current="page"]),
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) {
+  background-color: light-dark(#E9DED4, #3F3730);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar a[aria-current="page"],
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] a[aria-current="page"] {
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar a[aria-current="page"] *,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] a[aria-current="page"] *,
+html[data-theme-pack="warm-mineral"] #desktop-sidebar div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="warm-mineral"] #desktop-sidebar div:has(> a[aria-current="page"]) > button *,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button * {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button {
+  background-color: transparent;
+  border-color: light-dark(#847668, #968A7E);
+}
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar a[aria-current="page"]:hover,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:hover,
+html[data-theme-pack="warm-mineral"] #desktop-sidebar a[aria-current="page"]:focus-visible,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:focus-visible,
+html[data-theme-pack="warm-mineral"] #desktop-sidebar div:has(> a[aria-current="page"]) > button:hover,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button:hover,
+html[data-theme-pack="warm-mineral"] #desktop-sidebar div:has(> a[aria-current="page"]) > button:focus-visible,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button:focus-visible {
+  background-color: light-dark(#E9DED4, #3F3730);
+  color: var(--zd-accent-hover);
+}
+
+html[data-theme-pack="warm-mineral"] [data-header-nav] a[aria-current="page"],
+html[data-theme-pack="warm-mineral"] [data-header-nav] a[aria-current="page"]:hover,
+html[data-theme-pack="warm-mineral"] [data-header-nav] a[aria-current="page"]:focus-visible {
+  background-color: light-dark(#E9DED4, #3F3730);
+  color: var(--zd-accent);
+  box-shadow: inset 0 -3px 0 var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] [data-header-nav] a[aria-current="page"] * {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] nav[data-zd-toc] a {
+  padding-inline: 0.5rem;
+}
+
+html[data-theme-pack="warm-mineral"] nav[data-zd-toc] a[aria-current="true"] {
+  background-color: light-dark(#E9DED4, #3F3730);
+  color: var(--zd-accent);
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+/* ---- inactive navigation hover ---- */
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar [data-sidebar-tree-root] a:not([aria-current="page"]):hover,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] [data-sidebar-tree-root] a:not([aria-current="page"]):hover {
+  background-color: light-dark(#E4DDCF, #3D3732);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] [data-site-nav] a:hover {
+  color: var(--zd-accent);
+}
+
+/* ---- tag chips: line outline, bg fill, opaque muted count ---- */
+
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip] > [data-zd-tag-chip-outline] {
+  background-color: light-dark(#D8CEC1, #4D4640);
+}
+
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip] > [data-zd-tag-chip-label] {
+  background-color: var(--zd-bg);
+  color: var(--zd-fg);
+}
+
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip] [data-zd-tag-count],
+html[data-theme-pack="warm-mineral"] footer[data-footer] [data-zd-tag-count] {
+  opacity: 1;
+  color: var(--zd-muted);
+}
+
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip]:hover > [data-zd-tag-chip-outline],
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip]:focus-visible > [data-zd-tag-chip-outline] {
+  background-color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip]:hover > [data-zd-tag-chip-label],
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip]:focus-visible > [data-zd-tag-chip-label] {
+  background-color: light-dark(#E4DDCF, #3D3732);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip]:hover [data-zd-tag-count],
+html[data-theme-pack="warm-mineral"] a[data-zd-tag-chip]:focus-visible [data-zd-tag-count],
+html[data-theme-pack="warm-mineral"] footer[data-footer] a:hover [data-zd-tag-count],
+html[data-theme-pack="warm-mineral"] footer[data-footer] a:focus-visible [data-zd-tag-count] {
+  color: var(--zd-accent);
+}
+
+/* ---- admonitions: soft fills, semantic title + stripe (labels/icons kept) ---- */
+
+html[data-theme-pack="warm-mineral"] [data-admonition="note"] {
+  background-color: light-dark(#E9DED4, #3F3730);
+  border-left-color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="note"] .admonition-title {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="important"] {
+  background-color: light-dark(#E9DED4, #3F3730);
+  border-left-color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="important"] .admonition-title {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="info"] {
+  background-color: light-dark(#E3E0DB, #393836);
+  border-left-color: var(--zd-info);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="info"] .admonition-title {
+  color: var(--zd-info);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="tip"] {
+  background-color: light-dark(#E3E1D8, #393832);
+  border-left-color: var(--zd-success);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="tip"] .admonition-title {
+  color: var(--zd-success);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="warning"] {
+  background-color: light-dark(#E6E0D6, #3E3830);
+  border-left-color: var(--zd-warning);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="warning"] .admonition-title {
+  color: var(--zd-warning);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="danger"] {
+  background-color: light-dark(#E8DFD8, #3E3633);
+  border-left-color: var(--zd-danger);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="danger"] .admonition-title {
+  color: var(--zd-danger);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="caution"] {
+  background-color: light-dark(#E8DFD8, #3E3633);
+  border-left-color: var(--zd-danger);
+}
+
+html[data-theme-pack="warm-mineral"] [data-admonition="caution"] .admonition-title {
+  color: var(--zd-danger);
+}
+
+/* ---- keyboard focus: 2px accent outline, 3px offset (inset inside scrollers so it is never clipped) ---- */
+
+html[data-theme-pack="warm-mineral"] :focus-visible {
+  outline: 2px solid var(--zd-accent);
+  outline-offset: 3px;
+}
+
+html[data-theme-pack="warm-mineral"] #desktop-sidebar :focus-visible,
+html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] :focus-visible,
+html[data-theme-pack="warm-mineral"] nav[data-zd-toc] :focus-visible,
+html[data-theme-pack="warm-mineral"] div[data-zd-mobile-toc] :focus-visible {
+  outline-offset: -2px;
+}
+
+html[data-theme-pack="warm-mineral"] .zd-content a,
+html[data-theme-pack="warm-mineral"] .zd-content button {
+  text-underline-offset: 3px;
+}

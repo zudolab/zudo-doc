@@ -62,18 +62,21 @@ function AllTagChip({
       <a
         href={href}
         aria-label={`${labels.taggedWith}: ${tag}`}
-        class="group relative inline-flex no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        data-zd-tag-chip
+      class="group relative inline-flex no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <span
+          data-zd-tag-chip-outline
           class="absolute inset-0 bg-muted group-hover:bg-fg"
           style="clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%)"
         />
         <span
+          data-zd-tag-chip-label
           class="relative inline-flex items-center text-small text-fg bg-bg pl-hsp-sm pr-hsp-xl py-vsp-2xs group-hover:text-bg group-hover:bg-fg"
           style="clip-path: polygon(1px 1px, calc(100% - 17px) 1px, calc(100% - 1px) 50%, calc(100% - 17px) calc(100% - 1px), 1px calc(100% - 1px))"
         >
           <span>#{tag}</span>
-          <span class="text-caption opacity-60">&nbsp;({count})</span>
+          <span data-zd-tag-count class="text-caption opacity-60">&nbsp;({count})</span>
         </span>
       </a>
     </li>
@@ -94,13 +97,16 @@ function PageTagChip({
     <a
       href={href}
       aria-label={`${labels.taggedWith}: ${tag}`}
+      data-zd-tag-chip
       class="group relative inline-flex no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span
+        data-zd-tag-chip-outline
         class="absolute inset-0 bg-muted group-hover:bg-fg"
         style="clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)"
       />
       <span
+        data-zd-tag-chip-label
         class="relative inline-flex items-center text-caption text-fg bg-bg pl-hsp-sm pr-hsp-lg py-vsp-2xs group-hover:text-bg group-hover:bg-fg"
         style="clip-path: polygon(1px 1px, calc(100% - 13px) 1px, calc(100% - 1px) 50%, calc(100% - 13px) calc(100% - 1px), 1px calc(100% - 1px))"
       >

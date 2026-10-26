@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS } from "../settings-defaults.js";
 import { defaultTranslations } from "../i18n-defaults/index.js";
 import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
 import { buildThemePackRegistry } from "../theme-packs-registry/build-registry.js";
+import { resolveConfiguredThemePack } from "../theme-packs-registry/configured-theme-pack.js";
 import type { ThemePacksCatalogManifest } from "../theme-packs-registry/build-registry.js";
 import type { HeaderNavItem, LocaleConfig, Settings } from "../settings.js";
 import type {
@@ -47,6 +48,9 @@ export type RouteContextTranslations = Record<string, Record<string, string>>;
  *   `siteDescription`, `defaultLocale`, `locales`, `headerNav`, `themePack`).
  * - `settings` is a shallow, top-level merge over that result and wins last.
  *   Nested settings objects replace wholesale; they are never deep-merged.
+ * - A `themePack` still omitted (nullish) after that merge resolves through
+ *   `resolveConfiguredThemePack`: `"graphite"`, or `"default"` (Classic)
+ *   when `colorSchemes` data is supplied or `settings.colorMode` is `false`.
  * - `translations` deep-merges into `defaultTranslations` in two levels:
  *   locales are retained and individual keys within an overridden locale are
  *   retained unless that key is supplied by the caller.
@@ -71,7 +75,7 @@ export interface CreateRouteContextPayloadInput {
   locales?: Record<string, LocaleConfig>;
   /** Top-level navigation categories; becomes `settings.headerNav`. */
   categories?: readonly HeaderNavItem[];
-  /** Active theme-pack slug; defaults to `DEFAULT_SETTINGS.themePack`. */
+  /** Active theme-pack slug; omitted resolves via `resolveConfiguredThemePack`. */
   themePack?: string;
   /** Complete browser-facing catalog v2 manifest used to build the registry. */
   catalog?: ThemePacksCatalogManifest;
@@ -133,6 +137,14 @@ export function createRouteContextPayload(
     ...(input.themePack !== undefined ? { themePack: input.themePack } : {}),
     ...input.settings,
   };
+  settings.themePack = resolveConfiguredThemePack({
+    themePack: settings.themePack,
+    colorMode: settings.colorMode,
+    customColorSchemes:
+      input.colorSchemes !== undefined &&
+      input.colorSchemes !== null &&
+      input.colorSchemes !== defaultColorSchemes,
+  });
 
   const hasRegistryOverride = Object.prototype.hasOwnProperty.call(
     input,

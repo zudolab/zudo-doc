@@ -20,7 +20,7 @@ import type { ColorSchemeProviderColorMode } from "../theme/color-scheme-provide
 import ThemePackProvider, {
   themePackVersionMap,
 } from "../theme/theme-pack-provider.js";
-import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
+import { resolveConfiguredThemePack } from "../theme-packs-registry/configured-theme-pack.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings, FaviconConfig } from "../settings.js";
 import { renderAutoLogoIconSvg } from "../auto-logo/icon.js";
@@ -234,7 +234,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
   const themePackRegistry = ctx.themePackRegistry;
   const themePackEnabled =
     themePackRegistry !== null ? themePackVersionMap(themePackRegistry) : null;
-  const themePackConfigured = settings.themePack ?? DEFAULT_THEME_PACK_SLUG;
+  const themePackConfigured = resolveConfiguredThemePack(settings);
   // Base prefix WITH trailing slash — `withBase("/")` yields "/" for the
   // default base and "/sub/" for a sub-path deployment, so the bootstrap can
   // concatenate `base + "theme-packs/<slug>/pack.css?v=…"` verbatim.

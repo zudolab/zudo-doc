@@ -24,13 +24,52 @@ const REGISTRY: ThemePackRegistry = [
   makeEntry("zeta"),
   makeEntry("default"),
   makeEntry("alpha"),
+  makeEntry("graphite"),
   makeEntry("foundry"),
 ];
 
 describe("resolveEnabledPacks", () => {
-  it("defaults to: default first, then the bundled registry alphabetically", () => {
+  it("defaults to: graphite first, Classic (default) second, then the rest alphabetically", () => {
     const enabled = resolveEnabledPacks(REGISTRY, {});
-    expect(enabled.map((e) => e.slug)).toEqual(["default", "alpha", "foundry", "zeta"]);
+    expect(enabled.map((e) => e.slug)).toEqual(["graphite", "default", "alpha", "foundry", "zeta"]);
+  });
+
+  it("treats an omitted, undefined, or null themePack as the configured default (graphite)", () => {
+    for (const themePack of [undefined, null]) {
+      expect(() => resolveEnabledPacks(REGISTRY, { themePack })).not.toThrow();
+      expect(() =>
+        resolveEnabledPacks(REGISTRY, { themePack, themePacks: ["default", "foundry"] }),
+      ).toThrow(/"graphite" is not one of the enabled theme packs/);
+    }
+  });
+
+  it("an omitted themePack with colorMode:false resolves Classic", () => {
+    expect(() =>
+      resolveEnabledPacks(REGISTRY, { colorMode: false, themePacks: ["default"] }),
+    ).not.toThrow();
+  });
+
+  it("never inserts graphite into an explicit allowlist and names the migration", () => {
+    let message = "";
+    try {
+      resolveEnabledPacks(REGISTRY, { themePack: "graphite", themePacks: ["default", "foundry"] });
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    expect(message).toMatch(/add it to themePacks/);
+    expect(message).toMatch(/themePack: "default"/);
+    expect(
+      resolveEnabledPacks(REGISTRY, { themePack: "default", themePacks: ["default"] }).map(
+        (e) => e.slug,
+      ),
+    ).toEqual(["default"]);
+  });
+
+  it("keeps the relative order of the other packs when graphite or default is absent", () => {
+    const withoutGraphite = REGISTRY.filter((e) => e.slug !== "graphite");
+    expect(
+      resolveEnabledPacks(withoutGraphite, { themePack: "default" }).map((e) => e.slug),
+    ).toEqual(["default", "alpha", "foundry", "zeta"]);
   });
 
   it("honours an explicit themePacks order and may omit default", () => {
