@@ -834,7 +834,10 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   settings.themePack = resolveConfiguredThemePack({
     themePack: settings.themePack,
     colorMode: settings.colorMode,
-    customColorSchemes: userColorSchemes !== undefined && userColorSchemes !== null,
+    customColorSchemes:
+      userColorSchemes !== undefined &&
+      userColorSchemes !== null &&
+      userColorSchemes !== defaultColorSchemes,
   });
 
   // Validate both prefixes at config resolution, before route injection or

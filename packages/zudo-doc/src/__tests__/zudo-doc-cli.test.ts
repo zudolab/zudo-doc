@@ -46,6 +46,7 @@ const DIST_FILES_FOR_CLI = [
   "theme-packs-registry/resolve-enabled-packs.js",
   "theme-packs-registry/build-registry.js",
   "theme-packs-registry/load-registry.js",
+  "theme-packs-registry/configured-theme-pack.js",
   "color-scheme-utils.js",
   "config/component-tokens.js",
   "auto-logo/standalone.js",

@@ -6,7 +6,7 @@ import {
   printHelp,
   validateArgs,
 } from "./cli.js";
-import { FEATURES } from "./constants.js";
+import { FEATURES, effectiveOmittedThemePack } from "./constants.js";
 import { loadPreset, normalizeAgentMcpChoices } from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
 import { scaffold } from "./scaffold.js";
@@ -124,7 +124,7 @@ async function main() {
     } else {
       prefilled.singleScheme ??= "Default Dark";
     }
-    prefilled.themePack ??= "default";
+    prefilled.themePack ??= effectiveOmittedThemePack(prefilled.colorSchemeMode);
     prefilled.packageManager ??= "pnpm";
     prefilled.githubUrl ??= "";
     // A blank package list is the explicit non-interactive choice for the

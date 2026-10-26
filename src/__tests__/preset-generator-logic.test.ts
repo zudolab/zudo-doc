@@ -256,9 +256,24 @@ describe("buildCliCommand", () => {
 });
 
 describe("buildJson — themePack (ADR #2818 / #2823)", () => {
-  it("omits themePack when it equals the default", () => {
+  it("omits Classic in single-scheme mode, where omission keeps Classic", () => {
     const json = buildJson(makeState({ themePack: "default" }));
     expect(json).not.toHaveProperty("themePack");
+  });
+
+  it("omits Graphite in light-dark mode, where it is the effective default", () => {
+    const json = buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "graphite" }));
+    expect(json).not.toHaveProperty("themePack");
+  });
+
+  it("emits Classic in light-dark mode, where omission would select Graphite", () => {
+    const json = buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "default" }));
+    expect(json).toHaveProperty("themePack", "default");
+  });
+
+  it("emits Graphite in single-scheme mode, where omission would keep Classic", () => {
+    const json = buildJson(makeState({ themePack: "graphite" }));
+    expect(json).toHaveProperty("themePack", "graphite");
   });
 
   it("emits themePack when a non-default pack is chosen", () => {
@@ -364,7 +379,7 @@ describe("default generator state — regression: matches target JSON (#4007)", 
       darkScheme: "Default Dark",
       defaultMode: "dark",
       respectPrefersColorScheme: true,
-      themePack: "default",
+      themePack: "graphite",
       features: FEATURES.filter((f) => f.default).map((f) => f.value),
       cjkFriendly: true,
       packageManager: "pnpm",

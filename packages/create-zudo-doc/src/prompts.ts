@@ -1,5 +1,11 @@
 import * as p from "@clack/prompts";
-import { SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
+import {
+  SINGLE_SCHEMES,
+  FEATURES,
+  SUPPORTED_LANGS,
+  THEME_PACKS,
+  effectiveOmittedThemePack,
+} from "./constants.js";
 import {
   normalizeAgentMcpChoices,
   parseChangelogPackages,
@@ -29,7 +35,8 @@ export interface UserChoices {
   darkScheme?: string;
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
-  // Theme pack slug (ADR #2818 Decision 7). "default" = the stock look.
+  // Theme pack slug (ADR #2818 Decision 7). "graphite" = the default look,
+  // "default" = Classic (the original look, no pack stylesheet).
   themePack?: string;
   // Features
   features: string[];
@@ -225,7 +232,7 @@ export async function runPrompts(
         label: t.label,
         hint: t.hint,
       })),
-      initialValue: "default",
+      initialValue: effectiveOmittedThemePack(colorSchemeMode),
     });
     if (p.isCancel(result)) process.exit(0);
     themePack = result;

@@ -31,7 +31,7 @@ describe("resolveZfbConfigPath", () => {
 describe("detectActiveThemePack", () => {
   it("falls back to the documented default (detected: false) when zfb.config.ts is missing", async () => {
     const result = await detectActiveThemePack(tempDir);
-    expect(result).toEqual({ slug: "default", detected: false });
+    expect(result).toEqual({ slug: "graphite", detected: false });
   });
 
   it("reports the documented default (detected: true) when the field is absent from a canonical config", async () => {
@@ -45,7 +45,51 @@ export default defineConfig(
 );
 `);
     const result = await detectActiveThemePack(tempDir);
+    expect(result).toEqual({ slug: "graphite", detected: true });
+  });
+
+  it("reports Classic (detected: true) when the field is absent but colorSchemes is custom", async () => {
+    await writeConfig(`import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { mySchemes } from "./schemes";
+
+export default defineConfig(
+  zudoDoc({
+    colorSchemes: mySchemes,
+  }),
+);
+`);
+    const result = await detectActiveThemePack(tempDir);
     expect(result).toEqual({ slug: "default", detected: true });
+  });
+
+  it("reports Classic (detected: true) when the field is absent and colorMode is false", async () => {
+    await writeConfig(`import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    colorMode: false,
+  }),
+);
+`);
+    const result = await detectActiveThemePack(tempDir);
+    expect(result).toEqual({ slug: "default", detected: true });
+  });
+
+  it("is not confident when colorMode is an unreadable expression", async () => {
+    await writeConfig(`import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { mode } from "./mode";
+
+export default defineConfig(
+  zudoDoc({
+    colorMode: mode,
+  }),
+);
+`);
+    const result = await detectActiveThemePack(tempDir);
+    expect(result).toEqual({ slug: "graphite", detected: false });
   });
 
   it("reads the configured slug from a canonical config", async () => {
@@ -75,7 +119,7 @@ export default defineConfig(
 );
 `);
     await expect(detectActiveThemePack(tempDir)).resolves.toEqual({
-      slug: "default",
+      slug: "graphite",
       detected: false,
     });
   });
@@ -93,7 +137,7 @@ export default defineConfig(
 );
 `);
     await expect(detectActiveThemePack(tempDir)).resolves.toEqual({
-      slug: "default",
+      slug: "graphite",
       detected: false,
     });
   });

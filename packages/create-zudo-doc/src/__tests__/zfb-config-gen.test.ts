@@ -145,9 +145,29 @@ describe("generateZfbConfig — theme pack (ADR #2818)", () => {
     expect(result).toContain('themePack: "foundry"');
   });
 
-  it("omits themePack when it matches the default", () => {
+  it("omits Classic in single-scheme mode, where omission already keeps Classic", () => {
     const result = generateZfbConfig({ ...baseChoices, themePack: "default" });
     expect(result).not.toContain("themePack");
+  });
+
+  it("emits Graphite in single-scheme mode, where omission would select Classic", () => {
+    const result = generateZfbConfig({ ...baseChoices, themePack: "graphite" });
+    expect(result).toContain('themePack: "graphite"');
+  });
+
+  it("omits Graphite in light-dark mode, where it is the effective default", () => {
+    const result = generateZfbConfig({ ...packageDefaultChoices, themePack: "graphite" });
+    expect(result).not.toContain("themePack");
+  });
+
+  it("emits Classic in light-dark mode, where omission would select Graphite", () => {
+    const result = generateZfbConfig({ ...packageDefaultChoices, themePack: "default" });
+    expect(result).toContain('themePack: "default"');
+  });
+
+  it("omits themePack when no pack was chosen", () => {
+    expect(generateZfbConfig({ ...packageDefaultChoices })).not.toContain("themePack");
+    expect(generateZfbConfig({ ...baseChoices })).not.toContain("themePack");
   });
 
   it("omits themePack entirely when no theme-pack choice was made", () => {

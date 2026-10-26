@@ -15,6 +15,11 @@ export const SINGLE_SCHEMES = ["Default Dark", "Default Light"];
 
 export const LIGHT_SCHEMES = ["Default Light"];
 
+/** Mirrors effectiveOmittedThemePack in packages/create-zudo-doc/src/constants.ts. */
+export function effectiveOmittedThemePack(colorSchemeMode: ColorSchemeMode): string {
+  return colorSchemeMode === "single" ? "default" : "graphite";
+}
+
 export interface ThemePackOption {
   slug: string;
   label: string;
@@ -22,13 +27,19 @@ export interface ThemePackOption {
 }
 
 /** Mirrors THEME_PACKS from packages/create-zudo-doc/src/constants.ts (ADR
- *  #2818; full catalog synced by #2855). Order: "default" first, then the
- *  rest alphabetically by slug (matches resolveEnabledPacks). */
+ *  #2818; full catalog synced by #2855). Order: "graphite" (the omitted
+ *  default), then "default" (Classic), then the rest alphabetically by slug
+ *  (matches resolveEnabledPacks). */
 export const THEME_PACKS: ThemePackOption[] = [
   {
+    slug: "graphite",
+    label: "Graphite",
+    hint: "Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent (the default)",
+  },
+  {
     slug: "default",
-    label: "Default",
-    hint: "Stock zudo-doc look — no extra stylesheet loaded",
+    label: "Classic",
+    hint: "The original zudo-doc look — no extra stylesheet loaded",
   },
   {
     slug: "academia",
@@ -136,6 +147,11 @@ export const THEME_PACKS: ThemePackOption[] = [
     hint: "Green CRT terminal — phosphor glow, scanlines, inverse-video nav",
   },
   {
+    slug: "quiet-slate",
+    label: "Quiet Slate",
+    hint: "Quiet blue-grey slate — misty slate paper by day, cool slate at night, a muted copper accent",
+  },
+  {
     slug: "riso",
     label: "Riso",
     hint: "Risograph duotone print — warm paper, two inks (riso blue + fluorescent coral), misregistered offset shadows, soft linear paper grain",
@@ -174,6 +190,11 @@ export const THEME_PACKS: ThemePackOption[] = [
     slug: "timberline",
     label: "Timberline",
     hint: "Forest cabin after dark — pine & umber planks, cream prose, and matte lantern-amber accents",
+  },
+  {
+    slug: "warm-mineral",
+    label: "Warm Mineral",
+    hint: "Warm mineral tones — sandstone paper by day, umber stone at night, a terracotta accent",
   },
   {
     slug: "washi",
@@ -447,7 +468,8 @@ export interface FormState {
   darkScheme: string;
   defaultMode: "light" | "dark";
   respectPrefersColorScheme: boolean;
-  /** Theme pack slug (ADR #2818 Decision 7). "default" = the stock look. */
+  /** Theme pack slug (ADR #2818 Decision 7). "graphite" = the default look,
+   *  "default" = Classic. */
   themePack: string;
   features: string[];
   cjkFriendly: boolean;
@@ -482,9 +504,10 @@ export function buildJson(state: FormState): Record<string, unknown> {
   }
 
   // "Omit when default" — mirrors zfb-config-gen.ts's diff-from-defaults
-  // emission rule (ADR #2818 Decision 7 / #2823) so the JSON preset stays
-  // lossless without freezing an inert themePack: "default" into every preset.
-  if (state.themePack && state.themePack !== "default") {
+  // emission rule (ADR #2818 Decision 7 / #2823): an omitted pack resolves to
+  // Graphite, or Classic in single-scheme mode, so only a pack that differs
+  // from that is written (picking Classic in light-dark mode emits "default").
+  if (state.themePack && state.themePack !== effectiveOmittedThemePack(state.colorSchemeMode)) {
     base.themePack = state.themePack;
   }
 

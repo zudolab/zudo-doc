@@ -100,7 +100,7 @@ export function formatThemeList(result: ThemeListResult): string {
   } else {
     lines.push(
       pc.dim(
-        `Active theme pack: ${activeSlug} (assumed default — zfb.config.ts "themePack" could not be confidently read)`,
+        `Active theme pack: ${activeSlug} (assumed default — no zfb.config.ts "themePack" field found or readable)`,
       ),
     );
   }
