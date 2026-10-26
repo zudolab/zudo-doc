@@ -1339,6 +1339,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // byte lengths (57025, 67457, 78909). The workspace version bump
   // (8.1.0 -> 8.1.1) is an input to the build identity. Causal review:
   // docs/findings/4655-release-8.1.1-a2-causal-review.md.
+  //
+  // 2026-10-26 re-baseline (zfb 5.1.3 -> 5.1.4 bump): captured this fixture
+  // locally at main (39cad20f, which reproduced all three accepted references)
+  // and at the bump. Replacing native data-zfb-build identities only
+  // (37f236e087bcd08c -> 1cb2cf5ca630ff99) makes every normalized page hash to
+  // the accepted #4655 reference; raw pages additionally differ only in the
+  // islands entry (islands-a32cac03.js -> islands-9770cacc.js) and keep their
+  // byte lengths (57025, 67457, 78909). 5.1.4 changes only version pins and
+  // rebuilt native/WASM binaries. Causal review:
+  // docs/findings/zfb-5.1.4-a2-causal-review.md.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
