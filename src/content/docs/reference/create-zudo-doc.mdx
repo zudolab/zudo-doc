@@ -80,7 +80,7 @@ Customization happens one level deeper, through the `colorSchemes` escape-hatch 
 
 ## Theme Packs
 
-Independently of the color scheme, the scaffold can start a project on any bundled [theme pack](./theme-packs.mdx) — a prebuilt design bundle layered on top of the scheme system. Pass `--theme-pack <slug>`, or answer the interactive "Theme pack:" prompt (asked between the color-scheme questions and the feature multiselect). The chosen slug is written to `themePack` in the generated `zfb.config.ts` (only when it differs from `default`, per the diff-from-defaults rule). The on-page switcher UI is a separate feature toggle, `--theme-pack-switcher`.
+Independently of the color scheme, the scaffold can start a project on any bundled [theme pack](./theme-packs.mdx) — a prebuilt design bundle layered on top of the scheme system. Pass `--theme-pack <slug>`, or answer the interactive "Theme pack:" prompt (asked between the color-scheme questions and the feature multiselect). The prompt starts on Graphite, the default look, and lists Classic (slug `default`, the original look) second. The chosen slug is written to `themePack` in the generated `zfb.config.ts` only when it differs from what an omitted `themePack` resolves to, per the diff-from-defaults rule. Omitted means Graphite, or Classic for a single-scheme project, so choosing Classic in light/dark mode writes `themePack: "default"`. The on-page switcher UI is a separate feature toggle, `--theme-pack-switcher`.
 
 ## Options
 
@@ -117,7 +117,7 @@ Because `--respect-system-preference` defaults to `true`, a first visit without 
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--theme-pack <slug>` | Theme pack applied to the generated project — any slug from the [Theme Gallery](./theme-gallery.mdx) | `default` |
+| `--theme-pack <slug>` | Theme pack applied to the generated project — any slug from the [Theme Gallery](./theme-gallery.mdx) | `graphite` (`default`, which is Classic, in single-scheme mode) |
 
 ### Features
 

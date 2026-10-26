@@ -568,6 +568,9 @@ Rules:
    `div[data-zd-mobile-toc]`,
    `a[data-nav-active]`, `body`, `footer[data-footer]`,
    `nav[data-doc-pager]`, `p[data-doc-description]`,
+   `a[data-zd-tag-chip]` with its `[data-zd-tag-chip-outline]` /
+   `[data-zd-tag-chip-label]` parts and `[data-zd-tag-count]` (tag-index
+   chips, page tag chips, and the footer tag list's counts),
    `[data-theme-pack-switcher]`, `[data-switcher-card]`,
    `[data-switcher-launcher]`. The TOC's active-item hook is
    `nav[data-zd-toc] a[aria-current="true"]` — there is no `.toc-active`
@@ -613,10 +616,13 @@ Three new fields on `ZudoDocConfig` (`src/config.ts`, with `@default` JSDoc —
 
 ```ts
 /**
- * Active theme pack slug. "default" is the stock zudo-doc look (no pack
- * stylesheet loaded). Must be a member of the resolved `themePacks` list;
- * an unknown slug fails the build loudly at plugin setup.
- * @default "default"
+ * Active theme pack slug. Omitted (or null) resolves through
+ * `resolveConfiguredThemePack`: "graphite", except "default" (Classic, the
+ * original look, no pack stylesheet) when custom `colorSchemes` are
+ * supplied or `colorMode` is `false`. An explicit slug always wins. Must be
+ * a member of the resolved `themePacks` list; an unknown slug fails the
+ * build loudly at plugin setup.
+ * @default undefined (resolves to "graphite")
  */
 themePack?: string;
 /**
@@ -627,10 +633,12 @@ themePack?: string;
 themePackSwitcher?: boolean;
 /**
  * Enabled pack slugs, in switcher order. `undefined` = all bundled packs:
- * "default" first, then the bundled registry in its canonical
+ * "graphite", then "default", then the bundled registry in its canonical
  * (alphabetical-by-slug) order. An explicit list is authoritative — it may
  * omit "default", reorder freely, and must not contain duplicates or
- * unknown slugs (build fails loudly).
+ * unknown slugs (build fails loudly). Graphite is never inserted into an
+ * explicit list: an omitted `themePack` with a list lacking "graphite"
+ * fails with a migration hint (add it, or set `themePack: "default"`).
  * @default undefined
  */
 themePacks?: string[];
@@ -641,6 +649,20 @@ themePacks?: string[];
   verbatim.
 - `themePack` may name a non-default pack while `themePackSwitcher` stays
   `false` — a build-pinned look with no UI.
+- **Configured default vs reserved sentinel (soft-tone packs).**
+  `DEFAULT_THEME_PACK_SLUG = "default"` stays the reserved no-stylesheet
+  sentinel (displayed as "Classic"); `CONFIGURED_DEFAULT_THEME_PACK_SLUG =
+  "graphite"` is what an omitted `themePack` resolves to. The one resolver,
+  `resolveConfiguredThemePack({ themePack, colorMode, customColorSchemes })`,
+  is applied by `zudoDoc()`, `zudoDocPreset()` and
+  `createRouteContextPayload()` (after their last-wins merges), and by the
+  SSR fallbacks. Custom `colorSchemes` or `colorMode: false` keep Classic
+  so authored palettes are never painted over; an explicit pack wins. With
+  `colorMode: false` an explicit pack follows the host's CSS
+  `color-scheme` (hosts declare `html { color-scheme: dark; }`; packs
+  never do). zdtp storage namespaces are unchanged: Classic keeps
+  `zudo-doc-tweak`, every other pack (including Graphite) uses
+  `zudo-doc-tweak--<slug>`.
 - All three are serializable and ride the existing settings channel into
   `routeContext`; the resolved registry (settings ∩ bundled packs, ordered)
   rides alongside as `themePackRegistry` (Decision 2).
