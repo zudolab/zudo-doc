@@ -16,3 +16,7 @@ sidebar_position: 1146
 - 従来の見た目は **Classic** パックとして、スラッグ `default` のまま残ります。維持するには `themePack: "default"` を設定してください。閲覧者が保存した選択は引き続き有効です。
 - create-zudo-doc は Graphite を先頭、Classic を 2 番目に表示し、ライト/ダークのプロジェクトで Classic を選ぶと `themePack: "default"` を書き込みます。
 - タグチップとフッターのタグ数に、テーマパック用の安定したフック（`data-zd-tag-chip`、`data-zd-tag-chip-outline`、`data-zd-tag-chip-label`、`data-zd-tag-count`）を追加しました。Classic での見た目は変わりません。
+
+### その他の変更
+
+- zfb 5.1.5 が必須になり、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^5.1.4` から `^5.1.5` に引き上げます。zfb 5.1.5 はネイティブバイナリを tokio 1.54.1（RUSTSEC-2026-0386）でビルドし、WASM バイナリを再ビルドしたリリースで、JavaScript API に変更はありません。このリリースと合わせて zfb 系（使用時は `zfb-adapter-cloudflare` も）を 5.1.5 に更新してください。

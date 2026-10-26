@@ -19,6 +19,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 - create-zudo-doc offers Graphite first and Classic second, and writes `themePack: "default"` when Classic is chosen for a light/dark project.
 - Tag chips and the footer tag counts gain stable theme-pack hooks (`data-zd-tag-chip`, `data-zd-tag-chip-outline`, `data-zd-tag-chip-label`, `data-zd-tag-count`); the rendered look on Classic is unchanged.
 
+### Other Changes
+
+- Requires zfb 5.1.5: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.1.4` to `^5.1.5`. zfb 5.1.5 builds the native binary against tokio 1.54.1 (RUSTSEC-2026-0386) and rebuilds the WASM binaries; the JavaScript API is unchanged. Update the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.5 together with this release.
+
 ## [8.1.3] - 2026-10-26
 
 ### Features
