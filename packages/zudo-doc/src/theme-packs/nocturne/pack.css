@@ -322,25 +322,61 @@ html[data-theme-pack="nocturne"] .zd-content > p[data-doc-description] {
   color: color-mix(in oklch, var(--zd-fg) 62%, var(--zd-muted));
 }
 
-/* h2: gold fading rule. The SSR-inlined
-   `style="border-image:linear-gradient(...)"` bar is defeated with
-   border-image none !important (Decision 6.6's sole allowlisted
-   carve-out) + a zeroed border-top; the fading gold hairline is then
-   painted as a 1px top-anchored background gradient instead. */
-html[data-theme-pack="nocturne"] .zd-content h2 {
+/* h2: the original gold fading rule, now 2px and kept distinct from the
+   lavender link ink; h3 takes a quieter 1px muted rule and h4 none. The
+   SSR-inlined `style="border-image:linear-gradient(...)"` bar is
+   defeated with border-image none !important (Decision 6.6's sole
+   allowlisted carve-out) + zeroed borders; each rule is a top-anchored
+   background gradient instead. */
+html[data-theme-pack="nocturne"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
   border-image: none !important;
   border-top-width: 0;
-  font-size: 1.9rem;
+  border-bottom-width: 0;
+  padding-top: 1.25rem;
+  padding-bottom: 0;
+  font-size: 2.125rem;
+  font-weight: 700;
+  line-height: 1.3;
   background-image: linear-gradient(
     to right,
-    light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87)),
-    light-dark(oklch(0.53 0.105 85 / 0.3), oklch(0.78 0.105 87 / 0.3)) 60%,
-    transparent
+    light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87)) 0%,
+    light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87)) 32%,
+    color-mix(in oklch, light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87)) 58%, transparent) 72%,
+    transparent 100%
+  );
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: top left;
+}
+html[data-theme-pack="nocturne"] .zd-content h3:where(:not(.zd-compact-prose *)) {
+  border-image: none !important;
+  border-top-width: 0;
+  border-bottom-width: 0;
+  padding-top: 0.875rem;
+  padding-bottom: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--zd-muted) 42%, transparent),
+    color-mix(in oklch, var(--zd-muted) 22%, transparent) 40%,
+    transparent 76%
   );
   background-size: 100% 1px;
   background-repeat: no-repeat;
   background-position: top left;
 }
+html[data-theme-pack="nocturne"] .zd-content h4:where(:not(.zd-compact-prose *)) {
+  border-width: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.45;
+  background-image: none;
+}
+
 html[data-theme-pack="nocturne"] .zd-content h3 {
   letter-spacing: 0.01em;
 }
