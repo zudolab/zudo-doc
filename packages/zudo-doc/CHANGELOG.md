@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- Requires zfb 5.1.4: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.1.3` to `^5.1.4`. zfb 5.1.4 rebuilds the native engine and WASM binaries; the JavaScript API is unchanged. Update the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.4 together with this release.
 
 ## [8.1.1] - 2026-10-26
 
