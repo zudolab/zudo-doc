@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [8.1.3] - 2026-10-26
+
+### Other Changes
+
+- Generated projects now pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` 8.1.3, which includes the polished theme-pack heading hierarchy.
+
 ## [8.1.2] - 2026-10-26
 
 ### Other Changes

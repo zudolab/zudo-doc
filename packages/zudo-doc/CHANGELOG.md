@@ -8,6 +8,16 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [8.1.3] - 2026-10-26
+
+### Features
+
+- Polish the document heading hierarchy in nine theme packs (drift, fjord, hollow, manuscript, matcha, nocturne, observatory, sakura, solar): h2 gets a 2px top rule with line-height 1.3, h3 a quieter 1px muted rule with line-height 1.4, and h4 no rule with line-height 1.45, with per-pack sizes and weights. Each pack keeps its rule inks, fonts, small caps and motifs; the rules apply only to document headings, so home and compact-prose headings are unchanged. (f0ac53df)
+
+### Bug Fixes
+
+- Observatory: the constellation star nodes now follow the same document-h2 selector as the constellation line, so they never appear without it. (d72441b4)
+
 ## [8.1.2] - 2026-10-26
 
 ### Other Changes
