@@ -6,9 +6,13 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [8.1.2] - 2026-10-26
+
 ### Other Changes
 
-- Generated projects now pin the zfb 5.1.4 family (`@takazudo/zfb`, `zfb-runtime`, `zfb-md-wasm`, and `zfb-adapter-cloudflare` when the Cloudflare adapter is selected).
+- Generated projects now pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` 8.1.2 and the zfb 5.1.4 family: `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm`, plus `zfb-adapter-cloudflare` when the Cloudflare adapter is selected. (833fbc78)
 
 ## [8.1.1] - 2026-10-26
 
