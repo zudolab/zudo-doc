@@ -91,6 +91,9 @@ const FULL_PACK_CYCLE = [
   "scandi",
   "tidepool",
   "timberline",
+  "graphite",
+  "warm-mineral",
+  "quiet-slate",
 ];
 
 async function preseedTheme(page: Page, mode: "light" | "dark") {

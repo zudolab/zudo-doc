@@ -153,6 +153,13 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
     verifyRoundtrip(makeState({ themePack: "foundry" }));
   });
 
+  it("Graphite and Classic packs in both color-scheme modes", () => {
+    for (const colorSchemeMode of ["single", "light-dark"] as const) {
+      verifyRoundtrip(makeState({ colorSchemeMode, themePack: "graphite" }));
+      verifyRoundtrip(makeState({ colorSchemeMode, themePack: "default" }));
+    }
+  });
+
   it("light-dark scheme names with spaces roundtrip correctly", () => {
     verifyRoundtrip(makeState({
       colorSchemeMode: "light-dark",

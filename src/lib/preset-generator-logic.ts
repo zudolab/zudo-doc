@@ -15,10 +15,8 @@ export const SINGLE_SCHEMES = ["Default Dark", "Default Light"];
 
 export const LIGHT_SCHEMES = ["Default Light"];
 
-/** Mirrors effectiveOmittedThemePack in packages/create-zudo-doc/src/constants.ts. */
-export function effectiveOmittedThemePack(colorSchemeMode: ColorSchemeMode): string {
-  return colorSchemeMode === "single" ? "default" : "graphite";
-}
+/** Mirrors DEFAULT_THEME_PACK_CHOICE in packages/create-zudo-doc/src/constants.ts. */
+export const DEFAULT_THEME_PACK_CHOICE = "graphite";
 
 export interface ThemePackOption {
   slug: string;
@@ -503,11 +501,10 @@ export function buildJson(state: FormState): Record<string, unknown> {
     base.respectPrefersColorScheme = state.respectPrefersColorScheme;
   }
 
-  // "Omit when default" — mirrors zfb-config-gen.ts's diff-from-defaults
-  // emission rule (ADR #2818 Decision 7 / #2823): an omitted pack resolves to
-  // Graphite, or Classic in single-scheme mode, so only a pack that differs
-  // from that is written (picking Classic in light-dark mode emits "default").
-  if (state.themePack && state.themePack !== effectiveOmittedThemePack(state.colorSchemeMode)) {
+  // "Omit when default" (ADR #2818 Decision 7 / #2823): create-zudo-doc
+  // fills an omitted preset themePack with Graphite in every color-scheme
+  // mode, so only another pack is written (picking Classic emits "default").
+  if (state.themePack && state.themePack !== DEFAULT_THEME_PACK_CHOICE) {
     base.themePack = state.themePack;
   }
 

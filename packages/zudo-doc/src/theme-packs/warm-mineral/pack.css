@@ -100,7 +100,21 @@ html[data-theme-pack="warm-mineral"] aside[data-zd-mobile-sidebar] nav {
 }
 
 html[data-theme-pack="warm-mineral"] nav[data-zd-toc] ul,
+html[data-theme-pack="warm-mineral"] div[data-zd-mobile-toc],
 html[data-theme-pack="warm-mineral"] div[data-zd-mobile-toc] ul {
+  border-color: light-dark(#D8CEC1, #4D4640);
+}
+
+html[data-theme-pack="warm-mineral"] [data-site-nav] div,
+html[data-theme-pack="warm-mineral"] [data-tabs-nav],
+html[data-theme-pack="warm-mineral"] [data-version-menu] > li,
+html[data-theme-pack="warm-mineral"] [data-nav-more-menu] > li,
+html[data-theme-pack="warm-mineral"] [data-language-menu] > li,
+html[data-theme-pack="warm-mineral"] dialog[data-search-dialog] > div div,
+html[data-theme-pack="warm-mineral"] dialog[data-search-dialog] [data-search-count-narrow],
+html[data-theme-pack="warm-mineral"] dialog[data-doc-history-panel] > div,
+html[data-theme-pack="warm-mineral"] [data-theme-pack-switcher] dialog div,
+html[data-theme-pack="warm-mineral"] dialog[data-zd-ai-chat] > div > div {
   border-color: light-dark(#D8CEC1, #4D4640);
 }
 
@@ -130,6 +144,16 @@ html[data-theme-pack="warm-mineral"] button[data-language-toggle]:not(:hover),
 html[data-theme-pack="warm-mineral"] button[data-doc-history-trigger]:not(:hover),
 html[data-theme-pack="warm-mineral"] button[data-switcher-launcher]:not(:hover),
 html[data-theme-pack="warm-mineral"] dialog[data-search-dialog] > div,
+html[data-theme-pack="warm-mineral"] [data-site-nav] button,
+html[data-theme-pack="warm-mineral"] [data-nav-more-menu],
+html[data-theme-pack="warm-mineral"] [data-language-menu],
+html[data-theme-pack="warm-mineral"] [data-theme-pack-switcher] dialog,
+html[data-theme-pack="warm-mineral"] dialog[data-zd-ai-chat] input,
+html[data-theme-pack="warm-mineral"] dialog.zd-enlarge-dialog,
+html[data-theme-pack="warm-mineral"] dialog.zd-mermaid-dialog,
+html[data-theme-pack="warm-mineral"] .code-btn:not(:hover),
+html[data-theme-pack="warm-mineral"] .zd-desktop-sidebar-toggle,
+html[data-theme-pack="warm-mineral"] .zd-desktop-toc-toggle,
 html[data-theme-pack="warm-mineral"] kbd {
   border-color: light-dark(#847668, #968A7E);
 }

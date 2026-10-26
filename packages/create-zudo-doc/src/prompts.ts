@@ -4,7 +4,7 @@ import {
   FEATURES,
   SUPPORTED_LANGS,
   THEME_PACKS,
-  effectiveOmittedThemePack,
+  DEFAULT_THEME_PACK_CHOICE,
 } from "./constants.js";
 import {
   normalizeAgentMcpChoices,
@@ -232,7 +232,7 @@ export async function runPrompts(
         label: t.label,
         hint: t.hint,
       })),
-      initialValue: effectiveOmittedThemePack(colorSchemeMode),
+      initialValue: DEFAULT_THEME_PACK_CHOICE,
     });
     if (p.isCancel(result)) process.exit(0);
     themePack = result;

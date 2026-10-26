@@ -2819,6 +2819,30 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
     expect(config).toContain('themePack: "foundry"');
   });
+
+  it("createZudoDoc() keeps Graphite explicit for a single-scheme project with no pack chosen", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "graphite-single-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('themePack: "graphite"');
+  });
+
+  it("createZudoDoc() writes Classic explicitly for a light-dark project", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "classic-light-dark-test",
+      colorSchemeMode: "light-dark",
+      themePack: "default",
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('themePack: "default"');
+  });
 });
 
 describe("createZudoDoc() — CreateOptions preset parity (#2922)", () => {

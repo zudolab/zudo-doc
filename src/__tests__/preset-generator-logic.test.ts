@@ -256,24 +256,18 @@ describe("buildCliCommand", () => {
 });
 
 describe("buildJson — themePack (ADR #2818 / #2823)", () => {
-  it("omits Classic in single-scheme mode, where omission keeps Classic", () => {
-    const json = buildJson(makeState({ themePack: "default" }));
-    expect(json).not.toHaveProperty("themePack");
+  it("omits Graphite, which create-zudo-doc fills in for an omitted pack", () => {
+    expect(buildJson(makeState({ themePack: "graphite" }))).not.toHaveProperty("themePack");
+    expect(
+      buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "graphite" })),
+    ).not.toHaveProperty("themePack");
   });
 
-  it("omits Graphite in light-dark mode, where it is the effective default", () => {
-    const json = buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "graphite" }));
-    expect(json).not.toHaveProperty("themePack");
-  });
-
-  it("emits Classic in light-dark mode, where omission would select Graphite", () => {
-    const json = buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "default" }));
-    expect(json).toHaveProperty("themePack", "default");
-  });
-
-  it("emits Graphite in single-scheme mode, where omission would keep Classic", () => {
-    const json = buildJson(makeState({ themePack: "graphite" }));
-    expect(json).toHaveProperty("themePack", "graphite");
+  it("emits Classic in both color-scheme modes", () => {
+    expect(buildJson(makeState({ themePack: "default" }))).toHaveProperty("themePack", "default");
+    expect(
+      buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "default" })),
+    ).toHaveProperty("themePack", "default");
   });
 
   it("emits themePack when a non-default pack is chosen", () => {

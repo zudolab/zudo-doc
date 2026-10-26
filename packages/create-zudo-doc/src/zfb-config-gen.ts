@@ -1,6 +1,6 @@
 import type { UserChoices } from "./prompts.js";
 import type { LocalePlan } from "./locale-plan.js";
-import { effectiveOmittedThemePack } from "./constants.js";
+import { DEFAULT_THEME_PACK_CHOICE, effectiveOmittedThemePack } from "./constants.js";
 import { resolveLocalePlan } from "./locale-plan.js";
 import { capitalize, getLangLabel } from "./utils.js";
 
@@ -196,9 +196,11 @@ function buildDesiredConfig(
   // it is an advanced, hand-edited-only field with no CLI/prompt surface
   // (locked spec, #2823).
   // Emit themePack only when it differs from what omission resolves to — so
-  // picking Classic emits `themePack: "default"` in light-dark mode.
+  // picking Classic emits `themePack: "default"` in light-dark mode, and a
+  // single-scheme project keeps an explicit Graphite instead of falling back
+  // to Classic.
   const omittedPack = effectiveOmittedThemePack(choices.colorSchemeMode);
-  const chosenPack = choices.themePack ?? omittedPack;
+  const chosenPack = choices.themePack ?? DEFAULT_THEME_PACK_CHOICE;
   desired.themePack = chosenPack === omittedPack ? undefined : chosenPack;
   desired.themePackSwitcher = choices.features.includes("themePackSwitcher");
 

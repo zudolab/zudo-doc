@@ -8,7 +8,6 @@ sidebar_position: 1146
 
 - `themePack` を設定していないサイトは Graphite の見た目に変わります。Classic の見た目を保つには `themePack: "default"` を追加してください。
 - `"graphite"` を含まない明示的な `themePacks` リストがあり、`themePack` を設定していない設定は、修正方法を示すエラーでビルドが失敗するようになりました。`themePacks` に `"graphite"` を追加するか、`themePack`（たとえば `"default"`）を設定してください。
-- タグチップとフッターのタグ数に、テーマパック用の安定したフック（`data-zd-tag-chip`、`data-zd-tag-chip-outline`、`data-zd-tag-chip-label`、`data-zd-tag-count`）を追加しました。Classic での見た目は変わりません。
 
 ### 新機能
 
@@ -16,3 +15,4 @@ sidebar_position: 1146
 - Graphite が新しいデフォルトの見た目になりました。`themePack` を省略したプロジェクトは Graphite になります。独自の `colorSchemes` を渡すか `colorMode: false` を設定しているプロジェクトは従来の見た目のままで、明示的な `themePack` は常に優先されます。
 - 従来の見た目は **Classic** パックとして、スラッグ `default` のまま残ります。維持するには `themePack: "default"` を設定してください。閲覧者が保存した選択は引き続き有効です。
 - create-zudo-doc は Graphite を先頭、Classic を 2 番目に表示し、ライト/ダークのプロジェクトで Classic を選ぶと `themePack: "default"` を書き込みます。
+- タグチップとフッターのタグ数に、テーマパック用の安定したフック（`data-zd-tag-chip`、`data-zd-tag-chip-outline`、`data-zd-tag-chip-label`、`data-zd-tag-count`）を追加しました。Classic での見た目は変わりません。

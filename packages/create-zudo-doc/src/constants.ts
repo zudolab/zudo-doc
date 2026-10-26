@@ -33,9 +33,13 @@ export const SUPPORTED_LANGS: SupportedLang[] = [
   { value: "pt", label: "Portuguese" },
 ];
 
+// New projects start on Graphite whatever their color-scheme mode.
+export const DEFAULT_THEME_PACK_CHOICE = "graphite";
+
 // The pack an omitted `themePack` resolves to inside zudoDoc() — Graphite,
 // except that a fixed single-scheme config (colorMode: false) keeps Classic.
-// Mirrors resolveConfiguredThemePack in @takazudo/zudo-doc.
+// Mirrors resolveConfiguredThemePack in @takazudo/zudo-doc; used only to
+// decide whether the chosen pack must be written out.
 export function effectiveOmittedThemePack(colorSchemeMode: "single" | "light-dark" | undefined): string {
   return colorSchemeMode === "single" ? "default" : "graphite";
 }

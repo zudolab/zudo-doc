@@ -165,13 +165,13 @@ describe("generateZfbConfig — theme pack (ADR #2818)", () => {
     expect(result).toContain('themePack: "default"');
   });
 
-  it("omits themePack when no pack was chosen", () => {
+  it("treats no chosen pack as Graphite", () => {
     expect(generateZfbConfig({ ...packageDefaultChoices })).not.toContain("themePack");
-    expect(generateZfbConfig({ ...baseChoices })).not.toContain("themePack");
+    expect(generateZfbConfig({ ...baseChoices })).toContain('themePack: "graphite"');
   });
 
-  it("omits themePack entirely when no theme-pack choice was made", () => {
-    const result = generateZfbConfig(baseChoices);
+  it("omits themePack entirely when no theme-pack choice was made (light-dark)", () => {
+    const result = generateZfbConfig(packageDefaultChoices);
     expect(result).not.toContain("themePack");
   });
 

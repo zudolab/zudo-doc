@@ -571,6 +571,7 @@ Rules:
    `a[data-zd-tag-chip]` with its `[data-zd-tag-chip-outline]` /
    `[data-zd-tag-chip-label]` parts and `[data-zd-tag-count]` (tag-index
    chips, page tag chips, and the footer tag list's counts),
+   `dialog[data-zd-ai-chat]` (the AI assistant dialog),
    `[data-theme-pack-switcher]`, `[data-switcher-card]`,
    `[data-switcher-launcher]`. The TOC's active-item hook is
    `nav[data-zd-toc] a[aria-current="true"]` — there is no `.toc-active`

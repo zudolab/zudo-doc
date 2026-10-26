@@ -100,7 +100,21 @@ html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] nav {
 }
 
 html[data-theme-pack="quiet-slate"] nav[data-zd-toc] ul,
+html[data-theme-pack="quiet-slate"] div[data-zd-mobile-toc],
 html[data-theme-pack="quiet-slate"] div[data-zd-mobile-toc] ul {
+  border-color: light-dark(#CBD5DD, #4A5661);
+}
+
+html[data-theme-pack="quiet-slate"] [data-site-nav] div,
+html[data-theme-pack="quiet-slate"] [data-tabs-nav],
+html[data-theme-pack="quiet-slate"] [data-version-menu] > li,
+html[data-theme-pack="quiet-slate"] [data-nav-more-menu] > li,
+html[data-theme-pack="quiet-slate"] [data-language-menu] > li,
+html[data-theme-pack="quiet-slate"] dialog[data-search-dialog] > div div,
+html[data-theme-pack="quiet-slate"] dialog[data-search-dialog] [data-search-count-narrow],
+html[data-theme-pack="quiet-slate"] dialog[data-doc-history-panel] > div,
+html[data-theme-pack="quiet-slate"] [data-theme-pack-switcher] dialog div,
+html[data-theme-pack="quiet-slate"] dialog[data-zd-ai-chat] > div > div {
   border-color: light-dark(#CBD5DD, #4A5661);
 }
 
@@ -130,6 +144,16 @@ html[data-theme-pack="quiet-slate"] button[data-language-toggle]:not(:hover),
 html[data-theme-pack="quiet-slate"] button[data-doc-history-trigger]:not(:hover),
 html[data-theme-pack="quiet-slate"] button[data-switcher-launcher]:not(:hover),
 html[data-theme-pack="quiet-slate"] dialog[data-search-dialog] > div,
+html[data-theme-pack="quiet-slate"] [data-site-nav] button,
+html[data-theme-pack="quiet-slate"] [data-nav-more-menu],
+html[data-theme-pack="quiet-slate"] [data-language-menu],
+html[data-theme-pack="quiet-slate"] [data-theme-pack-switcher] dialog,
+html[data-theme-pack="quiet-slate"] dialog[data-zd-ai-chat] input,
+html[data-theme-pack="quiet-slate"] dialog.zd-enlarge-dialog,
+html[data-theme-pack="quiet-slate"] dialog.zd-mermaid-dialog,
+html[data-theme-pack="quiet-slate"] .code-btn:not(:hover),
+html[data-theme-pack="quiet-slate"] .zd-desktop-sidebar-toggle,
+html[data-theme-pack="quiet-slate"] .zd-desktop-toc-toggle,
 html[data-theme-pack="quiet-slate"] kbd {
   border-color: light-dark(#6C7D88, #98A6B2);
 }

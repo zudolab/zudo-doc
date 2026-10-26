@@ -80,7 +80,7 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 
 ## テーマパック
 
-カラースキームとは独立に、スキャフォールドは同梱の[テーマパック](./theme-packs.mdx) — スキームシステムの上に重なる完成済みデザインバンドル — を起点にしたプロジェクトを生成できます。`--theme-pack <slug>` を渡すか、対話式の「Theme pack:」プロンプト（カラースキームの質問と機能のマルチセレクトの間に表示されます）で答えます。プロンプトの初期選択はデフォルトの見た目である Graphite で、2 番目に Classic（スラッグ `default`、従来の見た目）が並びます。選んだスラッグは、デフォルト差分のみ出力する規則に従い、`themePack` を省略したときに解決されるパックと異なる場合にのみ、生成される `zfb.config.ts` の `themePack` に書き込まれます。省略時は Graphite（単一スキームのプロジェクトでは Classic）なので、ライト/ダークモードで Classic を選ぶと `themePack: "default"` が書き込まれます。ページ内のスイッチャー UI は独立した機能トグル `--theme-pack-switcher` です。
+カラースキームとは独立に、スキャフォールドは同梱の[テーマパック](./theme-packs.mdx) — スキームシステムの上に重なる完成済みデザインバンドル — を起点にしたプロジェクトを生成できます。`--theme-pack <slug>` を渡すか、対話式の「Theme pack:」プロンプト（カラースキームの質問と機能のマルチセレクトの間に表示されます）で答えます。プロンプトの初期選択はデフォルトの見た目である Graphite で、2 番目に Classic（スラッグ `default`、従来の見た目）が並びます。選んだスラッグは、デフォルト差分のみ出力する規則に従い、`themePack` を省略したときに解決されるパックと異なる場合にのみ、生成される `zfb.config.ts` の `themePack` に書き込まれます。省略時は Graphite（単一スキームのプロジェクトでは Classic）なので、ライト/ダークモードで Classic を選ぶと `themePack: "default"` が、単一スキームモードで Graphite を選ぶと `themePack: "graphite"` が書き込まれます。ページ内のスイッチャー UI は独立した機能トグル `--theme-pack-switcher` です。
 
 ## オプション
 
@@ -117,7 +117,7 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 
 | フラグ | 説明 | デフォルト |
 |--------|------|-----------|
-| `--theme-pack <slug>` | 生成プロジェクトに適用するテーマパック — 指定できるスラッグは[テーマギャラリー](./theme-gallery.mdx)を参照 | `graphite`（単一スキームモードでは Classic の `default`） |
+| `--theme-pack <slug>` | 生成プロジェクトに適用するテーマパック — 指定できるスラッグは[テーマギャラリー](./theme-gallery.mdx)を参照 | `graphite` |
 
 ### 機能
 
