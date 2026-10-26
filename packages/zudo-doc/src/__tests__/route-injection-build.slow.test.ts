@@ -1364,6 +1364,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // differ only in the islands entry (islands-ad134e49.js ->
   // islands-6342ab16.js); new pack CSS and catalog sources change zfb's build
   // identity globally.
+  //
+  // 2026-10-27 re-baseline (zfb 5.1.4 -> 5.1.5 bump, #4662): compared the CI
+  // A2 captures of #4661's accepted head (e8e5fa36) and this bump. Replacing
+  // native data-zfb-build identities only (1967cdd98144b301 ->
+  // 5409c8c490a5fb98) makes every normalized page hash to the accepted #4661
+  // reference; raw pages additionally differ only in the islands entry
+  // (islands-6342ab16.js -> islands-d48fa873.js) and keep their byte lengths
+  // (57089, 67521, 78973). 5.1.5 changes only version pins and rebuilt
+  // native/WASM binaries. Causal review:
+  // docs/findings/zfb-5.1.5-a2-causal-review.md.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
