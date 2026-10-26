@@ -179,7 +179,7 @@ export const FIRST_PARTY_PEER_CHECKS = [
     pkg: "@takazudo/zudo-doc-history-server",
     sourceKind: "lockstep (root version)",
     comparison: "satisfies",
-    approvedBaseline: "^8.0.0",
+    approvedBaseline: "^9.0.0",
     // Released at the same lockstep version as the root package.
     getSource: (rootPkg) => rootPkg.version,
   },

@@ -6,9 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [9.0.0] - 2026-10-27
+
+### Features
+
+- The theme-pack prompt offers Graphite first and Classic second, and writes `themePack: "default"` when Classic is chosen for a light/dark project. New projects get the Graphite look by default. (d8c2e5ae)
+
 ### Other Changes
 
-- Generated projects now pin the zfb 5.1.5 family: `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm`, plus `zfb-adapter-cloudflare` when the Cloudflare adapter is selected.
+- Generated projects now pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` 9.0.0 and the zfb 5.1.5 family: `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm`, plus `zfb-adapter-cloudflare` when the Cloudflare adapter is selected. (c63f8df0)
+- MCP-enabled projects pin Wrangler 4.153.0. (185bdafe)
 
 ## [8.1.3] - 2026-10-26
 
