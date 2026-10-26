@@ -172,6 +172,12 @@ Both schemes wire all 23 roles; the table below shows Default Dark's `map.semant
 | `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | Image enlarge overlay — merged onto `bg` |
 | `matchedKeywordBg` / `matchedKeywordFg` | shared literal | Search result `<mark>` — dedicated tokens, live-editable in the Design Token Panel |
 
+<Note>
+
+These schemes, and the Classic theme pack that shows them unchanged, use `muted` for both muted text and borders. The soft-tone theme packs (Graphite, Warm Mineral, Quiet Slate) split that role: they give decorative rules a quieter `line` color and interactive controls a stronger control border, so muted text can stay readable. See [Theme Packs](./theme-packs.mdx#bundled-packs-the-soft-tone-packs).
+
+</Note>
+
 ### Syntax semantics
 
 `ModeMap.syntax` is an optional partial map of nine syntax-specific roles. If the map is absent, or an individual role is omitted, that role inherits the existing semantic role shown below. Schemes and v3 token JSON authored before syntax tokens existed therefore remain valid, while a named variation or one mode can override only the roles it needs.

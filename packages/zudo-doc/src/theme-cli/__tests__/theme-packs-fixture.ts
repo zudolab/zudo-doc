@@ -1,5 +1,6 @@
 // Shared test-only helper: builds a minimal, validator-passing `theme-packs/`
-// fixture directory (a "default"-style no-css pack + one CSS-bearing pack)
+// fixture directory (a "default"-style no-css pack + two CSS-bearing packs,
+// one of them the omitted-themePack default "graphite")
 // so theme-cli tests don't need the real installed package's registry.
 // NOT a `*.test.ts` file — vitest's `include` glob won't pick this up as a
 // suite of its own.
@@ -34,9 +35,10 @@ function sampleMeta(slug: string, name: string, version: string) {
 }
 
 /**
- * Writes a fixture `theme-packs/` directory under `dir` with two packs:
- * `default` (meta.json only, per the reserved-pack rule) and `sample`
- * (ships a minimal, correctly-scoped `pack.css`). Returns the directory path.
+ * Writes a fixture `theme-packs/` directory under `dir` with three packs:
+ * `default` (meta.json only, per the reserved-pack rule), `graphite` (the
+ * omitted-themePack default) and `sample` (each shipping a minimal,
+ * correctly-scoped `pack.css`). Returns the directory path.
  */
 export async function buildThemePacksFixture(dir: string): Promise<string> {
   const root = path.join(dir, "theme-packs");
@@ -44,8 +46,20 @@ export async function buildThemePacksFixture(dir: string): Promise<string> {
   await fs.ensureDir(path.join(root, "default"));
   await fs.writeJson(
     path.join(root, "default", "meta.json"),
-    sampleMeta("default", "Default", "1.0.0"),
+    sampleMeta("default", "Classic", "1.0.0"),
     { spaces: 2 },
+  );
+
+  await fs.ensureDir(path.join(root, "graphite"));
+  await fs.writeJson(
+    path.join(root, "graphite", "meta.json"),
+    sampleMeta("graphite", "Graphite", "1.0.0"),
+    { spaces: 2 },
+  );
+  await fs.writeFile(
+    path.join(root, "graphite", "pack.css"),
+    `html[data-theme-pack="graphite"] {\n  --zd-bg: #f4f4f2;\n}\n`,
+    "utf8",
   );
 
   await fs.ensureDir(path.join(root, "sample"));

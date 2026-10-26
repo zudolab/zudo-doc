@@ -103,6 +103,7 @@ import { buildDocsSchema as defaultBuildDocsSchema } from "./docs-schema/index.j
 import { defaultDirectiveVocabulary } from "./directive-vocabulary-defaults/index.js";
 import { defaultTranslations } from "./i18n-defaults/index.js";
 import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
+import { resolveConfiguredThemePack } from "./theme-packs-registry/configured-theme-pack.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
@@ -672,10 +673,13 @@ export interface ZudoDocConfig {
    */
   designTokenPanelConfigModule?: string;
   /**
-   * Active theme pack slug. "default" is the stock zudo-doc look (no pack
-   * stylesheet loaded). Must be a member of the resolved `themePacks` list;
-   * an unknown slug fails the build loudly at plugin setup.
-   * @default "default"
+   * Active theme pack slug. Omitted selects Graphite, except that a config
+   * supplying its own `colorSchemes` or setting `colorMode: false` keeps
+   * Classic (`"default"`, the original zudo-doc look — no pack stylesheet
+   * loaded) so an authored palette is never overlaid. An explicit slug always
+   * wins. Must be a member of the resolved `themePacks` list; an unknown or
+   * excluded slug fails the build loudly at plugin setup.
+   * @default "graphite" (or "default" with custom colorSchemes / colorMode: false)
    */
   themePack?: string;
   /**
@@ -686,9 +690,12 @@ export interface ZudoDocConfig {
   themePackSwitcher?: boolean;
   /**
    * Enabled pack slugs, in switcher order. `undefined` = all bundled packs:
-   * "default" first, then the bundled registry in canonical
-   * (alphabetical-by-slug) order. An explicit list is authoritative — may omit
-   * "default", reorder freely; duplicates/unknown slugs fail loudly.
+   * "graphite" first, "default" (Classic) second, then the bundled registry
+   * in canonical (alphabetical-by-slug) order. An explicit list is
+   * authoritative — may omit any pack, reorder freely; duplicates/unknown
+   * slugs fail loudly. Graphite is never inserted implicitly: a list that
+   * excludes it needs an explicit `themePack` (e.g. `themePack: "default"`,
+   * `themePacks: ["default"]` for Classic only).
    * @default undefined
    */
   themePacks?: string[];
@@ -821,6 +828,17 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // their per-key defaults at the read site; this merge never fills them.
   // `settingsOverrides` is a Partial<Settings>.
   const settings: Settings = { ...DEFAULT_SETTINGS, ...settingsOverrides };
+  // Omitted pack → Graphite, except authored palettes (custom colorSchemes /
+  // colorMode:false) keep the no-stylesheet Classic path. Normalized once
+  // here so every downstream consumer sees a concrete slug.
+  settings.themePack = resolveConfiguredThemePack({
+    themePack: settings.themePack,
+    colorMode: settings.colorMode,
+    customColorSchemes:
+      userColorSchemes !== undefined &&
+      userColorSchemes !== null &&
+      userColorSchemes !== defaultColorSchemes,
+  });
 
   // Validate both prefixes at config resolution, before route injection or
   // filesystem scanning can observe an unsafe/colliding path.

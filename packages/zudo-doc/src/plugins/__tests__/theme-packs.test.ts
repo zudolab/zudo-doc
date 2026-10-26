@@ -62,7 +62,7 @@ describe("theme-packs plugin — setup()", () => {
 });
 
 describe("theme-packs plugin — postBuild()", () => {
-  it("copies the full bundled set (31 packs) when themePacks is omitted", async () => {
+  it("copies the full bundled set (34 packs) when themePacks is omitted", async () => {
     const outDir = makeOutDir();
     await themePacksPlugin.postBuild!({
       outDir,
@@ -87,6 +87,7 @@ describe("theme-packs plugin — postBuild()", () => {
     };
     expect(manifest.schemaVersion).toBe(1);
     expect(manifest.packs.map((p) => p.slug)).toEqual([
+      "graphite",
       "default",
       "academia",
       "bauhaus",
@@ -109,6 +110,7 @@ describe("theme-packs plugin — postBuild()", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "quiet-slate",
       "riso",
       "sakura",
       "scandi",
@@ -117,6 +119,7 @@ describe("theme-packs plugin — postBuild()", () => {
       "swissgrid",
       "tidepool",
       "timberline",
+      "warm-mineral",
       "washi",
     ]);
   });
@@ -125,7 +128,7 @@ describe("theme-packs plugin — postBuild()", () => {
     const outDir = makeOutDir();
     await themePacksPlugin.postBuild!({
       outDir,
-      options: { themePacks: ["default"] },
+      options: { themePack: "default", themePacks: ["default"] },
       logger,
       projectRoot: outDir,
       config: {} as never,
@@ -172,6 +175,7 @@ describe("theme-packs plugin — devMiddleware()", () => {
     expect(res?.headers?.["content-type"]).toBe("application/json");
     const manifest = JSON.parse(res!.body!) as { packs: Array<{ slug: string }> };
     expect(manifest.packs.map((p) => p.slug)).toEqual([
+      "graphite",
       "default",
       "academia",
       "bauhaus",
@@ -194,6 +198,7 @@ describe("theme-packs plugin — devMiddleware()", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "quiet-slate",
       "riso",
       "sakura",
       "scandi",
@@ -202,12 +207,13 @@ describe("theme-packs plugin — devMiddleware()", () => {
       "swissgrid",
       "tidepool",
       "timberline",
+      "warm-mineral",
       "washi",
     ]);
   });
 
   it("does not register anything when only default is enabled (no-op)", () => {
-    const { ctx, registered } = makeRegisterCtx({ base: "/", themePacks: ["default"] });
+    const { ctx, registered } = makeRegisterCtx({ base: "/", themePack: "default", themePacks: ["default"] });
     themePacksPlugin.devMiddleware!(ctx as never);
     expect(registered).toHaveLength(0);
   });

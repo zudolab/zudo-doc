@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "quiet-slate",
+  "name": "Quiet Slate",
+  "description": "Quiet blue-grey slate — misty slate paper by day, cool slate at night, a muted copper accent and quiet hairline rules.",
+  "mode": "dark",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "System",
+    "mono": "System",
+    "loaded": []
+  },
+  "preview": {
+    "light": {
+      "bg": "#EDF1F3",
+      "fg": "#3E4953",
+      "accent": "#95491E",
+      "syntax": {
+        "keyword": "#95491E",
+        "string": "#4D6356",
+        "comment": "#52606D",
+        "callable": "#476274"
+      }
+    },
+    "dark": {
+      "bg": "#2B3238",
+      "fg": "#D8DDE0",
+      "accent": "#E4AF89",
+      "syntax": {
+        "keyword": "#E4AF89",
+        "string": "#A9BFAD",
+        "comment": "#B3BFC9",
+        "callable": "#A3BDCD"
+      }
+    }
+  }
+}

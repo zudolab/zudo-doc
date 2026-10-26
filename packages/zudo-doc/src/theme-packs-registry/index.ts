@@ -3,6 +3,8 @@
 // This is the browser-safe half of the registry split, per the ADR:
 //   - `buildThemePackRegistry` — catalog-v2 + settings projection builder.
 //   - `resolveEnabledPacks` — PURE settings ∩ bundled-registry resolver.
+//   - `resolveConfiguredThemePack` — the effective configured pack for an
+//     omitted `themePack` (Graphite, or Classic for custom/fixed schemes).
 //   - `validateThemePack` — PURE, filesystem-free pack validator (also the
 //     build-time check `scripts/copy-theme-packs.mjs`, #2820, will run per
 //     pack before copying to `dist/`).
@@ -23,6 +25,12 @@ export {
   type ThemePackMeta,
   type ThemePackSwatches,
 } from "./meta-schema.js";
+
+export {
+  CONFIGURED_DEFAULT_THEME_PACK_SLUG,
+  resolveConfiguredThemePack,
+  type ConfiguredThemePackInput,
+} from "./configured-theme-pack.js";
 
 export {
   KNOWN_THEME_PACK_TOKEN_NAMES,

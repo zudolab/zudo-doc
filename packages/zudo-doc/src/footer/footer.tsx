@@ -143,7 +143,7 @@ export function Footer(props: FooterProps): Child {
                         class="text-caption text-muted hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                       >
                         #{tag}
-                        <span class="opacity-60" aria-hidden="true">
+                        <span data-zd-tag-count class="opacity-60" aria-hidden="true">
                           &nbsp;({count})
                         </span>
                       </a>

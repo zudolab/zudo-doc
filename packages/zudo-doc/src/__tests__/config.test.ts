@@ -419,6 +419,44 @@ describe("zudoDoc() default-merge semantics", () => {
 });
 
 // ── Package opt-in settings, validation, and MCP-only bundler support ─────────
+describe("zudoDoc() effective theme pack", () => {
+  const packOf = (config: ReturnType<typeof zudoDoc>) =>
+    routesOptions(config)?.settings.themePack;
+
+  it("resolves an omitted themePack to Graphite", () => {
+    expect(packOf(zudoDoc({}))).toBe("graphite");
+  });
+
+  it("treats null and undefined like an omitted themePack", () => {
+    expect(packOf(zudoDoc({ themePack: undefined }))).toBe("graphite");
+    // @ts-expect-error null is accepted at runtime from untyped configs.
+    expect(packOf(zudoDoc({ themePack: null }))).toBe("graphite");
+  });
+
+  it("keeps an explicit \"default\" as the Classic pack", () => {
+    expect(packOf(zudoDoc({ themePack: "default" }))).toBe("default");
+  });
+
+  it("keeps Classic when custom colorSchemes are supplied without a pack", () => {
+    const custom = { Mine: defaultColorSchemes[Object.keys(defaultColorSchemes)[0]!]! };
+    expect(packOf(zudoDoc({ colorSchemes: custom }))).toBe("default");
+  });
+
+  it("does not treat the package's own colorSchemes as custom", () => {
+    expect(packOf(zudoDoc({ colorSchemes: defaultColorSchemes }))).toBe("graphite");
+  });
+
+  it("keeps Classic for a fixed colorMode:false without a pack", () => {
+    expect(packOf(zudoDoc({ colorMode: false }))).toBe("default");
+  });
+
+  it("lets an explicit pack win over custom schemes and fixed mode", () => {
+    const custom = { Mine: defaultColorSchemes[Object.keys(defaultColorSchemes)[0]!]! };
+    expect(packOf(zudoDoc({ themePack: "quiet-slate", colorSchemes: custom }))).toBe("quiet-slate");
+    expect(packOf(zudoDoc({ themePack: "warm-mineral", colorMode: false }))).toBe("warm-mineral");
+  });
+});
+
 describe("zudoDoc() headerBrand (#4631)", () => {
   type Overrides = Parameters<typeof zudoDoc>[0];
 

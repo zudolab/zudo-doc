@@ -91,6 +91,9 @@ const FULL_PACK_CYCLE = [
   "scandi",
   "tidepool",
   "timberline",
+  "graphite",
+  "warm-mineral",
+  "quiet-slate",
 ];
 
 async function preseedTheme(page: Page, mode: "light" | "dark") {
@@ -207,6 +210,7 @@ test.describe("Theme pack switcher", () => {
       "fjord",
       "foundry",
       "futura-editorial",
+      "graphite",
       "hearth",
       "hollow",
       "ledger",
@@ -216,6 +220,7 @@ test.describe("Theme pack switcher", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "quiet-slate",
       "riso",
       "sakura",
       "scandi",
@@ -224,6 +229,7 @@ test.describe("Theme pack switcher", () => {
       "swissgrid",
       "tidepool",
       "timberline",
+      "warm-mineral",
       "washi",
     ]);
   });
@@ -235,7 +241,7 @@ test.describe("Theme pack switcher", () => {
 
     await openFlyout(page);
     await expect(flyoutCard(page)).toBeFocused();
-    await expect(flyoutCard(page)).toContainText("Default");
+    await expect(flyoutCard(page)).toContainText("Classic");
 
     await closeFlyout(page);
     await expect(launcherButton(page)).toBeFocused();
@@ -273,7 +279,7 @@ test.describe("Theme pack switcher", () => {
     expect(await readThemePackChangeDetail(page)).toEqual({ pack: "default", previous: "foundry" });
     await expect(page.locator(THEME_PACK_LINK_SELECTOR)).toHaveCount(0);
     expect(await readStoredPack(page)).toBe("default");
-    await expect(flyoutCard(page)).toContainText("Default");
+    await expect(flyoutCard(page)).toContainText("Classic");
   });
 
   test("Next cycles through the ENTIRE current pack list in order and wraps back to default; Prev walks the same list backward", async ({
@@ -327,7 +333,7 @@ test.describe("Theme pack switcher", () => {
     // the point; close is Esc/backdrop/close-button only).
     await expect(dialogLocator(page)).toBeVisible();
 
-    const defaultCard = packCard(page, "Default");
+    const defaultCard = packCard(page, "Classic");
     await expect(defaultCard).toHaveAttribute("aria-pressed", "false");
 
     await page.keyboard.press("Escape");

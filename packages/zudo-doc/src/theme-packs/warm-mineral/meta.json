@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "warm-mineral",
+  "name": "Warm Mineral",
+  "description": "Warm mineral tones — sandstone paper by day, umber stone at night, a terracotta accent and quiet hairline rules.",
+  "mode": "dark",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "System",
+    "mono": "System",
+    "loaded": []
+  },
+  "preview": {
+    "light": {
+      "bg": "#F3EFE8",
+      "fg": "#47403A",
+      "accent": "#92471C",
+      "syntax": {
+        "keyword": "#92471C",
+        "string": "#556047",
+        "comment": "#655B52",
+        "callable": "#505E67"
+      }
+    },
+    "dark": {
+      "bg": "#2D2A27",
+      "fg": "#D6CFC6",
+      "accent": "#E5AA7D",
+      "syntax": {
+        "keyword": "#E5AA7D",
+        "string": "#A9B892",
+        "comment": "#B7ADA2",
+        "callable": "#A6B4BD"
+      }
+    }
+  }
+}

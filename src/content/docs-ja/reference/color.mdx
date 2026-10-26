@@ -172,6 +172,12 @@ type RampRef =
 | `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | 画像拡大オーバーレイ — `bg`にマージ |
 | `matchedKeywordBg` / `matchedKeywordFg` | 共有リテラル | 検索結果の`<mark>` — 専用トークン、Design Token Panel でライブ編集可能 |
 
+<Note>
+
+これらのスキームと、それをそのまま表示する Classic テーマパックは、ミュートテキストとボーダーの両方に `muted` を使います。ソフトトーンのテーマパック（Graphite、Warm Mineral、Quiet Slate）はこの役割を分け、装飾的な罫線には控えめな `line` 色を、操作対象のコントロールには強めのコントロール境界線を使うため、ミュートテキストを読みやすく保てます。[テーマパック](./theme-packs.mdx#同梱パック-ソフトトーンパック)を参照してください。
+
+</Note>
+
 ### シンタックスセマンティクス
 
 `ModeMap.syntax` は、9 つのシンタックス固有ロールを持つ optional な partial map です。map 自体がない場合も、個別ロールを省略した場合も、下表の既存セマンティックロールを継承します。そのため、シンタックストークン導入前に作成されたスキームや v3 トークン JSON も引き続き有効で、名前付き variation や一方の mode では必要なロールだけを上書きできます。

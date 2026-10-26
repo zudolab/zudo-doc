@@ -6,7 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Breaking Changes
+
+- Sites that do not set `themePack` change appearance to Graphite. Add `themePack: "default"` to keep the Classic look.
+- A config with an explicit `themePacks` list that omits `"graphite"` and no `themePack` now fails the build with a hint: add `"graphite"` to `themePacks`, or set `themePack` (for example `"default"`).
+
+### Features
+
+- Add three soft-tone theme packs: **Graphite**, **Warm Mineral** and **Quiet Slate**. Each defines paired light and dark palettes with readable muted text, quiet decorative rules, 3:1 control borders, a soft active state with an accent marker, opaque tag, admonition, code-highlight and diff fills, and a 2px accent focus ring that is never clipped.
+- Graphite is the new default look: a project that omits `themePack` now gets Graphite. Projects that pass custom `colorSchemes` or set `colorMode: false` keep the previous look, and an explicit `themePack` always wins.
+- The original look stays available as the **Classic** pack, still under the slug `default`. To keep it, set `themePack: "default"`. Stored reader selections stay valid.
+- create-zudo-doc offers Graphite first and Classic second, and writes `themePack: "default"` when Classic is chosen for a light/dark project.
+- Tag chips and the footer tag counts gain stable theme-pack hooks (`data-zd-tag-chip`, `data-zd-tag-chip-outline`, `data-zd-tag-chip-label`, `data-zd-tag-count`); the rendered look on Classic is unchanged.
 
 ## [8.1.3] - 2026-10-26
 

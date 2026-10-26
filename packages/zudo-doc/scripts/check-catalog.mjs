@@ -7,7 +7,7 @@
 // stale manifest for consumers (mirrors check-theme-packs.mjs).
 //
 // Asserts: dist/catalog.js and dist/catalog.d.ts exist, the manifest has
-// schemaVersion 2, exactly 31 packs (the current bundled pack count —
+// schemaVersion 2, exactly 34 packs (the current bundled pack count —
 // zudolab/zudo-doc#3349 acceptance criterion), every entry carries the
 // registry-derived `hasStylesheet` boolean, and every pack carries the full
 // preview.{light,dark} swatch fields the catalog exists to serve
@@ -26,7 +26,7 @@ const PKG_ROOT = resolve(__dirname, "..");
 const DIST_JS = resolve(PKG_ROOT, "dist/catalog.js");
 const DIST_DTS = resolve(PKG_ROOT, "dist/catalog.d.ts");
 
-const EXPECTED_PACK_COUNT = 31;
+const EXPECTED_PACK_COUNT = 34;
 const SWATCH_FIELDS = ["bg", "fg", "accent"];
 const SYNTAX_FIELDS = ["keyword", "string", "comment", "callable"];
 

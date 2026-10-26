@@ -33,12 +33,26 @@ The bare word "theme" always refers to the light/dark mode system. Everything in
 
 ## Bundled packs
 
-Thirty-one packs ship with `@takazudo/zudo-doc` — the full catalog, with each pack's badge, fonts, and apply snippet, lives in the [Theme Gallery](./theme-gallery.mdx). Two packs have special roles in the collection:
+Thirty-four packs ship with `@takazudo/zudo-doc` — the full catalog, with each pack's badge, fonts, and apply snippet, lives in the [Theme Gallery](./theme-gallery.mdx). A few packs have special roles in the collection:
 
-| Slug      | Description                                                                                                                                                                                                        |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `default` | The stock zudo-doc look. A reserved pack that ships only metadata — **no pack stylesheet is ever loaded** for it, so the stock look costs zero extra requests.                                                       |
-| `foundry` | The reference pack: a GitHub-neutral baseline — white paper, near-black ink, Primer-blue links — that restyles every token surface, including all 9 `--zd-syntax-*` code-highlighting roles, in both light and dark. |
+| Slug                            | Description                                                                                                                                                                                                                                     |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `graphite`                      | **The default look.** A soft, low-glare neutral pack with one warm copper accent. A project that does not set `themePack` gets Graphite.                                                                                                          |
+| `warm-mineral`, `quiet-slate`   | The other two soft-tone packs. They share Graphite's component treatment and differ only in palette: sandstone and umber with a terracotta accent, and misty blue-grey slate with a muted copper accent.                                         |
+| `default` (shown as **Classic**) | The original zudo-doc look. A reserved pack that ships only metadata — **no pack stylesheet is ever loaded** for it, so it costs zero extra requests. The slug stays `default` for compatibility, so existing configs and stored selections keep working. |
+| `foundry`                       | The reference pack: a GitHub-neutral baseline — white paper, near-black ink, Primer-blue links — that restyles every token surface, including all 9 `--zd-syntax-*` code-highlighting roles, in both light and dark.                               |
+
+### The soft-tone packs
+
+Graphite, Warm Mineral and Quiet Slate keep text calm without washing it out. All three use the same rules:
+
+- Headings get a slightly stronger ink than body text, and the header, footer and table headers sit on a soft surface tone.
+- Decorative rules (dividers, table lines, sidebar edges) use a quiet `line` color. Controls you interact with (buttons, inputs, dropdowns, the search dialog) use a stronger control border with at least 3:1 contrast.
+- The current page in the sidebar and header, and the active table-of-contents entry, use a soft active fill, the accent ink and a 3px accent marker.
+- Tags, admonitions, code-line highlights and diff insert/delete rows use opaque soft fills. Every syntax color stays at 4.6:1 or better on each of them.
+- Keyboard focus is a 2px accent outline with a 3px offset. Inside the sidebar and table-of-contents scrollers the outline sits inside the element so it is never clipped.
+
+The **Classic** pack keeps its historical palette, where muted text and borders share one color. The soft-tone packs separate those two roles, so muted text can stay readable while dividers stay quiet.
 
 ## Choosing a pack
 
@@ -46,9 +60,9 @@ Three config fields control the feature:
 
 | Field               | Default     | What it does                                                                                                              |
 | ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `themePack`         | `"default"` | The active pack slug.                                                                                                      |
+| `themePack`         | omitted (Graphite) | The active pack slug. Omitted means `"graphite"`, except in the two cases described below.                                       |
 | `themePackSwitcher` | `false`     | Mounts the bottom-right switcher flyout (and its browse-all dialog) on every page.                                         |
-| `themePacks`        | `undefined` | The enabled pack slugs, in switcher order. `undefined` enables all bundled packs — `"default"` first, the rest alphabetical. |
+| `themePacks`        | `undefined` | The enabled pack slugs, in switcher order. `undefined` enables all bundled packs — `"graphite"` first, then `"default"` (Classic), then the rest alphabetical. |
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
@@ -61,9 +75,35 @@ export default defineConfig(
 );
 ```
 
-- An explicit `themePacks` list is authoritative: it may omit `"default"`, and its order **is** the switcher's Prev/Next cycle and the browse-all grid order.
+- An explicit `themePacks` list is authoritative: it may omit `"default"`, and its order **is** the switcher's Prev/Next cycle and the browse-all grid order. Graphite is never inserted into it for you.
 - An unknown or duplicate slug — in `themePack` or `themePacks` — **fails the build loudly** at plugin setup, naming the bad slug and the available ones. There is no silent fallback at build time.
 - `themePack` can name a non-default pack while `themePackSwitcher` stays `false`: a build-pinned look with no switching UI.
+
+### When the default is Classic instead
+
+An omitted `themePack` resolves to Graphite, with two exceptions where your own palette should keep control:
+
+- You pass custom `colorSchemes`. A project that authors its own palettes keeps the no-stylesheet Classic look, so Graphite never paints over them.
+- You set `colorMode: false` (a single fixed scheme).
+
+An explicit `themePack` always wins over both rules. Set `themePack: "default"` to keep the Classic look in any project.
+
+### Upgrading an existing project
+
+- **No `themePack` set:** the site switches to Graphite. To keep the previous look, add `themePack: "default"`.
+- **`themePack: "default"` set:** nothing changes. The pack is now labelled Classic, but the slug is the same.
+- **An explicit `themePacks` list without `"graphite"`:** the build fails with an error that names the fix. Either add `"graphite"` to `themePacks`, or set `themePack` to one of the listed packs (`themePack: "default"` keeps the Classic look).
+- **Saved reader selections** in `localStorage["zudo-doc-theme-pack"]` stay valid, because every existing slug still exists.
+
+### Packs with a fixed color mode
+
+With `colorMode: false` and an explicit pack, the pack follows the CSS `color-scheme` of the page, and packs never set `color-scheme` themselves. To show a pack's dark values on a fixed-dark site, declare it in your host CSS:
+
+```css title="src/styles/global.css"
+html {
+  color-scheme: dark;
+}
+```
 
 ## The switcher UI
 
@@ -122,7 +162,7 @@ pnpm create zudo-doc my-docs --theme-pack foundry --theme-pack-switcher
 ## Light/dark and the Design Token Panel
 
 - A pack's **Light/Dark badge** is its designed-primary mode — a hint about which mode the pack was designed around, not a capability flag. Every pack defines both modes, and the header appearance menu works identically on all of them.
-- [Design Token Panel](./design-token-panel.mdx) tweaks are **per-pack**: an override you save while pack A is active is stored against pack A, hidden while another pack is active, and restored verbatim when you switch back. On the `default` pack the panel keeps using its original storage, so tweaks saved before theme packs existed survive an upgrade untouched.
+- [Design Token Panel](./design-token-panel.mdx) tweaks are **per-pack**: an override you save while pack A is active is stored against pack A, hidden while another pack is active, and restored verbatim when you switch back. On the Classic (`default`) pack the panel keeps using its original `zudo-doc-tweak` storage, so tweaks saved before theme packs existed survive an upgrade untouched. Graphite tweaks are stored under `zudo-doc-tweak--graphite`.
 
 ## Emitting the pack stylesheet yourself
 
@@ -157,7 +197,7 @@ The short version of the authoring contract:
 - **Scope every rule** under `html[data-theme-pack="<slug>"]`. This is what makes switching atomic and guarantees an inactive pack can never leak styles.
 - **Define both modes** for every color via `light-dark(lightValue, darkValue)`. Packs never declare `color-scheme:` and never select on `[data-theme]` — mode stays the toggle's job.
 - **Override the `--zd-*` semantic roles** (including the 9 `--zd-syntax-*` highlighting roles) and `--zdc-*` component seams — never the `--color-*` utility aliases, which would break the Design Token Panel's live-edit round-trip.
-- **Restyle extras only against stable DOM hooks** (`header[data-header]`, `#desktop-sidebar`, `[data-admonition]`, `pre.hi-root`, …) — never against zudo-wind utility class names.
+- **Restyle extras only against stable DOM hooks** (`header[data-header]`, `#desktop-sidebar`, `[data-admonition]`, `pre.hi-root`, `a[data-zd-tag-chip]` with its `[data-zd-tag-chip-outline]`, `[data-zd-tag-chip-label]` and `[data-zd-tag-count]` parts, …) — never against zudo-wind utility class names.
 - **Keep the `[data-header-logo]` anchor a block-level box** (`display: block` / `inline` / `inline-block` / `flow-root`, and no `overflow`/`white-space`/`text-overflow` override) — the header component's own `truncate` class needs it for the ellipsis on a long site name. Put a logo marker (square, dot, …) on `::before`/`::after` instead of turning the anchor itself into a flex or grid container.
 
 The `--font-sans` override reaches prose and the whole chrome through `body { font-family: var(--zdc-chrome-font, var(--font-sans)) }`. Optional `--zdc-header-font`, `--zdc-sidebar-font`, and `--zdc-toc-font` seams let a pack choose a different family for one surface. The component selectors cover desktop and mobile chrome. Check their computed values on built pages, including repeated client navigation; retained islands preserve unchanged effective identity and props, while changed identity or props recreate their render scope.

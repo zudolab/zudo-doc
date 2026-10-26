@@ -55,6 +55,8 @@ import {
   warnAmbiguousDropdownCategoryMatch,
 } from "./config-assertions/index.js";
 import { zudoDocWindPreset } from "./wind/index.js";
+import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
+import { resolveConfiguredThemePack } from "./theme-packs-registry/configured-theme-pack.js";
 
 // ---------------------------------------------------------------------------
 // Input contract — structurally typed so the preset is portable to every
@@ -230,10 +232,16 @@ export interface PresetSettings {
    * Active theme pack slug (ADR docs/adr/theme-packs.md, Decision 2/7).
    * Threaded into the `@takazudo/zudo-doc/plugins/theme-packs` descriptor's
    * options; the plugin's `setup()` validates it against the resolved
-   * registry and throws loudly on an unknown slug. Omit to use the package
-   * default (`"default"`).
+   * registry and throws loudly on an unknown slug. Omitted is normalized by
+   * `resolveConfiguredThemePack`: `"graphite"`, or `"default"` (Classic) when
+   * custom `colorSchemes` are passed or `colorMode` is `false`.
    */
-  themePack?: string;
+  themePack?: string | null;
+  /**
+   * The resolved `colorMode` setting. Read only to decide the omitted
+   * `themePack` (`false` keeps Classic); see {@link themePack}.
+   */
+  colorMode?: unknown;
   /**
    * Enabled pack slugs, in switcher order (ADR Decision 7). `undefined` = all
    * bundled packs. Threaded into the `@takazudo/zudo-doc/plugins/theme-packs`
@@ -400,13 +408,25 @@ export interface ZudoDocPresetResult {
  * ```
  */
 export function zudoDocPreset({
-  settings,
+  settings: inputSettings,
   buildDocsSchema,
   directiveVocabulary,
   translations,
   tagVocabulary,
   colorSchemes,
 }: ZudoDocPresetArgs): ZudoDocPresetResult {
+  // Direct preset callers get the same omitted-pack normalization as
+  // `zudoDoc()` (which already hands over a concrete slug). Any colorSchemes
+  // map other than the package defaults counts as authored data.
+  const settings: PresetSettings = {
+    ...inputSettings,
+    themePack: resolveConfiguredThemePack({
+      themePack: inputSettings.themePack,
+      colorMode: inputSettings.colorMode,
+      customColorSchemes:
+        colorSchemes !== undefined && colorSchemes !== null && colorSchemes !== defaultColorSchemes,
+    }),
+  };
   // `zudoDoc()` (`../config.ts`) already runs this same check, but the
   // preset is itself a documented, directly-spreadable public entry point —
   // a consumer calling `zudoDocPreset()` straight (bypassing `zudoDoc()`)

@@ -1349,6 +1349,21 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // byte lengths (57025, 67457, 78909). 5.1.4 changes only version pins and
   // rebuilt native/WASM binaries. Causal review:
   // docs/findings/zfb-5.1.4-a2-causal-review.md.
+  //
+  // 2026-10-26 re-baseline (zudolab/zudo-doc#4661, soft-tone theme packs):
+  // captured this fixture locally at main (9d7bd416, which reproduced all
+  // three accepted references) and at this PR's source. The fixture still
+  // renders data-theme-pack=default. Replacing native data-zfb-build
+  // identities (ece5cd410dae15e4 -> 5409c8c490a5fb98) and the inline
+  // theme-pack loader's `var packs={...}` version map makes every normalized
+  // page byte-identical. The map gains exactly the three new bundled packs
+  // ("graphite", "quiet-slate", "warm-mineral", all 1.0.0), which is the
+  // whole +64-byte raw growth: 404.html 57025 -> 57089,
+  // getting-started/index.html 67457 -> 67521, and
+  // getting-started/coverage/index.html 78909 -> 78973. Raw pages otherwise
+  // differ only in the islands entry (islands-ad134e49.js ->
+  // islands-6342ab16.js); new pack CSS and catalog sources change zfb's build
+  // identity globally.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
