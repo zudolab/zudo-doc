@@ -85,12 +85,12 @@ Manual interactive smoke was skipped; browser E2E is outside this local suite.
 
 ## Current migration dependency contract
 
-Release 8.1.0 shipped the ZFB 5.1.2 family (peers `^5.1.2`; 5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641), MCP SDK 1.32.2, and history-server peer floor `^8.0.0`; the unreleased workspace moves to ZFB 5.1.3 (peers `^5.1.3`) and zdtp 0.8.7. Node.js 24 remains the minimum. The publication records below describe earlier releases.
+Release 8.1.1 shipped the ZFB 5.1.3 family (peers `^5.1.3`; 5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641, released in 8.1.0; 5.1.3 by #4646), zdtp 0.8.7, MCP SDK 1.32.2, and history-server peer floor `^8.0.0`; the unreleased workspace moves to ZFB 5.1.4 (peers `^5.1.4`). Node.js 24 remains the minimum. The publication records below describe earlier releases.
 
 The released 6.0.0 tuple: `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`
 and `create-zudo-doc` were published at 6.0.0 with the published zfb family
 pinned to 4.3.1 and peers ^4.3.1. zudo-doc 6.0.2 moved to zfb 4.3.2 with peers ^4.3.2 (#4541). zudo-doc 6.1.1 shipped zfb
-4.3.3 with peers ^4.3.3 (RUSTSEC-2026-0333 frontmatter parser fix). zudo-doc 6.2.0 shipped zfb 4.5.0 with peers ^4.5.0 (#4569, #4581). zudo-doc 7.0.0 shipped zfb 4.5.2 with peers ^4.5.2. zudo-doc 7.1.0 shipped zfb 4.7.0 with peers ^4.7.0 (4.5.3 by #4602, then 4.5.4 by #4606, then 4.6.0 by #4607, then 4.7.0 by #4612). zudo-doc 8.0.0 shipped zfb 5.0.1 with peers ^5.0.1 (5.0.0 by #4623). zudo-doc 8.1.0 shipped zfb 5.1.2 with peers ^5.1.2 (5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641). The unreleased workspace moves to zfb 5.1.3 with peers ^5.1.3; zdtp 0.8.7; MCP SDK 1.32.2; root and generated-MCP
+4.3.3 with peers ^4.3.3 (RUSTSEC-2026-0333 frontmatter parser fix). zudo-doc 6.2.0 shipped zfb 4.5.0 with peers ^4.5.0 (#4569, #4581). zudo-doc 7.0.0 shipped zfb 4.5.2 with peers ^4.5.2. zudo-doc 7.1.0 shipped zfb 4.7.0 with peers ^4.7.0 (4.5.3 by #4602, then 4.5.4 by #4606, then 4.6.0 by #4607, then 4.7.0 by #4612). zudo-doc 8.0.0 shipped zfb 5.0.1 with peers ^5.0.1 (5.0.0 by #4623). zudo-doc 8.1.0 shipped zfb 5.1.2 with peers ^5.1.2 (5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641). zudo-doc 8.1.1 shipped zfb 5.1.3 with peers ^5.1.3 and zdtp 0.8.7 (#4646). The unreleased workspace moves to zfb 5.1.4 with peers ^5.1.4; zdtp 0.8.7; MCP SDK 1.32.2; root and generated-MCP
 Wrangler 4.152.0. The history-server peer floor is ^8.0.0 (raised in the 8.0.0 major; a minimum compatibility
 floor — see "First-party peer floor" in `RELEASE.md`). Publication and consumer
 evidence: [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
