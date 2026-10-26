@@ -47,7 +47,7 @@ export const settings = {
     respectPrefersColorScheme: true,
   } satisfies ColorModeConfig as ColorModeConfig | false,
   siteName: "zudo-doc",
-  siteDescription: "Documentation base framework built with zfb, MDX, and Tailwind CSS v4." as string,
+  siteDescription: "Documentation base framework built with zfb, MDX, zudo-wind, and zudo-react islands." as string,
   // Showcase-only prose; fresh scaffolds keep the package's empty defaults.
   home: {
     wide: false,
@@ -84,7 +84,7 @@ Start with the **essentials**, then explore the live examples.
     ja: {
       label: "JA",
       dir: "src/content/docs-ja",
-      description: "zfb・MDX・Tailwind CSS v4 を使ったドキュメントフレームワーク。",
+      description: "zfb・MDX・zudo-wind・zudo-react を使ったドキュメントフレームワーク。",
       introMarkdown: `## ドキュメントを作る
 
 **基本的な使い方**を学んでから、実際の表示例を試せます。

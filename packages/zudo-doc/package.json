@@ -22,8 +22,9 @@
     "documentation",
     "framework",
     "mdx",
-    "preact",
-    "zfb"
+    "zfb",
+    "zudo-react",
+    "zudo-wind"
   ],
   "publishConfig": {
     "access": "public",
