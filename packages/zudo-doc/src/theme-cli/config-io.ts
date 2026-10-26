@@ -91,8 +91,13 @@ export async function detectActiveThemePack(cwd: string): Promise<DetectActiveTh
       const colorSchemes = valueText("colorSchemes");
       const colorMode = valueText("colorMode");
       if (colorSchemes === null || colorMode === null) return fallback;
+      // `defaultColorSchemes` is the package's own map, which zudoDoc() does
+      // not count as authored palettes.
       const customSchemes =
-        colorSchemes !== undefined && colorSchemes !== "undefined" && colorSchemes !== "null";
+        colorSchemes !== undefined &&
+        colorSchemes !== "undefined" &&
+        colorSchemes !== "null" &&
+        colorSchemes !== "defaultColorSchemes";
       if (customSchemes || colorMode === "false") {
         return { slug: DEFAULT_THEME_PACK_SLUG, detected: true };
       }

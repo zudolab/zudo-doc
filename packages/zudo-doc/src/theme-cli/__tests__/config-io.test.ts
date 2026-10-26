@@ -63,6 +63,21 @@ export default defineConfig(
     expect(result).toEqual({ slug: "default", detected: true });
   });
 
+  it("does not count the package's own defaultColorSchemes as custom", async () => {
+    await writeConfig(`import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
+
+export default defineConfig(
+  zudoDoc({
+    colorSchemes: defaultColorSchemes,
+  }),
+);
+`);
+    const result = await detectActiveThemePack(tempDir);
+    expect(result).toEqual({ slug: "graphite", detected: true });
+  });
+
   it("reports Classic (detected: true) when the field is absent and colorMode is false", async () => {
     await writeConfig(`import { defineConfig } from "zfb/config";
 import { zudoDoc } from "@takazudo/zudo-doc/config";

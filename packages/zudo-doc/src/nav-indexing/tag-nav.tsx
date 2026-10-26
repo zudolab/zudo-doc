@@ -63,7 +63,7 @@ function AllTagChip({
         href={href}
         aria-label={`${labels.taggedWith}: ${tag}`}
         data-zd-tag-chip
-      class="group relative inline-flex no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="group relative inline-flex no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <span
           data-zd-tag-chip-outline
