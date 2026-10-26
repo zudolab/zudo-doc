@@ -147,6 +147,10 @@ The live DOM governs the opt-out; adding the attribute only to the incoming page
 
 So the same module you create for `docContentHeaderExtras` is also where you would, for example, register the custom frontmatter renderers that previously only worked on host-owned routes.
 
+### Replacing `Header` and `Sidebar` together
+
+A replacement that changes the navigation tree should replace both `Header` (which owns the mobile drawer) and `Sidebar`, and build both from the same context. Otherwise the desktop sidebar and the mobile drawer show different trees. [Editorial Navigation](../guides/editorial-navigation.mdx) is a complete example: it wraps `createHeaderWithDefaults` and `createSidebarWithDefaults` with a context whose `buildNavTree` re-parents native nodes, forwards every slot prop unchanged, and leaves breadcrumbs, pagers, and `<CategoryNav>` on the original route context. Sidebar membership does not change which section owns a destination page.
+
 ### `sidebarNodes` is a `createHeaderWithDefaults` prop, not a `Header` binding slot
 
 The `Header` row above replaces the whole component: your replacement receives `HeaderSlotProps` and owns its own mobile-drawer tree entirely. `sidebarNodes` is a different, narrower seam — an optional prop on `HeaderWithDefaultsProps` that overrides only the tree the *package's* header factory passes to `SidebarToggle`, without replacing the rest of the header. It is available on `createHeaderWithDefaults(ctx)` and on `createChrome(...).HeaderWithDefaults`; it is **not** part of `HeaderSlotProps`, so a `chromeBindingsModule`-configured `Header` replacement never receives it. See `createHeaderWithDefaults(ctx)` in `API.md` for the full contract.

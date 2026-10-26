@@ -27,7 +27,7 @@ Always set `sidebar_position` explicitly to control page order. Without it, page
 
 ## Category Ordering
 
-Categories in the sidebar are ordered by the `sidebar_position` of their **index page** (`index.mdx`). If a category has no index page or no `sidebar_position`, it falls back to alphabetical ordering.
+Categories in the sidebar are ordered by the `sidebar_position` of their **index page** (`index.mdx`). A category without a position (from its index page or a legacy `_category_.json`) falls back to position `999`; ties sort alphabetically by directory name.
 
 For example, to make "Getting Started" appear first and "Guides" second:
 
@@ -56,7 +56,19 @@ Explore our guides to learn about zudo-doc features.
 
 The `<CategoryNav />` component renders a grid of links to all pages in the category (excluding the index itself), sorted by `sidebar_position`.
 
-Without an `index.mdx`, the category heading is a toggle-only control — clicking it expands or collapses the category, but does not navigate anywhere.
+### Linked and Heading-Only Category Rows
+
+What a category row does depends on its index page:
+
+| Category directory | Sidebar row | Route |
+| --- | --- | --- |
+| Authored `index.mdx` | Linked row to the landing page; title, position, and description come from its frontmatter | The authored page |
+| No `index.mdx`, but it contains pages | Linked row to a generated index page that lists the children; the label comes from the directory name | A generated auto-index route |
+| `index.mdx` with `category_no_page: true` | Heading-only row that expands and collapses | None |
+
+An authored `index.mdx` is recommended for every category, because it gives the landing page intentional content, a label, and a position. A missing index does not make a category toggle-only. Use `category_no_page: true` when a group is deliberately a heading without a page.
+
+The sidebar renders a row as a link whenever the row has an `href`. The `hasPage` flag only says whether an authored page backs the row, so it is not a test for "linked": generated auto-index rows and `type: "link"` items have `hasPage: false` and still link. [Note trays](./note-tray.mdx) are stricter and require a visible routed `index.mdx`.
 
 ## Default Open/Closed
 
@@ -119,37 +131,41 @@ src/content/docs/
 
 ## Nested Categories (Sub-Groups)
 
-Subdirectories within a category directory create nested collapsible groups in the sidebar. Each sub-directory needs an `index.mdx` file with `category_no_page: true` to set its label and position without creating a route:
+Subdirectories within a category directory create nested collapsible groups in the sidebar. Give each subdirectory its own `index.mdx` so the group row links to a real landing page:
 
 ```
 src/content/docs/
   methodology/
-    index.mdx
+    index.mdx               → title: Methodology, sidebar_position: 1
     architecture/
-      index.mdx             → title: Architecture, sidebar_position: 1, category_no_page: true
+      index.mdx             → title: Architecture, sidebar_position: 1
       bem-strategy.mdx
       component-first.mdx
     design-systems/
-      index.mdx             → title: Design Systems, sidebar_position: 2, category_no_page: true
+      index.mdx             → title: Design Systems, sidebar_position: 2
       tight-token.mdx
       two-tier-size.mdx
 ```
 
-With auto-generated sidebar, this renders as **3 levels deep**:
+The automatic sidebar keeps the real category nodes. Each group row is a link with a separate disclosure button, and the landing page is not repeated as a child:
 
 ```
-Methodology            (depth 0)
-  ▸ Architecture       (depth 1, collapsible)
-    BEM Strategy       (depth 2)
-    Component First    (depth 2)
-  ▸ Design Systems     (depth 1, collapsible)
-    Tight Token        (depth 2)
-    Two-Tier Size      (depth 2)
+Methodology            (linked)
+▸ Architecture         (linked, collapsible)
+    BEM Strategy
+    Component First
+▸ Design Systems       (linked, collapsible)
+    Tight Token
+    Two-Tier Size
 ```
 
-### Flattening with Explicit Sidebar Config
+No sidebar configuration is needed for this. Add `category_no_page: true` to a subdirectory's `index.mdx` only when that group should be a heading with no page of its own.
 
-For better readability, use explicit sidebar configuration to promote sub-groups to the top level. This reduces nesting by one level. A configuration file is not auto-consumed: bind it through the `sidebarsConfig` chrome slot.
+The tree is recursive and has no fixed depth limit. Keeping it shallow is a readability recommendation: when a section becomes deep, consider splitting it into another header section. To show a section's linked groups one level shallower without changing files, see [Scope Recipes](#broader-tree-scope-recipes).
+
+## Sidebar Configuration
+
+The automatic tree covers most sites. A section can instead be described by a configuration object, bound through the `sidebarsConfig` chrome slot. A configuration file is not auto-consumed.
 
 <Warning title="Requires a sidebar-data binding">
 
@@ -183,12 +199,6 @@ const sidebars: SidebarsConfig = {
 export default sidebars;
 ```
 
-The string form is a document id shorthand. The complete item vocabulary is a string
-`"doc/slug"`, `{ type: "doc", id, label? }`, `{ type: "link", label, href }`,
-`{ type: "category", label, items, collapsed?, sortOrder? }`, or
-`{ type: "autogenerated", dirName? }`. A section without a matching key falls back to
-filesystem auto-generation.
-
 ```ts title="src/chrome-bindings.ts"
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 import sidebars from "./sidebars";
@@ -206,11 +216,33 @@ export default defineConfig(
 );
 ```
 
-This repository's `src/config/sidebars.ts` is a showcase-only reference file. Its exported
-object is currently empty, so this showcase intentionally uses filesystem auto-generation for
-every section.
+A section without a matching key, or with an empty array, falls back to filesystem auto-generation.
+
+### Item Semantics
+
+Each item produces rows from the automatic tree. None of them creates pages or changes URLs.
+
+| Item or field | Result |
+| --- | --- |
+| `"doc/slug"` or `{ type: "doc", id, label? }` | Selects a real document as a **leaf**; its children are removed. A missing id is skipped. |
+| `{ type: "link", label, href }` | A linked row to any URL. |
+| `{ type: "category", label, items, collapsed?, sortOrder? }` | A **synthetic heading** without an `href`, containing the listed items. |
+| `{ type: "autogenerated" }` | The complete supplied tree, including its root rows. |
+| `{ type: "autogenerated", dirName }` | Inserts that directory's **children** into the visible tree. The directory row itself is not shown, though Broaden still knows it as the parent. |
+| `initialPath` | Zero-based indexes into the **resolved visible tree**, not URL segments. |
+| `initialPathMode: "node"` | The baseline is the selected row together with its children. |
+| `initialPathMode: "children"` (default) | The baseline is only the selected row's children. |
+| `scopeRoot` | The highest tree **Broaden tree** can reach. It does not create a hierarchy or change how `initialPath` counts. |
+| `sidebar_initial_expansion` (frontmatter) | Which branches start open. Disclosure is independent of scope. |
+
+`SidebarCategory` has no `link`, `href`, `id`, or landing-page property. A synthetic category cannot link its heading to a page.
+
+### Heading-Only Groups with Synthetic Categories
+
+Use `type: "category"` when a group is intentionally a heading with no landing page, for example to gather a few pages under a label that has no page of its own:
 
 ```ts title="src/sidebars.ts"
+import type { SidebarsConfig } from "@takazudo/zudo-doc/sidebar-utils";
 
 const sidebars: SidebarsConfig = {
   methodology: [
@@ -228,34 +260,44 @@ const sidebars: SidebarsConfig = {
   ],
 };
 
+export default sidebars;
 ```
 
-This renders as **2 levels**:
+This renders two levels, with headings that are not links:
 
 ```
-
-Methodology            (depth 0, leaf link)
-▸ Architecture         (depth 0, collapsible)
-  BEM Strategy         (depth 1)
-  Component First      (depth 1)
-▸ Design Systems       (depth 0, collapsible)
-  Tight Token          (depth 1)
-  Two-Tier Size        (depth 1)
-
+Methodology            (leaf link)
+▸ Architecture         (heading only)
+    BEM Strategy
+    Component First
+▸ Design Systems       (heading only)
+    Tight Token
+    Two-Tier Size
 ```
 
-Key points:
+- The string `"methodology"` is the category index as a **leaf link**. Its native children are removed, so the configuration supplies the structure.
+- `dirName` pulls the articles of each subdirectory, without the subdirectory row.
+- The Architecture and Design Systems landing pages are no longer reachable from the sidebar.
 
-- The string `"methodology"` references the category index page as a **leaf link** (children are stripped automatically — the explicit config handles structure)
-- `type: "autogenerated"` with `dirName` pulls articles from a specific subdirectory
-- Sub-group categories render at depth 0 with bold labels and border separators
-- Articles render at depth 1 — one level flatter than auto-generated
+<Warning title="A synthetic category never links to a landing page">
 
-<Tip>
+Putting a landing page inside a synthetic category does not make the heading link to it. This configuration renders an unlinked "Basics" heading whose first child is a "Basics" link:
 
-This pattern is recommended when categories have sub-groups. The explicit config keeps the filesystem organized while making the sidebar more readable.
+```ts
+{
+  type: "category",
+  label: "Basics",
+  items: ["reference/basics", "reference/installation", "reference/configuration"],
+}
+```
 
-</Tip>
+If a group has a landing page, keep the real category node (the automatic tree above), or select a shallower view with [`initialPath`](#broader-tree-scope-recipes). If the pages are siblings on disk and the URLs must stay, see [Editorial Navigation](./editorial-navigation.mdx).
+
+</Warning>
+
+### This Showcase's Configuration
+
+The package default for `sidebarsConfig` is `{}`. This repository's own `src/config/sidebars.ts` is showcase configuration bound in `src/chrome-bindings.tsx`: it gives each header section `{ items: [], scopeRoot: "configured" }`. Every section still uses the filesystem tree, and **Broaden tree** stops at that section instead of reaching the other header sections.
 
 ## Sort Order (Ascending / Descending)
 
@@ -279,10 +321,9 @@ Note trays use the same field as their single ordering contract. The selected di
 
 </Note>
 
-You can also set `sortOrder` in a bound sidebar configuration for manual sidebar configurations:
+You can also set `sortOrder` on a synthetic category in a bound sidebar configuration:
 
 ```ts
-
 {
   type: "category",
   label: "Releases",
@@ -291,7 +332,6 @@ You can also set `sortOrder` in a bound sidebar configuration for manual sidebar
     { type: "autogenerated" },
   ],
 }
-
 ```
 
 <Tip>
@@ -313,7 +353,7 @@ For changelog-style categories, combine `sortOrder: "desc"` with date-prefixed f
 
 The controls below the filter change the visible navigation tree without changing the article, reading position, or table of contents. **Broaden tree** moves to the immediate editorial parent. At the highest available tree the whole scope toolbar (Broaden and Restore) is hidden; there is no disabled button or hint. A custom forest can be that highest tree.
 
-Each category has a separate **Show only this branch** target button. Category links still open pages, and disclosure buttons still expand or collapse children. **Restore current page’s local tree** appears while a different scope is selected and returns to the current page’s configured roots and order. These controls also work in the mobile drawer without closing it; page links close it normally.
+Scope (which part of the tree is shown) is separate from disclosure (which branches are open) and from structure (which rows are parents). Each category has a separate **Show only this branch** target button. Category links still open pages, and disclosure buttons still expand or collapse children. **Restore current page’s local tree** appears while a different scope is selected and returns to the current page’s configured roots and order. These controls also work in the mobile drawer without closing it; page links close it normally.
 
 The filter stays in place when changing scope. A matching category keeps its subtree; a matching descendant keeps its ancestors. Branch expansion choices survive Broaden and branch focus. Restore returns to the configured baseline (including `initialPathMode: "node"`), clears the selected scope and the saved expand/collapse choices, keeps the filter text, and reveals the current page; a filter that excludes that page must be cleared to show it. The desktop sidebar and the mobile drawer update together. Trees remain recursive with no depth limit.
 
@@ -321,7 +361,7 @@ Scope is temporary session state. `initialPath` and `initialPathMode` define onl
 
 ### Explicit Editorial Context
 
-Existing array configurations keep their initial behavior. To supply parents outside a local view, use the object form: `items` describes the complete editorial tree and `initialPath` selects the children of a category by zero-based indexes in the resolved, ordered tree. In this example the initial forest contains Background and Border; the first broader view is Surfaces & borders, followed by Utility reference. These groups need not appear in document URLs.
+Existing array configurations keep their initial behavior. To supply parents outside a local view, use the object form: `items` describes the complete editorial tree and `initialPath` selects the children of a category by zero-based indexes in the resolved, ordered tree. In this example the initial forest contains Background and Border; the first broader view is Surfaces & borders, followed by Utility reference. These groups need not appear in document URLs. They are synthetic, heading-only rows; to make real landing pages the parents instead, see [Editorial Navigation](./editorial-navigation.mdx).
 
 ```ts title="src/sidebars.ts"
 import type { SidebarsConfig } from "@takazudo/zudo-doc/sidebar-utils";
@@ -406,6 +446,68 @@ export default sidebars;
 On a Reference page the sidebar shows Reference and its pages, with no Broaden into other header sections. A focused nested branch can still broaden back up to Reference. In the Wind example, node mode starts at Surfaces & borders; Broaden reaches Utility reference, then Wind, and stops there.
 
 An `autogenerated` entry retains the provenance of its omitted directory root. Authored groupings remain authoritative, and duplicate labels or links keep separate occurrence identities. A custom forest without a shared parent stops at that forest. Header dropdown grouping is not document ancestry.
+
+### Scope Recipes
+
+Write the visible tree down before choosing an `initialPath`. The examples below assume this filesystem:
+
+```
+guides/                    (index.mdx, linked)
+├── setup/                 (index.mdx, linked)
+│   └── install.mdx
+└── writing/               (index.mdx, linked)
+    └── pages.mdx
+reference/                 (index.mdx, linked)
+├── basics.mdx
+└── commands.mdx
+```
+
+**Default filesystem navigation already keeps a real section root.** With no entry for `guides`, a Guides page shows the Guides row with its children. There is no need to wrap it:
+
+```
+Guides                     (linked)
+├── Setup                  (linked)
+│   └── Install
+└── Writing                (linked)
+    └── Pages
+```
+
+**Capping Broaden at the section** uses the same tree. `{ items: [], scopeRoot: "configured" }` shows exactly the tree above; **Broaden tree** cannot leave Guides.
+
+**Showing linked child groups as peers.** The category-filtered tree for `guides` contains only Guides, so `[0]` is Guides. Children mode shows its linked groups at the top level, and Broaden returns to the Guides row:
+
+```ts
+guides: { items: [], initialPath: [0] }
+```
+
+```
+Setup                      (linked)
+└── Install
+Writing                    (linked)
+└── Pages
+```
+
+**Selecting a supplied root itself.** When the visible tree is a forest you supplied, such as the one-root `[Reference]` forest of [Editorial Navigation](./editorial-navigation.mdx), `autogenerated` without `dirName` keeps that forest, and node mode selects Reference with its children:
+
+```ts
+reference: { items: [{ type: "autogenerated" }], initialPath: [0], initialPathMode: "node" }
+```
+
+```
+Reference                  (linked)
+├── Basics
+└── Commands
+```
+
+This is correct only because the supplied tree has one root. On the native tree, `{ type: "autogenerated" }` is the whole site forest, `[Guides, Reference]`, so the same definition would select Guides.
+
+<Caution title="dirName changes what [0] means">
+
+`{ items: [{ type: "autogenerated", dirName: "reference" }], initialPath: [0] }` does **not** select Reference. `dirName` inserts the children of Reference, so the visible tree is `[Basics, Commands]` and `[0]` is Basics. Children mode then shows Basics' children (nothing, because Basics is a page), and node mode shows Basics alone.
+
+</Caution>
+
+`[0]` is not a universal index into the global tree: always count from the visible tree that the section's items produce.
 
 Custom integrations can call `buildSidebarNavigation` from `@takazudo/zudo-doc/sidebar-utils` and pass its `nodes` and `navigation` to `SidebarTree` or `SidebarToggle`. `buildSidebarForSection` and nodes-only island props remain supported; nodes-only integrations keep the existing tree without scope controls.
 

@@ -6,7 +6,7 @@ sidebar_position: 3.5
 
 ## Overview
 
-zudo-doc uses a **3-level navigation hierarchy** to organize content:
+zudo-doc sites usually organize content in **three levels**:
 
 1. **Header navigation** — the broadest, top-level categories visible across the entire site
 2. **Sidebar** — the next level of categorization within each header nav section
@@ -14,11 +14,26 @@ zudo-doc uses a **3-level navigation hierarchy** to organize content:
 
 Each level narrows the scope. The header gives users a high-level map of the site, the sidebar breaks a section into logical groups, and nested categories add fine-grained structure where needed.
 
+Three levels is a usability recommendation, not a technical limit. The sidebar is recursive and renders any depth, but shallow trees are easier to scan.
+
+## Choosing a Navigation Pattern
+
+Start with the first row. Move down the table only when the default cannot express what readers need.
+
+| Situation | Pattern | Sidebar result | Details |
+| --- | --- | --- | --- |
+| The files already form the hierarchy you want | **Filesystem navigation** (default): directories with an authored `index.mdx` | Each category is a linked row with its pages as children | This page |
+| A group is only a label and has no landing page | `category_no_page: true` on its `index.mdx`, or a synthetic `type: "category"` item | Heading-only row (not a link) | [Sidebar](../guides/sidebar.mdx#category-index-pages-linked-and-heading-only-category-rows) |
+| Existing linked groups should appear one level shallower | Sidebar configuration with `initialPath` | The section's linked child groups become the top rows | [Sidebar](../guides/sidebar.mdx#broader-tree-scope-recipes) |
+| Existing flat or cross-section pages need a hierarchy, and their URLs must not move | **Editorial navigation** (advanced) | Real pages become the parents of other real pages | [Editorial Navigation](../guides/editorial-navigation.mdx) |
+
+For a normal category, author an `index.mdx` for the landing content and metadata, keep the real category node and its native children, and do not wrap it in a synthetic category or repeat the landing page as an "Overview" child. No custom header or sidebar code is needed.
+
 ## File Structure = Navigation Structure
 
 <Note title="Key Principle">
 
-In zudo-doc, **your file and directory structure directly becomes your navigation**. There is no separate navigation config to maintain — the sidebar is generated from your `src/content/docs/` directory tree, and header nav items map to top-level directories via `categoryMatch`.
+By default, **your file and directory structure becomes your navigation**. In that default setup there is no separate navigation config to maintain — the sidebar is generated from your `src/content/docs/` directory tree, and header nav items map to top-level directories via `categoryMatch`.
 
 This means you can understand the entire site navigation just by looking at the file tree. It is equally intuitive for humans reading the repo and for AI tools generating content.
 
@@ -32,7 +47,7 @@ This tight coupling is the recommended approach because:
 - **No drift** — there is no separate config that can get out of sync with the actual content
 - **AI-friendly** — AI tools can reliably generate correct navigation by following the directory structure convention
 
-While zudo-doc supports advanced configuration for complex cases (custom sidebar labels, sort overrides, nested dropdowns), the default behavior — directories become categories, files become pages — covers most needs. Start simple and only add complexity when the default mapping is not enough.
+While zudo-doc supports advanced configuration for complex cases (custom sidebar labels, sort overrides, sidebar configuration, editorial trees), the default behavior — directories become categories, files become pages — covers most needs. Start simple and only add complexity when the default mapping is not enough; the [table above](#choosing-a-navigation-pattern) lists the next steps.
 
 ### Widening the Home Navigation Grid
 
@@ -117,8 +132,8 @@ export default defineConfig(
 The sidebar provides the next level of categorization within each header nav section. It is generated automatically from your directory structure.
 
 - **Use directories for categories** — each directory becomes a collapsible sidebar group.
-- **Every category directory should have an `index.mdx`** — this serves as the landing page for that category and sets its `sidebar_position`.
-- **Keep nesting to 2–3 levels max** — deeply nested sidebars are hard to navigate and often signal that content needs reorganization.
+- **Every category directory should have an `index.mdx`** — this serves as the landing page for that category and sets its label and `sidebar_position`. Without one, a category with pages still gets a generated index page, but its label and position fall back to defaults.
+- **Prefer 2–3 levels of nesting** — deeply nested sidebars are hard to navigate and often signal that content needs reorganization. This is a recommendation; there is no technical depth limit.
 - **Set `sidebar_position` on every page** — this ensures predictable ordering instead of relying on alphabetical defaults.
 
 <Tip>
@@ -137,7 +152,14 @@ src/content/docs/guides/        ← sidebar category "Guides"
 └── header-navigation.mdx       ← sidebar_position: 3
 ```
 
-Each `.mdx` file appears as a sidebar item. Subdirectories become nested collapsible categories.
+Each `.mdx` file appears as a sidebar item. Subdirectories become nested collapsible categories. The result keeps the real category as a linked row:
+
+```
+Guides                    (linked to guides/index.mdx)
+├── Configuration
+├── Sidebar
+└── Header Navigation
+```
 
 ### Category Shapes
 
@@ -160,7 +182,7 @@ Step-by-step guides for common zudo-doc tasks.
 <CategoryNav category="guides" />
 ```
 
-The `category` prop is the top-level directory name (e.g. `"guides"` for `src/content/docs/guides/`). Do not put full documentation content in the index — keep real docs in sibling `.mdx` files under the same directory. The same brevity rule applies to a note-tray index even though its list component differs.
+The `category` prop is the directory path relative to the docs root (e.g. `"guides"` for `src/content/docs/guides/`, or `"changelog/core"` for a nested category). Do not put full documentation content in the index — keep real docs in sibling `.mdx` files under the same directory. The same brevity rule applies to a note-tray index even though its list component differs.
 
 ## Concrete Real-World Example
 
@@ -186,16 +208,16 @@ When a user clicks "Xbox" in the Platforms dropdown, the sidebar shows:
 
 ```
 Sidebar (Xbox section):
-├── Overview (index)
-├── Hardware
+Xbox                       (linked to xbox/index.mdx)
+├── Hardware               (linked)
 │   ├── Xbox Series X
 │   ├── Xbox Series S
 │   └── Accessories
-├── Games
+├── Games                  (linked)
 │   ├── Halo Infinite
 │   ├── Forza Horizon 5
 │   └── Starfield
-└── Services
+└── Services               (linked)
     ├── Game Pass
     └── Xbox Live
 ```
@@ -245,7 +267,7 @@ src/content/docs/
 ├── home/
 │   └── index.mdx
 ├── xbox/
-│   ├── index.mdx                  ← "Overview"
+│   ├── index.mdx                  ← the linked "Xbox" row
 │   ├── hardware/
 │   │   ├── index.mdx
 │   │   ├── xbox-series-x.mdx
@@ -281,10 +303,11 @@ src/content/docs/
 Avoid these pitfalls when setting up navigation:
 
 - **Putting everything in the header** — the header should have only broad categories. If you have 10+ items, most of them belong in the sidebar instead.
-- **Deeply nested sidebars** — more than 3 levels of nesting makes content hard to find. Flatten your structure by splitting into separate header nav sections.
+- **Deeply nested sidebars** — more than 3 levels of nesting usually makes content hard to find. Consider splitting into separate header nav sections. (This is about readability; the sidebar itself has no depth limit.)
 - **Mixing unrelated topics in one sidebar section** — each sidebar section should cover a cohesive area. If "Hardware" and "Community Events" end up in the same sidebar, reconsider your header categories.
 - **Missing `sidebar_position`** — without it, pages sort alphabetically which often produces a confusing order. Always set `sidebar_position` for predictable navigation.
-- **Missing `index.mdx` in category directories** — without an index, the category has no landing page and may not appear correctly in the sidebar.
+- **Missing `index.mdx` in category directories** — the category still gets a generated index page, but its label, position, and landing text are defaults instead of intentional content.
+- **Wrapping a category that has a landing page in a synthetic category** — a `type: "category"` item never links to a page, so the result is an unlinked heading with the landing page repeated as its first child. Keep the real category node instead.
 - **Using multi-segment `categoryMatch` values** (e.g. `"platforms/xbox"`) — `categoryMatch` must be a single top-level directory name. Multi-segment values break active-state highlighting in the header nav.
 
 </Warning>
@@ -296,6 +319,7 @@ When using AI tools to generate zudo-doc site structures, follow these rules for
 - **Follow the hierarchy strictly** — header nav for broad categories, sidebar for subcategories, nested directories for further detail. Never skip a level.
 - **Keep header nav items to broad categories only** — resist the urge to add specific pages to the header. That is what the sidebar is for.
 - **Match `categoryMatch` values to actual directory names** — a `categoryMatch: "guides"` must correspond to a `src/content/docs/guides/` directory.
-- **Always create `index.mdx` for every category directory** — this ensures the category has a proper landing page and sidebar entry.
+- **Always create `index.mdx` for every category directory** — this gives the category an intentional landing page, label, and position.
+- **Prefer moving files over configuration** — when the wanted hierarchy differs from the directories, change the directories. Use [editorial navigation](../guides/editorial-navigation.mdx) only when existing URLs must stay.
 - **Set `sidebar_position` on every page and index** — this is the most common thing AI tools forget, leading to unpredictable ordering.
 - **Use kebab-case for directory and file names** — consistent naming avoids case-sensitivity issues across platforms.

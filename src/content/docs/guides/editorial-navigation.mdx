@@ -1,0 +1,327 @@
+---
+title: Editorial Navigation
+description: Advanced recipe for grouping existing pages into a different sidebar hierarchy without changing their URLs.
+sidebar_position: 3.2
+tags:
+  - customization
+  - level:advanced
+---
+
+<Warning title="Advanced">
+
+Start with [filesystem navigation](../getting-started/structuring-navigations.mdx#choosing-a-navigation-pattern). If you can move the files so that their directories match the sidebar you want, do that instead. This recipe replaces the header and sidebar chrome with host code that you then maintain.
+
+</Warning>
+
+## When You Need It
+
+Use an editorial tree when **existing URLs must stay where they are** but the sidebar needs a different parent/child structure. Typical cases:
+
+- Articles that are siblings of their intended landing page on disk, for example `reference/installation` next to `reference/basics`.
+- A collection that includes a page from another section, such as a guide listed under Reference.
+- A large flat directory that readers should browse through real landing pages.
+
+You do not need this recipe for these cases:
+
+| You want | Use |
+| --- | --- |
+| The same hierarchy as your directories | Filesystem navigation with an authored `index.mdx` per category |
+| A label with no landing page above some pages | `category_no_page: true`, or a synthetic `type: "category"` item ([Sidebar](./sidebar.mdx#sidebar-configuration)) |
+| A section's linked child groups shown one level shallower | `initialPath` on the filesystem tree ([Sidebar](./sidebar.mdx#broader-tree-scope-recipes)) |
+
+A synthetic `type: "category"` item cannot produce linked parent rows. It never has an `href`, so a landing page placed inside it appears as an extra child below an unlinked heading. `SidebarCategory` has no property that links its heading to a page.
+
+## Six Separate Decisions
+
+Navigation looks like one tree, but it combines six decisions. This recipe changes only the second one.
+
+| Decision | Default source | In this example |
+| --- | --- | --- |
+| 1. Which pages and URLs exist | Content files (and `slug` frontmatter) | Unchanged |
+| 2. Which pages are parents and children in the sidebar | Directory structure | The `editorialMembers` map |
+| 3. Which section owns a destination page | The page URL, matched by `headerNav` `categoryMatch` | Unchanged: the URL owner |
+| 4. Which part of the tree is initially visible | `initialPath` and `initialPathMode` | The Reference row and its children |
+| 5. Which branches are expanded | `sidebar_initial_expansion`, `collapsed`, and the reader's toggles | Unchanged |
+| 6. How far **Broaden tree** may travel | The supplied forest and `scopeRoot` | The one-root Reference forest |
+
+## The Example
+
+### Content Files and URLs
+
+The example site has two header sections. Every page that becomes an editorial row has an authored page.
+
+```
+src/content/docs/
+├── guides/
+│   ├── index.mdx            → /docs/guides/             "Guides"
+│   └── deploying.mdx        → /docs/guides/deploying/   "Deploying"
+└── reference/
+    ├── index.mdx            → /docs/reference/          "Reference"
+    ├── basics.mdx           → /docs/reference/basics/   "Basics"
+    ├── installation.mdx     → /docs/reference/installation/
+    └── configuration.mdx    → /docs/reference/configuration/
+```
+
+On disk, Basics, Installation, and Configuration are siblings. The default Reference sidebar is therefore flat:
+
+```
+Reference                  (linked)
+├── Basics                 (linked)
+├── Installation           (linked)
+└── Configuration          (linked)
+```
+
+The wanted Reference sidebar keeps every URL but changes the parents:
+
+```
+Reference                  (linked) /docs/reference/
+├── Basics                 (linked) /docs/reference/basics/
+│   ├── Installation       (linked) /docs/reference/installation/
+│   └── Configuration      (linked) /docs/reference/configuration/
+└── Deploying              (linked) /docs/guides/deploying/   ← cross-section leaf
+```
+
+### Membership Data and Tree Helper
+
+The membership map is the only description of the editorial hierarchy. The helper receives the native tree, finds the real nodes by slug, and returns copies whose children are exactly their members. Labels, hrefs (with locale and base), and metadata are taken from the native nodes, so nothing is reconstructed by hand.
+
+```ts title="src/navigation/editorial-tree.ts"
+import type { DocNavNode } from "@takazudo/zudo-doc/doc-page-props";
+import type { SidebarDefinition } from "@takazudo/zudo-doc/sidebar-utils";
+
+/** The header section (`categoryMatch`) that renders the editorial tree. */
+export const EDITORIAL_SECTION = "reference";
+
+/** Editorial parent slug → ordered child slugs. Page URLs do not change. */
+export const editorialMembers: ReadonlyMap<string, readonly string[]> = new Map([
+  ["reference", ["reference/basics", "guides/deploying"]],
+  ["reference/basics", ["reference/installation", "reference/configuration"]],
+]);
+
+/** The forest has one root, Reference; `[0]` in node mode shows that row. */
+export const editorialSidebar: SidebarDefinition = {
+  items: [{ type: "autogenerated" }],
+  initialPath: [0],
+  initialPathMode: "node",
+};
+
+/**
+ * Rebuild the native tree as a one-root editorial forest. Every row is a
+ * shallow copy of a native node (label, href, metadata); its children are
+ * exactly its editorial members, so a cross-link stays a leaf. The input
+ * is not mutated.
+ */
+export function toEditorialTree(tree: DocNavNode[]): DocNavNode[] {
+  const bySlug = new Map<string, DocNavNode>();
+  const index = (nodes: DocNavNode[]): void => {
+    for (const node of nodes) {
+      bySlug.set(node.slug, node);
+      index(node.children);
+    }
+  };
+  index(tree);
+
+  const build = (slug: string, ancestors: readonly string[]): DocNavNode[] => {
+    const node = bySlug.get(slug);
+    // A page missing from this locale or version tree is skipped, not invented.
+    if (!node) return [];
+    if (!node.hasPage || !node.href) {
+      throw new Error(`Editorial row "${slug}" needs an authored page`);
+    }
+    if (ancestors.includes(slug)) throw new Error(`Editorial cycle at "${slug}"`);
+    const members = editorialMembers.get(slug) ?? [];
+    const path = [...ancestors, slug];
+    return [{ ...node, children: members.flatMap((member) => build(member, path)) }];
+  };
+
+  const forest = build(EDITORIAL_SECTION, []);
+  // Without the root page (for example in an older version), keep the native tree.
+  return forest.length > 0 ? forest : tree;
+}
+```
+
+A row that has no `editorialMembers` entry of its own (such as `guides/deploying` here) is a leaf in the editorial tree even if it has native children. That keeps a cross-link from importing its whole original section. Conversely, a page that is not listed anywhere is omitted from the editorial sidebar and drawer: when you add a page to the section, add it to `editorialMembers` too. It is still routed and still appears in the pager.
+
+### Paired Header and Sidebar
+
+The package `Header` and `Sidebar` factories read their tree through `buildNavTree` on the context they receive. The wrapper creates one context that forwards every original argument to the native `buildNavTree` and transforms only the result. The same context feeds both factories, so the desktop sidebar and the mobile drawer receive identical data. Every other section uses a second, unmodified pair.
+
+```tsx title="src/navigation/editorial-chrome.tsx"
+import type { HeaderSlotProps, SidebarSlotProps } from "@takazudo/zudo-doc/chrome-bindings";
+import type {
+  ChromeContext,
+  ChromeHostBindings,
+  RouteContext,
+} from "@takazudo/zudo-doc/factory-context";
+import { createHeaderWithDefaults } from "@takazudo/zudo-doc/header-with-defaults";
+import { createSidebarWithDefaults } from "@takazudo/zudo-doc/sidebar-with-defaults";
+import { EDITORIAL_SECTION, editorialSidebar, toEditorialTree } from "./editorial-tree";
+
+/**
+ * Header and Sidebar replacements: Reference pages get the editorial tree,
+ * every other section keeps the native tree. Each pair shares one context,
+ * so the desktop sidebar and the mobile drawer receive the same data.
+ */
+export function createEditorialChrome(routeCtx: RouteContext, bindings: ChromeHostBindings) {
+  const nativeContext: ChromeContext = { ...routeCtx, components: {}, hostBindings: bindings };
+  const editorialContext: ChromeContext = {
+    ...nativeContext,
+    hostBindings: {
+      ...bindings,
+      sidebarsConfig: { ...bindings.sidebarsConfig, [EDITORIAL_SECTION]: editorialSidebar },
+    },
+    // Forward every argument so locale, base and href building stay native.
+    buildNavTree: (...args) => toEditorialTree(routeCtx.buildNavTree(...args)),
+  };
+
+  const native = {
+    Header: createHeaderWithDefaults(nativeContext),
+    Sidebar: createSidebarWithDefaults(nativeContext),
+  };
+  const editorial = {
+    Header: createHeaderWithDefaults(editorialContext),
+    Sidebar: createSidebarWithDefaults(editorialContext),
+  };
+  const pairFor = (navSection: string | undefined) =>
+    navSection === EDITORIAL_SECTION ? editorial : native;
+
+  return {
+    Header: (props: HeaderSlotProps) => pairFor(props.navSection).Header(props),
+    Sidebar: (props: SidebarSlotProps) => pairFor(props.navSection).Sidebar(props),
+  };
+}
+```
+
+The wrappers pass every prop through unchanged, including `lang`, `currentSlug`, `currentPath`, and `currentVersion`. Versioned pages therefore keep their `/v/{version}/` hrefs, because the package remaps the copied native nodes by slug after the tree is built.
+
+### Registering the Bindings
+
+The chrome bindings module builds its own route context from the same serializable payload the document routes use, and registers the two wrappers with `defineChromeBindings`. Keep every binding your project already has in `baseBindings`; the wrappers reuse them unchanged.
+
+```tsx title="src/chrome-bindings.tsx"
+import { routeContext } from "virtual:zudo-doc-route-context";
+import { createRouteContext, type RouteContextPayload } from "@takazudo/zudo-doc/route-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { createEditorialChrome } from "./navigation/editorial-chrome";
+
+// The project's other bindings. The editorial chrome reuses them unchanged.
+const baseBindings = defineChromeBindings({
+  sidebarsConfig: {
+    guides: { items: [], scopeRoot: "configured" },
+  },
+});
+
+const routeCtx = createRouteContext(routeContext as unknown as RouteContextPayload);
+
+export const chromeBindings = {
+  ...baseBindings,
+  ...defineChromeBindings(createEditorialChrome(routeCtx, baseBindings)),
+};
+```
+
+The Guides entry in `baseBindings` is an ordinary fallback section: Guides pages keep the native tree, capped at the Guides section.
+
+Because both pairs replace the package `Header`, slots that the package would otherwise add on its own routes must also be in `baseBindings`. In particular, a project that sets `designTokenPanel: true` together with `designTokenPanelConfigModule` should bind its `DesignTokenPanelBootstrap` boundary there, or the header loses the panel toggle.
+
+### Configuration
+
+Point `chromeBindingsModule` at the module and give each header item a single-segment `categoryMatch`:
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "Acme Docs",
+    headerNav: [
+      { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+      { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
+    ],
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
+```
+
+No other files change. The document routes already pass `chromeBindings` to the chrome.
+
+## What Stays Native
+
+Only the two wrapped factories see the editorial tree. Everything else keeps reading the original route context:
+
+- **Breadcrumbs** follow URL segments, so Installation shows Reference › Installation, not Basics.
+- **Previous/next pager**, **search**, and the **sitemap** keep URL order.
+- **`<CategoryNav>`** reads the URL tree (see the next section).
+- The sidebar renderer is the native one. Filtering, disclosure, **Show only this branch**, **Broaden tree**, **Restore**, saved state, focus handling, and accessibility behave as on any other site.
+
+Every Reference page renders the same editorial forest with the same baseline, so they share one navigation context: a reader who focuses a branch on Installation still sees that branch on Configuration. Guides pages use the native context.
+
+## Landing Pages and CategoryNav
+
+`<CategoryNav category="reference" />` lists the children of `reference` in the URL tree. Here that would show Basics, Installation, and Configuration as peers, and it would omit Deploying. CategoryNav cards and the chrome-only editorial tree are separate consumers of navigation data.
+
+On a landing page whose editorial children differ from its directory children, write the list in the same order as `editorialMembers` and update both together:
+
+```mdx title="src/content/docs/reference/index.mdx"
+---
+title: Reference
+sidebar_position: 2
+---
+
+Settings, commands, and deployment notes.
+
+- [Basics](./basics.mdx)
+- [Deploying](../guides/deploying.mdx)
+```
+
+`basics.mdx` lists Installation and Configuration the same way. Landing pages whose children match their directory can keep using `<CategoryNav>`.
+
+## Destination Ownership
+
+Sidebar membership does not change which section owns a page. Deploying appears in the Reference sidebar, but its URL is `/docs/guides/deploying/`, which matches the Guides `categoryMatch`. When a reader follows that link, the Guides header item becomes active and the page renders the Guides sidebar.
+
+That is the policy this example chooses: **the URL owns the destination**. Making Reference own the page would be a separate host decision. Your wrappers would have to select a different section for those slugs, and you would need to check the header state and the sidebar of every affected page. The package does not do this automatically.
+
+## Example Constraints
+
+- **Authored landing pages.** Every editorial row must have an authored page (`hasPage` and an `href`). The helper throws for a generated auto-index row or a `category_no_page` heading. With versioning enabled, the header's version switcher also builds this tree for every configured version, so keep the editorial section free of generated auto-index routes in archived versions too; an editorial row that is an auto-index in an older version fails the build.
+- **Missing pages.** A member missing from a locale or version tree is skipped. If the root page is missing, the helper returns the native tree.
+- **One editorial section.** Membership is keyed by slug, so the same data covers every locale and version. For several editorial sections, give each section its own root and choose the pair by `navSection` in the same way.
+
+## Scope Inside the Editorial Forest
+
+The supplied forest is `[Reference]`, so its indexes describe that forest and not URL segments:
+
+```
+[0]       Reference
+[0, 0]    Basics
+[0, 1]    Deploying
+```
+
+`{ items: [{ type: "autogenerated" }], initialPath: [0], initialPathMode: "node" }` selects the Reference row itself, with its children. Because the forest has only one root, that baseline is already the highest scope, so the scope toolbar stays hidden until the reader focuses a branch.
+
+To start Installation and Configuration at Basics instead, a page would need `initialPath: [0, 0]` with node mode. That means choosing a different sidebar definition per page and creating a separate factory pair for each definition. Keep one baseline unless readers clearly need more.
+
+Do not use `{ type: "autogenerated", dirName: "reference" }` here. It shows the children of Reference and hides the Reference row, so `[0]` would select Basics.
+
+## Checking the Tree
+
+Test the helper against your real tree before you ship it. Build the native tree for each locale, call `toEditorialTree`, and assert the parent of each member and the order of the children. Also assert that every native page of the section is reachable in the result. A typo in `editorialMembers`, or a new page that was never listed, drops a page silently.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| An unlinked heading has its own landing page as the first child | The landing page sits inside a synthetic `type: "category"` item | Keep the real category node, or use this recipe to make the real page the parent |
+| A landing page and its articles appear as unrelated peer links | The articles are siblings of the landing page on disk | Move the files under the landing page's directory, or list them as its editorial members |
+| The parent row disappeared after adding `dirName` | `autogenerated` with `dirName` inserts only that directory's children | Use `items: []` or `autogenerated` without `dirName`, and select the row with node mode |
+| `initialPath` selects the wrong row | It indexes the resolved visible tree, not URL segments | Write the visible tree down with its indexes and count from it |
+| Desktop sidebar and mobile drawer disagree | Only one of `Header` and `Sidebar` was replaced, or they got different contexts | Create both from the same context, as `createEditorialChrome` does |
+| A cross-link opens with another section's sidebar | Destination ownership follows the page URL | Expected with this policy; change ownership only as a deliberate host decision |
+
+## See Also
+
+- [How to Structure Navigations](../getting-started/structuring-navigations.mdx) — choosing a pattern
+- [Sidebar](./sidebar.mdx) — sidebar items, `initialPath`, and `scopeRoot`
+- [Header Navigation](./header-navigation.mdx) — `categoryMatch` and section ownership
+- [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) — the `Header` and `Sidebar` slots

@@ -36,7 +36,7 @@ JA mirrors the EN directory tree exactly. Exceptions below.
 
 ## Navigation Structure
 
-Navigation is filesystem-driven — directory structure becomes sidebar navigation.
+By default, navigation is filesystem-driven — directory structure becomes sidebar navigation. Re-parenting existing pages without moving their URLs is an advanced chrome-bindings recipe (`guides/editorial-navigation.mdx`); prefer moving files.
 
 - Pages ordered by `sidebar_position` (ascending)
 - Category index pages (`index.mdx`) control category position via `sidebar_position`; add

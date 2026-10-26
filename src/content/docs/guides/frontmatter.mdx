@@ -150,6 +150,8 @@ Organize pages into categories by placing them in directories under `src/content
 
 When set to `true` on a category `index.mdx`, the category appears as a non-linked header in the sidebar. No route, sitemap entry, or search entry is generated for the index page itself — it exists solely to label and group the pages beneath it.
 
+Without this field, a category directory that contains pages but has no `index.mdx` still gets a generated index route and a linked sidebar row. Set `category_no_page: true` when the group should have neither. See [Sidebar](./sidebar.mdx#category-index-pages-linked-and-heading-only-category-rows).
+
 ```mdx
 ---
 title: Internals

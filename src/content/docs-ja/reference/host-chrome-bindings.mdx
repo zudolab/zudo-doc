@@ -147,6 +147,10 @@ export const chromeBindings = defineChromeBindings({
 
 つまり、`docContentHeaderExtras` のために作成するモジュールは、たとえば以前はホスト所有ルートでしか機能しなかったカスタムフロントマターレンダラーを登録する場所でもあります。
 
+### `Header` と `Sidebar` を一緒に置き換える
+
+ナビゲーションのツリーを変える置き換えでは、`Header`（モバイルドロワーを所有）と `Sidebar` の両方を置き換え、両方を同じコンテキストから作ってください。そうしないと、デスクトップのサイドバーとモバイルのドロワーが別々のツリーを表示します。[編集上のナビゲーション](../guides/editorial-navigation.mdx)が完全な例です。`buildNavTree` でネイティブのノードの親を付け替えるコンテキストで `createHeaderWithDefaults` と `createSidebarWithDefaults` をラップし、スロットの props はすべてそのまま渡し、パンくずリスト、ページャー、`<CategoryNav>` は元のルートコンテキストに任せます。サイドバーのメンバーシップは、遷移先のページを所有するセクションを変えません。
+
 ### `sidebarNodes` は `createHeaderWithDefaults` の prop であり、`Header` バインディングのスロットではない
 
 上表の `Header` 行はコンポーネント全体を置き換えるものです。置き換えたコンポーネントは `HeaderSlotProps` を受け取り、モバイルドロワーのツリーを完全に自前で所有します。`sidebarNodes` はこれとは別の、より狭い継ぎ目です — `HeaderWithDefaultsProps` のオプション prop で、ヘッダーの残りを置き換えずに、*パッケージの*ヘッダーファクトリーが `SidebarToggle` に渡すツリーだけを上書きします。この prop は `createHeaderWithDefaults(ctx)` と `createChrome(...).HeaderWithDefaults` で利用できます。**`HeaderSlotProps` には含まれない**ため、`chromeBindingsModule` で設定した `Header` の置き換えコンポーネントはこの prop を受け取りません。完全な契約は `API.md` の `createHeaderWithDefaults(ctx)` を参照してください。

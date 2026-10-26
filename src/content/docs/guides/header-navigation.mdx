@@ -89,6 +89,10 @@ A [note tray](./note-tray.mdx) is not a special header-nav type. Add it like any
 
 Children can also have `categoryMatch`. For example, placing `categoryMatch: "components"` on a child ensures that visiting `/docs/components/` activates the parent dropdown and filters the sidebar to the components section.
 
+#### Sidebar Membership and Section Ownership
+
+A page belongs to the section whose `categoryMatch` matches the start of its slug (or to the `"!"` fallback item when none does). That owner decides the active header item and the sidebar the page renders. Listing a page in another section's sidebar — a `type: "doc"` item or an [editorial tree](./editorial-navigation.mdx) — only adds a link there. Following that link opens the page in its owning section. Changing the owner is a separate host decision; see [Destination Ownership](./editorial-navigation.mdx#destination-ownership).
+
 #### Nested Children Under One Category
 
 When every child is nested below one top-level category, keep `categoryMatch` only on the parent. Child active state is resolved from each child's `path`, while the parent's single-segment `categoryMatch` keeps the sidebar scoped to the complete top-level category. Per-package changelogs are the canonical example:
