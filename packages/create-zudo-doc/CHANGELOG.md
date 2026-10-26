@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Other Changes
 
 - Generated projects now pin the zfb 5.1.5 family: `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm`, plus `zfb-adapter-cloudflare` when the Cloudflare adapter is selected.
+- MCP-enabled projects pin Wrangler 4.153.0.
 
 ## [8.1.3] - 2026-10-26
 
