@@ -1,0 +1,15 @@
+---
+title: 8.1.3
+description: 8.1.3のリリースノート。
+sidebar_position: 1145
+---
+
+リリース日: 2026-10-26
+
+### 機能
+
+- 9 つのテーマパック（drift・fjord・hollow・manuscript・matcha・nocturne・observatory・sakura・solar）で文書見出しの階層を調整しました。h2 は 2px の上罫線と line-height 1.3、h3 は控えめな 1px のミュート罫線と line-height 1.4、h4 は罫線なしで line-height 1.45 になり、サイズとウェイトはパックごとに設定されます。各パックの罫線色・フォント・スモールキャップ・モチーフは維持され、文書見出しにのみ適用されるため、ホームとコンパクトな本文の見出しは変わりません。(f0ac53df)
+
+### バグ修正
+
+- Observatory: 星座の星ノードが星座線と同じ文書 h2 セレクタに従うようになり、線のない状態で星だけが表示されることがなくなりました。(d72441b4)
