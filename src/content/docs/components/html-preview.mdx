@@ -459,7 +459,7 @@ This browser-time set is smaller than the [full language list](./basic-component
 
 ## Notes
 
-- The preview renders inside an isolated `<iframe>` with a CSS reset (Tailwind v4 preflight), so styles do not leak in or out.
+- The preview renders inside an isolated `<iframe>` with a CSS reset (a vendored copy of Tailwind v4 preflight; zudo-doc has no Tailwind dependency), so styles do not leak in or out.
 - `loading="visible"` keeps an inert height reservation until the wrapper's one-shot visibility gate opens; it does not add a native iframe lazy-loading attribute.
 - Route-bound MDX previews use the active locale for the seven `htmlPreview.*` control labels; direct non-route-bound component use defaults to English unless `labels` is supplied.
 - `showSource={false}` removes the source toggle and highlighting subtree structurally without removing the iframe. `defaultOpen` does not reopen a hidden source region.

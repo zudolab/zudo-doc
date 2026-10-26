@@ -4,7 +4,7 @@ description: Learn what zudo-doc is, its features, and how it works.
 sidebar_position: 1
 ---
 
-Welcome to **zudo-doc** — a documentation base framework built with zfb and MDX.
+Welcome to **zudo-doc** — a documentation base framework built with zfb, MDX, zudo-wind, and zudo-react islands.
 
 <Note>
 
@@ -33,6 +33,8 @@ If you're coming from Docusaurus, you'll find the MDX workflow familiar but with
 ## How It Works
 
 zudo-doc uses zfb's content collections (configured in `zfb.config.ts`) to manage documentation pages. Each `.mdx` file in `src/content/docs/` becomes a page with automatic sidebar navigation, table of contents, and prev/next links.
+
+Components are `.tsx` files rendered with zfb's zudo-react runtime: they produce static HTML at build time, and only components wrapped in an island hydrate in the browser. Styling uses zudo-wind, zfb's built-in utility compiler, with design tokens declared as ordinary CSS custom properties. zfb bundles pages and islands with Rolldown, so there is no Tailwind, Preact, or separate bundler to configure.
 
 The color scheme system uses a ramp-native palette (shared base/accent/state ramps resolved to semantic roles). By swapping a single color scheme, the entire site's appearance changes.
 
