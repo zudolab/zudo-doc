@@ -1,6 +1,6 @@
 ---
 name: zudo-doc-writing
-description: "Doc-writing and navigation-structure guide for this zudo-doc project. Consult BEFORE creating pages, adding categories, designing header navigation, or writing/editing mdx content under src/content/. Covers: plan-the-nav-tree-first workflow, 3-level hierarchy (header → sidebar → nested), file-structure-is-navigation, category index pages, sidebar_position discipline, frontmatter schema, no-h1 rule, relative .mdx links, and admonition syntax. Triggered by 'write docs', 'add a page', 'create a page', 'add category', 'structure navigation', 'nav design', 'zudo-doc-writing'."
+description: "Doc-writing and navigation-structure guide for this zudo-doc project. Consult BEFORE creating pages, adding categories, designing header navigation, or writing/editing mdx content under src/content/. Covers: plan-the-nav-tree-first workflow, the recommended 3-level hierarchy (header → sidebar → nested), filesystem navigation as the default, linked versus heading-only category rows, category index pages, sidebar_position discipline, frontmatter schema, no-h1 rule, relative .mdx links, and admonition syntax. Triggered by 'write docs', 'add a page', 'create a page', 'add category', 'structure navigation', 'nav design', 'zudo-doc-writing'."
 user-invocable: true
 ---
 
@@ -20,7 +20,7 @@ When adding to an existing site, read the current tree under `src/content/docs/`
 
 ## The 3-Level Hierarchy
 
-zudo-doc has exactly three navigation levels. Do not invent more:
+Design for three navigation levels. This is a usability recommendation, not a technical maximum — the sidebar is recursive and renders any depth — but deeper trees are harder to read:
 
 1. **Header nav** — the broadest categories (3–6 items max)
 2. **Sidebar** — all pages of the active category (generated from the filesystem)
@@ -28,16 +28,27 @@ zudo-doc has exactly three navigation levels. Do not invent more:
 
 Each level narrows scope. Never jump levels — do not put a specific page directly in the header, and do not bury a whole category inside a deep sidebar fold.
 
-## File Structure IS the Navigation
+## File Structure Is the Default Navigation
 
-**This is the single most important rule.** The directory tree under `src/content/docs/` *is* the navigation. There is no separate navigation config to maintain:
+**This is the single most important rule.** By default, the directory tree under `src/content/docs/` *is* the navigation, with no separate config to keep in sync. Recommend this default first:
 
 - A directory becomes a sidebar category. Its `index.mdx` is the category landing page.
 - A file becomes a sidebar item.
 - Subdirectories become nested collapsible categories.
 - The `headerNav` setting maps top-level directories to header items via `categoryMatch`.
 
-**Consequence**: design the filesystem with navigation in mind from the start. Do not reorganize the sidebar via config hacks — reorganize the files.
+**Consequence**: design the filesystem with navigation in mind from the start. When the wanted hierarchy differs from the directories, move the files.
+
+Editorial trees are supported for the case where existing URLs must stay but the sidebar needs different parents, including links to pages in other sections. That is an advanced chrome-bindings recipe (see the Editorial navigation link under Full Guides below); recommend it only when moving files is not an option.
+
+## Linked Parents vs Heading-Only Groups
+
+Decide for every group row whether it is a link:
+
+- **Linked parent** — a real category node backed by a page. An authored `index.mdx` gives it intentional landing content, label, and position. Keep the real node and its native children; do not wrap it in a synthetic category and do not repeat the landing page as an "Overview" child.
+- **Heading-only group** — no page of its own. Use `category_no_page: true` on the `index.mdx`, or a synthetic `{ type: "category" }` sidebar item.
+
+A synthetic `type: "category"` never has an `href` and has no property that links it to a page. Putting a landing page inside one produces an unlinked heading with the landing page duplicated as its first child.
 
 ## Header Navigation Rules
 
@@ -76,15 +87,15 @@ For a large navigation tree, the home page's category grid can opt into a wider 
 
 The sidebar is generated from the filesystem. The rules are about how you organize files:
 
-- **Every category directory MUST have an `index.mdx`.** Without it, the category has no landing page and may not appear correctly. The index's `sidebar_position` sets the category's position in the parent sidebar.
+- **Author an `index.mdx` for every category directory.** It supplies intentional landing content and metadata; its `sidebar_position` sets the category's position in the parent sidebar. Without one, a category that contains pages still gets a generated auto-index page and a linked row, but with a default label and position. `category_no_page: true` removes the page and the link.
 - **Every page MUST set `sidebar_position`.** Without it, pages sort alphabetically — almost never what you want. This is the single most common AI mistake. Small integers are fine; leaving gaps (1, 2, 3, 10) makes later insertion easier.
-- **Nesting depth: 2–3 levels max.** Deep nesting hides content. If you need more, the header nav is probably missing a category — split it out.
+- **Nesting depth: prefer 2–3 levels.** Deep nesting hides content. If you need more, the header nav is probably missing a category — split it out. This is a readability rule, not an enforced limit.
 - **Each sidebar section covers one cohesive topic.** Do not mix unrelated themes in the same section (e.g. "Hardware" and "Community Events").
 - **Use kebab-case directory and file names.** `my-article.mdx`, not `myArticle.mdx` (breaks on case-sensitive filesystems) or `my_article.mdx`. The URL slug derives from the filename, so kebab-case also keeps URLs clean.
 
 ## Category Top Page (index.mdx)
 
-Every category directory must have an `index.mdx` — the **landing page** for that category. Keep it short:
+Every category directory should have an authored `index.mdx` — the **landing page** for that category. Keep it short:
 
 - A 1–2 sentence intro describing what the category covers.
 - A `<CategoryNav category="<dir>" />` component that auto-renders links to sibling pages.
@@ -109,14 +120,14 @@ Building a gaming wiki? Plan the tree first:
 
 ```
 Header Nav:                       Sidebar (Xbox section):
-├── Home                          ├── Overview (index)
-├── Platforms        ← dropdown   ├── Hardware
+├── Home                          Xbox          (linked to xbox/index.mdx)
+├── Platforms        ← dropdown   ├── Hardware  (linked)
 │   ├── Xbox                      │   ├── Xbox Series X
 │   ├── PlayStation               │   └── Accessories
-│   └── Nintendo                  ├── Games
+│   └── Nintendo                  ├── Games     (linked)
 ├── Genres           ← dropdown   │   ├── Halo Infinite
 │   ├── RPG                       │   └── Starfield
-│   └── Action                    └── Services
+│   └── Action                    └── Services  (linked)
 └── Community                         └── Game Pass
 ```
 
@@ -127,7 +138,7 @@ src/content/docs/
 ├── home/
 │   └── index.mdx
 ├── xbox/
-│   ├── index.mdx                  ← "Overview" (short intro + <CategoryNav>)
+│   ├── index.mdx                  ← the linked "Xbox" row (short intro + <CategoryNav>)
 │   ├── hardware/
 │   │   ├── index.mdx
 │   │   ├── xbox-series-x.mdx
@@ -227,14 +238,15 @@ Two carve-outs — do NOT create additional-locale mirrors for these:
 - **Writing pages before planning the nav tree** — the root cause of chaotic structures.
 - **Putting specific pages in the header nav.** The header is for broad categories only.
 - **Missing `sidebar_position`** — unpredictable alphabetical ordering.
-- **Missing `index.mdx` in category directories** — category has no landing page.
+- **Missing `index.mdx` in category directories** — the category falls back to a generated page with a default label and position.
+- **Wrapping a landing page in a synthetic `type: "category"`** — produces an unlinked heading with the landing page duplicated as its first child.
 - **Stuffing a category `index.mdx` with full content** — keep it to intro + `<CategoryNav>`.
 - **Multi-segment `categoryMatch`** (e.g. `"platforms/xbox"`) — breaks header active-state highlighting.
 - **Deep nesting (4+ levels)** — the header nav is probably missing a category.
 - **Starting content with `# h1`** — duplicates the auto-rendered title.
 - **Absolute `/docs/...` links or extension-less links in prose** — the resolver can't verify them.
 - **camelCase/PascalCase file names** — break on case-sensitive filesystems.
-- **Reorganizing navigation via config instead of moving files** — the filesystem is the navigation.
+- **Reorganizing navigation via config instead of moving files** — the filesystem is the default navigation; reach for an editorial tree only when URLs must stay.
 
 ## Checklist Before Creating Any Page
 
@@ -253,3 +265,5 @@ The complete versions of this guidance (with more examples) are published in the
 
 - Writing docs: https://zudo-doc.takazudomodular.com/docs/getting-started/writing-docs/
 - Structuring navigations: https://zudo-doc.takazudomodular.com/docs/getting-started/structuring-navigations/
+- Sidebar (category rows, sidebar configuration, scope recipes): https://zudo-doc.takazudomodular.com/docs/guides/sidebar/
+- Editorial navigation (advanced): https://zudo-doc.takazudomodular.com/docs/guides/editorial-navigation/
