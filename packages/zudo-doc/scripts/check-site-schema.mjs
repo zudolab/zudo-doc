@@ -47,7 +47,6 @@ if (typeof mod.schemaVersion !== "number") {
 
 const { violations, specifiers } = await analyzeSiteSchemaGraph({
   entry: DIST_JS,
-  resolveFrom: [PKG_ROOT, resolve(PKG_ROOT, "../..")],
 });
 
 if (violations.length > 0) {

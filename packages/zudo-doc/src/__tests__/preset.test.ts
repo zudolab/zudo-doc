@@ -27,16 +27,10 @@ const fixtureColorScheme: ColorScheme = {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const presetSrc = resolve(__dirname, "../preset.ts");
-const repoRoot = resolve(__dirname, "../../../..");
 
 // ── esbuild resolution ───────────────────────────────────────────────────
-// esbuild is not a direct dependency of this package — it rides in as a
-// transitive of vite/vitest. Resolve it via vite so the guard runs without
-// adding a dep. `require.resolve('vite/package.json')` is searched from this
-// package and the repo root (pnpm hoists vite to either).
-// esbuild has no type-declaration entry resolvable from this package (it is
-// not a declared dep), so type the surface we use rather than importing
-// `typeof import("esbuild")`.
+// esbuild is a declared dependency of this package. Only the surface the
+// guard uses is typed here.
 interface EsbuildBuildError extends Error {
   errors?: Array<{ text?: string }>;
 }
@@ -48,11 +42,7 @@ interface EsbuildLike {
 }
 
 function loadEsbuild(): EsbuildLike {
-  const vitePkg = require.resolve("vite/package.json", {
-    paths: [process.cwd(), __dirname, repoRoot],
-  });
-  const viteRequire = createRequire(vitePkg);
-  return viteRequire("esbuild") as EsbuildLike;
+  return createRequire(import.meta.url)("esbuild") as EsbuildLike;
 }
 
 // (success-path) Match `node:*` only as a real module specifier in BUNDLED

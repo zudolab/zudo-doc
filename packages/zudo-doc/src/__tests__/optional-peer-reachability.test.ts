@@ -37,7 +37,6 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // src/__tests__/ → packages/zudo-doc/
 const pkgRoot = resolve(__dirname, "../..");
-const repoRoot = resolve(pkgRoot, "../..");
 
 // Optional peers that ARE reachable from the always-bundled graph and are an
 // accepted, permanent part of the consumer contract. Each needs a reason.
@@ -118,15 +117,10 @@ interface EsbuildLike {
   build(opts: Record<string, unknown>): Promise<{ errors: unknown[] }>;
 }
 
-// esbuild is not a direct dependency of this package — it rides in as a
-// transitive of vite/vitest. Resolve it via vite so the guard adds no dep
-// (same approach as `preset.test.ts`).
+// esbuild is a declared dependency of this package (same approach as
+// `preset.test.ts`).
 function loadEsbuild(): EsbuildLike {
-  const require = createRequire(import.meta.url);
-  const vitePkg = require.resolve("vite/package.json", {
-    paths: [process.cwd(), __dirname, repoRoot],
-  });
-  return createRequire(vitePkg)("esbuild") as EsbuildLike;
+  return createRequire(import.meta.url)("esbuild") as EsbuildLike;
 }
 
 function optionalPeersOf(): string[] {

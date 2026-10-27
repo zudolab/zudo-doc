@@ -19,7 +19,6 @@ import type { ThemePackMeta } from "../../route-context-payload/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../../..");
-const REPO_ROOT = resolve(PKG_ROOT, "../..");
 const SRC_ENTRY = resolve(PKG_ROOT, "src/theme-packs-registry/index.ts");
 const DIST_DTS = resolve(PKG_ROOT, "dist/theme-packs-registry/index.d.ts");
 
@@ -28,7 +27,7 @@ interface RegistryGraph {
     violations: Array<{ specifier: string; label: string; importer: string }>;
     files: string[];
   };
-  analyzeSiteSchemaGraph(args: { entry: string; resolveFrom: string[] }): Promise<{
+  analyzeSiteSchemaGraph(args: { entry: string }): Promise<{
     violations: Array<{ specifier: string; label: string; importer: string }>;
     specifiers: string[];
   }>;
@@ -122,7 +121,6 @@ describe("./theme-packs-registry browser safety", () => {
     const { analyzeSiteSchemaGraph } = await loadGraphHelper();
     const { violations, specifiers } = await analyzeSiteSchemaGraph({
       entry: SRC_ENTRY,
-      resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
     });
 
     expect(

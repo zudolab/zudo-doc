@@ -34,7 +34,6 @@ if (typeof mod.createRouteContextPayload !== "function") {
 
 const { violations: jsViolations, specifiers } = await analyzeSiteSchemaGraph({
   entry: DIST_JS,
-  resolveFrom: [PKG_ROOT, resolve(PKG_ROOT, "../..")],
 });
 const { violations: dtsViolations, files } = analyzeDeclarationGraph(DIST_DTS);
 

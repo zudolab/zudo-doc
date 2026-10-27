@@ -22,7 +22,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const standaloneSrc = resolve(__dirname, "../standalone.ts");
 const iconSrc = resolve(__dirname, "../icon.ts");
 const autoLogoIndexSrc = resolve(__dirname, "../index.tsx");
-const repoRoot = resolve(__dirname, "../../../../..");
 
 interface EsbuildMetafile {
   inputs: Record<string, unknown>;
@@ -36,11 +35,7 @@ interface EsbuildLike {
 }
 
 function loadEsbuild(): EsbuildLike {
-  const vitePkg = require.resolve("vite/package.json", {
-    paths: [process.cwd(), __dirname, repoRoot],
-  });
-  const viteRequire = createRequire(vitePkg);
-  return viteRequire("esbuild") as EsbuildLike;
+  return createRequire(import.meta.url)("esbuild") as EsbuildLike;
 }
 
 function isTsxInput(path: string): boolean {

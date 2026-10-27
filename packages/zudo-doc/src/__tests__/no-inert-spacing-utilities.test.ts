@@ -38,18 +38,14 @@ const { extractTokens } = await import(resolve(PACKAGE_ROOT, "scripts/gen-wind-m
 // regex precursor — and everything after gets mis-tokenized (confirmed
 // empirically: real class strings like "w-72" go missing entirely). So each
 // file is esbuild-transformed (JSX/TS stripped, exactly what tsup does for
-// dist) before handing its text to extractTokens — esbuild is not a direct
-// dependency of this package; resolve it via vite, same pattern as
-// preset.test.ts's node-free eval-graph guard.
+// dist) before handing its text to extractTokens — esbuild is a declared
+// dependency of this package, loaded the same way as preset.test.ts's
+// node-free eval-graph guard.
 interface EsbuildLike {
   transform(input: string, options: Record<string, unknown>): Promise<{ code: string }>;
 }
 function loadEsbuild(): EsbuildLike {
-  const vitePkg = require.resolve("vite/package.json", {
-    paths: [process.cwd(), __dirname, repoRoot],
-  });
-  const viteRequire = createRequire(vitePkg);
-  return viteRequire("esbuild") as EsbuildLike;
+  return createRequire(import.meta.url)("esbuild") as EsbuildLike;
 }
 
 function findSourceFiles(dir: string): string[] {
