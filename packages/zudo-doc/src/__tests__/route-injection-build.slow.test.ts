@@ -38,6 +38,7 @@ import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, 
 import { join, resolve, dirname, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { parse, type DefaultTreeAdapterMap } from "parse5";
+import { ZDTP_DISABLED_MESSAGE_PREFIX } from "../plugins/zdtp-loader";
 
 // ---------------------------------------------------------------------------
 // Parity helpers — imported from the shared, side-effect-free module also
@@ -2253,12 +2254,13 @@ describe("DTP host-owned: designTokenPanel false + bundleZdtp true keeps the rea
     expect(findDistFilesContaining(fixtureDir, ZDTP_CHUNK_MARKERS)).not.toEqual([]);
   });
 
-  // Assertion 2: no emitted file carries the throwing stub's own source text
+  // Assertion 2: no emitted file carries the zdtp throwing stub's own message
   // (`plugins/zdtp-loader.ts`'s `DISABLED_LOADER_SOURCE`, the literal #4261
   // symptom — a green build shipping a chunk that throws the moment it's
-  // opened).
-  it("not shadowed: no emitted file contains the throwing stub's \"is not bundled\" text", () => {
-    expect(findDistFilesContaining(fixtureDir, ["is not bundled"])).toEqual([]);
+  // opened). Searches the zdtp-specific prefix, not the generic "is not
+  // bundled": the katex and diff stubs legitimately emit that phrase too.
+  it("not shadowed: no emitted file contains the zdtp throwing stub's \"@takazudo/zdtp is not bundled\" text", () => {
+    expect(findDistFilesContaining(fixtureDir, [ZDTP_DISABLED_MESSAGE_PREFIX])).toEqual([]);
   });
 
   // Assertion 3: module-graph laziness proof, same technique as the existing
