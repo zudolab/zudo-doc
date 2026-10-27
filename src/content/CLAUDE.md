@@ -36,8 +36,9 @@ JA mirrors the EN directory tree exactly. Exceptions below.
 
 ## Navigation Structure
 
-By default, navigation is filesystem-driven — directory structure becomes sidebar navigation. Re-parenting existing pages without moving their URLs is an advanced chrome-bindings recipe (`guides/editorial-navigation.mdx`); prefer moving files.
+By default, navigation is filesystem-driven — directory structure becomes sidebar navigation. Re-parenting existing pages without moving their URLs is an advanced chrome-bindings recipe (`guides/editorial-navigation.mdx`); prefer moving files. Write the intended tree and each destination's behavior before choosing configuration (`zudo-doc-navigation-design` skill).
 
+- Learn is one linked umbrella tree (Learn → Guides, Components, Markdown Features with their full subtrees), built by `src/lib/learn-chrome.tsx`. A header dropdown or a list of section pages never creates a sidebar parent. The Editorial Navigation guide's umbrella helper blocks must stay byte-identical to `src/lib/learn-*` (enforced by `src/__tests__/editorial-navigation-guide.test.ts`).
 - Pages ordered by `sidebar_position` (ascending)
 - Category index pages (`index.mdx`) control category position via `sidebar_position`; add
   `sidebar_label` for a custom sidebar name; add `category_sort_order: "desc"` for
