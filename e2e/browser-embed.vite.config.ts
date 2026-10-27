@@ -1,4 +1,4 @@
-import { defineConfig, transformWithEsbuild } from "vite";
+import { defineConfig, transformWithEsbuild, type Rollup } from "vite";
 import { resolve } from "node:path";
 
 const repoRoot = import.meta.dirname.replace(/\/e2e$/, "");
@@ -19,7 +19,7 @@ const preservePackageFunctionNames = {
       keepNames: true,
       target: "esnext",
     });
-    return { code: result.code, map: result.map };
+    return { code: result.code, map: result.map as Rollup.SourceMapInput };
   },
 };
 

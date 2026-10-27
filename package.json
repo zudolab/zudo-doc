@@ -101,20 +101,14 @@
       "workerd"
     ],
     "overrides": {
-      "lodash-es": ">=4.18.0",
-      "uuid": ">=11.1.1",
-      "dompurify": ">=3.4.11",
-      "esbuild": ">=0.28.1",
+      "esbuild": "^0.28.2",
       "picomatch": ">=4.0.4",
       "postcss": ">=8.5.23",
-      "undici": ">=7.29.0 <8",
-      "ws": ">=8.20.1",
       "yaml@2": ">=2.8.3 <3",
-      "brace-expansion@5": ">=5.0.9 <6",
-      "fast-uri@3": ">=3.1.8 <4",
+      "brace-expansion@5": ">=5.0.12 <6",
+      "fast-uri@3": ">=3.1.9 <4",
       "hono@4": ">=4.13.7 <5",
-      "nanoid@3": ">=3.3.18 <4",
-      "sharp": ">=0.35.0 <1"
+      "nanoid@3": ">=3.3.18 <4"
     }
   },
   "dependencies": {
@@ -126,19 +120,19 @@
     "@takazudo/zfb-runtime": "5.1.5",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
-    "katex": "^0.19.0",
-    "zod": "^4.3.6"
+    "katex": "^0.19.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.18.5",
-    "@cloudflare/workers-types": "5.20260829.1",
+    "@cloudflare/vitest-plugin": "1.4.8",
+    "@cloudflare/workers-types": "5.20261027.1",
     "@playwright/test": "1.58.2",
     "@takazudo/mdx-formatter": "1.3.0",
     "@takazudo/zudo-design-token-lint": "^2.1.0",
     "@types/culori": "^4.0.1",
-    "@types/node": "^25.3.5",
+    "@types/node": "^25.9.9",
     "@types/pluralize": "^0.0.33",
-    "chokidar": "^4.0.0",
+    "chokidar": "^5.0.0",
     "culori": "^4.0.2",
     "html-validate": "^10.15.0",
     "lefthook": "^2.1.4",
@@ -146,10 +140,10 @@
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
     "semver": "7.8.5",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vite": "^7.3.2",
-    "vitest": "^4.1.0",
+    "vite": "^7.3.7",
+    "vitest": "^4.1.12",
     "wrangler": "4.153.0"
   }
 }

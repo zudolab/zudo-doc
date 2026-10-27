@@ -9,12 +9,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "minisearch": "^7.1.2"
+    "minisearch": "^7.2.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260829.1",
+    "@cloudflare/workers-types": "^5.20261027.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.0",
-    "wrangler": "^4.111.0"
+    "vitest": "^4.1.12",
+    "wrangler": "^4.153.0"
   }
 }
