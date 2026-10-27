@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Features
+
+- The sidebar's branch-focus control is now a four-corner focus frame (named "Focus sidebar on" plus the category) instead of "◎". Pointing at it or reaching it with the keyboard briefly highlights exactly the branch it would show, with a short tooltip and no layout, scope, filter or URL change; on touch, one tap focuses the branch. The frame of a branch already shown on its own is inactive (`aria-disabled`, out of the tab order). Restore uses a counter-clockwise reset arrow ("Restore current page's sidebar"). Japanese labels are included.
+
 ### Bug Fixes
 
 - The page-loading scrim covers the full viewport again, including the header and sidebar, with the spinner centered in the viewport. Since #4580 its bootstrap clipped it to the content area at runtime. The header and an unchanged desktop sidebar still stay undimmed and still during the page animation, because they use their own transition snapshots and the scrim is excluded from the animation.

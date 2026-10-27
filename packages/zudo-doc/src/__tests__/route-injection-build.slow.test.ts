@@ -1398,6 +1398,21 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // The changed sidebar-utils/nav-scope and HtmlPreview island sources change
   // zfb's build identity globally; this fixture's single getting-started
   // category has no prefix sibling, so its visible sidebar is unchanged.
+  //
+  // 2026-10-28 re-baseline (zudolab/zudo-doc#4682, sidebar focus frame + branch
+  // preview): compared the A2 capture of #4680's run 40502626664 (artifact
+  // 12734015074, source 00f7704d, whose normalized pages hash to the prior
+  // reference) with this PR's run 40575355711 (artifact 12767398442, source
+  // d7933c45) via scripts/a2-causal-diff.py. 404.html has no residual; both
+  // doc pages differ only in the SidebarTree island markup this PR changes
+  // (the "◎" span becomes the FocusFrame SVG, the frame's accessible name and
+  // classes, aria-disabled/tabindex/data-sidebar-tip* on the already-focused
+  // single root, data-sidebar-branch/-row/-current/-children and
+  // data-tree-connector hooks) plus the zudo-react region markers renumbered
+  // around the added SVG node. The final head's run 40575384355 (artifact
+  // 12767463008, source 56d1b974) differs from 40575355711 only by the native
+  // build identity (92fb283d67891f70 -> f9a21a36004da117); these hashes are
+  // taken from that final capture.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);

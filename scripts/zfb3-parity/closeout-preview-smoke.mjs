@@ -221,7 +221,7 @@ const T = 20_000;
     const focusButtons = page.locator("[data-sidebar-focus]:visible");
     const before = await focusButtons.count();
     assert(before >= 2, `need >=2 focus buttons, got ${before}`);
-    await focusButtons.nth(1).click();
+    await page.locator('[data-sidebar-focus]:visible:not([aria-disabled="true"])').nth(1).click();
     await page.locator("[data-sidebar-restore]:visible").first().waitFor({ state: "visible", timeout: T });
     const narrowed = await page.locator("[data-sidebar-focus]:visible").count();
     assert(narrowed < before, `focus did not narrow (${before} -> ${narrowed})`);

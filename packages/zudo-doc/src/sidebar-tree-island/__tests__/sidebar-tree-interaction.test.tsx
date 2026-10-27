@@ -215,9 +215,11 @@ describe("Broader tree controls", () => {
     const actions = toolbar.querySelector('[data-sidebar-scope-actions]')!;
     const restore = actions.querySelector<HTMLButtonElement>('[data-sidebar-restore]')!;
     expect(restore.textContent).toBe("");
-    expect(restore.getAttribute("title")).toBe("Restore current page’s local tree");
-    expect(restore.getAttribute("aria-label")).toBe(restore.title);
-    expect(restore.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(restore.getAttribute("aria-label")).toBe("Restore current page’s sidebar");
+    expect(restore.getAttribute("data-sidebar-tip")).toBe("Restore this page’s sidebar");
+    // A native title would stack a second tooltip on top of the transient one.
+    expect(restore.hasAttribute("title")).toBe(false);
+    expect(restore.querySelector('svg[aria-hidden="true"] path')?.getAttribute("d")).toBe("M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6");
     expect(toolbar.querySelector('[data-sidebar-scope-hint]')).toBeNull();
     expect(restore.style.width).toBe("40px");
     expect(root.querySelector("[data-sidebar-filter-region]")).not.toBeNull();
@@ -227,15 +229,15 @@ describe("Broader tree controls", () => {
     const ja = buildSidebarNavigation([], "ja", undefined, undefined, {}, () => NODES, []);
     view!.dispose();
     const localized = await mount({ ...ja, currentSlug: "guides/first", locale: "ja" });
-    click(localized.querySelector('button[aria-label="この枝だけを表示: Guides"]'));
+    click(localized.querySelector('button[aria-label="サイドバーに「Guides」だけを表示"]'));
     await flushAll();
-    expect(localized.querySelector('[data-sidebar-restore]')?.getAttribute("aria-label")).toBe("現在のページのツリーに戻す");
+    expect(localized.querySelector('[data-sidebar-restore]')?.getAttribute("aria-label")).toBe("現在のページのサイドバーに戻す");
   });
 
   it("hydrates the configured forest, keeps the filter, broadens exactly once and restores", async () => {
     const data = build();
     const root = await mount({ ...data, currentSlug: "guides/first" });
-    expect(root.textContent).not.toContain("Show only this branch: Editorial");
+    expect(root.textContent).not.toContain("Focus sidebar on Editorial");
     expect(root.querySelector('[data-sidebar-restore]')).toBeNull();
     const input = root.querySelector<HTMLInputElement>('input')!;
     input.value = "no matching page";
@@ -273,7 +275,7 @@ describe("Broader tree controls", () => {
     click(root.querySelector('[data-sidebar-broaden]'));
     await flushAll();
     expect(root.querySelector('button[aria-label="Expand Guides"]')).not.toBeNull();
-    click(root.querySelector('button[aria-label="Show only this branch: Guides"]'));
+    click(root.querySelector('button[aria-label="Focus sidebar on Guides"]'));
     await flushAll();
     expect(root.querySelector('a[href="/docs/about"]')).toBeNull();
     expect(root.querySelector('a[href="/docs/guides/first"]')).not.toBeNull();
@@ -323,7 +325,7 @@ describe("Broader tree controls", () => {
     sessionStorage.setItem("zd-sidebar-scope", JSON.stringify({ context: data.navigation.id, selected: "deleted", query: "" }));
     const root = await mount({ ...data, currentSlug: "guides/first" });
     expect(root.querySelector('[data-sidebar-restore]')).toBeNull();
-    click(root.querySelector('button[aria-label="Show only this branch: Guides"]'));
+    click(root.querySelector('button[aria-label="Focus sidebar on Guides"]'));
     await flushAll();
     document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/about";
     document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
@@ -340,17 +342,20 @@ it("resets scope and query across locale/version context and renders Japanese co
   const root = await mount({ ...data, currentSlug: "guides/first", locale: "ja" });
   expect(root.querySelector('input')?.value).toBe("");
   expect(root.querySelector('[data-sidebar-scope-toolbar]')).toBeNull();
-  click(root.querySelector('button[aria-label="この枝だけを表示: Guides"]'));
+  click(root.querySelector('button[aria-label="サイドバーに「Guides」だけを表示"]'));
   await flushAll();
   expect(root.querySelector('[data-sidebar-broaden]')?.textContent).toContain("ツリーを広げる");
   expect(root.querySelector('[data-sidebar-restore]')).not.toBeNull();
-  expect(root.querySelector('button[aria-label="この枝だけを表示: Guides"]')).not.toBeNull();
+  expect(root.querySelector('[data-sidebar-restore]')?.getAttribute("data-sidebar-tip")).toBe("現在のページのサイドバーに戻す");
+  const focused = root.querySelector('button[aria-label="すでに「Guides」だけを表示しています"]');
+  expect(focused?.getAttribute("aria-disabled")).toBe("true");
+  expect(focused?.getAttribute("data-sidebar-tip")).toBe("すでにここだけを表示しています");
 });
 
 it("preserves an off-article branch across same-page refresh and a second desktop/mobile mount", async () => {
   const data = buildSidebarNavigation([], "en", undefined, undefined, {}, () => NODES, []);
   const root = await mount({ ...data, currentSlug: "about" });
-  click(root.querySelector('button[aria-label="Show only this branch: Guides"]'));
+  click(root.querySelector('button[aria-label="Focus sidebar on Guides"]'));
   await flushAll();
   expect(root.querySelector('a[href="/docs/about"]')).toBeNull();
   const second = await renderIsland(SidebarTree, { ...data, currentSlug: "about" }, {
@@ -381,7 +386,7 @@ it("widens a focused branch and reveals the empty-slug root page on native navig
   };
   const data = buildSidebarNavigation([], "en", undefined, undefined, {}, () => [rootGroup, ...NODES], []);
   const root = await mount({ ...data, currentSlug: "guides/first" });
-  click(root.querySelector('button[aria-label="Show only this branch: Guides"]'));
+  click(root.querySelector('button[aria-label="Focus sidebar on Guides"]'));
   await flushAll();
   expect(root.querySelector('a[href="/docs/"]')).toBeNull();
   document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/";
@@ -417,7 +422,7 @@ it("preserves dated tray groups across ordinary scope changes but Restore resets
   expect(root.querySelector('a[href="/docs/notes/older"]')).not.toBeNull();
   click(root.querySelector('[data-sidebar-broaden]'));
   await flushAll();
-  click(root.querySelector('button[aria-label="Show only this branch: Notes"]'));
+  click(root.querySelector('button[aria-label="Focus sidebar on Notes"]'));
   await flushAll();
   expect(root.querySelector('button[aria-label="Collapse 2025"]')).not.toBeNull();
   view!.dispose();
@@ -427,7 +432,7 @@ it("preserves dated tray groups across ordinary scope changes but Restore resets
   click(remounted.querySelector('[data-sidebar-broaden]'));
   await flushAll();
   expect(remounted.querySelector('[data-sidebar-scope-toolbar]')).toBeNull();
-  click(remounted.querySelector('button[aria-label="Show only this branch: Notes"]'));
+  click(remounted.querySelector('button[aria-label="Focus sidebar on Notes"]'));
   await flushAll();
   click(remounted.querySelector('[data-sidebar-restore]'));
   await flushAll();
@@ -455,7 +460,7 @@ it("always hides the global toolbar at the highest scope and transfers focus to 
   click(root.querySelector('button[aria-label="Collapse Guides"]'));
   await flushAll();
   expect(root.querySelector('[data-sidebar-scope-toolbar]')).toBeNull();
-  click(root.querySelector('button[aria-label="Show only this branch: Guides"]'));
+  click(root.querySelector('button[aria-label="Focus sidebar on Guides"]'));
   await flushAll();
   expect(root.querySelector('[data-sidebar-broaden]')).not.toBeNull();
 });
@@ -563,7 +568,7 @@ describe("explicit-only disclosure persistence", () => {
     try {
       click(second.root.querySelector('button[aria-label="Collapse Guides"]'));
       await flushAll();
-      click(root.querySelector('button[aria-label="Show only this branch: Other"]'));
+      click(root.querySelector('button[aria-label="Focus sidebar on Other"]'));
       await flushAll();
       for (const treeRoot of [root, second.root]) {
         expect(treeRoot.querySelector('a[href="/docs/other/page"]')).not.toBeNull();
@@ -657,7 +662,7 @@ describe("explicit-only disclosure persistence", () => {
   it("keeps an explicit collapse when broadening out of a focused branch", async () => {
     const data = build();
     const root = await mount({ ...data, currentSlug: "about" });
-    click(root.querySelector('button[aria-label="Show only this branch: Guides"]'));
+    click(root.querySelector('button[aria-label="Focus sidebar on Guides"]'));
     await flushAll();
     click(root.querySelector('button[aria-label="Collapse Guides"]'));
     await flushAll();
@@ -673,7 +678,10 @@ describe("explicit-only disclosure persistence", () => {
       initialPath: [0, 0], initialPathMode: "node",
     } }, () => NODES, ["guides"]);
     const root = await mount({ ...data, currentSlug: "guides/first" });
-    click(root.querySelector('button[aria-label="Show only this branch: Local"]'));
+    // The node-mode baseline already shows Local as its single root, so its frame is inactive.
+    const local = root.querySelector('button[aria-label="Sidebar is already focused on Local"]');
+    expect(local?.getAttribute("aria-disabled")).toBe("true");
+    click(local);
     await flushAll();
     expect(stored().selected).toBeNull();
     expect(root.querySelector('[data-sidebar-restore]')).toBeNull();
@@ -700,5 +708,223 @@ describe("explicit-only disclosure persistence", () => {
     const remounted = await mount({ ...data, currentSlug: "wind/surfaces/background" });
     expect(remounted.querySelector('a[href="/docs/wind"]')).not.toBeNull();
     expect(stored().selected).toBe(data.navigation.roots[0]!.occurrenceId);
+  });
+});
+
+describe("focus frame, branch preview and tooltip", () => {
+  const FOREST: SidebarNavNode[] = [
+    NODES[0]!,
+    { slug: "other", label: "Other", position: 1, href: "/docs/other", hasPage: true, collapsed: true,
+      children: [{ slug: "other/page", label: "Other page", position: 0, href: "/docs/other/page", hasPage: true, children: [] }] },
+    NODES[1]!,
+  ];
+  const build = () => buildSidebarNavigation([], "en", undefined, undefined, {}, () => FOREST, []);
+  const frame = (root: Element, label: string) => root.querySelector<HTMLButtonElement>(`button[aria-label="Focus sidebar on ${label}"]`);
+  const previewed = (root: Element) => [...root.querySelectorAll("[data-sidebar-preview]")];
+  const pointer = (type: "pointerover" | "pointerout", target: Element, pointerType: string) => {
+    const event = new Event(type, { bubbles: true });
+    Object.defineProperty(event, "pointerType", { value: pointerType });
+    Object.defineProperty(event, "relatedTarget", { value: null });
+    target.dispatchEvent(event);
+  };
+  const branchOf = (button: Element | null) => button?.closest("[data-sidebar-branch]");
+  const tooltip = () => document.querySelector<HTMLElement>('[role="tooltip"][data-sidebar-tooltip]');
+
+  it("renders the four-corner frame at rest, separate from link and disclosure", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    const other = frame(root, "Other")!;
+    expect(other.textContent).toBe("");
+    expect(root.textContent).not.toContain("◎");
+    const svg = other.querySelector('svg[aria-hidden="true"]')!;
+    expect(svg.getAttribute("viewBox")).toBe("0 0 24 24");
+    expect(svg.getAttribute("stroke-width")).toBe("1.65");
+    expect(svg.querySelector("path")?.getAttribute("d")).toBe("M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3");
+    expect(other.getAttribute("data-sidebar-tip")).toBe("Focus sidebar here");
+    expect(other.getAttribute("data-sidebar-tip-detail")).toBe("Other");
+    expect(other.hasAttribute("aria-disabled")).toBe(false);
+    const row = other.closest("[data-sidebar-row]")!;
+    expect(row.querySelector('a[href="/docs/other"]')).not.toBeNull();
+    expect(row.querySelector('button[aria-label="Expand Other"]')).not.toBeNull();
+    expect(other.contains(row.querySelector("a"))).toBe(false);
+  });
+
+  it("previews exactly the hovered branch for mouse, never for touch, without persisting", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    const writes = vi.spyOn(Storage.prototype, "setItem");
+    const broadcasts: Event[] = [];
+    const onSync = (event: Event) => broadcasts.push(event);
+    document.addEventListener("zd:sidebar-scope", onSync);
+    try {
+      pointer("pointerover", frame(root, "Other")!, "touch");
+      await flushAll();
+      expect(previewed(root)).toHaveLength(0);
+      pointer("pointerover", frame(root, "Other")!, "mouse");
+      await flushAll();
+      expect(previewed(root)).toEqual([branchOf(frame(root, "Other"))]);
+      // Collapsed: the preview marks the row without expanding its children.
+      expect(root.querySelector('a[href="/docs/other/page"]')).toBeNull();
+      // Hovering the link or disclosure is not a preview trigger.
+      pointer("pointerout", frame(root, "Other")!, "mouse");
+      pointer("pointerover", root.querySelector('a[href="/docs/other"]')!, "mouse");
+      await flushAll();
+      expect(previewed(root)).toHaveLength(0);
+      expect(writes).not.toHaveBeenCalled();
+      expect(broadcasts).toHaveLength(0);
+      expect(window.location.hash).toBe("");
+    } finally {
+      writes.mockRestore();
+      document.removeEventListener("zd:sidebar-scope", onSync);
+    }
+  });
+
+  it("lets pointer hover win over the keyboard-focused frame and falls back on pointer departure", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    const guides = frame(root, "Guides")!;
+    const other = frame(root, "Other")!;
+    guides.focus();
+    guides.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    await flushAll();
+    expect(previewed(root)).toEqual([branchOf(guides)]);
+    pointer("pointerover", other, "mouse");
+    await flushAll();
+    expect(previewed(root)).toEqual([branchOf(other)]);
+    pointer("pointerout", other, "mouse");
+    await flushAll();
+    expect(previewed(root)).toEqual([branchOf(guides)]);
+    guides.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+    await flushAll();
+    expect(previewed(root)).toHaveLength(0);
+  });
+
+  it("clears a stale preview on filtering, scope change and navigation", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    pointer("pointerover", frame(root, "Other")!, "mouse");
+    await flushAll();
+    const input = root.querySelector<HTMLInputElement>("input")!;
+    input.value = "page";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await flushAll();
+    expect(previewed(root)).toHaveLength(0);
+    pointer("pointerover", frame(root, "Other")!, "mouse");
+    await flushAll();
+    expect(previewed(root)).toHaveLength(1);
+    // A filtered view previews its rendered branch without changing the filter.
+    expect(input.value).toBe("page");
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    await flushAll();
+    expect(previewed(root)).toHaveLength(0);
+    pointer("pointerover", frame(root, "Other")!, "mouse");
+    await flushAll();
+    click(frame(root, "Other"));
+    await flushAll();
+    expect(previewed(root)).toHaveLength(0);
+  });
+
+  it("makes the focused root's frame inactive while its disclosure keeps working", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    click(frame(root, "Other"));
+    await flushAll();
+    const inactive = root.querySelector<HTMLButtonElement>('button[aria-label="Sidebar is already focused on Other"]')!;
+    expect(inactive.getAttribute("aria-disabled")).toBe("true");
+    expect(inactive.getAttribute("tabindex")).toBe("-1");
+    expect(inactive.getAttribute("data-sidebar-tip")).toBe("Already focused here");
+    const before = sessionStorage.getItem("zd-sidebar-scope");
+    click(inactive);
+    await flushAll();
+    expect(sessionStorage.getItem("zd-sidebar-scope")).toBe(before);
+    expect(root.querySelector("[data-sidebar-restore]")).not.toBeNull();
+    // Not a preview trigger either.
+    pointer("pointerover", inactive, "mouse");
+    await flushAll();
+    expect(previewed(root)).toHaveLength(0);
+    click(root.querySelector('button[aria-label="Collapse Other"]'));
+    await flushAll();
+    expect(root.querySelector('button[aria-label="Expand Other"]')).not.toBeNull();
+    expect(root.querySelector('a[href="/docs/other/page"]')).toBeNull();
+  });
+
+  it("derives the inactive frame from the unfiltered scope, not the filtered rows", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    const input = root.querySelector<HTMLInputElement>("input")!;
+    input.value = "other page";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await flushAll();
+    expect(root.querySelectorAll("[data-sidebar-tree-root] > [data-sidebar-branch]")).toHaveLength(1);
+    const other = frame(root, "Other")!;
+    expect(other.hasAttribute("aria-disabled")).toBe(false);
+    click(other);
+    await flushAll();
+    expect(input.value).toBe("other page");
+    expect(root.querySelector('button[aria-label="Sidebar is already focused on Other"]')).not.toBeNull();
+  });
+
+  it("moves keyboard focus to the new root's own action, never to an inactive frame", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    frame(root, "Guides")!.focus();
+    click(frame(root, "Guides"));
+    await flushAll();
+    // Guides has no page, so focus lands on the first link of the new tree.
+    expect(document.activeElement?.getAttribute("href")).toBe("/docs/guides/first");
+    click(root.querySelector("[data-sidebar-restore]"));
+    await flushAll();
+    click(frame(root, "Other"));
+    await flushAll();
+    expect(document.activeElement?.getAttribute("href")).toBe("/docs/other");
+    expect(document.activeElement?.getAttribute("aria-disabled")).toBeNull();
+  });
+
+  it("marks the arrived root briefly", async () => {
+    vi.useFakeTimers();
+    try {
+      const root = await mount({ ...build(), currentSlug: "about" });
+      click(frame(root, "Other"));
+      await flushAll();
+      expect(root.querySelector("[data-sidebar-arrived]")).toBe(branchOf(root.querySelector('button[aria-label="Sidebar is already focused on Other"]')));
+      vi.advanceTimersByTime(800);
+      await flushAll();
+      expect(root.querySelector("[data-sidebar-arrived]")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows an associated tooltip on keyboard focus and consumes only the first Escape", async () => {
+    const root = await mount({ ...build(), currentSlug: "about" });
+    const other = frame(root, "Other")!;
+    other.focus();
+    other.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    await flushAll();
+    const tip = tooltip()!;
+    expect(tip.hidden).toBe(false);
+    expect(tip.parentElement).toBe(document.body);
+    expect(tip.textContent).toBe("Focus sidebar hereOther");
+    expect(other.getAttribute("aria-describedby")).toBe(tip.id);
+    expect(document.activeElement).toBe(other);
+    const first = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    other.dispatchEvent(first);
+    expect(first.defaultPrevented).toBe(true);
+    expect(tip.hidden).toBe(true);
+    expect(other.hasAttribute("aria-describedby")).toBe(false);
+    const second = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    other.dispatchEvent(second);
+    expect(second.defaultPrevented).toBe(false);
+    const composing = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true, isComposing: true });
+    other.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    other.dispatchEvent(composing);
+    expect(composing.defaultPrevented).toBe(false);
+  });
+
+  it("removes its tooltip and listeners on disposal", async () => {
+    await mount({ ...build(), currentSlug: "about" });
+    expect(tooltip()).not.toBeNull();
+    view!.dispose();
+    view = undefined;
+    expect(tooltip()).toBeNull();
+  });
+
+  it("renders no frame or tooltip without navigation context", async () => {
+    const root = await mount({ nodes: NODES, currentSlug: "about" });
+    expect(root.querySelector("[data-sidebar-focus]")).toBeNull();
+    expect(tooltip()).toBeNull();
   });
 });

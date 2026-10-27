@@ -353,7 +353,7 @@ it("keeps the mobile drawer open for focus, broaden and restore; native navigati
   const hamburger = root.querySelector<HTMLButtonElement>('button[aria-label="Open sidebar"]')!;
   click(hamburger);
   await flushAll();
-  click(root.querySelector('button[aria-label="Show only this branch: Branch"]'));
+  click(root.querySelector('button[aria-label="Focus sidebar on Branch"]'));
   await flushAll();
   expect(hamburger.getAttribute("aria-expanded")).toBe("true");
   click(root.querySelector('[data-sidebar-broaden]'));
@@ -410,4 +410,30 @@ it("agrees with the desktop tree through soft navigation while the drawer was ne
       expect(stored().expansion).toEqual({});
     } finally { remounted.dispose(); }
   } finally { desktop.dispose(); }
+});
+
+it("lets an open focus-frame tooltip consume the first Escape before the drawer, and clears it when the drawer closes", async () => {
+  const data = buildSidebarNavigation([], "en", undefined, undefined, {
+    default: [{ type: "category", label: "Editorial", items: [{ type: "category", label: "Branch", items: ["introduction"] }] }, "introduction"],
+  }, () => NODES, []);
+  const { root } = await mount({ ...data, currentSlug: "introduction" });
+  const hamburger = root.querySelector<HTMLButtonElement>('button[aria-label="Open sidebar"]')!;
+  click(hamburger);
+  await flushAll();
+  const frame = root.querySelector<HTMLButtonElement>('button[aria-label="Focus sidebar on Branch"]')!;
+  frame.focus();
+  frame.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+  await flushAll();
+  const tip = document.querySelector<HTMLElement>("[data-sidebar-tooltip]")!;
+  expect(tip.hidden).toBe(false);
+  expect(frame.closest("[data-sidebar-branch]")?.hasAttribute("data-sidebar-preview")).toBe(true);
+  const first = pressEscape(frame);
+  expect(first.defaultPrevented).toBe(true);
+  expect(tip.hidden).toBe(true);
+  await flushAll();
+  expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+  pressEscape(frame);
+  await flushAll();
+  expect(hamburger.getAttribute("aria-expanded")).toBe("false");
+  expect(root.querySelector("[data-sidebar-preview]")).toBeNull();
 });

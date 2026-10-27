@@ -2102,6 +2102,97 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 .zd-theme-pack-active-ring {
   box-shadow: 0 0 0 2px var(--color-accent);
 }
+
+[data-sidebar-preview] {
+  background-color: color-mix(in oklch, var(--color-accent) 3%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+[data-sidebar-preview] > [data-sidebar-row]:not([data-sidebar-current]) {
+  background-color: color-mix(in oklch, var(--color-accent) 7%, transparent);
+}
+
+[data-sidebar-preview] > [data-sidebar-row]:not([data-sidebar-current]) [data-sidebar-focus] {
+  color: var(--color-accent);
+  background-color: color-mix(in oklch, var(--color-accent) 7%, transparent);
+}
+
+[data-sidebar-preview] > [data-sidebar-children] [data-tree-connector] {
+  border-color: var(--color-accent);
+}
+
+[data-sidebar-arrived] > [data-sidebar-row]:not([data-sidebar-current]) {
+  animation: .7s ease-out zd-sidebar-arrival;
+}
+
+@keyframes zd-sidebar-arrival {
+  0%, 22% {
+    background-color: color-mix(in oklch, var(--color-accent) 12%, transparent);
+    box-shadow: inset 2px 0 0 var(--color-accent);
+  }
+
+  100% {
+    background-color: #0000;
+    box-shadow: inset 0 0 #0000;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sidebar-arrived] > [data-sidebar-row]:not([data-sidebar-current]) {
+    animation: none;
+  }
+}
+
+@media (pointer: coarse) {
+  [data-sidebar-row] [data-sidebar-focus] {
+    width: 2.5rem;
+    height: 2.75rem;
+  }
+}
+
+[data-sidebar-tooltip] {
+  position: fixed;
+  z-index: var(--z-index-tooltip);
+  max-width: min(18rem, 100vw - 1rem);
+  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
+  border-radius: var(--radius-DEFAULT);
+  background-color: var(--color-fg);
+  color: var(--color-bg);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  box-shadow: 0 4px 12px color-mix(in oklch, var(--color-fg) 20%, transparent);
+}
+
+[data-sidebar-tooltip][hidden] {
+  display: none;
+}
+
+[data-sidebar-tooltip] > strong {
+  display: block;
+  font-weight: 600;
+}
+
+[data-sidebar-tooltip] > span {
+  display: block;
+  font-size: var(--text-micro);
+  opacity: .8;
+}
+
+@media (forced-colors: active) {
+  [data-sidebar-preview] > [data-sidebar-row] {
+    outline: 2px solid highlight;
+    outline-offset: -2px;
+  }
+
+  [data-sidebar-preview] > [data-sidebar-children] [data-tree-connector] {
+    border-color: highlight;
+  }
+
+  [data-sidebar-tooltip] {
+    border: 1px solid canvastext;
+  }
+}
 .block {
   display: block;
 }
@@ -2265,6 +2356,9 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 .h-\[0\.875rem\] {
   height: 0.875rem;
 }
+.h-\[1\.0625rem\] {
+  height: 1.0625rem;
+}
 .h-\[1\.125rem\] {
   height: 1.125rem;
 }
@@ -2273,6 +2367,9 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 }
 .h-\[1\.575rem\] {
   height: 1.575rem;
+}
+.h-\[1\.875rem\] {
+  height: 1.875rem;
 }
 .h-\[10rem\] {
   height: 10rem;
@@ -2418,6 +2515,9 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 .w-\[0\.875rem\] {
   width: 0.875rem;
 }
+.w-\[1\.0625rem\] {
+  width: 1.0625rem;
+}
 .w-\[1\.125rem\] {
   width: 1.125rem;
 }
@@ -2432,6 +2532,9 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 }
 .w-\[1\.75rem\] {
   width: 1.75rem;
+}
+.w-\[1\.875rem\] {
+  width: 1.875rem;
 }
 .w-\[12rem\] {
   width: 12rem;
@@ -3290,6 +3393,9 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 .shadow-lg {
   box-shadow: var(--zw-shadow-lg);
 }
+.opacity-50 {
+  opacity: 0.5;
+}
 .opacity-60 {
   opacity: 0.6;
 }
@@ -3345,6 +3451,9 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 }
 .rotate-90 {
   rotate: 90deg;
+}
+.cursor-default {
+  cursor: default;
 }
 .cursor-not-allowed {
   cursor: not-allowed;
@@ -3541,9 +3650,6 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 }
 .focus-visible\:text-accent:focus-visible {
   color: var(--zw-color-accent);
-}
-.focus-visible\:text-fg:focus-visible {
-  color: var(--zw-color-fg);
 }
 .focus-visible\:bg-accent\/10:focus-visible {
   background-color: color-mix(in oklab, var(--zw-color-accent) 10%, transparent);

@@ -4,9 +4,23 @@ import { broaderSidebarScope, sidebarScopeNodes, reconcileSidebarScope, indexSid
 import { getNoteTrayItems, groupItems } from "../note-tray-model/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 
+export interface ScopeLabels {
+  broaden: string;
+  restore: string;
+  restoreTip: string;
+  focus: (label: string) => string;
+  focusTip: string;
+  focused: (label: string) => string;
+  focusedTip: string;
+}
+
 export interface ScopeControls {
   focus: (node: SidebarNavNode) => void;
-  focusLabel: string;
+  labels: ScopeLabels;
+  /** True when the unfiltered scope is exactly this one occurrence as its single root. */
+  isFocusedRoot: (occurrenceId: string | undefined) => boolean;
+  /** The single root a scope change just arrived at, briefly; null otherwise. */
+  arrived: ReadonlySignal<string | null>;
   /** Effective disclosure: the user's explicit choice, else revealed/scope root, else `baseline`. */
   isOpen: (key: string, baseline: boolean) => boolean;
   /** Records an explicit user disclosure choice. */
@@ -18,6 +32,8 @@ export interface ScopeControls {
 // Version 1 records (no `version`) mixed automatic reveal into `expansion`
 // without provenance, so their expansion is discarded once on read.
 const STATE_VERSION = 2;
+// Matches the `zd-sidebar-arrival` keyframes in features.css.
+const ARRIVAL_MS = 700;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -42,11 +58,17 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
   const navRef: Ref<HTMLElement> = { current: null };
   const stateKey = "zd-sidebar-scope";
   const syncEvent = "zd:sidebar-scope";
-  const labels = locale === "ja" ? {
-    broaden: "ツリーを広げる", restore: "現在のページのツリーに戻す", focus: "この枝だけを表示",
+  const labels: ScopeLabels = locale === "ja" ? {
+    broaden: "ツリーを広げる", restore: "現在のページのサイドバーに戻す", restoreTip: "現在のページのサイドバーに戻す",
+    focus: (label) => `サイドバーに「${label}」だけを表示`, focusTip: "ここだけを表示",
+    focused: (label) => `すでに「${label}」だけを表示しています`, focusedTip: "すでにここだけを表示しています",
   } : {
-    broaden: "Broaden tree", restore: "Restore current page’s local tree", focus: "Show only this branch",
+    broaden: "Broaden tree", restore: "Restore current page’s sidebar", restoreTip: "Restore this page’s sidebar",
+    focus: (label) => `Focus sidebar on ${label}`, focusTip: "Focus sidebar here",
+    focused: (label) => `Sidebar is already focused on ${label}`, focusedTip: "Already focused here",
   };
+  const arrived = signal<string | null>(null);
+  let arrivalTimer: ReturnType<typeof setTimeout> | undefined;
   const selectedNodes = computed(() => navigation ? sidebarScopeNodes(navigation, nodes, selected.value) : nodes);
   const broader = computed(() => navigation ? broaderSidebarScope(navigation, nodes, selected.value) : null);
   const occurrenceIndex = navigation ? indexSidebarOccurrences(navigation.roots) : new Map<string, SidebarNavNode>();
@@ -118,19 +140,26 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
       revealed.value = new Set([...revealed.value, ...withAncestors(previous), ...withAncestors(id)]);
     }
     save();
+    clearTimeout(arrivalTimer);
+    arrived.value = id === null ? null : scopeRoot.value ?? null;
+    if (arrived.value !== null) arrivalTimer = setTimeout(() => { arrived.value = null; }, ARRIVAL_MS);
     // Scroll only the sidebar's own viewport; never scrollIntoView, which also
     // scrolls the document and would move the article being read.
     queueMicrotask(() => {
       const nav = navRef.current;
-      const controls = [...(nav?.querySelectorAll<HTMLButtonElement>("[data-sidebar-focus]") ?? [])];
+      // An already-focused root's frame is aria-disabled and out of the tab order,
+      // so it must never receive the fallback focus.
+      const controls = [...(nav?.querySelectorAll<HTMLButtonElement>('[data-sidebar-focus]:not([aria-disabled="true"])') ?? [])];
       const activeBranch = controls.reverse().find((button) => {
         const node = occurrenceIndex.get(button.dataset.sidebarFocusScope ?? "");
         const contains = (n: SidebarNavNode): boolean => n.slug === activeSlug.value || n.children.some(contains);
         return node && contains(node);
       });
-      const rootLink = id && id !== SIDEBAR_FOREST_SCOPE && broader.value !== null ? nav?.querySelector<HTMLAnchorElement>("[data-sidebar-tree-root] a") : null;
+      // The tree's first link; a tree with no link at all falls back to its first disclosure.
+      const rootAction = nav?.querySelector<HTMLElement>("[data-sidebar-tree-root] a") ?? nav?.querySelector<HTMLElement>("[data-sidebar-tree-root] button[aria-expanded]");
+      const rootLink = id && id !== SIDEBAR_FOREST_SCOPE && broader.value !== null ? rootAction : null;
       const currentLink = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-      const control = (id === null ? currentLink : rootLink) ?? nav?.querySelector<HTMLButtonElement>("[data-sidebar-broaden]") ?? activeBranch ?? currentLink ?? nav?.querySelector<HTMLElement>('[data-sidebar-focus], [data-sidebar-tree-root] a, input');
+      const control = (id === null ? currentLink : rootLink) ?? nav?.querySelector<HTMLButtonElement>("[data-sidebar-broaden]") ?? activeBranch ?? currentLink ?? rootAction ?? nav?.querySelector<HTMLElement>('[data-sidebar-focus]:not([aria-disabled="true"]), [data-sidebar-tree-root] a, [data-sidebar-tree-root] button[aria-expanded], input');
       const target = control;
       let viewport = nav?.parentElement;
       while (viewport && viewport !== document.body && viewport.scrollHeight <= viewport.clientHeight) viewport = viewport.parentElement;
@@ -143,9 +172,10 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
       control?.focus({ preventScroll: true });
     });
   };
+  const isFocusedRoot = (occurrenceId: string | undefined) => occurrenceId !== undefined && scopeRoot.value === occurrenceId;
   const scopeControls: ScopeControls | undefined = navigation ? {
-    focus: (node) => { if (node.occurrenceId) changeScope(node.occurrenceId); },
-    focusLabel: labels.focus, defaultOpen, defaultGroupOpen,
+    focus: (node) => { if (node.occurrenceId && !isFocusedRoot(node.occurrenceId)) changeScope(node.occurrenceId); },
+    labels, isFocusedRoot, arrived, defaultOpen, defaultGroupOpen,
     isOpen: (key, baseline) => expansion.value[key] ?? automaticOpen(key, baseline),
     setOpen: (key, open) => {
       expansion.value = { ...expansion.value, [key]: open };
@@ -191,7 +221,7 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
     };
     document.addEventListener(syncEvent, sync);
     document.addEventListener(AFTER_NAVIGATE_EVENT, navigate);
-    return () => { document.removeEventListener(syncEvent, sync); document.removeEventListener(AFTER_NAVIGATE_EVENT, navigate); };
+    return () => { clearTimeout(arrivalTimer); document.removeEventListener(syncEvent, sync); document.removeEventListener(AFTER_NAVIGATE_EVENT, navigate); };
   });
   return { selected, selectedNodes, broader, labels, canRestore, changeScope, save, navRef, scopeControls };
 }

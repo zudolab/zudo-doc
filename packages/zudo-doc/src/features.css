@@ -1350,3 +1350,113 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 .zd-theme-pack-active-ring {
   box-shadow: 0 0 0 2px var(--color-accent);
 }
+
+/* ========================================
+ * Sidebar branch focus preview (frame + branch preview)
+ *
+ * Hovering (mouse/pen) or keyboard-focusing a category's focus frame marks
+ * exactly that branch wrapper `[data-sidebar-preview]` (one per sidebar
+ * instance — see sidebar-tree-island/branch-preview.ts). Every treatment is
+ * paint-only: background, inset box-shadow and border-color. Nothing here may
+ * change box geometry, or the preview would shift rows.
+ *
+ * The wash and leading rule live on the wrapper's own background layer, so the
+ * current-page row's `bg-fg` fill paints over them and stays readable.
+ * ======================================== */
+[data-sidebar-preview] {
+  background-color: color-mix(in oklch, var(--color-accent) 3%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+[data-sidebar-preview] > [data-sidebar-row]:not([data-sidebar-current]) {
+  background-color: color-mix(in oklch, var(--color-accent) 7%, transparent);
+}
+
+[data-sidebar-preview] > [data-sidebar-row]:not([data-sidebar-current]) [data-sidebar-focus] {
+  color: var(--color-accent);
+  background-color: color-mix(in oklch, var(--color-accent) 7%, transparent);
+}
+
+/* Only connectors inside the previewed subtree — never the row's own elbow to
+ * its parent, which belongs to the ancestor. */
+[data-sidebar-preview] > [data-sidebar-children] [data-tree-connector] {
+  border-color: var(--color-accent);
+}
+
+/* Scope arrival: a brief wash on the newly focused root row. */
+[data-sidebar-arrived] > [data-sidebar-row]:not([data-sidebar-current]) {
+  animation: zd-sidebar-arrival 700ms ease-out;
+}
+
+@keyframes zd-sidebar-arrival {
+  0%,
+  22% {
+    background-color: color-mix(in oklch, var(--color-accent) 12%, transparent);
+    box-shadow: inset 2px 0 0 var(--color-accent);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sidebar-arrived] > [data-sidebar-row]:not([data-sidebar-current]) {
+    animation: none;
+  }
+}
+
+/* Touch target: a one-tap focus frame at a comfortable size. */
+@media (pointer: coarse) {
+  /* Out-specifies the frame's w-/h- utilities, which are emitted after this file. */
+  [data-sidebar-row] [data-sidebar-focus] {
+    width: 2.5rem;
+    height: 2.75rem;
+  }
+}
+
+/* Transient tooltip for the focus frame and Restore. Appended to <body> so the
+ * sidebar's scroll viewport and the drawer's transform cannot clip it. */
+[data-sidebar-tooltip] {
+  position: fixed;
+  z-index: var(--z-index-tooltip);
+  max-width: min(18rem, calc(100vw - 1rem));
+  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
+  border-radius: var(--radius-DEFAULT);
+  background-color: var(--color-fg);
+  color: var(--color-bg);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  box-shadow: 0 4px 12px color-mix(in oklch, var(--color-fg) 20%, transparent);
+}
+
+[data-sidebar-tooltip][hidden] {
+  display: none;
+}
+
+[data-sidebar-tooltip] > strong {
+  display: block;
+  font-weight: 600;
+}
+
+[data-sidebar-tooltip] > span {
+  display: block;
+  font-size: var(--text-micro);
+  opacity: 0.8;
+}
+
+@media (forced-colors: active) {
+  [data-sidebar-preview] > [data-sidebar-row] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  [data-sidebar-preview] > [data-sidebar-children] [data-tree-connector] {
+    border-color: Highlight;
+  }
+
+  [data-sidebar-tooltip] {
+    border: 1px solid CanvasText;
+  }
+}

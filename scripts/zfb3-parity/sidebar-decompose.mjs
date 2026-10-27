@@ -289,11 +289,16 @@ async function scope(browser, baseUrl) {
       await page.locator('#desktop-sidebar').screenshot({ path: join(output, file), animations: 'disabled' });
       stops.push({ ...info, screenshot: file });
     }
-    // Activating the focused branch-focus control with Enter must not navigate.
-    const focusBtn = page.locator(`${sel} [data-sidebar-focus]`).first();
+    // Activating an enabled branch-focus control with Enter must change the
+    // scope without navigating. An already-focused root's frame is
+    // aria-disabled, so pressing Enter on it would pass vacuously.
+    const focusBtn = page.locator(`${sel} [data-sidebar-focus]:not([aria-disabled="true"])`).first();
     const url = page.url();
-    if (await focusBtn.count()) { await focusBtn.focus(); await page.keyboard.press('Enter'); await settle(page); }
-    log.push({ name: `keyboard ${route} ${width}`, stops, enterOnFocusKeepsUrl: page.url() === url });
+    const scopeOf = () => page.locator(`${sel} nav[data-sidebar-scope]`).first().getAttribute('data-sidebar-scope');
+    const scopeBefore = await scopeOf();
+    let enterChangedScope = null;
+    if (await focusBtn.count()) { await focusBtn.focus(); await page.keyboard.press('Enter'); await settle(page); enterChangedScope = (await scopeOf()) !== scopeBefore; }
+    log.push({ name: `keyboard ${route} ${width}`, stops, enterOnFocusKeepsUrl: page.url() === url, enterChangedScope });
     await context.close();
   };
 

@@ -232,8 +232,9 @@ if (mode === "preview") {
       const buttons = page.locator("#desktop-sidebar [data-sidebar-focus]:visible");
       const before = await buttons.count();
       assert(before >= 2, `need >=2 focus buttons, got ${before}`);
-      const label = await buttons.nth(1).getAttribute("aria-label");
-      await buttons.nth(1).click();
+      const enabled = page.locator('#desktop-sidebar [data-sidebar-focus]:visible:not([aria-disabled="true"])');
+      const label = await enabled.nth(1).getAttribute("aria-label");
+      await enabled.nth(1).click();
       await page.locator("#desktop-sidebar [data-sidebar-restore]:visible").first().waitFor({ state: "visible", timeout: T });
       const narrowed = await page.locator("#desktop-sidebar [data-sidebar-focus]:visible").count();
       assert(narrowed < before, `focus did not narrow (${before} -> ${narrowed})`);
