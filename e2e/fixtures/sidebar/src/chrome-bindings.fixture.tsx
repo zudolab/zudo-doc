@@ -24,6 +24,8 @@ import type { SidebarsConfig } from "@takazudo/zudo-doc/sidebar-utils";
 // the locked self-contained-stub shape — #2653 decision wave).
 
 import type { Child } from "@takazudo/zfb/zudo-react";
+import { routeContext } from "virtual:zudo-doc-route-context";
+import { createRouteContext, type RouteContextPayload } from "@takazudo/zudo-doc/route-context";
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
 import { settings } from "@/config/settings";
@@ -49,6 +51,8 @@ import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history
 // alias (esbuild-inlined, no fs). Static import is load-bearing for the island
 // scanner chain noted below.
 import docHistoryMeta from "#doc-history-meta";
+import { createUmbrellaChrome } from "@/lib/learn-chrome";
+import { learnNavigation, type UmbrellaNavigation } from "@/lib/learn-navigation";
 
 // ---------------------------------------------------------------------------
 // Frontmatter-preview entry builder (moved verbatim from the former
@@ -193,7 +197,7 @@ Object.assign(sidebars, {
   },
 } satisfies SidebarsConfig);
 
-export const chromeBindings = defineChromeBindings({
+const baseBindings = defineChromeBindings({
   SearchWidget,
   docHistoryMeta,
   sidebarsConfig: sidebars,
@@ -205,3 +209,19 @@ export const chromeBindings = defineChromeBindings({
   DocHistory,
   mdxExtras,
 });
+
+// Learn is one linked hierarchy: Guides, Components and Markdown Features keep
+// their complete native subtrees beneath the Learn landing row. The paired
+// Header/Sidebar replacements reuse every binding above unchanged.
+const umbrellaNavigations: UmbrellaNavigation[] = [learnNavigation];
+
+export const chromeBindings = {
+  ...baseBindings,
+  ...defineChromeBindings(
+    createUmbrellaChrome(
+      createRouteContext(routeContext as unknown as RouteContextPayload),
+      baseBindings,
+      umbrellaNavigations,
+    ),
+  ),
+};
