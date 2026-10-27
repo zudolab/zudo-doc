@@ -19,6 +19,7 @@ import type { ResolvedDateFormats } from "../settings.js";
 import {
   INDENT,
   BASE_PAD,
+  CONNECTOR_OFFSET,
   connectorLeft,
   ConnectorLines,
   CategoryLinkIcon,
@@ -47,6 +48,7 @@ import { formatMonthDay } from "../format-date/index.js";
 
 const STORAGE_KEY = "zd-sidebar-open";
 const GROUPED_TRAY_ITEM_DEPTH = 3;
+const TOGGLE_BOX_SIZE = "1.5rem";
 
 function ToggleChevron({
   isExpanded,
@@ -71,6 +73,11 @@ function padLeft(depth: number, forCategory: boolean): string {
   if (depth === 0)
     return `calc(${BASE_PAD} + ${forCategory ? "0.15rem" : "0rem"})`;
   return `calc(${depth} * ${INDENT} + 1.25rem + 5px)`;
+}
+
+/** Puts a 1px vertical guide on the center of a category row's leading toggle box. */
+function toggleGuideLeft(depth: number): string {
+  return `calc(${padLeft(depth, true)} + ${TOGGLE_BOX_SIZE} / 2 - 0.5px)`;
 }
 
 function getOpenSet(): Set<string> {
@@ -547,6 +554,7 @@ function TrayItem({
   isLast,
   showDate = false,
   depth = 1,
+  guideLeft,
   locale,
   dateFormats,
 }: {
@@ -556,6 +564,8 @@ function TrayItem({
   isLast: ReadonlySignal<boolean>;
   showDate?: boolean;
   depth?: number;
+  /** Draws this row's connector from the parent's toggle center instead of its depth column. */
+  guideLeft?: string;
   locale?: string;
   dateFormats?: ResolvedDateFormats;
 }) {
@@ -574,6 +584,12 @@ function TrayItem({
               depth={depth}
               isLast={isLast}
               topPad="var(--spacing-vsp-2xs)"
+              left={guideLeft}
+              width={
+                guideLeft
+                  ? `calc(${padLeft(depth, false)} - ${CONNECTOR_OFFSET} - ${guideLeft})`
+                  : undefined
+              }
             />
             <a
               href={computed(() => item.value.href ?? "")}
@@ -621,19 +637,23 @@ function ConnectorLinesLive({
   depth,
   isLast,
   topPad,
+  left,
+  width,
 }: {
   depth: number;
   isLast: ReadonlySignal<boolean>;
   topPad: string;
+  left?: string;
+  width?: string;
 }) {
   return (
     <Show
       when={isLast}
       fallback={() => (
-        <ConnectorLines depth={depth} isLast={false} topPad={topPad} />
+        <ConnectorLines depth={depth} isLast={false} topPad={topPad} left={left} width={width} />
       )}
     >
-      {() => <ConnectorLines depth={depth} isLast={true} topPad={topPad} />}
+      {() => <ConnectorLines depth={depth} isLast={true} topPad={topPad} left={left} width={width} />}
     </Show>
   );
 }
@@ -746,7 +766,15 @@ function TrayGroupNode({
       </div>
       <Show when={expanded}>
         {() => (
-          <div>
+          <div class="relative">
+            <div
+              class="absolute border-l border-dashed border-muted"
+              style={{
+                left: toggleGuideLeft(1),
+                top: "calc(-1 * var(--spacing-vsp-xs))",
+                height: "var(--spacing-vsp-xs)",
+              }}
+            />
             <For each={items} by={(item) => item.slug}>
               {(item, index) => (
                 <TrayItem
@@ -759,6 +787,7 @@ function TrayGroupNode({
                   locale={locale}
                   dateFormats={dateFormats}
                   depth={GROUPED_TRAY_ITEM_DEPTH}
+                  guideLeft={toggleGuideLeft(1)}
                 />
               )}
             </For>

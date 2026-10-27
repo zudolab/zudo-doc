@@ -16,4 +16,10 @@ describe("tree navigation shared primitives", () => {
     expect(html).toContain("calc(100% - calc(1rem + 0.5lh))");
     expect(html).toContain("border-t border-dashed border-muted");
   });
+
+  it("lets a caller anchor the guide to an explicit column", () => {
+    const html = renderSsr(<ConnectorLines depth={3} isLast={false} left="2rem" width="1rem" />);
+    expect(html).toContain("left:2rem");
+    expect(html).toContain("width:1rem");
+  });
 });
