@@ -48,7 +48,6 @@ if (typeof mod.loadThemePackRegistry === "function") {
 
 const { violations: jsViolations, specifiers } = await analyzeSiteSchemaGraph({
   entry: DIST_JS,
-  resolveFrom: [PKG_ROOT, resolve(PKG_ROOT, "../..")],
 });
 const {
   violations: dtsViolations,

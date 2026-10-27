@@ -46,7 +46,6 @@ import { toRouteSlug, toSlugParams } from "../slug/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../..");
-const REPO_ROOT = resolve(PKG_ROOT, "../..");
 const SRC_ENTRY = resolve(PKG_ROOT, "src/site-schema/index.ts");
 const DIST_DTS = resolve(PKG_ROOT, "dist/site-schema/index.d.ts");
 
@@ -61,7 +60,7 @@ interface SiteSchemaGraph {
     violations: Array<{ specifier: string; label: string; importer: string }>;
     files: string[];
   };
-  analyzeSiteSchemaGraph(args: { entry: string; resolveFrom: string[] }): Promise<{
+  analyzeSiteSchemaGraph(args: { entry: string }): Promise<{
     violations: Array<{ specifier: string; label: string; importer: string }>;
     specifiers: string[];
   }>;
@@ -456,7 +455,6 @@ describe("site-schema stays browser-safe", () => {
     const { analyzeSiteSchemaGraph } = await loadGraphHelper();
     const { violations, specifiers } = await analyzeSiteSchemaGraph({
       entry: SRC_ENTRY,
-      resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
     });
     expect(
       violations,

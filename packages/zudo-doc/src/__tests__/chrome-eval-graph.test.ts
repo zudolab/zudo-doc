@@ -5,12 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const srcRoot = resolve(__dirname, "..");
-const repoRoot = resolve(__dirname, "../../../..");
 
 // ── esbuild resolution (mirrors preset.test.ts) ─────────────────────────────
-// esbuild is not a direct dependency of this package — it rides in as a
-// transitive of vite/vitest. Resolve it via vite so the guard runs without
-// adding a dep.
+// esbuild is a declared dependency of this package.
 interface EsbuildBuildError extends Error {
   errors?: Array<{ text?: string }>;
 }
@@ -22,11 +19,7 @@ interface EsbuildLike {
 }
 
 function loadEsbuild(): EsbuildLike {
-  const vitePkg = require.resolve("vite/package.json", {
-    paths: [process.cwd(), __dirname, repoRoot],
-  });
-  const viteRequire = createRequire(vitePkg);
-  return viteRequire("esbuild") as EsbuildLike;
+  return createRequire(import.meta.url)("esbuild") as EsbuildLike;
 }
 
 // (success-path) Match `node:*` / `virtual:*` only as a real module specifier

@@ -801,16 +801,16 @@
     }
   },
   "dependencies": {
-    "@inquirer/prompts": "^8.4.2",
-    "esbuild": ">=0.28.1",
-    "fs-extra": "^11.3.0",
+    "@inquirer/prompts": "^8.7.5",
+    "esbuild": "^0.28.2",
+    "fs-extra": "^11.4.1",
     "minimist": "^1.2.8",
     "parse5": "^8.0.1",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
     "smol-toml": "^1.9.1",
-    "tsx": "^4.21.0",
-    "yaml": "^2.9.0"
+    "tsx": "^4.23.15",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
@@ -821,12 +821,13 @@
     "@takazudo/zudo-doc-history-server": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",
-    "@types/node": "^25.3.5",
+    "@types/node": "^25.9.9",
     "@types/pluralize": "^0.0.33",
-    "happy-dom": "^20.10.6",
-    "tsup": "^8.0.0",
+    "happy-dom": "^21.0.4",
+    "katex": "^0.19.1",
+    "tsup": "^9.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^4.1.0",
-    "zod": "^4.3.6"
+    "vitest": "^4.1.12",
+    "zod": "^4.6.7"
   }
 }

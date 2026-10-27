@@ -33,7 +33,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../..");
-const REPO_ROOT = resolve(PKG_ROOT, "../..");
 
 // The detector is shared verbatim with the `prepack` guard
 // (`scripts/check-asset-viewer-exports.mjs`) so the two can never disagree
@@ -48,7 +47,6 @@ interface SiteSchemaGraph {
   forbiddenLabel(specifier: string, rules?: SiteSchemaGraphRule[]): string | undefined;
   analyzeSiteSchemaGraph(args: {
     entry: string;
-    resolveFrom: string[];
     rules?: SiteSchemaGraphRule[];
   }): Promise<{
     violations: Array<{ specifier: string; label: string; importer: string }>;
@@ -139,7 +137,6 @@ describe("asset-viewer zfb-free modules stay zfb-free", () => {
     const { analyzeSiteSchemaGraph, ASSET_VIEWER_FORBIDDEN_SPECIFIERS } = await loadGraphHelper();
     const { violations } = await analyzeSiteSchemaGraph({
       entry: resolve(PKG_ROOT, relPath),
-      resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
       rules: ASSET_VIEWER_FORBIDDEN_SPECIFIERS,
     });
     expect(
@@ -159,7 +156,6 @@ describe("asset-viewer zfb-free modules stay zfb-free", () => {
     for (const relPath of ["src/asset-page/body.tsx", "src/asset-index-page/body.tsx"] as const) {
       const { specifiers } = await analyzeSiteSchemaGraph({
         entry: resolve(PKG_ROOT, relPath),
-        resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
         rules: ASSET_VIEWER_FORBIDDEN_SPECIFIERS,
       });
       expect(specifiers.length).toBeGreaterThan(0);
@@ -219,7 +215,6 @@ describe("asset-viewer zfb-free modules stay zfb-free", () => {
       const { analyzeSiteSchemaGraph, ASSET_VIEWER_FORBIDDEN_SPECIFIERS } = await loadGraphHelper();
       const { violations } = await analyzeSiteSchemaGraph({
         entry: resolve(PKG_ROOT, relPath),
-        resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
         rules: ASSET_VIEWER_FORBIDDEN_SPECIFIERS,
       });
       expect(violations.length).toBeGreaterThan(0);
@@ -246,7 +241,6 @@ describe("asset-viewer zfb-free modules stay zfb-free", () => {
       writeFileSync(entry, 'import "@takazudo/zfb";\n');
       const { violations } = await analyzeSiteSchemaGraph({
         entry,
-        resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
         rules: zfbOnlyRules,
       });
       expect(violations.some((v) => v.label === "zfb engine package")).toBe(true);

@@ -17,7 +17,6 @@ import type { DocPageEntry } from "../doc-page-props/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../..");
-const REPO_ROOT = resolve(PKG_ROOT, "../..");
 const SRC_ENTRY = resolve(PKG_ROOT, "src/route-context-payload/index.ts");
 const DIST_DTS = resolve(PKG_ROOT, "dist/route-context-payload/index.d.ts");
 
@@ -28,7 +27,6 @@ interface BrowserGraph {
   };
   analyzeSiteSchemaGraph(args: {
     entry: string;
-    resolveFrom: string[];
   }): Promise<{
     violations: Array<{ specifier: string; label: string; importer: string }>;
     specifiers: string[];
@@ -377,7 +375,6 @@ describe("./route-context-payload browser safety", () => {
     const { analyzeSiteSchemaGraph } = await loadGraphHelper();
     const { violations, specifiers } = await analyzeSiteSchemaGraph({
       entry: SRC_ENTRY,
-      resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
     });
 
     // Plain defaults live outside the config/preset graph, so this browser

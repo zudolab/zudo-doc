@@ -28,9 +28,9 @@
 // SOURCE, strips TypeScript types deterministically via esbuild's
 // `transformSync()` (same rationale as gen-search-widget-script.mjs — see
 // that file's header comment for the full `ts.transpileModule()` vs esbuild
-// history, zudolab/zudo-doc#3422 / #3430 — identical here: esbuild is only a
+// history, zudolab/zudo-doc#3422 / #3430 — identical here: esbuild is a
 // package dependency (it is also used by the shipped ejected-header generator),
-// and the effective floor tracks the root `pnpm.overrides` range), executes
+// and its range matches the root `pnpm.overrides` entry), executes
 // each transpiled CommonJS module in an isolated sandbox (empty
 // `module`/`exports`; all four source files are import-free), then reads
 // the REAL runtime values off each sandbox's `exports`:

@@ -19,7 +19,6 @@
 // makes the check total: a forbidden dependency is caught whether it resolves,
 // fails to resolve, or gets inlined away.
 
-import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
@@ -117,25 +116,9 @@ export function analyzeDeclarationGraph(entry, rules = FORBIDDEN_SPECIFIERS) {
   return { violations, files: [...seen].sort() };
 }
 
-/**
- * Resolve esbuild without adding it as a direct dependency — it rides in
- * transitively via tsup (build/prepack) and vite/vitest (tests).
- *
- * @param {string[]} fromPaths - candidate resolution roots.
- */
-export async function loadEsbuild(fromPaths) {
-  const require = createRequire(import.meta.url);
-  // Each host package is resolved first, then esbuild is resolved FROM it —
-  // pnpm's store keeps esbuild out of this package's own node_modules.
-  for (const host of ["tsup", "vite", "vitest"]) {
-    try {
-      const hostPkg = require.resolve(`${host}/package.json`, { paths: fromPaths });
-      return await import(createRequire(hostPkg).resolve("esbuild"));
-    } catch {
-      // try the next host package
-    }
-  }
-  throw new Error("[site-schema-graph] could not resolve esbuild via tsup / vite / vitest");
+/** Load esbuild, a declared `dependencies` entry of this package. */
+export async function loadEsbuild() {
+  return await import("esbuild");
 }
 
 /**
@@ -143,13 +126,12 @@ export async function loadEsbuild(fromPaths) {
  *
  * @param {object} args
  * @param {string} args.entry - absolute path to the entry module (.ts or .js).
- * @param {string[]} args.resolveFrom - roots used to locate esbuild.
  * @param {Array<{ pattern: RegExp, label: string }>} [args.rules] - defaults
  *   to `FORBIDDEN_SPECIFIERS`.
  * @returns {Promise<{ violations: Array<{ specifier: string, label: string, importer: string }>, specifiers: string[] }>}
  */
-export async function analyzeSiteSchemaGraph({ entry, resolveFrom, rules = FORBIDDEN_SPECIFIERS }) {
-  const esbuild = await loadEsbuild(resolveFrom);
+export async function analyzeSiteSchemaGraph({ entry, rules = FORBIDDEN_SPECIFIERS }) {
+  const esbuild = await loadEsbuild();
 
   /** @type {Map<string, { specifier: string, label: string, importer: string }>} */
   const violations = new Map();

@@ -26,15 +26,13 @@
 // could reformat its emit and silently rewrite the frozen bytes with no
 // source change in the diff, and the emit was never byte-identical to the
 // esbuild-compiled bindings this generator replaced in #3412 anyway, so
-// `typescript` bought no stability it actually had. esbuild is only a
-// transitive dep here via tsup, so it's declared as an explicit `esbuild`
-// devDependency in package.json. NOTE: the range there is deliberately the
-// same `>=0.28.1` the ROOT package.json `pnpm.overrides` forces — an override
-// wins over any dependency range in the workspace, so declaring tsup's own
-// `^0.27.0` here would be a dead range that never matches what is installed.
-// The effective esbuild floor is therefore open-ended, and byte stability of
-// this generator's output is guaranteed by `pnpm check:search-widget-drift`
-// (b4push + CI) rather than by the version range), executes each transpiled
+// `typescript` bought no stability it actually had. esbuild is a declared
+// `dependencies` entry in package.json (the shipped ejected-header generator
+// also needs it). The root `pnpm.overrides` entry uses the same `^0.28.2`
+// range, so every workspace consumer resolves one esbuild line. Byte
+// stability of this generator's output is guaranteed by
+// `pnpm check:search-widget-drift` (b4push + CI) rather than by the version
+// range), executes each transpiled
 // CommonJS module in an isolated sandbox
 // (empty `module`/`exports`, no external deps — both source files are
 // import-free), then reads the REAL runtime values off the sandbox's

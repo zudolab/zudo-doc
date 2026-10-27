@@ -40,7 +40,6 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "..");
-const REPO_ROOT = resolve(PKG_ROOT, "../..");
 
 /** Every export target this sub adds, plus whether it must stay zfb-free. */
 const TARGETS = [
@@ -81,7 +80,6 @@ for (const target of TARGETS.filter((t) => t.zfbFree)) {
 
   const { violations: jsViolations, specifiers } = await analyzeSiteSchemaGraph({
     entry: distJs,
-    resolveFrom: [PKG_ROOT, REPO_ROOT],
     rules: ASSET_VIEWER_FORBIDDEN_SPECIFIERS,
   });
   const { violations: dtsViolations, files } = analyzeDeclarationGraph(
