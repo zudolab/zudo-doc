@@ -94,6 +94,15 @@ export const settings = {
       path: "/docs/series-year",
       categoryMatch: "series-year",
     },
+    {
+      label: "Atlas",
+      path: "/docs/atlas",
+      categoryMatch: "atlas",
+      children: [
+        { label: "Maps", path: "/docs/atlas-maps", categoryMatch: "atlas-maps" },
+        { label: "Routes", path: "/docs/atlas-routes", categoryMatch: "atlas-routes" },
+      ],
+    },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   packageOwnedRoutes: true,
 } satisfies ZudoDocConfig;

@@ -214,6 +214,9 @@ const baseBindings = defineChromeBindings({
 // their complete native subtrees beneath the Learn landing row. The paired
 // Header/Sidebar replacements reuse every binding above unchanged.
 const umbrellaNavigations: UmbrellaNavigation[] = [learnNavigation];
+// The fixture has no Learn content (so Learn sections stay native); Atlas
+// exercises the same production helper with fixture-owned sections.
+umbrellaNavigations.push({ root: "atlas", branches: ["atlas-maps", "atlas-routes"] });
 
 export const chromeBindings = {
   ...baseBindings,
