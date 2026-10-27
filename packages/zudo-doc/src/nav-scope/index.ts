@@ -53,13 +53,8 @@ export function getNavSectionForSlug(
   const all = getCategoryOrder(headerNav);
 
   // First pass: find explicit matchers (not "!")
-  const explicitMatches = all.filter(
-    (cm) => cm !== "!" && topCategory.startsWith(cm),
-  );
-  if (explicitMatches.length > 0) {
-    // Longest prefix match wins
-    return explicitMatches.sort((a, b) => b.length - a.length)[0];
-  }
+  const explicitMatch = all.find((cm) => cm !== "!" && topCategory === cm);
+  if (explicitMatch !== undefined) return explicitMatch;
 
   // Second pass: return the default ("!") matcher
   const defaultItem = headerNav.find(
@@ -68,10 +63,15 @@ export function getNavSectionForSlug(
   return defaultItem?.categoryMatch;
 }
 
+/** Whole-segment match so `foo` claims `foo` and `foo/bar` but not `foo2`. */
+function matchesCategory(slug: string, match: string): boolean {
+  return slug === match || slug.startsWith(match + "/");
+}
+
 /**
  * Filter top-level NavNodes by a headerNav categoryMatch value.
  * - `"!"` means everything NOT claimed by explicit matchers
- * - `"claude"` means nodes whose slug starts with `"claude"`
+ * - `"claude"` means nodes whose slug is `"claude"` or under `"claude/"`
  * - `undefined` means all nodes
  *
  * Parameterized version of the host's `getNavSubtree()` — receives the
@@ -91,9 +91,9 @@ export function getNavSubtree<T extends NavScopeNode>(
   if (categoryMatch === "!") {
     const explicitPrefixes = getCategoryOrder(headerNav).filter((cm) => cm !== "!");
     return tree.filter(
-      (node) => !explicitPrefixes.some((prefix) => node.slug.startsWith(prefix)),
+      (node) => !explicitPrefixes.some((prefix) => matchesCategory(node.slug, prefix)),
     );
   }
 
-  return tree.filter((node) => node.slug.startsWith(categoryMatch));
+  return tree.filter((node) => matchesCategory(node.slug, categoryMatch));
 }
