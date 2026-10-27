@@ -22,7 +22,7 @@ Release 8.1.2 shipped the ZFB 5.1.4 family (peers `^5.1.4`; 5.1.0 by #4627, 5.1.
 
 Current state (2026-10-27): the zfb 4 migration PR #4477 is merged (`b9dd43b0d`) and
 production-deployed. Pins: workspace zfb family 5.1.5, peers ^5.1.5 (4.3.1 adopted by #4516; bumped to 4.3.2 by #4541; to 4.3.3 for RUSTSEC-2026-0333 in the 6.1.1 release; to 4.4.0 by #4569, then 4.5.0 by #4581, released in 6.2.0; 4.5.1 by #4586, then 4.5.2 by #4592, released in 7.0.0; 4.5.3 by #4602, then 4.5.4 by #4606, then 4.6.0 by #4607, then 4.7.0 by #4612, released in 7.1.0; 5.0.0 adopted by #4623, which dropped the zfb#4429/#4430 workarounds, then 5.0.1, released in 8.0.0; 5.1.0 adopted by #4627, then 5.1.1 by #4640, then 5.1.2 by #4641, released in 8.1.0; 5.1.3 by #4646, released in 8.1.1; 5.1.4 by #4656, released in 8.1.2; then 5.1.5); zdtp 0.9.0 (0.8.7 through release 9.0.0);
-MCP SDK 1.32.2; root/generated-MCP Wrangler 4.153.0. The three published packages (`@takazudo/zudo-doc`,
+MCP SDK 1.32.2; root/generated-MCP Wrangler 4.154.0. The three published packages (`@takazudo/zudo-doc`,
 `@takazudo/zudo-doc-history-server` and `create-zudo-doc`) are at 8.1.3 on npm
 `latest`; their published ZFB requirement is 5.1.4. The history-server peer floor is `^8.0.0` (raised in the 8.0.0 major) — see the original 6.0.0 publication record
 `docs/findings/4430-zfb3-migration/release-6.0.0/README.md`. Upstream #4097 is closed. Owner
