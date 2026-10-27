@@ -167,7 +167,7 @@ The **postBuild** step (per-page history-dropdown JSON in `dist/doc-history/`) i
 - `SKIP_DOC_HISTORY=1` → never generate (wins over everything).
 - `DOC_HISTORY_SKIP_POSTBUILD=1` → never generate (wins over `GEN_DOC_HISTORY` and CI, loses only to `SKIP_DOC_HISTORY`).
 - `GEN_DOC_HISTORY=1` → generate (local opt-in — e.g. before `pnpm preview` of a locally-built `dist/`).
-- CI (`CI` / `GITHUB_ACTIONS`) → generate (keeps the CI build-site artifact identical; the async generator stays within budget).
+- CI (`CI` / `GITHUB_ACTIONS`) → generate, except that the three workflows' build-site `pnpm build` steps set `DOC_HISTORY_SKIP_POSTBUILD=1` (the 37–94s chain hit the 120s budget in a production deploy); the parallel `build-history` job emits the JSON and the deploy merge uses it.
 - otherwise (plain local build) → skip.
 
 `DOC_HISTORY_SKIP_POSTBUILD=1` therefore skips **only** the dropdown JSON, leaving preBuild metadata intact — for a shallow-clone CI variant that keeps enough git history for the cheap preBuild walk but opts out of the heavier chain (#2927). Its name deliberately avoids the substring `SKIP_DOC_HISTORY` so `scripts/check-compatibility-contract.ts`'s literal survivor scan for that marker needs no allowlist update.
