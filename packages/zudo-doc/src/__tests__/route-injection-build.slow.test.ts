@@ -1386,6 +1386,18 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // (islands-d5efa665.js -> islands-8c7115bf.js) and keep their byte lengths
   // (57089, 67521, 78973). The changed sidebar island source changes zfb's
   // build identity globally; these routes render no note-tray rows.
+  //
+  // 2026-10-27 re-baseline (zudolab/zudo-doc#4674, sweep cleanup: categoryMatch
+  // segment match #4676 + HtmlPreview hover fg #4677): compared the CI A2
+  // capture of #4665's run 40472443638 (artifact 12718976787, the accepted
+  // reference) with this PR's run 40496420926 (artifact 12730254253).
+  // Replacing native data-zfb-build identities only (342c6f8360395e38 ->
+  // 682abb0e0686b7dd) makes every normalized page byte-identical; raw pages
+  // additionally differ only in the islands entry (islands-8c7115bf.js ->
+  // islands-4bb59b6b.js) and keep their byte lengths (57089, 67521, 78973).
+  // The changed sidebar-utils/nav-scope and HtmlPreview island sources change
+  // zfb's build identity globally; this fixture's single getting-started
+  // category has no prefix sibling, so its visible sidebar is unchanged.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
