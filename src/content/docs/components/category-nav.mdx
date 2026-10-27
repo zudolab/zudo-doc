@@ -86,6 +86,10 @@ src/content/docs/
     writing-docs.mdx
 ```
 
+### CategoryNav and Custom Sidebar Trees
+
+`CategoryNav` lists children from the URL tree. A sidebar configuration or an [editorial tree](../guides/editorial-navigation.mdx) changes only the sidebar and the mobile drawer; it does not change these cards. On a landing page whose sidebar children differ from its directory children, list the links explicitly in the same order as your sidebar membership data.
+
 ## Source
 
 The component's rendering logic ships from the package at `@takazudo/zudo-doc/category-nav`, and is wired into every MDX doc page automatically via the package-owned routes (`packageOwnedRoutes`, on by default) — there is no project file to maintain.
