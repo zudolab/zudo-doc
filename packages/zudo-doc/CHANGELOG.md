@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Features
 
-- The sidebar's branch-focus control is now a four-corner focus frame ("Focus sidebar on {category}") instead of "◎". Pointing at it or reaching it with the keyboard briefly highlights exactly the branch it would show, with no layout, scope, filter or URL change, and a short tooltip; touch focuses in one tap. The frame of the branch already shown on its own is inactive (`aria-disabled`, out of the tab order), and keyboard focus after a scope change lands on the new root row instead. Restore uses a counter-clockwise reset arrow ("Restore current page's sidebar"). Japanese labels are included.
+- The sidebar's branch-focus control is now a four-corner focus frame (named "Focus sidebar on" plus the category) instead of "◎". Pointing at it or reaching it with the keyboard briefly highlights exactly the branch it would show, with a short tooltip and no layout, scope, filter or URL change; on touch, one tap focuses the branch. The frame of a branch already shown on its own is inactive (`aria-disabled`, out of the tab order). Restore uses a counter-clockwise reset arrow ("Restore current page's sidebar"). Japanese labels are included.
 
 ### Bug Fixes
 
