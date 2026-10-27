@@ -36,7 +36,7 @@ consumer relationship. This adds no unique formatter package to the lockfile.
 | `@types/minimist` in `packages/zudo-doc` | Only `bin/zudo-doc.mjs` imports minimist, outside the checked TS files. Keep for editor typing of that live JS CLI; the scaffold's TS CLI also retains its own declaration, so removal would save zero packages. |
 | `minimist`, `fs-extra`, `picocolors` | Live CLI, scaffolding, eject, theme, and audit consumers. No handwritten replacements attempted. |
 | `diff`, `katex`, `@takazudo/zdtp`, `@takazudo/zfb-md-wasm` | Framework peer contracts enable history comparison, math, design-token controls, and browser highlighting. Imports alone are not a sufficient removal oracle. |
-| `preact`, `zod`, zfb packages | Preact remains installed for `@takazudo/zdtp`'s peer and opaque bundle; zod is the runtime schema contract; zfb packages are engine contracts, and the Cloudflare adapter also has a direct import in `pages/api/ai-chat.tsx`. |
+| `zod`, zfb packages | zod is the runtime schema contract; zfb packages are engine contracts, and the Cloudflare adapter also has a direct import in `pages/api/ai-chat.tsx`. |
 | `preact-render-to-string`, `vite` | The browser-embed fixture now uses zfb's public zudo-react server renderer; the unused renderer dependency has been removed from the root manifest. Vite remains the direct fixture build dependency. |
 | `pluralize`, `@types/pluralize`, `culori`, `@types/culori` | Tag tests and contrast tooling import these directly. Retention elsewhere does not replace a direct declaration. |
 | `@takazudo/zudo-design-token-lint`, `html-validate`, `wrangler` | Depcheck false positives: binary names and script/CI consumers differ from import usage. |
@@ -85,12 +85,12 @@ Manual interactive smoke was skipped; browser E2E is outside this local suite.
 
 ## Current migration dependency contract
 
-Release 8.1.2 shipped the ZFB 5.1.4 family (peers `^5.1.4`; 5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641, released in 8.1.0; 5.1.3 by #4646, released in 8.1.1; 5.1.4 by #4656), zdtp 0.8.7, MCP SDK 1.32.2, and history-server peer floor `^8.0.0`; 8.1.3 kept that tuple; the unreleased workspace moves to ZFB 5.1.5 (peers `^5.1.5`). Node.js 24 remains the minimum. The publication records below describe earlier releases.
+Release 8.1.2 shipped the ZFB 5.1.4 family (peers `^5.1.4`; 5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641, released in 8.1.0; 5.1.3 by #4646, released in 8.1.1; 5.1.4 by #4656), zdtp 0.8.7, MCP SDK 1.32.2, and history-server peer floor `^8.0.0`; 8.1.3 kept that tuple; the unreleased workspace moves to ZFB 5.1.5 (peers `^5.1.5`) and zdtp 0.9.0. Node.js 24 remains the minimum. The publication records below describe earlier releases.
 
 The released 6.0.0 tuple: `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server`
 and `create-zudo-doc` were published at 6.0.0 with the published zfb family
 pinned to 4.3.1 and peers ^4.3.1. zudo-doc 6.0.2 moved to zfb 4.3.2 with peers ^4.3.2 (#4541). zudo-doc 6.1.1 shipped zfb
-4.3.3 with peers ^4.3.3 (RUSTSEC-2026-0333 frontmatter parser fix). zudo-doc 6.2.0 shipped zfb 4.5.0 with peers ^4.5.0 (#4569, #4581). zudo-doc 7.0.0 shipped zfb 4.5.2 with peers ^4.5.2. zudo-doc 7.1.0 shipped zfb 4.7.0 with peers ^4.7.0 (4.5.3 by #4602, then 4.5.4 by #4606, then 4.6.0 by #4607, then 4.7.0 by #4612). zudo-doc 8.0.0 shipped zfb 5.0.1 with peers ^5.0.1 (5.0.0 by #4623). zudo-doc 8.1.0 shipped zfb 5.1.2 with peers ^5.1.2 (5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641). zudo-doc 8.1.1 shipped zfb 5.1.3 with peers ^5.1.3 and zdtp 0.8.7 (#4646). zudo-doc 8.1.2 shipped zfb 5.1.4 with peers ^5.1.4 (#4656), and 8.1.3 kept it. The unreleased workspace moves to zfb 5.1.5 with peers ^5.1.5; zdtp 0.8.7; MCP SDK 1.32.2; root and generated-MCP
+4.3.3 with peers ^4.3.3 (RUSTSEC-2026-0333 frontmatter parser fix). zudo-doc 6.2.0 shipped zfb 4.5.0 with peers ^4.5.0 (#4569, #4581). zudo-doc 7.0.0 shipped zfb 4.5.2 with peers ^4.5.2. zudo-doc 7.1.0 shipped zfb 4.7.0 with peers ^4.7.0 (4.5.3 by #4602, then 4.5.4 by #4606, then 4.6.0 by #4607, then 4.7.0 by #4612). zudo-doc 8.0.0 shipped zfb 5.0.1 with peers ^5.0.1 (5.0.0 by #4623). zudo-doc 8.1.0 shipped zfb 5.1.2 with peers ^5.1.2 (5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641). zudo-doc 8.1.1 shipped zfb 5.1.3 with peers ^5.1.3 and zdtp 0.8.7 (#4646). zudo-doc 8.1.2 shipped zfb 5.1.4 with peers ^5.1.4 (#4656), and 8.1.3 kept it. The unreleased workspace moves to zfb 5.1.5 with peers ^5.1.5; zdtp 0.9.0; MCP SDK 1.32.2; root and generated-MCP
 Wrangler 4.153.0. The history-server peer floor is ^8.0.0 (raised in the 8.0.0 major; a minimum compatibility
 floor — see "First-party peer floor" in `RELEASE.md`). Publication and consumer
 evidence: [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
@@ -102,9 +102,10 @@ which reads that pin (no separate workflow version literal) and invokes
 `npx --yes wrangler@<pin>` without a workspace install;
 `scripts/verify-worker-dry-run.mjs` uses the installed `pnpm exec wrangler` from the
 same pin.
-Core JSX uses zudo-react. Installed zdtp 0.8.7 carries Preact ^10.29.1 as its own
-dependency (a peer through 0.8.5) and owns its internal Tailwind browser dependency; those remain intentional panel-only
-engine mentions. Native Wind uses package defaults plus the public wind.json
+Core JSX uses zudo-react. Installed zdtp 0.9.0 renders with its own bundled zudo-react
+runtime and depends on no Preact (0.8.6–0.8.7 carried Preact as a dependency; through
+0.8.5 it was a peer), so the workspace installs no Preact at all. zdtp still owns its
+internal Tailwind browser dependency, an intentional panel-only engine mention. Native Wind uses package defaults plus the public wind.json
 manifest, and no host Tailwind compiler dependency is required.
 
 ## Unreleased KaTeX compatibility floor (#4572)

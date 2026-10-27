@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- The optional `@takazudo/zdtp` peer now also accepts 0.9 (`^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0`). zdtp 0.9.0 renders the design token panel without Preact, so a site on zdtp 0.9 installs no Preact at all; the panel's API, storage keys and CSS are unchanged. It also fixes undo on a generic token tab leaving the edited value on `:root` until reload.
 
 ## [9.0.0] - 2026-10-27
 

@@ -649,7 +649,7 @@ function bootstrapDesignTokenPanelForScope(
     }
     // Dynamic imports cannot be cancelled. The activated island owns the
     // continuation until this check, after which the zdtp module alone owns
-    // its opaque document-lifetime Preact tree.
+    // its opaque document-lifetime panel tree.
     if (activationSignal?.aborted) {
       activationInFlight = false;
       removePendingListeners();
