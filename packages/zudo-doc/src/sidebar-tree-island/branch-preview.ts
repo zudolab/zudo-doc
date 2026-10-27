@@ -79,7 +79,10 @@ export function createBranchPreview(navRef: Ref<HTMLElement>): BranchPreview & {
     const anchor = trigger.getBoundingClientRect();
     const box = tip.getBoundingClientRect();
     const maxLeft = window.innerWidth - box.width - VIEWPORT_MARGIN_PX;
-    let left = anchor.right + GAP_PX;
+    // Start past the sidebar's edge so the hoverable tooltip never covers the
+    // row's disclosure, which sits right beside the frame.
+    const edge = Math.max(anchor.right, navRef.current?.getBoundingClientRect().right ?? anchor.right);
+    let left = edge + GAP_PX;
     let top = anchor.top + anchor.height / 2 - box.height / 2;
     // No room beside the trigger (narrow drawer): drop below it instead.
     if (left > maxLeft) {

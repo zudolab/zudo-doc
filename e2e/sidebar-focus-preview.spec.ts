@@ -55,6 +55,10 @@ test.describe("desktop focus frame preview", () => {
     await expect(sidebar.getByRole("link", { name: "Outline color", exact: true })).toHaveCount(0);
     await expect(tooltip(page)).toHaveText("Focus sidebar hereOutline recipes");
     await expect(outline).toHaveAttribute("aria-describedby", /zd-sidebar-tip-/);
+    // The hoverable tooltip must not cover the row's disclosure beside the frame.
+    const tipBox = (await tooltip(page).boundingBox())!;
+    const disclosureBox = (await sidebar.getByRole("button", { name: "Expand Outline recipes", exact: true }).boundingBox())!;
+    expect(tipBox.x).toBeGreaterThanOrEqual(disclosureBox.x + disclosureBox.width);
     expect(await rowBoxes(sidebar)).toEqual(before);
 
     await color.hover();
