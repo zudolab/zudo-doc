@@ -69,6 +69,7 @@ export function ConnectorLines({
     <>
       <div
         class="absolute border-l border-dashed border-muted"
+        data-tree-connector
         style={{
           left,
           top: "0px",
@@ -77,6 +78,7 @@ export function ConnectorLines({
       />
       <div
         class="absolute border-t border-dashed border-muted"
+        data-tree-connector
         style={{
           left,
           width,

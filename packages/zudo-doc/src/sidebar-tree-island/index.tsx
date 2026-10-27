@@ -24,11 +24,12 @@ import {
   ConnectorLines,
   CategoryLinkIcon,
 } from "../tree-nav-shared/index.js";
-import { ChevronRight, ChevronLeft, Search } from "../icons/index.js";
+import { ChevronRight, ChevronLeft, Search, FocusFrame, RestoreArrow } from "../icons/index.js";
 import { ThemeToggle, type ThemeToggleLabels } from "../theme-toggle/index.js";
 import { smartBreakToHtml } from "../smart-break/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import { useSidebarScope, type ScopeControls } from "./scope-state.js";
+import { createBranchPreview } from "./branch-preview.js";
 import { filterTree } from "../sidebar-filter/index.js";
 import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
 import {
@@ -281,10 +282,31 @@ export function SidebarTree({
   const scope = getScope();
   const activeSlug = useActiveSlug(navigation?.roots ?? nodes, currentSlug, currentPath);
   const query = signal("");
-  const { selected, selectedNodes, broader, labels, canRestore, changeScope, save, navRef, scopeControls } = useSidebarScope({
+  const { selected, selectedNodes, broader, labels, canRestore, changeScope, save, navRef, scopeControls: baseScopeControls } = useSidebarScope({
     nodes, navigation, activeSlug, query,
     locale: localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en",
   });
+  const branchPreview = createBranchPreview(navRef);
+  const scopeControls: TreeScopeControls | undefined = baseScopeControls
+    ? { ...baseScopeControls, preview: branchPreview.active }
+    : undefined;
+  if (navigation) {
+    scope.onActivate(() => {
+      const dispose = branchPreview.activate();
+      const onNavigate = () => branchPreview.clear();
+      document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
+      return () => {
+        document.removeEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
+        dispose();
+      };
+    });
+    // Scope changes, filtering and remounted rows invalidate a transient preview.
+    scope.effect(() => {
+      void selected.value;
+      void query.value;
+      branchPreview.clear();
+    });
+  }
   const showingRootMenu = signal(false);
   const filterRef: Ref<HTMLInputElement> = { current: null };
   const filterPlaceholder = signal("Filter...");
@@ -393,14 +415,10 @@ export function SidebarTree({
                     </button>
                     <Show when={canRestore}>{() => (
                       <button type="button" data-sidebar-restore on:click={() => changeScope(null)}
-                        title={labels.restore} aria-label={labels.restore}
+                        aria-label={labels.restore} data-sidebar-tip={labels.restoreTip}
                         style="width:40px;height:40px"
-                        class="grid place-items-center shrink-0 rounded text-muted hover:text-fg focus-visible:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                          <circle cx="12" cy="12" r="10" />
-                          <circle cx="12" cy="12" r="6" />
-                          <circle cx="12" cy="12" r="2" />
-                        </svg>
+                        class="grid place-items-center shrink-0 rounded text-muted hover:text-accent hover:bg-surface focus-visible:text-accent focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        <RestoreArrow class="h-[1.0625rem] w-[1.0625rem]" />
                       </button>
                     )}</Show>
                   </div>
@@ -450,8 +468,12 @@ export function SidebarTree({
 }
 SidebarTree.displayName = "SidebarTree";
 
+interface TreeScopeControls extends ScopeControls {
+  /** This sidebar instance's transient branch preview (occurrence id). */
+  preview: ReadonlySignal<string | null>;
+}
 interface ActiveProps {
-  scopeControls?: ScopeControls;
+  scopeControls?: TreeScopeControls;
   currentSlug: ReadonlySignal<string | undefined>;
   forceOpen: ReadonlySignal<boolean>;
 }
@@ -894,18 +916,33 @@ function CategoryNode({
     if (scopeControls) open.value = scopeControls.isOpen(occurrenceKey(), scopeControls.defaultOpen(node.value));
   });
   const expanded = computed(() => forceOpen.value || open.value);
+  const focusedRoot = computed(() => !!scopeControls?.isFocusedRoot(node.value.occurrenceId));
+  const previewed = computed(() => !!node.value.occurrenceId && scopeControls?.preview.value === node.value.occurrenceId);
+  const arrived = computed(() => !!node.value.occurrenceId && scopeControls?.arrived.value === node.value.occurrenceId);
   const focusButton = scopeControls ? (
     <button type="button" data-sidebar-focus data-sidebar-focus-scope={computed(() => node.value.occurrenceId ?? "")}
-      on:click={() => scopeControls.focus(node.value)}
-      aria-label={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
-      title={computed(() => `${scopeControls.focusLabel}: ${node.value.label}`)}
-      class={computed(() => `ml-auto shrink-0 rounded px-hsp-xs py-vsp-2xs ${active.value ? "text-bg hover:bg-bg/10 focus-visible:bg-bg/10" : "text-muted hover:bg-surface hover:text-fg focus-visible:bg-surface focus-visible:text-fg"}`)}>
-      <span aria-hidden="true">◎</span>
+      on:click={() => { if (!focusedRoot.value) scopeControls.focus(node.value); }}
+      aria-disabled={computed(() => (focusedRoot.value ? "true" : null))}
+      tabindex={computed(() => (focusedRoot.value ? -1 : null))}
+      aria-label={computed(() => (focusedRoot.value ? scopeControls.labels.focused(node.value.label) : scopeControls.labels.focus(node.value.label)))}
+      data-sidebar-tip={computed(() => (focusedRoot.value ? scopeControls.labels.focusedTip : scopeControls.labels.focusTip))}
+      data-sidebar-tip-detail={computed(() => node.value.label)}
+      class={computed(() => `ml-auto grid shrink-0 place-items-center rounded w-[1.875rem] h-[1.875rem] ${
+        focusedRoot.value
+          ? `cursor-default opacity-50 ${active.value ? "text-bg" : "text-muted"}`
+          : active.value
+            ? "text-bg hover:bg-bg/10 focus-visible:bg-bg/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            : "text-muted hover:bg-accent/10 hover:text-accent focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      }`)}>
+      <FocusFrame class="h-[1.125rem] w-[1.125rem]" />
     </button>
   ) : null;
   const paddingLeft = padLeft(depth, true);
   return (
     <div
+      data-sidebar-branch
+      data-sidebar-preview={computed(() => (previewed.value ? "" : null))}
+      data-sidebar-arrived={computed(() => (arrived.value ? "" : null))}
       class={computed(
         () =>
           `${depth === 0 ? "border-t border-muted first:border-t-0" : ""} ${depth >= 1 && !isLast.value ? "relative" : ""}`,
@@ -917,11 +954,12 @@ function CategoryNode({
         {() => (
           <div
             class="absolute border-l border-solid border-muted z-local-1"
+            data-tree-connector
             style={{ left: connectorLeft(depth), top: "0px", bottom: "0px" }}
           />
         )}
       </Show>
-      <div class="relative">
+      <div class="relative" data-sidebar-row data-sidebar-current={computed(() => (active.value ? "" : null))}>
         <ConnectorLinesLive
           depth={depth}
           isLast={isLast}
@@ -1009,7 +1047,7 @@ function CategoryNode({
       </div>
       <Show when={expanded}>
         {() => (
-          <div>
+          <div data-sidebar-children>
             <NodeList
               nodes={computed(() => node.value.children)}
               currentSlug={currentSlug}

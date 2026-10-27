@@ -17,6 +17,7 @@ import { SidebarTree } from "../index.js";
 import { h } from "@takazudo/zfb/zudo-react";
 import { islandRoot } from "@takazudo/zfb/zudo-react/server";
 import type { SidebarNavNode } from "../../sidebar/types.js";
+import { buildSidebarNavigation } from "../../sidebar-utils/index.js";
 
 const SAMPLE_NODES: SidebarNavNode[] = [
   {
@@ -69,6 +70,26 @@ describe("SidebarTree — SSG HTML presence", () => {
   it("renders empty nav gracefully", () => {
     const html = render(<SidebarTree nodes={[]} />);
     expect(html).toContain("<nav");
+  });
+});
+
+describe("SidebarTree — focus frame SSR markup", () => {
+  const data = buildSidebarNavigation([], "en", undefined, undefined, {}, () => SAMPLE_NODES, []);
+
+  it("server-renders the four-corner frame with no transient preview, arrival or tooltip state", () => {
+    const html = render(<SidebarTree {...data} currentSlug="introduction" />);
+    expect(html).toContain('aria-label="Focus sidebar on Guides"');
+    expect(html).toContain('d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3"');
+    expect(html).not.toContain("◎");
+    expect(html).not.toContain("data-sidebar-preview");
+    expect(html).not.toContain("data-sidebar-arrived");
+    expect(html).not.toContain("aria-describedby");
+    expect(html).not.toContain('role="tooltip"');
+  });
+
+  it("server-renders no frame for nodes-only sidebars", () => {
+    const html = render(<SidebarTree nodes={SAMPLE_NODES} />);
+    expect(html).not.toContain("data-sidebar-focus");
   });
 });
 

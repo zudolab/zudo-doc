@@ -376,3 +376,47 @@ export function FileArchive({ class: className }: IconProps): Child {
     </svg>
   );
 }
+
+// ---------------------------------------------------------------------------
+// FocusFrame — four open corners (sidebar "focus on this branch")
+// ---------------------------------------------------------------------------
+
+export function FocusFrame({ class: className }: IconProps): Child {
+  return (
+    <svg
+      class={className || undefined}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.65"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RestoreArrow — counter-clockwise reset arrow
+// ---------------------------------------------------------------------------
+
+export function RestoreArrow({ class: className }: IconProps): Child {
+  return (
+    <svg
+      class={className || undefined}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.65"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6" />
+    </svg>
+  );
+}

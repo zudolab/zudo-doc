@@ -13,18 +13,18 @@ test("scope controls retain the article/filter and restore the configured tree",
   const article = await page.locator("h1").textContent();
   await page.evaluate(() => window.scrollTo(0, 120));
   const scroll = await page.evaluate(() => window.scrollY);
-  await sidebar.getByRole("button", { name: "Show only this branch: Sub A", exact: true }).click();
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true })).toHaveCount(0);
+  await sidebar.getByRole("button", { name: "Focus sidebar on Sub A", exact: true }).click();
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Sub B", exact: true })).toHaveCount(0);
   await expect(page).toHaveURL(new RegExp(`${PAGE}/?$`));
   expect(await page.locator("h1").textContent()).toBe(article);
   expect(await page.evaluate(() => window.scrollY)).toBe(scroll);
   await sidebar.getByRole("textbox", { name: "Filter navigation" }).fill("Sub B");
   await sidebar.locator("[data-sidebar-broaden]").click();
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Sub B", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("textbox")).toHaveValue("Sub B");
   await sidebar.locator("[data-sidebar-broaden]").click();
   await expect(sidebar.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
-  await sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true }).click();
+  await sidebar.getByRole("button", { name: "Focus sidebar on Sub B", exact: true }).click();
   await sidebar.locator("[data-sidebar-restore]").click();
   await expect(sidebar.getByRole("textbox")).toHaveValue("Sub B");
   await sidebar.getByRole("textbox").fill("");
@@ -37,11 +37,11 @@ test("native same-branch navigation, refresh and Back/Forward keep a valid selec
   await page.goto(PAGE);
   await waitForSidebarHydration(page);
   const sidebar = desktopSidebar(page);
-  await sidebar.getByRole("button", { name: "Show only this branch: Sub A", exact: true }).click();
+  await sidebar.getByRole("button", { name: "Focus sidebar on Sub A", exact: true }).click();
   await spaClickSelector(page, '#desktop-sidebar a[href$="/guides/sub-a/page-2/"], #desktop-sidebar a[href$="/guides/sub-a/page-2"]');
   await waitForSidebarHydration(page);
   await expect(sidebar.locator('[data-sidebar-restore]')).toBeVisible();
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Sub B", exact: true })).toHaveCount(0);
   await page.reload();
   await waitForSidebarHydration(page);
   await expect(sidebar.locator('[data-sidebar-restore]')).toBeVisible();
@@ -51,7 +51,7 @@ test("native same-branch navigation, refresh and Back/Forward keep a valid selec
   await page.goForward();
   await waitForSidebarHydration(page);
   await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /sub-a\/page-2\/?$/);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Sub B", exact: true })).toHaveCount(0);
   assertNoConsoleErrors();
 });
 
@@ -62,12 +62,12 @@ for (const width of [320, 390, 1023]) {
     await openMobileDrawer(page);
     const drawer = page.locator("[data-zd-mobile-sidebar]");
     const scroll = await page.evaluate(() => window.scrollY);
-    await drawer.getByRole("button", { name: "Show only this branch: Sub A", exact: true }).click();
+    await drawer.getByRole("button", { name: "Focus sidebar on Sub A", exact: true }).click();
     await expect(page.getByRole("button", { name: "Close sidebar", exact: true })).toBeVisible();
     await drawer.locator("[data-sidebar-broaden]").click();
     await drawer.locator("[data-sidebar-broaden]").click();
     await expect(drawer.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
-    await drawer.getByRole("button", { name: "Show only this branch: Sub A", exact: true }).click();
+    await drawer.getByRole("button", { name: "Focus sidebar on Sub A", exact: true }).click();
     await drawer.locator("[data-sidebar-restore]").click();
     await expect(drawer).not.toHaveAttribute("inert", "");
     expect(await page.evaluate(() => window.scrollY)).toBe(scroll);
@@ -84,10 +84,10 @@ test("twelve-level 390px tree broadens one editorial parent at a time", async ({
   await page.goto(DEEP_PAGE);
   await openMobileDrawer(page);
   const drawer = page.locator("[data-zd-mobile-sidebar]");
-  await drawer.getByRole("button", { name: "Show only this branch: Deep level 12 with a long wrapped editorial category label", exact: true }).click();
+  await drawer.getByRole("button", { name: "Focus sidebar on Deep level 12 with a long wrapped editorial category label", exact: true }).click();
   for (let depth = 11; depth >= 1; depth--) {
     await drawer.locator("[data-sidebar-broaden]").click();
-    await expect(drawer.getByRole("button", { name: `Show only this branch: Deep level ${depth} with a long wrapped editorial category label`, exact: true })).toHaveCount(1);
+    await expect(drawer.getByRole("button", { name: `Focus sidebar on Deep level ${depth} with a long wrapped editorial category label`, exact: true })).toHaveCount(1);
     await expect(page.getByRole("button", { name: "Close sidebar", exact: true })).toBeVisible();
   }
   await drawer.locator("[data-sidebar-restore]").click();
@@ -100,12 +100,12 @@ test("refresh preserves a branch focused away from the article", async ({ page, 
   await page.goto(PAGE);
   await waitForSidebarHydration(page);
   const sidebar = desktopSidebar(page);
-  await sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true }).click();
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub A", exact: true })).toHaveCount(0);
+  await sidebar.getByRole("button", { name: "Focus sidebar on Sub B", exact: true }).click();
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Sub A", exact: true })).toHaveCount(0);
   await page.reload();
   await waitForSidebarHydration(page);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub A", exact: true })).toHaveCount(0);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Sub B", exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Sub A", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Sub B", exact: true })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`${PAGE}/?$`));
   assertNoConsoleErrors();
 });
@@ -123,21 +123,21 @@ test("serialized editorial parents broaden one level and Restore reinstates the 
   await page.goto(EDITORIAL_PAGE);
   await waitForSidebarHydration(page);
   const sidebar = desktopSidebar(page);
-  const expectedRoots = ["Show only this branch: Color recipes", "Show only this branch: Outline recipes"];
+  const expectedRoots = ["Focus sidebar on Color recipes", "Focus sidebar on Outline recipes"];
   expect(await configuredRootLabels(sidebar)).toEqual(expectedRoots);
   await expect(sidebar.getByRole("button", { name: "Expand Outline recipes", exact: true })).toBeVisible();
   await sidebar.getByRole("button", { name: "Expand Outline recipes", exact: true }).click();
   await expect(sidebar.getByRole("link", { name: "Outline color", exact: true })).toBeVisible();
   await sidebar.locator("[data-sidebar-broaden]").click();
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Surfaces & borders", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Utility reference", exact: true })).toHaveCount(0);
   await expect(sidebar.locator("[data-sidebar-broaden]")).toHaveText("↑Broaden tree");
   await expect(sidebar.locator("[data-sidebar-scope-hint]")).toHaveCount(0);
   await sidebar.locator("[data-sidebar-broaden]").click();
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Utility reference", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Surfaces & borders", exact: true })).toHaveCount(1);
   await expect(sidebar.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
-  await sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true }).click();
+  await sidebar.getByRole("button", { name: "Focus sidebar on Surfaces & borders", exact: true }).click();
   await sidebar.locator("[data-sidebar-restore]").click();
   expect(await configuredRootLabels(sidebar)).toEqual(expectedRoots);
   await expect(sidebar.getByRole("button", { name: "Expand Outline recipes", exact: true })).toBeVisible();
@@ -160,18 +160,18 @@ test("keyboard scope actions preserve URL hash, article position and desktop TOC
   expect(readingY).toBeGreaterThan(0);
   const url = page.url();
   const article = await page.locator("h1").textContent();
-  const focus = sidebar.getByRole("button", { name: "Show only this branch: Color recipes", exact: true });
+  const focus = sidebar.getByRole("button", { name: "Focus sidebar on Color recipes", exact: true });
   await focus.focus();
   await expect(focus).toBeFocused();
   await focus.press("Enter");
   await expect(sidebar.locator("[data-sidebar-tree-root] a").first()).toBeFocused();
   await sidebar.locator("[data-sidebar-broaden]").focus();
   await page.keyboard.press("Space");
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Surfaces & borders", exact: true })).toHaveCount(1);
   await expect(sidebar.locator("[data-sidebar-tree-root] a").first()).toBeFocused();
   await sidebar.locator("[data-sidebar-broaden]").focus();
   await page.keyboard.press("Space");
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Utility reference", exact: true })).toHaveCount(1);
   await expect(sidebar.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
   await expect(focus).toBeFocused();
   await page.keyboard.press("Space");
@@ -196,14 +196,14 @@ test.describe("touch scope controls", () => {
     const drawer = page.locator("[data-zd-mobile-sidebar]");
     const url = page.url();
     const readingY = await page.evaluate(() => window.scrollY);
-    await drawer.getByRole("button", { name: "Show only this branch: Color recipes", exact: true }).tap();
-    await expect(drawer.getByRole("button", { name: "Show only this branch: Outline recipes", exact: true })).toHaveCount(0);
+    await drawer.getByRole("button", { name: "Focus sidebar on Color recipes", exact: true }).tap();
+    await expect(drawer.getByRole("button", { name: "Focus sidebar on Outline recipes", exact: true })).toHaveCount(0);
     await drawer.locator("[data-sidebar-broaden]").tap();
-    await expect(drawer.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
+    await expect(drawer.getByRole("button", { name: "Focus sidebar on Surfaces & borders", exact: true })).toHaveCount(1);
     await drawer.locator("[data-sidebar-restore]").tap();
     await expect(page.getByRole("button", { name: "Close sidebar", exact: true })).toBeVisible();
     await expect(drawer).not.toHaveAttribute("inert", "");
-    expect(await configuredRootLabels(drawer)).toEqual(["Show only this branch: Color recipes", "Show only this branch: Outline recipes"]);
+    expect(await configuredRootLabels(drawer)).toEqual(["Focus sidebar on Color recipes", "Focus sidebar on Outline recipes"]);
     expect(page.url()).toBe(url);
     expect(await page.evaluate(() => window.scrollY)).toBe(readingY);
     assertNoConsoleErrors();
@@ -215,16 +215,16 @@ test("native article links widen only to the nearest common editorial ancestor",
   await page.goto(EDITORIAL_PAGE);
   await waitForSidebarHydration(page);
   const sidebar = desktopSidebar(page);
-  await sidebar.getByRole("button", { name: "Show only this branch: Color recipes", exact: true }).click();
+  await sidebar.getByRole("button", { name: "Focus sidebar on Color recipes", exact: true }).click();
   expect(await spaClickSelector(page, 'main a[href$="/editorial/outline/"], main a[href$="/editorial/outline"]')).toBe(true);
   await waitForSidebarHydration(page);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true })).toHaveCount(1);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(0);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Motion recipes", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Surfaces & borders", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Utility reference", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Motion recipes", exact: true })).toHaveCount(0);
   await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/outline\/?$/);
   expect(await spaClickSelector(page, 'main a[href$="/editorial/motion/"], main a[href$="/editorial/motion"]')).toBe(true);
   await waitForSidebarHydration(page);
-  await expect(sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Utility reference", exact: true })).toHaveCount(1);
   await expect(sidebar.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
   await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/motion\/?$/);
   assertNoConsoleErrors();
@@ -235,7 +235,7 @@ test("modified sidebar links open a native new tab without changing the selected
   await page.goto(EDITORIAL_PAGE);
   await waitForSidebarHydration(page);
   const sidebar = desktopSidebar(page);
-  await sidebar.getByRole("button", { name: "Show only this branch: Color recipes", exact: true }).click();
+  await sidebar.getByRole("button", { name: "Focus sidebar on Color recipes", exact: true }).click();
   const url = page.url();
   const popupPromise = page.context().waitForEvent("page");
   await sidebar.getByRole("link", { name: "Border color", exact: true }).click({ modifiers: ["ControlOrMeta"] });
@@ -244,7 +244,7 @@ test("modified sidebar links open a native new tab without changing the selected
     await expect(popup).toHaveURL(/\/docs\/editorial\/border\/?$/);
     await expect(popup.locator("h1")).toHaveText("Border color");
     expect(page.url()).toBe(url);
-    await expect(sidebar.getByRole("button", { name: "Show only this branch: Outline recipes", exact: true })).toHaveCount(0);
+    await expect(sidebar.getByRole("button", { name: "Focus sidebar on Outline recipes", exact: true })).toHaveCount(0);
     await expect(sidebar.locator('a[aria-current="page"]')).toHaveAttribute("href", /editorial\/background\/?$/);
   } finally {
     await popup.close();
@@ -285,7 +285,7 @@ for (const { width, drawer } of [
       await waitForSidebarHydration(page);
       container = desktopSidebar(page);
     }
-    await expect(container.getByRole("button", { name: "Show only this branch: Deep level 12 with a long wrapped editorial category label", exact: true })).toBeVisible();
+    await expect(container.getByRole("button", { name: "Focus sidebar on Deep level 12 with a long wrapped editorial category label", exact: true })).toBeVisible();
     const controls = await focusControlLayout(container);
     expect(controls.length).toBeGreaterThanOrEqual(12);
     for (const control of controls) {
@@ -293,11 +293,11 @@ for (const { width, drawer } of [
       expect(control.width, `${control.label} width`).toBeGreaterThanOrEqual(24);
       expect(control.right, `${control.label} stays inside the nav`).toBeLessThanOrEqual(control.navRight + 0.5);
     }
-    const deepest = container.getByRole("button", { name: "Show only this branch: Deep level 12 with a long wrapped editorial category label", exact: true });
+    const deepest = container.getByRole("button", { name: "Focus sidebar on Deep level 12 with a long wrapped editorial category label", exact: true });
     const url = page.url();
     await deepest.focus();
     await page.keyboard.press("Enter");
-    await expect(container.getByRole("button", { name: "Show only this branch: Deep level 11 with a long wrapped editorial category label", exact: true })).toHaveCount(0);
+    await expect(container.getByRole("button", { name: "Focus sidebar on Deep level 11 with a long wrapped editorial category label", exact: true })).toHaveCount(0);
     expect(page.url()).toBe(url);
     assertNoConsoleErrors();
   });
@@ -329,7 +329,7 @@ for (const { width, mobile } of [{ width: 1440, mobile: false }, { width: 390, m
     }
     const url = page.url();
     const readingY = await page.evaluate(() => window.scrollY);
-    const surfaces = ["Show only this branch: Surfaces & borders"];
+    const surfaces = ["Focus sidebar on Surfaces & borders"];
     expect(await configuredRootLabels(container)).toEqual(surfaces);
     await expect(container.locator("[data-sidebar-tree-root] a").first()).toHaveAttribute("href", /\/docs\/wind\/utility\/surfaces\/?$/);
     await expect(container.getByRole("link", { name: "Surfaces & borders", exact: true })).toHaveCount(1);
@@ -338,18 +338,18 @@ for (const { width, mobile } of [{ width: 1440, mobile: false }, { width: 390, m
     await expect(container.getByRole("link", { name: "Utility reference", exact: true })).toHaveCount(0);
     await expect(container.locator("[data-sidebar-restore]")).toHaveCount(0);
     await container.locator("[data-sidebar-broaden]").click();
-    expect(await configuredRootLabels(container)).toEqual(["Show only this branch: Utility reference"]);
+    expect(await configuredRootLabels(container)).toEqual(["Focus sidebar on Utility reference"]);
     await expect(container.getByRole("link", { name: "Surfaces & borders", exact: true })).toHaveCount(1);
     await expect(container.getByRole("link", { name: "Wind", exact: true })).toHaveCount(0);
     await container.locator("[data-sidebar-broaden]").click();
-    expect(await configuredRootLabels(container)).toEqual(["Show only this branch: Wind"]);
+    expect(await configuredRootLabels(container)).toEqual(["Focus sidebar on Wind"]);
     await expect(container.getByRole("link", { name: "Utility reference", exact: true })).toHaveCount(1);
     await expect(container.getByRole("link", { name: "Surfaces & borders", exact: true })).toHaveCount(1);
     // Wind is one root of the automatic multi-root forest, so one more step widens to it.
     await container.locator("[data-sidebar-broaden]").click();
     await expect(container.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
-    await expect(container.getByRole("button", { name: "Show only this branch: Guides", exact: true })).toHaveCount(1);
-    await container.getByRole("button", { name: "Show only this branch: Wind", exact: true }).click();
+    await expect(container.getByRole("button", { name: "Focus sidebar on Guides", exact: true })).toHaveCount(1);
+    await container.getByRole("button", { name: "Focus sidebar on Wind", exact: true }).click();
     await container.locator("[data-sidebar-restore]").click();
     expect(await configuredRootLabels(container)).toEqual(surfaces);
     await expect(container.locator('a[aria-current="page"]')).toHaveAttribute("href", /surfaces\/background\/?$/);
@@ -392,7 +392,7 @@ for (const { width, mobile } of [{ width: 1440, mobile: false }, { width: 390, m
     await page.goto(WIND_PAGE);
     await waitForSidebarHydration(page);
     const sidebar = mobile ? page.locator("[data-zd-mobile-sidebar]") : desktopSidebar(page);
-    expect(await configuredRootLabels(sidebar)).toEqual(["Show only this branch: Surfaces & borders"]);
+    expect(await configuredRootLabels(sidebar)).toEqual(["Focus sidebar on Surfaces & borders"]);
     if (mobile) await expect(page.getByRole("button", { name: "Open sidebar", exact: true })).toHaveAttribute("aria-expanded", "false");
     assertNoConsoleErrors();
   });
@@ -406,7 +406,7 @@ test("explicit choices persist, an active branch stays closed for its page, and 
   const drawer = page.locator("[data-zd-mobile-sidebar]");
   await sidebar.locator("[data-sidebar-broaden]").click();
   await sidebar.locator("[data-sidebar-broaden]").click();
-  expect(await configuredRootLabels(sidebar)).toEqual(["Show only this branch: Wind"]);
+  expect(await configuredRootLabels(sidebar)).toEqual(["Focus sidebar on Wind"]);
   await sidebar.getByRole("button", { name: "Collapse Surfaces & borders", exact: true }).click();
   await sidebar.getByRole("button", { name: "Expand Layout", exact: true }).click();
   await expect(sidebar.getByRole("link", { name: "Background color", exact: true })).toHaveCount(0);
@@ -436,7 +436,7 @@ test("explicit choices persist, an active branch stays closed for its page, and 
   await expect(sidebar.getByRole("textbox", { name: "Filter navigation" })).toHaveValue("o");
   for (const container of [sidebar, drawer]) {
     await expect(container.getByRole("textbox", { name: "Filter navigation", includeHidden: true })).toHaveValue("o");
-    expect(await configuredRootLabels(container)).toEqual(["Show only this branch: Surfaces & borders"]);
+    expect(await configuredRootLabels(container)).toEqual(["Focus sidebar on Surfaces & borders"]);
   }
   assertNoConsoleErrors();
 });
@@ -448,10 +448,10 @@ test("legacy expansion resets once; scope, query and context boundaries survive"
   const sidebar = desktopSidebar(page);
   await expectStoredPage(page, WIND_SLUG);
   const context = (await storedScope(page))!.context;
-  const surfacesId = await sidebar.getByRole("button", { name: "Show only this branch: Surfaces & borders", exact: true }).getAttribute("data-sidebar-focus-scope");
+  const surfacesId = await sidebar.getByRole("button", { name: "Focus sidebar on Surfaces & borders", exact: true }).getAttribute("data-sidebar-focus-scope");
   await sidebar.locator("[data-sidebar-broaden]").click();
-  const utilityId = await sidebar.getByRole("button", { name: "Show only this branch: Utility reference", exact: true }).getAttribute("data-sidebar-focus-scope");
-  const layoutId = await sidebar.getByRole("button", { name: "Show only this branch: Layout", exact: true }).getAttribute("data-sidebar-focus-scope");
+  const utilityId = await sidebar.getByRole("button", { name: "Focus sidebar on Utility reference", exact: true }).getAttribute("data-sidebar-focus-scope");
+  const layoutId = await sidebar.getByRole("button", { name: "Focus sidebar on Layout", exact: true }).getAttribute("data-sidebar-focus-scope");
   const write = (value: unknown) => page.evaluate((record) => sessionStorage.setItem("zd-sidebar-scope", JSON.stringify(record)), value);
   // Legacy records have no version and mix automatic reveal with user toggles.
   await write({ context, page: WIND_SLUG, selected: utilityId, query: "Color", expansion: { [layoutId!]: true, [surfacesId!]: true } });
@@ -460,7 +460,7 @@ test("legacy expansion resets once; scope, query and context boundaries survive"
   await expect(sidebar.getByRole("textbox", { name: "Filter navigation" })).toHaveValue("Color");
   await expect.poll(async () => await storedScope(page)).toMatchObject({ version: 2, selected: utilityId, query: "Color", expansion: {} });
   await sidebar.getByRole("textbox", { name: "Filter navigation" }).fill("");
-  expect(await configuredRootLabels(sidebar)).toEqual(["Show only this branch: Utility reference"]);
+  expect(await configuredRootLabels(sidebar)).toEqual(["Focus sidebar on Utility reference"]);
   await sidebar.getByRole("button", { name: "Expand Layout", exact: true }).click();
   await page.reload();
   await waitForSidebarHydration(page);
@@ -477,6 +477,6 @@ test("legacy expansion resets once; scope, query and context boundaries survive"
   await page.reload();
   await waitForSidebarHydration(page);
   await expect(sidebar.getByRole("textbox", { name: "Filter navigation" })).toHaveValue("");
-  expect(await configuredRootLabels(sidebar)).toEqual(["Show only this branch: Surfaces & borders"]);
+  expect(await configuredRootLabels(sidebar)).toEqual(["Focus sidebar on Surfaces & borders"]);
   assertNoConsoleErrors();
 });
