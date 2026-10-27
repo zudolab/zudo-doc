@@ -30,7 +30,8 @@ export default defineConfig(
       // Flat link (no dropdown)
       { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
 
-      // Dropdown parent with children
+      // Dropdown parent with children. This groups header items only: the
+      // sidebar still shows Guides and Components as separate sections.
       {
         label: "Learn",
         labelKey: "nav.learn",
@@ -92,6 +93,10 @@ export default defineConfig(
 #### サイドバーのメンバーシップとセクションの所有
 
 ページは、スラッグの最初のセグメントと`categoryMatch`が一致するセクション（どれにも一致しない場合は`"!"`のフォールバック項目）に属します。この所有者が、アクティブなヘッダー項目と、そのページが表示するサイドバーを決めます。別のセクションのサイドバーにページを載せても（`type: "doc"`アイテムや[編集上のツリー](./editorial-navigation.mdx)）、そこにリンクが加わるだけです。そのリンクをたどると、ページは所有するセクションで開きます。所有者を変えるのはホスト側の別の判断です。[遷移先の所有](./editorial-navigation.mdx#遷移先の所有)を参照してください。
+
+#### ドロップダウンの子はサイドバーの子ではない
+
+ドロップダウンは独立したセクションを 1 つのヘッダーメニューにまとめます。サイドバーでそれらを何かの子にするわけではありません。各子の`categoryMatch`は引き続き自分のセクションと自分のサイドバーを所有します。サイドバーでセクションを 1 つのリンク付きランディングページの下に表示したい場合は、[傘のツリー](./editorial-navigation.mdx#完全なセクションをまとめる傘のツリー)を作り、各子の`categoryMatch`は残します。このショーケースの「学ぶ」ドロップダウンはこの形です。ヘッダーはガイド、コンポーネント、Markdown 機能を並べ、別のクロムバインディングがサイドバーに「学ぶ」の階層を与えます。
 
 #### 1つのカテゴリ配下にネストした子を置く
 
@@ -156,7 +161,7 @@ zudoDoc({
 
 現在のページURLがアイテムの`path`で始まる場合、そのヘッダーナビゲーションアイテムがアクティブとみなされます。現在のページが子アイテムの`path`にマッチする場合、親アイテムもアクティブとして表示されます。
 
-例えば、`/docs/components/admonitions`にアクセスすると、`/docs/components`が子アイテムの一つにマッチするため「Learn」ドロップダウンがアクティブになります。
+例えば、`/docs/components/admonitions`にアクセスすると、`/docs/components`が子アイテムの一つにマッチするため「Learn」ドロップダウンがアクティブになり、コンポーネントの子が現在の項目として示されます。傘のサイドバーですべてのページを`learn`に割り当てず、各セクション自身の`categoryMatch`を残すのはこのためです。
 
 ## モバイル動作
 

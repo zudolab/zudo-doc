@@ -1,7 +1,9 @@
 /**
  * Runs the Editorial Navigation guide's example exactly as documented.
  *
- * The titled code fences of guides/editorial-navigation.mdx are written into a
+ * The guide holds two examples: the curated editorial tree, then the umbrella
+ * tree that starts at the `src/lib/learn-navigation.ts` block. Each example's
+ * titled code fences are written into its own
  * throwaway project (its node_modules links to this workspace), type-checked
  * with the package's own tsconfig base, and imported. The modules then run
  * against the native route context, nav-tree builder, sidebar resolver and
@@ -29,16 +31,25 @@ import {
 const repoRoot = resolve(__dirname, "../..");
 const guidePath = (dir: string) => resolve(repoRoot, "src/content", dir, "guides/editorial-navigation.mdx");
 
-/** Every fenced block of an MDX file, keyed by its `title="…"` when present. */
-function readFences(path: string): { all: string[]; titled: Map<string, string> } {
+/** The first fence of the umbrella example; every fence from here on belongs to it. */
+const UMBRELLA_START = "src/lib/learn-navigation.ts";
+
+/**
+ * Every fenced block of an MDX file. Titled blocks are keyed by `title="…"`,
+ * separately for the curated example and the umbrella example that follows it.
+ */
+function readFences(path: string): { all: string[]; titled: Map<string, string>; umbrella: Map<string, string> } {
   const all: string[] = [];
   const titled = new Map<string, string>();
+  const umbrella = new Map<string, string>();
+  let target = titled;
   for (const match of readFileSync(path, "utf8").matchAll(/^```([^\n]*)\n([\s\S]*?)^```$/gm)) {
     all.push(match[0]);
     const title = /title="([^"]+)"/.exec(match[1] ?? "")?.[1];
-    if (title) titled.set(title, match[2] ?? "");
+    if (title === UMBRELLA_START) target = umbrella;
+    if (title) target.set(title, match[2] ?? "");
   }
-  return { all, titled };
+  return { all, titled, umbrella };
 }
 
 const EXAMPLE_FILES = [
@@ -449,5 +460,136 @@ describe("Sidebar guide — native resolver semantics", () => {
       { label: "Setup", href: "/handbook/docs/guides/setup", children: [] },
       { label: "Basics", children: [leaf("Basics", "reference/basics"), leaf("Commands", "reference/commands")] },
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Umbrella tree — the Learn recipe. Its helper blocks are the showcase's real
+// src/lib modules, byte for byte.
+// ---------------------------------------------------------------------------
+
+const UMBRELLA_FILES = [
+  "src/lib/learn-navigation.ts",
+  "src/lib/learn-chrome.tsx",
+  "src/chrome-bindings.tsx",
+  "zfb.config.ts",
+] as const;
+
+interface UmbrellaChromeModule {
+  createUmbrellaChrome(
+    routeCtx: RouteContext,
+    bindings: ChromeHostBindings,
+    umbrellas: readonly { root: string; branches: readonly string[] }[],
+  ): { Header: (props: HeaderSlotProps) => unknown; Sidebar: (props: SidebarSlotProps) => unknown };
+}
+interface UmbrellaTreeModule {
+  learnNavigation: { root: string; branches: readonly string[] };
+}
+
+describe("Editorial Navigation guide — umbrella tree recipe", () => {
+  let umbrellaDir: string;
+  let umbrellaChrome: UmbrellaChromeModule;
+  let umbrellaTree: UmbrellaTreeModule;
+
+  const learnDocs = [
+    doc("learn/index", "Learn", 1, { sidebar_initial_expansion: "collapsed" }),
+    doc("guides/index", "Guides", 2),
+    doc("guides/setup/index", "Setup", 1),
+    doc("guides/setup/install", "Install", 1),
+    doc("components/index", "Components", 3),
+    doc("components/card", "Card", 1),
+    doc("markdown-features/index", "Markdown Features", 4),
+    doc("reference/index", "Reference", 5),
+  ];
+  const learnCollections: Record<string, DocPageEntry[]> = {
+    docs: learnDocs,
+    "docs-v-1.0": learnDocs.filter((entry) => !entry.slug.startsWith("learn/")),
+  };
+  const learnContext = () =>
+    createRouteContext(
+      { settings, translations: {}, tagVocabulary: [], colorSchemes: null, assetManifest: null } as never,
+      { stableDocs: (name) => learnCollections[name] ?? [] },
+    );
+  const section = { items: [], scopeRoot: "configured" } as const;
+  const learnBindings: ChromeHostBindings = {
+    sidebarsConfig: { learn: section, guides: section, components: section, "markdown-features": section },
+  };
+  const learnPage = (slug: string, navSection: string, currentVersion?: string) => ({
+    currentSlug: slug,
+    lang: "en",
+    navSection,
+    currentVersion,
+    currentPath: `/handbook/${currentVersion ? `v/${currentVersion}/` : ""}docs/${slug}`,
+  });
+
+  beforeAll(async () => {
+    const { umbrella } = readFences(guidePath("docs"));
+    umbrellaDir = mkdtempSync(join(tmpdir(), "umbrella-navigation-example-"));
+    symlinkSync(resolve(repoRoot, "node_modules"), join(umbrellaDir, "node_modules"), "dir");
+    writeFileSync(
+      join(umbrellaDir, "tsconfig.json"),
+      JSON.stringify({ extends: "@takazudo/zudo-doc/tsconfig.base.json", include: ["src", "zfb.config.ts"] }),
+    );
+    for (const file of UMBRELLA_FILES) {
+      const source = umbrella.get(file);
+      if (source === undefined) throw new Error(`The umbrella example has no code block titled ${file}`);
+      mkdirSync(dirname(join(umbrellaDir, file)), { recursive: true });
+      writeFileSync(join(umbrellaDir, file), source);
+    }
+    umbrellaTree = await import(pathToFileURL(join(umbrellaDir, "src/lib/learn-navigation.ts")).href);
+    umbrellaChrome = await import(pathToFileURL(join(umbrellaDir, "src/lib/learn-chrome.tsx")).href);
+  });
+
+  afterAll(() => {
+    if (umbrellaDir) rmSync(umbrellaDir, { recursive: true, force: true });
+  });
+
+  it("documents the showcase's real helper modules verbatim", () => {
+    const { umbrella } = readFences(guidePath("docs"));
+    for (const file of ["src/lib/learn-navigation.ts", "src/lib/learn-chrome.tsx"]) {
+      expect(umbrella.get(file)).toBe(readFileSync(resolve(repoRoot, file), "utf8"));
+    }
+  });
+
+  it("type-checks the complete umbrella example against the published package exports", () => {
+    const tsc = resolve(repoRoot, "node_modules/typescript/bin/tsc");
+    const result = spawnSync(process.execPath, [tsc, "--noEmit", "-p", umbrellaDir], { encoding: "utf8" });
+    expect(result.stdout + result.stderr).toBe("");
+    expect(result.status).toBe(0);
+  }, 120_000);
+
+  it("renders the documented Learn tree and keeps native navigation where Learn is missing", () => {
+    const { Header, Sidebar } = umbrellaChrome.createUmbrellaChrome(learnContext(), learnBindings, [umbrellaTree.learnNavigation]);
+    const learn = sidebarData(Sidebar(learnPage("learn", "learn")));
+    expect(shape(learn.navigation!.roots)).toEqual([
+      {
+        label: "Learn",
+        href: "/handbook/docs/learn",
+        children: [
+          {
+            label: "Guides",
+            href: "/handbook/docs/guides",
+            children: [
+              { label: "Setup", href: "/handbook/docs/guides/setup", children: [
+                { label: "Install", href: "/handbook/docs/guides/setup/install", children: [] },
+              ] },
+            ],
+          },
+          { label: "Components", href: "/handbook/docs/components", children: [
+            { label: "Card", href: "/handbook/docs/components/card", children: [] },
+          ] },
+          { label: "Markdown Features", href: "/handbook/docs/markdown-features", children: [] },
+        ],
+      },
+    ]);
+
+    const guides = sidebarData(Sidebar(learnPage("guides/setup/install", "guides")));
+    expect(guides.nodes.map((node) => node.slug)).toEqual(["guides"]);
+    expect(guides.navigation!.localParentId).toBe(learn.navigation!.roots[0]!.occurrenceId);
+    expect(drawerData(Header(learnPage("guides/setup/install", "guides"))).navigation).toEqual(guides.navigation);
+
+    const archived = sidebarData(Sidebar(learnPage("guides/setup/install", "guides", "1.0")));
+    expect(archived.navigation!.roots.map((node) => node.slug)).toEqual(["guides"]);
+    expect(archived.nodes[0]).toMatchObject({ href: "/handbook/v/1.0/docs/guides" });
   });
 });

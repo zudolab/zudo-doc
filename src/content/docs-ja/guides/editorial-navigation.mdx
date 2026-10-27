@@ -28,6 +28,7 @@ tags:
 | ディレクトリと同じ階層 | カテゴリごとに `index.mdx` を書いたファイルシステムナビゲーション |
 | いくつかのページの上に、ランディングページのないラベルを置く | `category_no_page: true`、または合成の `type: "category"` アイテム（[サイドバー](./sidebar.mdx#サイドバー設定)） |
 | セクションのリンク付き子グループを一段浅く表示する | ファイルシステムのツリーに対する `initialPath`（[サイドバー](./sidebar.mdx#ツリーを広げる-表示範囲のレシピ)） |
+| 複数の完全なセクションを 1 つのリンク付きランディングページの下に置く | 下の[傘のツリー](#完全なセクションをまとめる傘のツリー)。ネイティブの子孫をすべて保ちます |
 
 合成の `type: "category"` アイテムでは、リンク付きの親行を作れません。このアイテムは `href` を持たないため、中に置いたランディングページは、リンクのない見出しの下に余分な子として表示されます。`SidebarCategory` には、見出しをページへリンクさせるプロパティはありません。
 
@@ -307,6 +308,308 @@ Installation と Configuration を Basics から表示したい場合は、そ�
 ## ツリーの確認
 
 公開する前に、実際のツリーに対してヘルパーをテストしてください。ロケールごとにネイティブのツリーを作り、`toEditorialTree` を呼び、各メンバーの親と子の順序を検証します。セクションのネイティブのページがすべて結果からたどれることも検証してください。`editorialMembers` の書き間違いや、列挙し忘れた新しいページは、何も言わずにページを落とします。
+
+## 完全なセクションをまとめる傘のツリー
+
+上の例は**厳選した**ツリーです。特定のページを並べ、セクションをまたぐリンクは葉のまま残ります。**傘（アンブレラ）**のツリーは別のパターンです。リンク付きのランディングページ 1 つが複数の完全なセクションの親になり、各セクションはネイティブのページとグループをすべて保ちます。このショーケースの「学ぶ」のサイドバーは傘のツリーです。
+
+### 作りたいツリー
+
+設定を選ぶ前に、作りたいツリーを書き出します：
+
+```
+Learn                      (linked) /docs/learn/
+├── Guides                 (linked) /docs/guides/              + every native descendant
+├── Components             (linked) /docs/components/          + every native descendant
+└── Markdown Features      (linked) /docs/markdown-features/   + every native descendant
+```
+
+次に、それぞれの判断を分けて書きます：
+
+| 判断 | 「学ぶ」の傘 |
+| --- | --- |
+| 親子の階層 | 「学ぶ」が唯一のルートです。その子はリンク付きの 3 つのセクション行で、それぞれが完全なネイティブのサブツリーを持ちます。ほかには何も書きません |
+| 遷移先の所有 | 変わりません。各ページは URL が一致するセクション（`learn`、`guides`、`components`、`markdown-features`）に属します。4 つのセクションはどれも同じ共有の「学ぶ」フォレストを選びます |
+| 初期表示と復元 | 「学ぶ」のランディングページは「学ぶ」の行から始まります。ガイド、コンポーネント、Markdown 機能のページは、それぞれ自分のセクションの行から始まります |
+| 開閉 | 「学ぶ」のランディングページは `sidebar_initial_expansion: collapsed` を指定するため、3 つの枝は閉じた状態で始まります。セクションのページはネイティブの展開状態を保ち、現在のページの祖先はいつもどおり開きます |
+| 広げられる上限 | 「学ぶ」です。セクションで**ツリーを広げる**と「学ぶ」まで広がり、そこで止まります |
+| 保存される読者の状態 | ネイティブのままです。4 つのセクションは 1 つのナビゲーションコンテキストを共有するため、読者が選んだ広い「学ぶ」の表示やフォーカスした枝は、復元するまでセクション間の移動でも保たれます |
+
+### セクションページを並べるだけでは足りない理由
+
+次のフラットな設定は階層のように見えますが、同列のリンクが 4 つできるだけです：
+
+```ts title="src/config/sidebars.ts (counterexample)"
+learn: {
+  items: ["learn", "guides", "components", "markdown-features"],
+  scopeRoot: "configured",
+},
+```
+
+```
+Learn                      (linked, leaf)
+Guides                     (linked, leaf)
+Components                 (linked, leaf)
+Markdown Features          (linked, leaf)
+```
+
+文字列や `type: "doc"` のアイテムは 1 つのページを選び、その子を取り除きます。`scopeRoot` は**ツリーを広げる**の届く範囲を制限するだけで、`initialPath` は既存のツリーのどの部分を表示するかを選ぶだけです。どちらも親を作りません。セクションを並べたヘッダーのドロップダウンも親を作りません。[ヘッダーナビゲーション](./header-navigation.mdx#ドロップダウンの子はサイドバーの子ではない)を参照してください。
+
+### 傘のツリーのヘルパー
+
+書くのはルートのスラッグと、順序付きの枝のスラッグだけです。ヘルパーは実際のネイティブノードをスラッグで探し、ルートの行をコピーし、ネイティブの枝のノードを変更せずに付けます。そのため子孫、ラベル、href、メタデータはネイティブのままです。枝の中のどこにページやネストしたグループを追加しても、このリストを編集せずに表示されます。
+
+```ts title="src/lib/learn-navigation.ts"
+import type { DocNavNode } from "@takazudo/zudo-doc/doc-page-props";
+import type { SidebarDefinition } from "@takazudo/zudo-doc/sidebar-utils";
+
+/**
+ * A linked umbrella row that holds complete native sections. Only the direct
+ * branch memberships and their order are authored; everything below a branch
+ * comes from the native tree.
+ */
+export interface UmbrellaNavigation {
+  /** Slug of the umbrella landing page, also its header `categoryMatch`. */
+  root: string;
+  /** Ordered branch slugs, each also its own section's `categoryMatch`. */
+  branches: readonly string[];
+}
+
+export const learnNavigation: UmbrellaNavigation = {
+  root: "learn",
+  branches: ["guides", "components", "markdown-features"],
+};
+
+/** Header sections that render the umbrella forest. */
+export function umbrellaSections(umbrella: UmbrellaNavigation): string[] {
+  return [umbrella.root, ...umbrella.branches];
+}
+
+/**
+ * The one-root umbrella forest: a copy of the native root row whose children
+ * are the native branch nodes, descendants included. Branches missing from
+ * this locale or version are skipped. Without a linked root page the result
+ * is `undefined`, so callers keep the fully native navigation. The input is
+ * not mutated.
+ */
+export function toUmbrellaTree(tree: DocNavNode[], umbrella: UmbrellaNavigation): DocNavNode[] | undefined {
+  const bySlug = new Map<string, DocNavNode>();
+  const index = (nodes: DocNavNode[]): void => {
+    for (const node of nodes) {
+      if (!bySlug.has(node.slug)) bySlug.set(node.slug, node);
+      index(node.children);
+    }
+  };
+  index(tree);
+
+  const root = bySlug.get(umbrella.root);
+  if (!root?.hasPage || !root.href) return undefined;
+  const children = umbrella.branches.flatMap((slug) => {
+    const branch = bySlug.get(slug);
+    return branch ? [branch] : [];
+  });
+  return [{ ...root, children }];
+}
+
+/**
+ * Node-mode baseline for one section of an umbrella forest: the root row for
+ * the umbrella itself, otherwise the section's actual branch row. Returns
+ * `undefined` when the section is not a retained branch.
+ */
+export function umbrellaSidebar(forest: readonly DocNavNode[], section: string): SidebarDefinition | undefined {
+  const root = forest[0];
+  if (!root) return undefined;
+  const branch = root.children.findIndex((node) => node.slug === section);
+  const initialPath = section === root.slug ? [0] : branch >= 0 ? [0, branch] : undefined;
+  if (!initialPath) return undefined;
+  return {
+    items: [{ type: "autogenerated" }],
+    initialPath,
+    initialPathMode: "node",
+    scopeRoot: "configured",
+  };
+}
+```
+
+`toEditorialTree` と違い、このヘルパーは枝の子を刈り込まず、生成されたインデックスでも例外を投げません。特定のページを並べたいときは厳選のヘルパーを、完全なセクションをまとめたいときは傘のヘルパーを使います。
+
+### 傘のヘッダーとサイドバー
+
+傘のすべてのセクションは同じ 1 ルートのフォレストを表示します。違うのは node モードの `initialPath` だけで、固定のインデックスではなく実際に存在する枝から求めます。ラッパーは基準の表示ごとにファクトリの組を 1 つ作り、ヘッダーとサイドバーに同じコンテキストを渡すため、モバイルのドロワーとデスクトップのサイドバーは常に一致します。
+
+```tsx title="src/lib/learn-chrome.tsx"
+import type { HeaderSlotProps, SidebarSlotProps } from "@takazudo/zudo-doc/chrome-bindings";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+import type {
+  ChromeContext,
+  ChromeHostBindings,
+  RouteContext,
+} from "@takazudo/zudo-doc/factory-context";
+import { createHeaderWithDefaults } from "@takazudo/zudo-doc/header-with-defaults";
+import { createSidebarWithDefaults } from "@takazudo/zudo-doc/sidebar-with-defaults";
+import {
+  toUmbrellaTree,
+  umbrellaSections,
+  umbrellaSidebar,
+  type UmbrellaNavigation,
+} from "./learn-navigation";
+
+interface ChromePair {
+  Header: ReturnType<typeof createHeaderWithDefaults>;
+  Sidebar: ReturnType<typeof createSidebarWithDefaults>;
+}
+
+const pairOf = (context: ChromeContext): ChromePair => ({
+  Header: createHeaderWithDefaults(context),
+  Sidebar: createSidebarWithDefaults(context),
+});
+
+/**
+ * Header and Sidebar replacements for umbrella sections. Every section of an
+ * umbrella renders the same one-root forest; only its node-mode baseline
+ * differs. A locale or version without the umbrella's root page, and every
+ * other section, keeps the native pair with its original sidebar definitions.
+ * Each pair shares one context, so the desktop sidebar and the mobile drawer
+ * receive the same data.
+ */
+export function createUmbrellaChrome(
+  routeCtx: RouteContext,
+  bindings: ChromeHostBindings,
+  umbrellas: readonly UmbrellaNavigation[],
+) {
+  const nativeContext: ChromeContext = { ...routeCtx, components: {}, hostBindings: bindings };
+  const native = pairOf(nativeContext);
+  const pairs = new Map<string, ChromePair>();
+
+  function pairFor(lang: string, navSection: string | undefined, currentVersion: string | undefined): ChromePair {
+    const umbrella = navSection === undefined
+      ? undefined
+      : umbrellas.find((candidate) => umbrellaSections(candidate).includes(navSection));
+    if (!umbrella || navSection === undefined) return native;
+    // Decide from the same native source and tree the factories render.
+    const { navDocs, categoryMeta } = routeCtx.loadNavSourceDocs(lang, currentVersion);
+    const tree = routeCtx.buildNavTree(
+      navDocs as DocPageEntry[],
+      lang,
+      categoryMeta,
+      (slug, locale) => routeCtx.docsUrl(slug, locale),
+    );
+    const forest = toUmbrellaTree(tree, umbrella);
+    const definition = forest && umbrellaSidebar(forest, navSection);
+    if (!definition) return native;
+
+    const key = `${navSection}:${definition.initialPath?.join(".")}`;
+    let pair = pairs.get(key);
+    if (!pair) {
+      pair = pairOf({
+        ...nativeContext,
+        hostBindings: {
+          ...bindings,
+          sidebarsConfig: { ...bindings.sidebarsConfig, [navSection]: definition },
+        },
+        // Forward every argument so locale, base and href building stay native.
+        buildNavTree: (...args) => {
+          const nativeTree = routeCtx.buildNavTree(...args);
+          return toUmbrellaTree(nativeTree, umbrella) ?? nativeTree;
+        },
+      });
+      pairs.set(key, pair);
+    }
+    return pair;
+  }
+
+  return {
+    Header: (props: HeaderSlotProps) => pairFor(props.lang, props.navSection, props.currentVersion).Header(props),
+    Sidebar: (props: SidebarSlotProps) => pairFor(props.lang, props.navSection, props.currentVersion).Sidebar(props),
+  };
+}
+```
+
+有効なロケールやバージョンにリンク付きのルートページがない場合、`toUmbrellaTree` は `undefined` を返し、ラッパーはプロジェクト本来のサイドバー定義を持つネイティブの組を使います。傘の `initialPath` をネイティブのツリーに当てはめたり、ルートのルートを作り出したり、存在しないページへリンクしたりはしません。枝が欠けている場合、ほかの枝は自分の行を保ち、そのセクションはネイティブの組に戻ります。
+
+### 傘のバインディングの登録
+
+```tsx title="src/chrome-bindings.tsx"
+import { routeContext } from "virtual:zudo-doc-route-context";
+import { createRouteContext, type RouteContextPayload } from "@takazudo/zudo-doc/route-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import type { SidebarDefinition } from "@takazudo/zudo-doc/sidebar-utils";
+import { createUmbrellaChrome } from "./lib/learn-chrome";
+import { learnNavigation } from "./lib/learn-navigation";
+
+// Native fallback definitions, used where a locale or version has no Learn page.
+const section = (): SidebarDefinition => ({ items: [], scopeRoot: "configured" });
+
+// The project's other bindings. The umbrella chrome reuses them unchanged.
+const baseBindings = defineChromeBindings({
+  sidebarsConfig: {
+    learn: section(),
+    guides: section(),
+    components: section(),
+    "markdown-features": section(),
+    reference: section(),
+  },
+});
+
+export const chromeBindings = {
+  ...baseBindings,
+  ...defineChromeBindings(
+    createUmbrellaChrome(
+      createRouteContext(routeContext as unknown as RouteContextPayload),
+      baseBindings,
+      [learnNavigation],
+    ),
+  ),
+};
+```
+
+厳選のレシピと同じ注意があります。両方のファクトリがパッケージの `Header` を置き換えるため、独自の `DesignTokenPanelBootstrap`（`designTokenPanelConfigModule` と併用）をバインドするプロジェクトは、そのバインディングを `baseBindings` に残してください。デフォルトのパネル設定では追加は不要です。
+
+各セクション自身の `categoryMatch` は残します。ヘッダーは子のページで「学ぶ」のドロップダウンをアクティブにし、一致する子も強調します。すべてのルートのセクションを `learn` にすると、子の状態が失われます。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "Acme Docs",
+    headerNav: [
+      {
+        label: "Learn",
+        path: "/docs/learn",
+        categoryMatch: "learn",
+        versioned: false,
+        children: [
+          { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+          { label: "Components", path: "/docs/components", categoryMatch: "components" },
+          { label: "Markdown Features", path: "/docs/markdown-features", categoryMatch: "markdown-features" },
+        ],
+      },
+      { label: "Reference", path: "/docs/reference", categoryMatch: "reference" },
+    ],
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
+```
+
+`versioned: false` は「学ぶ」のリンクを現行のドキュメントに留めます。アーカイブされたバージョンには「学ぶ」のページがないためです。そうしたバージョンでは、セクションのページはネイティブのフォールバックを使います。
+
+ランディングページは、ネイティブの展開の基準によってコンパクトな表示を求めます：
+
+```mdx title="src/content/docs/learn/index.mdx"
+---
+title: Learn
+sidebar_position: 1
+sidebar_initial_expansion: collapsed
+---
+
+<CategoryNav categories={["guides", "components", "markdown-features"]} />
+```
+
+### 傘が変えないもの
+
+傘のフォレストを見るのは、組になったヘッダーとサイドバーだけです。パンくずリスト、前後のページャー、検索、サイトマップ、ホームページのグリッドは、URL に基づく従来の仕様のままです。「学ぶ」ページの `<CategoryNav>` は、`categories` が同じ順序なので同じ 3 つのセクションを表示します。2 つのリストは手で同期させてください。
 
 ## トラブルシューティング
 

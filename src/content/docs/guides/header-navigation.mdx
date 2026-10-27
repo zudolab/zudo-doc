@@ -30,7 +30,8 @@ export default defineConfig(
       // Flat link (no dropdown)
       { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
 
-      // Dropdown parent with children
+      // Dropdown parent with children. This groups header items only: the
+      // sidebar still shows Guides and Components as separate sections.
       {
         label: "Learn",
         labelKey: "nav.learn",
@@ -92,6 +93,10 @@ Children can also have `categoryMatch`. For example, placing `categoryMatch: "co
 #### Sidebar Membership and Section Ownership
 
 A page belongs to the section whose `categoryMatch` equals the first segment of its slug (or to the `"!"` fallback item when none does). That owner decides the active header item and the sidebar the page renders. Listing a page in another section's sidebar — a `type: "doc"` item or an [editorial tree](./editorial-navigation.mdx) — only adds a link there. Following that link opens the page in its owning section. Changing the owner is a separate host decision; see [Destination Ownership](./editorial-navigation.mdx#destination-ownership).
+
+#### Dropdown Children Are Not Sidebar Children
+
+A dropdown collects independent sections into one header menu. It does not make them children of anything in the sidebar: each child's `categoryMatch` still owns its own section and its own sidebar. When the sidebar should show the sections under one linked landing page, build an [umbrella tree](./editorial-navigation.mdx#umbrella-tree-with-complete-sections) and keep each child's `categoryMatch`. This showcase's Learn dropdown works that way: the header lists Guides, Components, and Markdown Features, and a separate chrome binding gives the sidebar its Learn hierarchy.
 
 #### Nested Children Under One Category
 
@@ -156,7 +161,7 @@ Items with `children` render as dropdown menus. The parent item itself remains a
 
 A header nav item is considered active when the current page URL starts with the item's `path`. If the current page matches any child item's `path`, the parent item also shows as active.
 
-For example, visiting `/docs/components/admonitions` activates the "Learn" dropdown because `/docs/components` matches one of its children.
+For example, visiting `/docs/components/admonitions` activates the "Learn" dropdown because `/docs/components` matches one of its children, and the Components child is marked as the current item. This is why an umbrella sidebar keeps each section's own `categoryMatch` instead of assigning every page to `learn`.
 
 ## Mobile Behavior
 

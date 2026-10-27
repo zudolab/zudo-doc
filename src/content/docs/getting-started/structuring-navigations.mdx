@@ -26,8 +26,22 @@ Start with the first row. Move down the table only when the default cannot expre
 | A group is only a label and has no landing page | `category_no_page: true` on its `index.mdx`, or a synthetic `type: "category"` item | Heading-only row (not a link) | [Sidebar](../guides/sidebar.mdx#category-index-pages-linked-and-heading-only-category-rows) |
 | Existing linked groups should appear one level shallower | Sidebar configuration with `initialPath` | The section's linked child groups become the top rows | [Sidebar](../guides/sidebar.mdx#broader-tree-scope-recipes) |
 | Existing flat or cross-section pages need a hierarchy, and their URLs must not move | **Editorial navigation** (advanced) | Real pages become the parents of other real pages | [Editorial Navigation](../guides/editorial-navigation.mdx) |
+| Several complete sections should sit under one linked landing page in the sidebar | **Umbrella tree** (advanced) | The landing row is the parent of each section row, with every native descendant | [Umbrella Tree](../guides/editorial-navigation.mdx#umbrella-tree-with-complete-sections) |
 
 For a normal category, author an `index.mdx` for the landing content and metadata, keep the real category node and its native children, and do not wrap it in a synthetic category or repeat the landing page as an "Overview" child. No custom header or sidebar code is needed.
+
+### Four Patterns That Look Alike
+
+These four are easy to confuse because each one shows several sections near each other:
+
+1. **Header dropdown** — collects independent sections into one header menu. Each section keeps its own sidebar. It creates no sidebar parent.
+2. **Shared sidebar hierarchy** — one linked landing page is the real parent of other rows, so readers see and broaden to that landing page from every page below it.
+3. **Curated editorial tree** — the sidebar lists particular pages and cross-links chosen by hand. A listed page from another section stays a leaf ([Editorial Navigation](../guides/editorial-navigation.mdx)).
+4. **Umbrella tree** — a shared hierarchy whose children are complete native sections. Only the section list is authored; every page and group inside a section appears automatically ([Umbrella Tree](../guides/editorial-navigation.mdx#umbrella-tree-with-complete-sections)).
+
+This showcase's Learn menu combines 1 and 4: the header dropdown lists Guides, Components, and Markdown Features, and the sidebar shows them below the linked Learn row.
+
+Before choosing configuration, write down the tree you want and how each destination behaves: which rows are parents, which section owns each page, what a fresh page and Restore show, which branches start open, and how far **Broaden tree** may go. When the request is to match an existing hierarchy, keep its linked parents and their descendants. Do not flatten it into peer links because the directories happen to be siblings.
 
 ## File Structure = Navigation Structure
 
@@ -93,7 +107,7 @@ If a slug is also in `siteTreeNavIgnore`, the category is hidden instead. The MD
 The header navigation is the topmost level. It should contain only the broadest categories that define your site's major sections.
 
 - **Keep it concise** — aim for 3–6 items. More than that overwhelms users and clutters the header.
-- **Use dropdowns sparingly** — only for closely related sections that belong under a single umbrella (e.g., "Learn" containing "Guides" and "Components").
+- **Use dropdowns sparingly** — only for closely related sections that belong under a single umbrella (e.g., "Learn" containing "Guides" and "Components"). A dropdown groups header items only; it does not make those sections children of anything in the sidebar.
 - **Each item maps to a content directory** — the `categoryMatch` field in your config links a header item to the sidebar content for that section.
 
 <Tip>
@@ -104,7 +118,7 @@ For configuration details, see [Header Navigation](../guides/header-navigation.m
 
 ### Example Header Config
 
-Header navigation is the `headerNav` field of your single `zudoDoc()` config in `zfb.config.ts`:
+Header navigation is the `headerNav` field of your single `zudoDoc()` config in `zfb.config.ts`. This dropdown is header-only: Guides and Components keep separate sidebars.
 
 ```ts
 // zfb.config.ts
@@ -308,6 +322,7 @@ Avoid these pitfalls when setting up navigation:
 - **Missing `sidebar_position`** — without it, pages sort alphabetically which often produces a confusing order. Always set `sidebar_position` for predictable navigation.
 - **Missing `index.mdx` in category directories** — the category still gets a generated index page, but its label, position, and landing text are defaults instead of intentional content.
 - **Wrapping a category that has a landing page in a synthetic category** — a `type: "category"` item never links to a page, so the result is an unlinked heading with the landing page repeated as its first child. Keep the real category node instead.
+- **Expecting a header dropdown or a list of section pages to create a sidebar parent** — dropdown children stay independent sections, and `items: ["learn", "guides", "components"]` produces peer leaf links. `scopeRoot` and `initialPath` do not add ancestry either. Use an [umbrella tree](../guides/editorial-navigation.mdx#umbrella-tree-with-complete-sections) for that.
 - **Using multi-segment `categoryMatch` values** (e.g. `"platforms/xbox"`) — `categoryMatch` must be a single top-level directory name. Multi-segment values break active-state highlighting in the header nav.
 
 </Warning>
@@ -316,6 +331,8 @@ Avoid these pitfalls when setting up navigation:
 
 When using AI tools to generate zudo-doc site structures, follow these rules for consistent results:
 
+- **Write the intended tree first** — before choosing configuration, list the parent/child rows and how each destination behaves (owner section, fresh and Restore view, open branches, Broaden ceiling). Choose the pattern from that list, not from the directory layout.
+- **Preserve requested hierarchies** — when asked to match an existing sidebar, keep its linked parent rows and their full descendants. Do not replace them with a flat hub of peer links.
 - **Follow the hierarchy strictly** — header nav for broad categories, sidebar for subcategories, nested directories for further detail. Never skip a level.
 - **Keep header nav items to broad categories only** — resist the urge to add specific pages to the header. That is what the sidebar is for.
 - **Match `categoryMatch` values to actual directory names** — a `categoryMatch: "guides"` must correspond to a `src/content/docs/guides/` directory.
