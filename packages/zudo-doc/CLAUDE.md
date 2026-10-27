@@ -560,9 +560,10 @@ specifier end-to-end.
 
 The base owns `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove React→Preact
 compatibility paths and React/Preact type imports. Use `Child`, `Description`,
-`Component<P>` and `JSX.IntrinsicElements` from the owned runtime. Preact remains
-only as zdtp 0.8.7's own dependency (`^10.29.1`; a peer through 0.8.5) for its opaque subtree; zdtp's
-internal Tailwind browser dependency does not become a host engine dependency.
+`Component<P>` and `JSX.IntrinsicElements` from the owned runtime. No Preact is
+installed: zdtp 0.9.0 renders with its own bundled zudo-react runtime (older zdtp still in the
+optional peer range carried Preact). zdtp's internal Tailwind browser dependency does not become a
+host engine dependency.
 
 The base sets no `baseUrl`: TypeScript 7 removed the option (TS5102 in every
 project extending a config that sets it — #4558). Declare host aliases in the
