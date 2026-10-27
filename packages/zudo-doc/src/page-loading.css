@@ -33,7 +33,8 @@
   position: fixed;
   view-transition-name: zfb-loading;
   inset: 0;
-  /* Pending-content overlay — the bootstrap excludes the layout's chrome.
+  /* Full-viewport pending scrim, header and sidebar included. Stationary
+     chrome comes from its own named snapshots, not from clipping this box.
      --z-index-modal fallback (100) ensures the overlay stacks on top even for
      bare consumers that have not defined the token. */
   z-index: var(--z-index-modal, 100);

@@ -78,6 +78,27 @@ describe("<PageLoadingOverlay />", () => {
 });
 
 describe("loading lifecycle cleanup", () => {
+  it("never writes runtime geometry, so CSS keeps the scrim full-viewport", async () => {
+    const script = buildPageLoadingOverlayBootstrap("loading");
+    expect(script).not.toContain("getBoundingClientRect");
+    expect(script).not.toMatch(/\.style\b/);
+    const { Window } = await import("happy-dom");
+    const window = new Window();
+    const doc = window.document;
+    doc.body.innerHTML = '<header style="height:56px">Header</header><aside class="zd-sidebar-content-wrapper"></aside><div id="loading" aria-hidden="true"></div>';
+    new Function("document", "Element", script)(doc, window.Element);
+    const overlay = doc.getElementById("loading")!;
+    for (let i = 0; i < 3; i++) {
+      doc.dispatchEvent(new window.Event(BEFORE_NAVIGATE_EVENT));
+      expect(overlay.hasAttribute("data-visible")).toBe(true);
+      expect(overlay.getAttribute("aria-hidden")).toBe("false");
+      expect(overlay.hasAttribute("style")).toBe(false);
+      doc.dispatchEvent(new window.Event(i === 1 ? NAVIGATION_ABORTED_EVENT : AFTER_NAVIGATE_EVENT));
+      expect(overlay.hasAttribute("data-visible")).toBe(false);
+      expect(overlay.hasAttribute("style")).toBe(false);
+    }
+  });
+
   it("retains newer loading across unscoped preparation completion and clears after swap or abort", async () => {
     const { Window } = await import("happy-dom");
     const window = new Window();
