@@ -72,6 +72,10 @@ export function createBranchPreview(navRef: Ref<HTMLElement>): BranchPreview & {
   };
 
   const place = (trigger: HTMLElement, tip: HTMLElement) => {
+    // Measure from the origin: a stale right-side `left` would shrink-wrap the
+    // fixed tooltip to the remaining viewport width.
+    tip.style.left = "0px";
+    tip.style.top = "0px";
     const anchor = trigger.getBoundingClientRect();
     const box = tip.getBoundingClientRect();
     const maxLeft = window.innerWidth - box.width - VIEWPORT_MARGIN_PX;
@@ -175,6 +179,14 @@ export function createBranchPreview(navRef: Ref<HTMLElement>): BranchPreview & {
     const onKeyDown = (event: Event) => {
       const key = event as KeyboardEvent;
       if (key.key !== "Escape" || key.isComposing || tip.hidden) return;
+      // Escape aimed at an unrelated surface (e.g. a dialog opened while the
+      // pointer still rests on a frame) must reach its own owner.
+      const target = key.target;
+      if (target instanceof Element && target !== document.body && !navRef.current?.contains(target) && !tip.contains(target)) {
+        hideTooltip();
+        pointerKey.value = null;
+        return;
+      }
       key.preventDefault();
       key.stopPropagation();
       hideTooltip();
@@ -194,9 +206,12 @@ export function createBranchPreview(navRef: Ref<HTMLElement>): BranchPreview & {
     };
     // The drawer stays mounted when closed and goes `inert`; a hidden sidebar
     // must not keep a preview or tooltip.
-    const drawer = navRef.current?.closest("[data-zd-mobile-sidebar]");
+    // The <nav> sits inside a <Show> (the root-menu view can replace it), so
+    // fall back to the drawer itself when the ref is not mounted yet.
+    const drawer = navRef.current ? navRef.current.closest("[data-zd-mobile-sidebar]") : document.querySelector("[data-zd-mobile-sidebar]");
     const observer = drawer ? new MutationObserver(() => { if (drawer.hasAttribute("inert")) clear(); }) : undefined;
     observer?.observe(drawer!, { attributes: true, attributeFilter: ["inert"] });
+    // The lg breakpoint (Wind `lg:` / features.css) where the drawer and the desktop sidebar swap.
     const media = window.matchMedia?.("(min-width: 1024px)");
     const onBreakpoint = () => clear();
     media?.addEventListener?.("change", onBreakpoint);

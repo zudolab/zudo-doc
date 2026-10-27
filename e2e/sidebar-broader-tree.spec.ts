@@ -252,7 +252,7 @@ test("modified sidebar links open a native new tab without changing the selected
   assertNoConsoleErrors();
 });
 
-/** Per `◎` control: whether its row's label text paints under it, and its box relative to the nav (#4507). */
+/** Per focus-frame control: whether its row's label text paints under it, and its box relative to the nav (#4507). */
 async function focusControlLayout(container: import("@playwright/test").Locator) {
   return container.locator("nav").evaluate((nav) => {
     const navRight = nav.getBoundingClientRect().right;

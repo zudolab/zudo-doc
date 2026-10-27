@@ -921,7 +921,7 @@ function CategoryNode({
   const arrived = computed(() => !!node.value.occurrenceId && scopeControls?.arrived.value === node.value.occurrenceId);
   const focusButton = scopeControls ? (
     <button type="button" data-sidebar-focus data-sidebar-focus-scope={computed(() => node.value.occurrenceId ?? "")}
-      on:click={() => { if (!focusedRoot.value) scopeControls.focus(node.value); }}
+      on:click={() => scopeControls.focus(node.value)}
       aria-disabled={computed(() => (focusedRoot.value ? "true" : null))}
       tabindex={computed(() => (focusedRoot.value ? -1 : null))}
       aria-label={computed(() => (focusedRoot.value ? scopeControls.labels.focused(node.value.label) : scopeControls.labels.focus(node.value.label)))}

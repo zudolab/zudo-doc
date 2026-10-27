@@ -2104,17 +2104,17 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 }
 
 [data-sidebar-preview] {
-  background-color: color-mix(in oklch, var(--color-accent) 5%, transparent);
+  background-color: color-mix(in oklch, var(--color-accent) 3%, transparent);
   box-shadow: inset 2px 0 0 var(--color-accent);
 }
 
 [data-sidebar-preview] > [data-sidebar-row]:not([data-sidebar-current]) {
-  background-color: color-mix(in oklch, var(--color-accent) 9%, transparent);
+  background-color: color-mix(in oklch, var(--color-accent) 7%, transparent);
 }
 
 [data-sidebar-preview] > [data-sidebar-row]:not([data-sidebar-current]) [data-sidebar-focus] {
   color: var(--color-accent);
-  background-color: color-mix(in oklch, var(--color-accent) 10%, transparent);
+  background-color: color-mix(in oklch, var(--color-accent) 7%, transparent);
 }
 
 [data-sidebar-preview] > [data-sidebar-children] [data-tree-connector] {
