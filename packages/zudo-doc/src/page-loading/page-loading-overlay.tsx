@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-// Server-rendered, zero-hydration content loading overlay.
+// Server-rendered, zero-hydration full-viewport loading overlay.
 //
 // Renders the overlay and its bootstrap into the document:
 //
@@ -53,7 +53,7 @@ export function buildPageLoadingOverlayBootstrap(overlayId: string): string {
   const after = JSON.stringify(AFTER_NAVIGATE_EVENT);
   return `(function(){
 var id=${id};
-function show(){var el=document.getElementById(id);if(!el)return;var content=document.querySelector(".zd-sidebar-content-wrapper");var header=document.querySelector("body > header");el.style.left=Math.max(0,content?content.getBoundingClientRect().left:0)+"px";el.style.top=Math.max(0,header?header.getBoundingClientRect().bottom:0)+"px";el.setAttribute("data-visible","");el.setAttribute("aria-hidden","false");}
+function show(){var el=document.getElementById(id);if(!el)return;el.setAttribute("data-visible","");el.setAttribute("aria-hidden","false");}
 function hide(){var el=document.getElementById(id);if(!el)return;el.removeAttribute("data-visible");el.setAttribute("aria-hidden","true");}
 function setPending(ev){document.querySelectorAll("[data-zd-nav-pending]").forEach(function(el){el.removeAttribute("data-zd-nav-pending");});var src=ev&&ev.sourceElement;if(src&&src instanceof Element)src.setAttribute("data-zd-nav-pending","");}
 function clearPending(){document.querySelectorAll("[data-zd-nav-pending]").forEach(function(el){el.removeAttribute("data-zd-nav-pending");});}
@@ -66,7 +66,11 @@ document.addEventListener(${JSON.stringify(NAVIGATION_ABORTED_EVENT)},function()
 }
 
 /**
- * Content loading overlay shown while a dynamic navigation is pending.
+ * Full-viewport loading overlay shown while a dynamic navigation is pending.
+ *
+ * Geometry belongs to `page-loading.css` (`position: fixed; inset: 0`); the
+ * bootstrap only toggles visibility. Header and sidebar stay stationary through
+ * their own named View Transition snapshots, not by clipping the scrim.
  *
  * Mount this once per layout (typically inside `DocLayoutWithDefaults`'s
  * `bodyEnd` slot, alongside the existing body-end providers). It is

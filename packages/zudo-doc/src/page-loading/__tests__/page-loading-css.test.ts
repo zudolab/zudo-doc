@@ -56,6 +56,16 @@ describe("src/page-loading.css source contract", () => {
     expect(css).toContain("[data-visible]");
   });
 
+  it("covers the full viewport and extracts loading pixels from page snapshots", () => {
+    const start = css.indexOf(".page-loading-overlay {");
+    const block = css.slice(start, css.indexOf("\n}", start));
+    expect(block).toContain("position: fixed;");
+    expect(block).toContain("inset: 0;");
+    expect(block).toContain("view-transition-name: zfb-loading;");
+    expect(block).not.toMatch(/\b(top|left|right|bottom|width|height):/);
+    expect(css).toMatch(/::view-transition-old\(zfb-loading\),\s*::view-transition-new\(zfb-loading\)\s*\{\s*display: none;/);
+  });
+
   it("data-zd-nav-pending selector targets pending navigation elements", () => {
     expect(css).toContain("data-zd-nav-pending");
   });
