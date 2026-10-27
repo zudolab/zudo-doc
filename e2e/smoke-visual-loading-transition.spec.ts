@@ -14,10 +14,12 @@ import {
 
 test.use({ viewport: { width: 1280, height: 900 } });
 
-test("slow native navigation extracts visible loading feedback without dimming stationary chrome", async ({ page }, testInfo) => {
+test("slow native navigation extracts visible full-viewport loading feedback without dimming stationary chrome", async ({ page }, testInfo) => {
   await page.goto("/docs/guides/page-1/");
   await waitForSidebarHydration(page);
   await installNativeTransitionProbe(page);
+  const headerClip = await visibleSnapshotClip(page, "body > header");
+  const headerBefore = await page.screenshot({ clip: headerClip, animations: "allow" });
 
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
@@ -33,6 +35,7 @@ test("slow native navigation extracts visible loading feedback without dimming s
     await expect(overlay).toHaveAttribute("data-visible", "");
     await expect(overlay).toHaveCSS("opacity", "1");
     await expect(overlay).toHaveCSS("view-transition-name", "zfb-loading");
+    expect(await overlay.boundingBox()).toEqual({ x: 0, y: 0, width: 1280, height: 900 });
   } finally { release(); }
   await navigation;
 
@@ -51,7 +54,11 @@ test("slow native navigation extracts visible loading feedback without dimming s
   // Chromium may omit display:none image nodes from CDP even though their
   // captured pixels exist. Reveal that exact old image as a counterfactual,
   // without advancing the held article animation or altering the live overlay.
-  const clip = await visibleSnapshotClip(page, "main");
+  const clips = {
+    main: await visibleSnapshotClip(page, "main"),
+    header: headerClip,
+    sidebar: await visibleSnapshotClip(page, "#desktop-sidebar"),
+  };
   const heldTime = () => page.evaluate(() => {
     const animation = window.__zdNativeTransitionProof!.animations.find((candidate) =>
       (candidate.effect as KeyframeEffect | null)?.pseudoElement === "::view-transition-new(root)");
@@ -61,16 +68,20 @@ test("slow native navigation extracts visible loading feedback without dimming s
     return animation.currentTime;
   });
   const screenshot = async (label: string) => {
-    const path = testInfo.outputPath(`${label}.png`);
-    const pixels = await page.screenshot({ path, clip, animations: "allow" });
-    await testInfo.attach(label, { path, contentType: "image/png" });
-    return pixels;
+    const frame: Record<string, Buffer> = {};
+    for (const [region, clip] of Object.entries(clips)) {
+      const path = testInfo.outputPath(`${label}-${region}.png`);
+      frame[region] = await page.screenshot({ path, clip, animations: "allow" });
+      await testInfo.attach(`${label}-${region}`, { path, contentType: "image/png" });
+    }
+    return frame;
   };
   const commitFrame = () => page.evaluate(async () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
   });
   const time = await heldTime();
   const hidden = await screenshot("loading-suppressed");
+  expect(hidden.header!.equals(headerBefore), "Active header pixels must match the undimmed pre-navigation header").toBe(true);
   let exposedNodes: Awaited<ReturnType<typeof nativeSnapshots>> = [];
   try {
     await page.evaluate(() => {
@@ -88,7 +99,14 @@ test("slow native navigation extracts visible loading feedback without dimming s
     expect(old[0]!.style.display).toBe("block");
     expect(old[0]!.style.opacity).toBe("1");
     const exposed = await screenshot("loading-old-image-exposed");
-    expect(exposed.equals(hidden), "The real captured scrim must visibly change article pixels when exposed").toBe(false);
+    // The captured scrim spans the viewport, so exposing it dims the article and
+    // the sidebar. The header group is stacked above it and stays undimmed.
+    expect(old[0]!.style.width).toBe("1280px");
+    expect(old[0]!.style.height).toBe("900px");
+    for (const region of ["main", "sidebar"]) {
+      expect(exposed[region]!.equals(hidden[region]!), `The real captured scrim must visibly change ${region} pixels when exposed`).toBe(false);
+    }
+    expect(exposed.header!.equals(headerBefore), "The header snapshot group stays above even an exposed scrim").toBe(true);
     expect(await heldTime(), "Only loading-image suppression may change between frames").toBe(time);
     expect((await readNativeTransitionRecord(page)).finished).toBe("pending");
   } finally {
@@ -96,7 +114,9 @@ test("slow native navigation extracts visible loading feedback without dimming s
     await commitFrame();
   }
   const restored = await screenshot("loading-suppression-restored");
-  expect(restored.equals(hidden), "Restoring suppression must restore the exact same active article pixels").toBe(true);
+  for (const region of Object.keys(clips)) {
+    expect(restored[region]!.equals(hidden[region]!), `Restoring suppression must restore the exact same active ${region} pixels`).toBe(true);
+  }
   expect(await heldTime()).toBe(time);
   expect((await readNativeTransitionRecord(page)).finished).toBe("pending");
   await testInfo.attach("loading-counterfactual-native.json", {
