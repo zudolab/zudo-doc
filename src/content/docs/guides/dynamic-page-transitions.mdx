@@ -42,7 +42,9 @@ Retaining a chrome ancestor does not freeze every nested island. When effective 
 
 ## The Loading Overlay
 
-While the target page is being fetched, zudo-doc shows a **loading overlay** with a centered spinner over the content area. In the standard layout, it starts below the header and beside the desktop sidebar, so loading feedback does not dim those navigation regions. It remains visible until the content swap or navigation cancellation. The loading scrim and spinner are excluded from the page animation, so useful feedback on slower connections does not leave the destination dimmed during its transition.
+While the target page is being fetched, zudo-doc shows a **loading overlay**: a scrim over the whole viewport, header and sidebar included, with a spinner centered in the viewport. It remains visible until the content swap or navigation cancellation.
+
+The overlay is visual feedback only. It does not decide which regions are replaced or animated. Once the destination is ready, the scrim and spinner are excluded from the page animation, so the header and an unchanged desktop sidebar appear undimmed and still while the article and table of contents animate, and the destination is never left dimmed.
 
 The link or button you clicked remains highlighted until the content swap completes. If navigation is aborted, including a failed or superseded request, the loading overlay and pending highlight are cleared.
 
@@ -116,7 +118,7 @@ The overlay ships from `@takazudo/zudo-doc` as two pieces you wire yourself: the
 
 Import `PageLoadingOverlay` and render it **once per layout**, in a body-end slot (the same place you mount your other body-end providers). It is server-rendered with **no hydration** — it emits a small inline script that listens to the navigation lifecycle, so there is no island to register and no `client:*` directive to add. The overlay and pending-link highlight appear on `zfb:before-preparation`. Both clear on `zfb:after-swap` or `zfb:navigation-aborted`. The shipped stylesheet keeps the loading feedback out of the page animation.
 
-The script uses the existing content wrapper and header bounds to position the overlay. In a standalone layout without those elements, it falls back to the viewport edges.
+The overlay always covers the full viewport. The script only toggles its visibility and never measures or positions it from your layout.
 
 ```tsx
 import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";

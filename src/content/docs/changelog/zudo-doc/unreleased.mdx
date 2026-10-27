@@ -4,6 +4,10 @@ description: Changes planned for the next release.
 sidebar_position: 1147
 ---
 
+### Bug Fixes
+
+- The page-loading scrim covers the full viewport again, including the header and sidebar, with the spinner centered in the viewport. Since #4580 its bootstrap clipped it to the content area at runtime. The header and an unchanged desktop sidebar still stay undimmed and still during the page animation, because they use their own transition snapshots and the scrim is excluded from the animation.
+
 ### Other Changes
 
 - The optional `@takazudo/zdtp` peer now also accepts 0.9 (`^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0`). zdtp 0.9.0 renders the design token panel without Preact, so a site on zdtp 0.9 installs no Preact at all; the panel's API, storage keys and CSS are unchanged. It also fixes undo on a generic token tab leaving the edited value on `:root` until reload.
