@@ -347,3 +347,20 @@ describe("scopeRoot broadening boundary", () => {
     expect(broaderSidebarScope(configured.navigation, configured.nodes, null)).toBeNull();
   });
 });
+
+describe("categoryMatch matches the whole top-level segment", () => {
+  const fooTree = [leaf("foo", [leaf("foo/bar")]), leaf("foo2", [leaf("foo2/x")]), leaf("misc")];
+  const section = (match: string, explicit: string[]) => buildSidebarForSection([], "en", match, undefined, {}, () => fooTree, explicit).map((n) => n.slug);
+
+  it("foo section excludes foo2 and keeps nested foo slugs", () => {
+    expect(section("foo", ["foo", "foo2"])).toEqual(["foo"]);
+  });
+
+  it("foo2 section includes only foo2", () => {
+    expect(section("foo2", ["foo", "foo2"])).toEqual(["foo2"]);
+  });
+
+  it('"!" section includes foo2 when only foo is explicit', () => {
+    expect(section("!", ["foo"])).toEqual(["foo2", "misc"]);
+  });
+});
