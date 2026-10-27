@@ -38,6 +38,7 @@ import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, 
 import { join, resolve, dirname, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { parse, type DefaultTreeAdapterMap } from "parse5";
+import { ZDTP_DISABLED_MESSAGE_PREFIX } from "../plugins/zdtp-loader";
 
 // ---------------------------------------------------------------------------
 // Parity helpers — imported from the shared, side-effect-free module also
@@ -1385,6 +1386,18 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // (islands-d5efa665.js -> islands-8c7115bf.js) and keep their byte lengths
   // (57089, 67521, 78973). The changed sidebar island source changes zfb's
   // build identity globally; these routes render no note-tray rows.
+  //
+  // 2026-10-27 re-baseline (zudolab/zudo-doc#4674, sweep cleanup: categoryMatch
+  // segment match #4676 + HtmlPreview hover fg #4677): compared the CI A2
+  // capture of #4665's run 40472443638 (artifact 12718976787, the accepted
+  // reference) with this PR's run 40496420926 (artifact 12730254253).
+  // Replacing native data-zfb-build identities only (342c6f8360395e38 ->
+  // 682abb0e0686b7dd) makes every normalized page byte-identical; raw pages
+  // additionally differ only in the islands entry (islands-8c7115bf.js ->
+  // islands-4bb59b6b.js) and keep their byte lengths (57089, 67521, 78973).
+  // The changed sidebar-utils/nav-scope and HtmlPreview island sources change
+  // zfb's build identity globally; this fixture's single getting-started
+  // category has no prefix sibling, so its visible sidebar is unchanged.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
@@ -2253,12 +2266,13 @@ describe("DTP host-owned: designTokenPanel false + bundleZdtp true keeps the rea
     expect(findDistFilesContaining(fixtureDir, ZDTP_CHUNK_MARKERS)).not.toEqual([]);
   });
 
-  // Assertion 2: no emitted file carries the throwing stub's own source text
+  // Assertion 2: no emitted file carries the zdtp throwing stub's own message
   // (`plugins/zdtp-loader.ts`'s `DISABLED_LOADER_SOURCE`, the literal #4261
   // symptom — a green build shipping a chunk that throws the moment it's
-  // opened).
-  it("not shadowed: no emitted file contains the throwing stub's \"is not bundled\" text", () => {
-    expect(findDistFilesContaining(fixtureDir, ["is not bundled"])).toEqual([]);
+  // opened). Searches the zdtp-specific prefix, not the generic "is not
+  // bundled": the katex and diff stubs legitimately emit that phrase too.
+  it("not shadowed: no emitted file contains the zdtp throwing stub's \"@takazudo/zdtp is not bundled\" text", () => {
+    expect(findDistFilesContaining(fixtureDir, [ZDTP_DISABLED_MESSAGE_PREFIX])).toEqual([]);
   });
 
   // Assertion 3: module-graph laziness proof, same technique as the existing

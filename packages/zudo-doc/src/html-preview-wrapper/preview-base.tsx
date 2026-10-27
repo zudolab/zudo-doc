@@ -169,7 +169,7 @@ export function PreviewBase({
                   class={computed(() => `min-h-[44px] min-w-[44px] px-hsp-sm py-hsp-2xs text-caption border rounded-full cursor-pointer transition-[background,color,border-color] duration-150 leading-snug ${
                     i === activeViewport.value
                       ? "bg-accent text-bg border-accent hover:bg-accent-hover hover:border-accent-hover"
-                      : "bg-transparent text-muted border-muted hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
+                      : "bg-transparent text-muted border-muted hover:text-fg hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
                   }`)}
                   aria-pressed={computed(() => i === activeViewport.value)}
                   on:click={() => { activeViewport.value = i; }}
@@ -204,7 +204,7 @@ export function PreviewBase({
         <div class="border-t border-muted">
           <button
             type="button"
-            class="flex min-h-[44px] min-w-[44px] items-center w-full px-hsp-md py-hsp-sm text-caption font-medium text-muted bg-surface border-none cursor-pointer gap-hsp-xs hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
+            class="flex min-h-[44px] min-w-[44px] items-center w-full px-hsp-md py-hsp-sm text-caption font-medium text-muted bg-surface border-none cursor-pointer gap-hsp-xs hover:text-fg hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
             on:click={() => { codeOpen.value = !codeOpen.value; }}
             aria-expanded={codeOpen}
           >
