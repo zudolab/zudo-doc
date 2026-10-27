@@ -771,7 +771,7 @@
   ],
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@takazudo/zdtp": "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0",
+    "@takazudo/zdtp": "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0",
     "@takazudo/zfb": "^5.1.5",
     "@takazudo/zfb-md-wasm": "^5.1.5",
     "@takazudo/zfb-runtime": "^5.1.5",

@@ -101,7 +101,6 @@
       "workerd"
     ],
     "overrides": {
-      "preact": "10.29.2",
       "lodash-es": ">=4.18.0",
       "uuid": ">=11.1.1",
       "dompurify": ">=3.4.11",
@@ -120,7 +119,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@takazudo/zdtp": "0.8.7",
+    "@takazudo/zdtp": "0.9.0",
     "@takazudo/zfb": "5.1.5",
     "@takazudo/zfb-adapter-cloudflare": "5.1.5",
     "@takazudo/zfb-md-wasm": "5.1.5",

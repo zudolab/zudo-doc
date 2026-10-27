@@ -1101,9 +1101,10 @@ function generatePackageJson(
     // `@takazudo/zdtp/styles.css` (see features/design-token-panel.ts). Both are
     // no-ops with the feature off, so an OFF project must not carry the dep
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
-    // zdtp 0.8.6+ owns Preact as a regular dependency (it was a peer through
-    // 0.8.5), so a generated project no longer declares Preact itself.
-    deps["@takazudo/zdtp"] = "0.8.7";
+    // zdtp 0.9.0 renders with its own bundled zudo-react runtime and depends on
+    // no Preact at all (0.8.6-0.8.7 owned it as a dependency; through 0.8.5 it
+    // was a peer), so a generated project never declares Preact.
+    deps["@takazudo/zdtp"] = "0.9.0";
   }
 
   if (
