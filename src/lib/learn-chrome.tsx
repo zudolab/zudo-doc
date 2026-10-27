@@ -7,6 +7,7 @@ import type {
 } from "@takazudo/zudo-doc/factory-context";
 import { createHeaderWithDefaults } from "@takazudo/zudo-doc/header-with-defaults";
 import { createSidebarWithDefaults } from "@takazudo/zudo-doc/sidebar-with-defaults";
+import type { SidebarDefinition } from "@takazudo/zudo-doc/sidebar-utils";
 import {
   toUmbrellaTree,
   umbrellaSections,
@@ -40,23 +41,39 @@ export function createUmbrellaChrome(
   const nativeContext: ChromeContext = { ...routeCtx, components: {}, hostBindings: bindings };
   const native = pairOf(nativeContext);
   const pairs = new Map<string, ChromePair>();
+  // navDocs keeps its identity until content changes, so one decision serves
+  // the Header and Sidebar of every page that shares a source.
+  const decisions = new WeakMap<object, Map<string, SidebarDefinition | undefined>>();
 
-  function pairFor(lang: string, navSection: string | undefined, currentVersion: string | undefined): ChromePair {
-    const umbrella = navSection === undefined
-      ? undefined
-      : umbrellas.find((candidate) => umbrellaSections(candidate).includes(navSection));
-    if (!umbrella || navSection === undefined) return native;
+  function definitionFor(
+    umbrella: UmbrellaNavigation,
+    navSection: string,
+    lang: string,
+    currentVersion: string | undefined,
+  ): SidebarDefinition | undefined {
     // Decide from the same native source and tree the factories render.
     const { navDocs, categoryMeta } = routeCtx.loadNavSourceDocs(lang, currentVersion);
-    const tree = routeCtx.buildNavTree(
-      navDocs as DocPageEntry[],
-      lang,
-      categoryMeta,
-      (slug, locale) => routeCtx.docsUrl(slug, locale),
-    );
-    const forest = toUmbrellaTree(tree, umbrella);
-    const definition = forest && umbrellaSidebar(forest, navSection);
-    if (!definition) return native;
+    let byKey = decisions.get(navDocs);
+    if (!byKey) decisions.set(navDocs, (byKey = new Map()));
+    const key = `${lang}\n${navSection}`;
+    if (!byKey.has(key)) {
+      const tree = routeCtx.buildNavTree(
+        navDocs as DocPageEntry[],
+        lang,
+        categoryMeta,
+        (slug, locale) => routeCtx.docsUrl(slug, locale),
+      );
+      const forest = toUmbrellaTree(tree, umbrella);
+      byKey.set(key, forest && umbrellaSidebar(forest, navSection));
+    }
+    return byKey.get(key);
+  }
+
+  function pairFor(lang: string, navSection: string | undefined, currentVersion: string | undefined): ChromePair {
+    if (navSection === undefined) return native;
+    const umbrella = umbrellas.find((candidate) => umbrellaSections(candidate).includes(navSection));
+    const definition = umbrella && definitionFor(umbrella, navSection, lang, currentVersion);
+    if (!umbrella || !definition) return native;
 
     const key = `${navSection}:${definition.initialPath?.join(".")}`;
     let pair = pairs.get(key);

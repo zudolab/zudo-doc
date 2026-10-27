@@ -24,11 +24,11 @@ export function umbrellaSections(umbrella: UmbrellaNavigation): string[] {
 }
 
 /**
- * The one-root umbrella forest: a copy of the native root row whose children
- * are the native branch nodes, descendants included. Branches missing from
- * this locale or version are skipped. Without a linked root page the result
- * is `undefined`, so callers keep the fully native navigation. The input is
- * not mutated.
+ * The one-root umbrella forest: a copy of the native root row. Its own native
+ * pages come first, then the native branch nodes, descendants included.
+ * Branches missing from this locale or version are skipped. Without a linked
+ * root page the result is `undefined`, so callers keep the fully native
+ * navigation. The input is not mutated.
  */
 export function toUmbrellaTree(tree: DocNavNode[], umbrella: UmbrellaNavigation): DocNavNode[] | undefined {
   const bySlug = new Map<string, DocNavNode>();
@@ -42,11 +42,12 @@ export function toUmbrellaTree(tree: DocNavNode[], umbrella: UmbrellaNavigation)
 
   const root = bySlug.get(umbrella.root);
   if (!root?.hasPage || !root.href) return undefined;
-  const children = umbrella.branches.flatMap((slug) => {
+  const branches = umbrella.branches.flatMap((slug) => {
     const branch = bySlug.get(slug);
     return branch ? [branch] : [];
   });
-  return [{ ...root, children }];
+  const own = root.children.filter((node) => !umbrella.branches.includes(node.slug));
+  return [{ ...root, children: [...own, ...branches] }];
 }
 
 /**

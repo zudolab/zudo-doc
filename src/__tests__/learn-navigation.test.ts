@@ -196,6 +196,13 @@ describe("toUmbrellaTree", () => {
     expect(slugs(ctx.findNode([guides], "guides/new-group")!.children)).toEqual(["guides/new-group/child"]);
   });
 
+  it("keeps the root's own native pages ahead of the branches", () => {
+    const ctx = routeContext();
+    const forest = toUmbrellaTree(nativeTree(ctx, [...englishDocs, doc("learn/overview", "Overview article", 1)]), learnNavigation)!;
+    expect(slugs(forest[0]!.children)).toEqual(["learn/overview", "guides", "components", "markdown-features"]);
+    expect(umbrellaSidebar(forest, "guides")?.initialPath).toEqual([0, 1]);
+  });
+
   it("returns undefined without the root page and skips missing branches without reordering", () => {
     const ctx = routeContext();
     expect(toUmbrellaTree(nativeTree(ctx, collections["docs-v-1.0"]!), learnNavigation)).toBeUndefined();
@@ -319,7 +326,7 @@ describe("createUmbrellaChrome", () => {
   it("supports several umbrellas, each selected by its own sections", () => {
     const atlas: UmbrellaNavigation = { root: "reference", branches: ["components"] };
     const { Sidebar } = createUmbrellaChrome(routeContext(), bindings, [learnNavigation, atlas]);
-    expect(slugs(sidebarData(Sidebar(page("reference/basics", "reference"))).navigation.roots[0]!.children)).toEqual(["components"]);
+    expect(slugs(sidebarData(Sidebar(page("reference/basics", "reference"))).navigation.roots[0]!.children)).toEqual(["reference/basics", "components"]);
     // The first umbrella that lists a section owns it.
     expect(slugs(sidebarData(Sidebar(page("components/card", "components"))).navigation.roots)).toEqual(["learn"]);
   });

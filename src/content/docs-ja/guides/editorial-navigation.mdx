@@ -357,7 +357,7 @@ Markdown Features          (linked, leaf)
 
 ### 傘のツリーのヘルパー
 
-書くのはルートのスラッグと、順序付きの枝のスラッグだけです。ヘルパーは実際のネイティブノードをスラッグで探し、ルートの行をコピーし、ネイティブの枝のノードを変更せずに付けます。そのため子孫、ラベル、href、メタデータはネイティブのままです。枝の中のどこにページやネストしたグループを追加しても、このリストを編集せずに表示されます。
+書くのはルートのスラッグと、順序付きの枝のスラッグだけです。ヘルパーは実際のネイティブノードをスラッグで探し、ルートの行をコピーし、ネイティブの枝のノードを変更せずに付けます。そのため子孫、ラベル、href、メタデータはネイティブのままです。ルート自身のディレクトリ直下にあるページも、枝より前にその子として残ります。枝の中のどこにページやネストしたグループを追加しても、このリストを編集せずに表示されます。
 
 ```ts title="src/lib/learn-navigation.ts"
 import type { DocNavNode } from "@takazudo/zudo-doc/doc-page-props";
@@ -386,11 +386,11 @@ export function umbrellaSections(umbrella: UmbrellaNavigation): string[] {
 }
 
 /**
- * The one-root umbrella forest: a copy of the native root row whose children
- * are the native branch nodes, descendants included. Branches missing from
- * this locale or version are skipped. Without a linked root page the result
- * is `undefined`, so callers keep the fully native navigation. The input is
- * not mutated.
+ * The one-root umbrella forest: a copy of the native root row. Its own native
+ * pages come first, then the native branch nodes, descendants included.
+ * Branches missing from this locale or version are skipped. Without a linked
+ * root page the result is `undefined`, so callers keep the fully native
+ * navigation. The input is not mutated.
  */
 export function toUmbrellaTree(tree: DocNavNode[], umbrella: UmbrellaNavigation): DocNavNode[] | undefined {
   const bySlug = new Map<string, DocNavNode>();
@@ -404,11 +404,12 @@ export function toUmbrellaTree(tree: DocNavNode[], umbrella: UmbrellaNavigation)
 
   const root = bySlug.get(umbrella.root);
   if (!root?.hasPage || !root.href) return undefined;
-  const children = umbrella.branches.flatMap((slug) => {
+  const branches = umbrella.branches.flatMap((slug) => {
     const branch = bySlug.get(slug);
     return branch ? [branch] : [];
   });
-  return [{ ...root, children }];
+  const own = root.children.filter((node) => !umbrella.branches.includes(node.slug));
+  return [{ ...root, children: [...own, ...branches] }];
 }
 
 /**
@@ -447,6 +448,7 @@ import type {
 } from "@takazudo/zudo-doc/factory-context";
 import { createHeaderWithDefaults } from "@takazudo/zudo-doc/header-with-defaults";
 import { createSidebarWithDefaults } from "@takazudo/zudo-doc/sidebar-with-defaults";
+import type { SidebarDefinition } from "@takazudo/zudo-doc/sidebar-utils";
 import {
   toUmbrellaTree,
   umbrellaSections,
@@ -480,23 +482,39 @@ export function createUmbrellaChrome(
   const nativeContext: ChromeContext = { ...routeCtx, components: {}, hostBindings: bindings };
   const native = pairOf(nativeContext);
   const pairs = new Map<string, ChromePair>();
+  // navDocs keeps its identity until content changes, so one decision serves
+  // the Header and Sidebar of every page that shares a source.
+  const decisions = new WeakMap<object, Map<string, SidebarDefinition | undefined>>();
 
-  function pairFor(lang: string, navSection: string | undefined, currentVersion: string | undefined): ChromePair {
-    const umbrella = navSection === undefined
-      ? undefined
-      : umbrellas.find((candidate) => umbrellaSections(candidate).includes(navSection));
-    if (!umbrella || navSection === undefined) return native;
+  function definitionFor(
+    umbrella: UmbrellaNavigation,
+    navSection: string,
+    lang: string,
+    currentVersion: string | undefined,
+  ): SidebarDefinition | undefined {
     // Decide from the same native source and tree the factories render.
     const { navDocs, categoryMeta } = routeCtx.loadNavSourceDocs(lang, currentVersion);
-    const tree = routeCtx.buildNavTree(
-      navDocs as DocPageEntry[],
-      lang,
-      categoryMeta,
-      (slug, locale) => routeCtx.docsUrl(slug, locale),
-    );
-    const forest = toUmbrellaTree(tree, umbrella);
-    const definition = forest && umbrellaSidebar(forest, navSection);
-    if (!definition) return native;
+    let byKey = decisions.get(navDocs);
+    if (!byKey) decisions.set(navDocs, (byKey = new Map()));
+    const key = `${lang}\n${navSection}`;
+    if (!byKey.has(key)) {
+      const tree = routeCtx.buildNavTree(
+        navDocs as DocPageEntry[],
+        lang,
+        categoryMeta,
+        (slug, locale) => routeCtx.docsUrl(slug, locale),
+      );
+      const forest = toUmbrellaTree(tree, umbrella);
+      byKey.set(key, forest && umbrellaSidebar(forest, navSection));
+    }
+    return byKey.get(key);
+  }
+
+  function pairFor(lang: string, navSection: string | undefined, currentVersion: string | undefined): ChromePair {
+    if (navSection === undefined) return native;
+    const umbrella = umbrellas.find((candidate) => umbrellaSections(candidate).includes(navSection));
+    const definition = umbrella && definitionFor(umbrella, navSection, lang, currentVersion);
+    if (!umbrella || !definition) return native;
 
     const key = `${navSection}:${definition.initialPath?.join(".")}`;
     let pair = pairs.get(key);

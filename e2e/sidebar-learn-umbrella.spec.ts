@@ -51,6 +51,8 @@ test("a subsection starts at its own row, broadens to Atlas and restores its bas
 
   await page.evaluate(() => window.scrollTo(0, 80));
   const scroll = await page.evaluate(() => window.scrollY);
+  // Guard against a vacuous check: the page must actually have scrolled.
+  expect(scroll).toBe(80);
   await sidebar.locator("[data-sidebar-broaden]").click();
   await expect(link(sidebar, "Atlas")).toBeVisible();
   await expect(link(sidebar, "Routes")).toBeVisible();
