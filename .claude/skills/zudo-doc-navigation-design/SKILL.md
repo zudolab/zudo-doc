@@ -1,6 +1,6 @@
 ---
 name: zudo-doc-navigation-design
-description: "Navigation design rules for zudo-doc documentation sites. Consult before creating new pages, restructuring directories, or designing header navigation. Covers: the recommended 3-level hierarchy (header → sidebar → nested), filesystem navigation as the default, linked versus heading-only category rows, when an editorial tree is warranted, header nav conciseness, category index pages, sidebar_position discipline, and common mistakes. Triggered by 'nav design', 'navigation structure', 'zudo-doc-navigation-design', 'structure nav', 'add category', 'add header nav'."
+description: "Navigation design rules for zudo-doc documentation sites. Consult before creating new pages, restructuring directories, or designing header navigation. Covers: the recommended 3-level hierarchy (header → sidebar → nested), filesystem navigation as the default, linked versus heading-only category rows, when an editorial or umbrella tree is warranted, writing the intended tree first, header nav conciseness, category index pages, sidebar_position discipline, and common mistakes. Triggered by 'nav design', 'navigation structure', 'zudo-doc-navigation-design', 'structure nav', 'add category', 'add header nav'."
 user-invocable: true
 ---
 
@@ -14,9 +14,25 @@ This skill is the short version. The authoritative guides are:
 
 - `src/content/docs/getting-started/structuring-navigations.mdx` — choosing a pattern (decision table) and the gaming-wiki walkthrough.
 - `src/content/docs/guides/sidebar.mdx` — category rows, sidebar item semantics, `initialPath`/`initialPathMode`, `scopeRoot`, and scope recipes.
-- `src/content/docs/guides/editorial-navigation.mdx` — the advanced recipe for re-parenting existing pages without moving their URLs.
+- `src/content/docs/guides/editorial-navigation.mdx` — the advanced recipes for re-parenting existing pages without moving their URLs: a curated editorial tree, and an umbrella tree that keeps complete sections under one linked landing page.
 
 Link to those guides instead of copying their advanced implementation into another file.
+
+## Write the Intended Tree Before Choosing Configuration
+
+Before you touch `headerNav`, `sidebars`, or chrome bindings, write down:
+
+1. The complete parent/child tree the reader should see, marking each row as linked or heading-only.
+2. For each destination page: which section owns it (its URL's `categoryMatch`), what a fresh visit and **Restore** show, which branches start open, and how far **Broaden tree** may go.
+
+Then pick the pattern that produces that tree. Four patterns look alike and are not interchangeable:
+
+- **Header dropdown** — collects independent sections in the header. It creates no sidebar parent.
+- **Shared sidebar hierarchy** — one linked landing page is the real parent of the rows below it.
+- **Curated editorial tree** — lists particular pages and cross-links; a cross-link stays a leaf (`guides/editorial-navigation.mdx`).
+- **Umbrella tree** — a shared hierarchy whose children are complete native sections; only the section list is authored (`guides/editorial-navigation.mdx#umbrella-tree-with-complete-sections`). This showcase's Learn sidebar is one (`src/lib/learn-navigation.ts`, `src/lib/learn-chrome.tsx`).
+
+When asked to match an existing hierarchy, keep its linked parent rows and every descendant. Do not substitute a flat hub of peer links because the directories happen to be siblings. A list of section pages such as `items: ["learn", "guides", "components"]` is that flat hub: each string is a leaf. `scopeRoot` only caps Broaden, and `initialPath` only selects a view; neither creates ancestry.
 
 ## The 3-Level Hierarchy
 
@@ -68,6 +84,7 @@ The header is the topmost level. It holds only the biggest categories.
 - **3–6 items max.** More than 6 overwhelms users and wraps the header.
 - **Each item is a broad section, not a page.** "Guides" ✓, "How to install" ✗.
 - **`categoryMatch` must be a single top-level directory name.** Multi-segment values (e.g. `"platforms/xbox"`) break active-state highlighting and sidebar scoping. When dropdown children are nested under one top-level directory, keep `categoryMatch` on the parent and omit it from the children; child active state comes from `path`. Per-package changelogs (`changelog/core`, `changelog/cli`) are the canonical example. Children that represent separate top-level directories may each use their own single-segment `categoryMatch`.
+- **A dropdown is header-only.** Its children stay independent sections with their own sidebars; it never makes them sidebar children. For a sidebar parent, use an umbrella tree and keep each child's own `categoryMatch`.
 - **Dropdowns are for closely related sections only.** "Learn > Guides, Components" makes sense. "Everything > 7 miscellaneous items" does not — split into separate header items instead.
 
 ## Sidebar Structure Rules
@@ -135,6 +152,7 @@ Before creating any new category directory:
 - **Wrapping a linked category in a synthetic `type: "category"`.** It produces an unlinked heading plus a duplicate landing-page child. Keep the real category node.
 - **Multi-segment `categoryMatch`** (e.g. `"platforms/xbox"`). Breaks active highlighting — use a single top-level directory name.
 - **Reorganizing via config instead of filesystem.** If you are tempted to add a custom sidebar config override, the underlying filesystem is probably wrong. Fix the files instead. Reach for an editorial tree only when existing URLs must stay.
+- **Flattening a requested hierarchy into peer links.** A header dropdown, a list of section landing pages, `scopeRoot`, or `initialPath` never creates a parent row. Build the linked tree the request describes.
 - **Treating `initialPath: [0]` as a universal index.** It indexes the resolved visible tree. `autogenerated` with `dirName` hides that directory's row, so `[0]` becomes its first child.
 - **Using `<CategoryNav>` for a note tray.** It loses tray-specific ranks, dates, and ordering; use `<NoteTrayIndex>`.
 - **Stuffing a category `index.mdx` with full content/prose.** The index is a landing page — keep it to a short intro plus the shape-appropriate list component and put real content in sibling files.

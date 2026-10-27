@@ -18,6 +18,15 @@ Never create pages one by one "wherever seems closest." Before writing the first
 
 When adding to an existing site, read the current tree under `src/content/docs/` first, draw it out, and place the new page where it fits the hierarchy — never skip this step.
 
+Before choosing any navigation configuration, also write down how each destination behaves: which header section owns it (its URL's `categoryMatch`), what a fresh visit and **Restore** show in the sidebar, which branches start open, and how far **Broaden tree** may go. Choose the pattern from that list:
+
+- **Header dropdown** — collects independent sections in the header. Each keeps its own sidebar; the dropdown creates no sidebar parent.
+- **Shared sidebar hierarchy** — one linked landing page is the real parent of the rows below it.
+- **Curated editorial tree** — lists particular pages and cross-links; a cross-link stays a leaf.
+- **Umbrella tree** — a shared hierarchy whose children are complete native sections; only the section list is authored, so new pages inside a section appear automatically.
+
+When asked to match an existing hierarchy, keep its linked parent rows and every descendant. Do not replace them with a flat hub of peer links because the directories are siblings. `items: ["learn", "guides", "components"]` in the sidebar config is such a flat hub: each string is a leaf link. `scopeRoot` only caps **Broaden tree** and `initialPath` only selects a view; neither creates a parent. The editorial and umbrella recipes are advanced chrome-bindings recipes — see the Editorial navigation guide under Full Guides below.
+
 ## The 3-Level Hierarchy
 
 Design for three navigation levels. This is a usability recommendation, not a technical maximum — the sidebar is recursive and renders any depth — but deeper trees are harder to read:
@@ -246,6 +255,7 @@ Two carve-outs — do NOT create additional-locale mirrors for these:
 - **Starting content with `# h1`** — duplicates the auto-rendered title.
 - **Absolute `/docs/...` links or extension-less links in prose** — the resolver can't verify them.
 - **camelCase/PascalCase file names** — break on case-sensitive filesystems.
+- **Expecting a header dropdown or a list of section pages to create a sidebar parent** — both leave the sections as peers. Use an umbrella tree for complete sections under one landing page.
 - **Reorganizing navigation via config instead of moving files** — the filesystem is the default navigation; reach for an editorial tree only when URLs must stay.
 
 ## Checklist Before Creating Any Page
@@ -267,3 +277,4 @@ The complete versions of this guidance (with more examples) are published in the
 - Structuring navigations: https://zudo-doc.takazudomodular.com/docs/getting-started/structuring-navigations/
 - Sidebar (category rows, sidebar configuration, scope recipes): https://zudo-doc.takazudomodular.com/docs/guides/sidebar/
 - Editorial navigation (advanced): https://zudo-doc.takazudomodular.com/docs/guides/editorial-navigation/
+- Umbrella tree (advanced): https://zudo-doc.takazudomodular.com/docs/guides/editorial-navigation/#umbrella-tree-with-complete-sections

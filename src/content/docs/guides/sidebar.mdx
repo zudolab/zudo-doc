@@ -237,6 +237,8 @@ Each item produces rows from the automatic tree. None of them creates pages or c
 
 `SidebarCategory` has no `link`, `href`, `id`, or landing-page property. A synthetic category cannot link its heading to a page.
 
+Listing section landing pages as strings therefore never builds a hierarchy. `items: ["learn", "guides", "components"]` produces three peer leaf links, and adding `scopeRoot` or `initialPath` does not change that: `scopeRoot` caps **Broaden tree**, and `initialPath` selects a view of the tree that already exists. To put complete sections under one linked landing page, use the [umbrella tree](./editorial-navigation.mdx#umbrella-tree-with-complete-sections).
+
 ### Heading-Only Groups with Synthetic Categories
 
 Use `type: "category"` when a group is intentionally a heading with no landing page, for example to gather a few pages under a label that has no page of its own:
@@ -297,7 +299,9 @@ If a group has a landing page, keep the real category node (the automatic tree a
 
 ### This Showcase's Configuration
 
-The package default for `sidebarsConfig` is `{}`. This repository's own `src/config/sidebars.ts` is showcase configuration bound in `src/chrome-bindings.tsx`: it gives each header section `{ items: [], scopeRoot: "configured" }`. Every section still uses the filesystem tree, and **Broaden tree** stops at that section instead of reaching the other header sections.
+The package default for `sidebarsConfig` is `{}`. This repository's own `src/config/sidebars.ts` is showcase configuration bound in `src/chrome-bindings.tsx`: it gives each header section `{ items: [], scopeRoot: "configured" }`. Most sections use their own filesystem tree, and **Broaden tree** stops at that section instead of reaching the other header sections.
+
+Learn is the intentional exception. Learn, Guides, Components, and Markdown Features share one [umbrella tree](./editorial-navigation.mdx#umbrella-tree-with-complete-sections): the linked Learn row holds the three complete sections. The Learn page starts at the Learn row with its branches closed, each section page starts at its own row, and **Broaden tree** reaches Learn. Their `sidebars.ts` entries are the native fallback for an archived version, which has no Learn page.
 
 ## Sort Order (Ascending / Descending)
 

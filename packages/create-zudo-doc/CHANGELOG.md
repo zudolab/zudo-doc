@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Other Changes
 
 - With the design token panel enabled, generated projects now pin `@takazudo/zdtp` 0.9.0. The panel no longer depends on Preact, so generated projects install no Preact; undo on a generic token tab now also clears the edited value from `:root`.
+- The `zudo-doc-writing` skill (`claudeSkillsWriting` feature) now asks for the intended sidebar tree and each destination's behavior before any navigation configuration. It separates a header dropdown, a shared sidebar hierarchy, a curated editorial tree and an umbrella tree, and warns that a dropdown or a list of section pages never creates a sidebar parent.
 
 ## [9.0.0] - 2026-10-27
 
