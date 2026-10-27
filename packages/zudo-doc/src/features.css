@@ -1408,7 +1408,8 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
 
 /* Touch target: a one-tap focus frame at a comfortable size. */
 @media (pointer: coarse) {
-  [data-sidebar-focus] {
+  /* Out-specifies the frame's w-/h- utilities, which are emitted after this file. */
+  [data-sidebar-row] [data-sidebar-focus] {
     width: 2.5rem;
     height: 2.75rem;
   }

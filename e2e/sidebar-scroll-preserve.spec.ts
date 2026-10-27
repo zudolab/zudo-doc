@@ -159,7 +159,7 @@ test("full-forest navigation after Broaden keeps a nonzero sidebar offset", asyn
   const sidebar = desktopSidebar(page);
   await broadenToCeiling(sidebar);
   await expect(sidebar.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
-  await expect(sidebar.getByRole("button", { name: "Focus sidebar on Guides", exact: true })).toHaveCount(1);
+  await expect(sidebar.locator('[data-sidebar-focus][data-sidebar-tip-detail="Guides"]')).toHaveCount(1);
   await expect(sidebar.getByRole("link", { name: "Getting Started", exact: true })).toHaveCount(1);
   await expect(sidebar.getByRole("link", { name: "Wind", exact: true })).toHaveCount(1);
   const before = await placeGuidesLink(page, 36);
@@ -268,20 +268,20 @@ for (const width of [1280, 390]) {
       : desktopSidebar(page);
     if (width < 1024) await openMobileDrawer(page);
     else await waitForSidebarHydration(page);
-    await expect(container.getByRole("button", { name: "Focus sidebar on Surfaces", exact: true })).toBeVisible();
+    await expect(container.locator('[data-sidebar-focus][data-sidebar-tip-detail="Surfaces"]')).toBeVisible();
     await expect(container.getByRole("link", { name: "Background", exact: true })).toBeVisible();
     await expect(container.getByRole("link", { name: "Utility reference", exact: true })).toHaveCount(0);
     await expect(container.getByRole("link", { name: "Bounded Wind", exact: true })).toHaveCount(0);
     await container.locator("[data-sidebar-broaden]").click();
-    await expect(container.getByRole("button", { name: "Focus sidebar on Utility reference", exact: true })).toBeVisible();
+    await expect(container.locator('[data-sidebar-focus][data-sidebar-tip-detail="Utility reference"]')).toBeVisible();
     await container.locator("[data-sidebar-restore]").click();
-    await expect(container.getByRole("button", { name: "Focus sidebar on Surfaces", exact: true })).toBeVisible();
+    await expect(container.locator('[data-sidebar-focus][data-sidebar-tip-detail="Surfaces"]')).toBeVisible();
     await container.locator("[data-sidebar-broaden]").click();
     await container.locator("[data-sidebar-broaden]").click();
-    await expect(container.getByRole("button", { name: "Focus sidebar on Bounded Wind", exact: true })).toBeVisible();
+    await expect(container.locator('[data-sidebar-focus][data-sidebar-tip-detail="Bounded Wind"]')).toBeVisible();
     await expect(container.locator("[data-sidebar-scope-toolbar]")).toHaveCount(0);
     await expect(container.getByRole("link", { name: "Guides", exact: true })).toHaveCount(0);
-    await expect(container.getByRole("button", { name: "Focus sidebar on Guides", exact: true })).toHaveCount(0);
+    await expect(container.locator('[data-sidebar-focus][data-sidebar-tip-detail="Guides"]')).toHaveCount(0);
     assertNoConsoleErrors();
   });
 }

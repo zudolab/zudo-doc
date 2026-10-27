@@ -863,8 +863,8 @@ describe("focus frame, branch preview and tooltip", () => {
     frame(root, "Guides")!.focus();
     click(frame(root, "Guides"));
     await flushAll();
-    // Guides has no page, so its disclosure is the root row's primary action.
-    expect(document.activeElement?.getAttribute("aria-label")).toBe("Collapse Guides");
+    // Guides has no page, so focus lands on the first link of the new tree.
+    expect(document.activeElement?.getAttribute("href")).toBe("/docs/guides/first");
     click(root.querySelector("[data-sidebar-restore]"));
     await flushAll();
     click(frame(root, "Other"));

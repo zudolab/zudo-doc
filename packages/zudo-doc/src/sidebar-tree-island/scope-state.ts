@@ -155,9 +155,8 @@ export function useSidebarScope({ nodes, navigation, activeSlug, query, locale }
         const contains = (n: SidebarNavNode): boolean => n.slug === activeSlug.value || n.children.some(contains);
         return node && contains(node);
       });
-      // The root row's own primary action: its page link, or a non-linked root's disclosure.
-      const rootRow = nav?.querySelector<HTMLElement>("[data-sidebar-tree-root] [data-sidebar-row]");
-      const rootAction = rootRow?.querySelector<HTMLElement>("a[href], button[aria-expanded]") ?? nav?.querySelector<HTMLAnchorElement>("[data-sidebar-tree-root] a");
+      // The tree's first link; a tree with no link at all falls back to its first disclosure.
+      const rootAction = nav?.querySelector<HTMLElement>("[data-sidebar-tree-root] a") ?? nav?.querySelector<HTMLElement>("[data-sidebar-tree-root] button[aria-expanded]");
       const rootLink = id && id !== SIDEBAR_FOREST_SCOPE && broader.value !== null ? rootAction : null;
       const currentLink = nav?.querySelector<HTMLElement>('[aria-current="page"]');
       const control = (id === null ? currentLink : rootLink) ?? nav?.querySelector<HTMLButtonElement>("[data-sidebar-broaden]") ?? activeBranch ?? currentLink ?? rootAction ?? nav?.querySelector<HTMLElement>('[data-sidebar-focus]:not([aria-disabled="true"]), [data-sidebar-tree-root] a, [data-sidebar-tree-root] button[aria-expanded], input');

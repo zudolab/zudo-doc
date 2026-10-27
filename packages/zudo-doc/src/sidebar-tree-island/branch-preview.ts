@@ -180,8 +180,17 @@ export function createBranchPreview(navRef: Ref<HTMLElement>): BranchPreview & {
       hideTooltip();
       pointerKey.value = null;
     };
+    // Keyboard focus scrolls the sidebar to reveal its target, so follow the
+    // trigger instead of dismissing; a trigger that left the DOM dismisses.
+    let scrollFrame = 0;
     const onScroll = () => {
-      if (!tip.hidden) hideTooltip();
+      if (tip.hidden || scrollFrame) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        if (tip.hidden) return;
+        if (owner?.isConnected) place(owner, tip);
+        else hideTooltip();
+      });
     };
     // The drawer stays mounted when closed and goes `inert`; a hidden sidebar
     // must not keep a preview or tooltip.
@@ -201,6 +210,7 @@ export function createBranchPreview(navRef: Ref<HTMLElement>): BranchPreview & {
     tip.addEventListener("pointerenter", onTipEnter);
     tip.addEventListener("pointerleave", onTipLeave);
     return () => {
+      cancelAnimationFrame(scrollFrame);
       clear();
       observer?.disconnect();
       media?.removeEventListener?.("change", onBreakpoint);
