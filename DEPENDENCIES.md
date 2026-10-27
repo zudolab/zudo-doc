@@ -8,10 +8,10 @@ plus hand-checked imports, scripts, configs, CI and upstream manifests.
 
 | Measure | Before | After |
 | --- | --- | --- |
-| Lockfile package records | 543 | 539 |
-| Installed `name@version` (linux-x64) | 432 | 432 |
+| Lockfile package records | 543 | 538 |
+| Installed `name@version` (linux-x64) | 432 | 431 |
 | Installed package names | 404 | 402 |
-| Installed size (`node_modules/.pnpm`) | 710.5 MB | 555.6 MB |
+| Installed size (`node_modules/.pnpm`) | 710.5 MB | 554.0 MB |
 | `pnpm audit` (all / prod) | 59 / 7 (15 high) | 0 / 0 |
 | `@takazudo/zudo-doc` `dist/` | 1104 files, 7,265,125 B | byte-identical |
 | Site worker bundle `_zfb_inner.mjs` | 1,462,693 B | 1,579,849 B (zod 4.6) |
@@ -41,6 +41,8 @@ the duplicate Wrangler 4.111 / Miniflare 4 / workerd 1.20260710 stack: 155 MB.
   breaking 0.x release cannot slip in.
 - `fast-uri@3` `>=3.1.9`, `brace-expansion@5` `>=5.0.12`: raised to the patched
   versions of the advisories open at baseline.
+- `yaml@2` `>=2.9.1`: raised to match the package's own `^2.9.1`, which the
+  override would otherwise rewrite back to 2.9.0.
 - `picomatch`, `postcss`, `yaml@2`, `hono@4`, `nanoid@3`: kept. Their
   requesters' ranges still admit the vulnerable versions these floors exclude.
 
@@ -63,6 +65,7 @@ instead of borrowing Vite's or tsup's copy.
 | `tsup` | Kept and moved to 9.0.0: `@takazudo/zudo-doc` `dist/` is byte-identical and it drops tsup 8's chokidar 4 / esbuild 0.27 requests. |
 | `@inquirer/prompts`, `pluralize` | knip false positives: imported by `bin/*-runner.ts`, which knip does not treat as entries. |
 | `fs-extra` | About 100 call sites, including `copy` with filters, in both published CLIs. A native rewrite breaks the 40-line abandon rule. Terminal KEEP. |
+| `katex` (new `@takazudo/zudo-doc` dev dependency) | Package tests load KaTeX directly. Without the declaration, pnpm resolved the optional peer to a second 0.19.0 copy next to the root's 0.19.1. |
 | `jsdom`, `msw` | Not declared. pnpm resolves them as optional peers of Vitest / `@vitest/mocker`; a fresh resolution keeps them. Nothing imports them. |
 
 ### Decided against (with blockers)
@@ -92,6 +95,11 @@ instead of borrowing Vite's or tsup's copy.
   `@types/node@22`). Trust checks were not disabled, so both stay at their
   locked versions. The same policy also blocks a full `pnpm dedupe` until
   `@types/node@22.19.15`'s `undici-types` is resolved.
+- **Published peer floors are unchanged.** The workspace now resolves zod 4.6.7,
+  but the `zod` peer (`^4.3.6`) and the scaffold's emitted range still admit
+  versions affected by the advisory for zod `<4.6.6`. Raising a published peer
+  floor narrows consumer compatibility and belongs to release review. Fresh
+  scaffolds already resolve the latest 4.x.
 - **`@playwright/test`** stays at 1.58.2 because the CI e2e jobs pin the
   matching `mcr.microsoft.com/playwright:v1.58.2-noble` image.
 

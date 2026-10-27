@@ -19,7 +19,6 @@
 // makes the check total: a forbidden dependency is caught whether it resolves,
 // fails to resolve, or gets inlined away.
 
-import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
