@@ -6,10 +6,16 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [9.1.0] - 2026-10-28
+
 ### Other Changes
 
-- With the design token panel enabled, generated projects now pin `@takazudo/zdtp` 0.9.0. The panel no longer depends on Preact, so generated projects install no Preact; undo on a generic token tab now also clears the edited value from `:root`.
-- The `zudo-doc-writing` skill (`claudeSkillsWriting` feature) now asks for the intended sidebar tree and each destination's behavior before any navigation configuration. It separates a header dropdown, a shared sidebar hierarchy, a curated editorial tree and an umbrella tree, and warns that a dropdown or a list of section pages never creates a sidebar parent.
+- With the design token panel enabled, generated projects now pin `@takazudo/zdtp` 0.9.0. The panel no longer depends on Preact, so generated projects install no Preact; undo on a generic token tab now also clears the edited value from `:root`. (09442500)
+- The `zudo-doc-writing` skill (`claudeSkillsWriting` feature) now asks for the intended sidebar tree and each destination's behavior before any navigation configuration. It separates a header dropdown, a shared sidebar hierarchy, a curated editorial tree and an umbrella tree, links the editorial navigation guides, and warns that a dropdown or a list of section pages never creates a sidebar parent. (1b906785, 1dc8b3a6)
+- MCP-enabled projects pin Wrangler 4.154.0. (36137132)
+- The `fs-extra` dependency range is refreshed to `^11.4.1`. (07381de5)
 
 ## [9.0.0] - 2026-10-27
 

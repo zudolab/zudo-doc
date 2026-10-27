@@ -1,0 +1,23 @@
+---
+title: 9.1.0
+description: Release notes for 9.1.0.
+sidebar_position: 1147
+---
+
+Released: 2026-10-28
+
+### Features
+
+- The sidebar's branch-focus control is now a four-corner focus frame (named "Focus sidebar on" plus the category) instead of "◎". Pointing at it or reaching it with the keyboard briefly highlights exactly the branch it would show, with a short tooltip and no layout, scope, filter or URL change; on touch, one tap focuses the branch. The frame of a branch already shown on its own is inactive (`aria-disabled`, out of the tab order). Restore uses a counter-clockwise reset arrow ("Restore current page's sidebar"). Japanese labels are included. (b918819b)
+
+### Bug Fixes
+
+- The page-loading scrim covers the full viewport again, including the header and sidebar, with the spinner centered in the viewport. Since #4580 its bootstrap clipped it to the content area at runtime. The header and an unchanged desktop sidebar still stay undimmed and still during the page animation, because they use their own transition snapshots and the scrim is excluded from the animation. (d453d849)
+- A `categoryMatch` now matches only the whole top-level slug segment. Before, `categoryMatch: "foo"` also claimed `foo2/...` pages in the sidebar filter, in the `"!"` fallback exclusion, and when choosing a page's header section. (28808511)
+- The vertical guide line under an expanded note-tray year or month group now runs from the center of the group's toggle, and each child's connector reaches its label. (6ac3b3c8)
+- HtmlPreview's source toggle and inactive viewport buttons use the foreground color on hover, so their hover text keeps AA contrast. (6c82bb0c)
+
+### Other Changes
+
+- The optional `@takazudo/zdtp` peer now also accepts 0.9 (`^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0`). zdtp 0.9.0 renders the design token panel without Preact, so a site on zdtp 0.9 installs no Preact at all; the panel's API, storage keys and CSS are unchanged. It also fixes undo on a generic token tab leaving the edited value on `:root` until reload. (09442500)
+- Runtime dependency ranges are refreshed: `esbuild` `^0.28.2` (was `>=0.28.1`), `yaml` `^2.9.1`, `fs-extra` `^11.4.1`, `tsx` `^4.23.15` and `@inquirer/prompts` `^8.7.5`. (07381de5)
