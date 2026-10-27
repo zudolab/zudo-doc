@@ -43,10 +43,16 @@ export function ConnectorLines({
   isLast,
   widthScale = 1,
   topPad = "0px",
+  left: leftOverride,
+  width: widthOverride,
 }: {
   depth: number;
   isLast: boolean;
   widthScale?: number;
+  /** Overrides the depth-derived x position of the vertical line. */
+  left?: string;
+  /** Overrides the horizontal connector's length. */
+  width?: string;
   /**
    * Padding-top of the inner content row that holds the link text. The horizontal
    * connector and (when `isLast`) the vertical clip both anchor to the first-line
@@ -56,8 +62,8 @@ export function ConnectorLines({
   topPad?: string;
 }) {
   if (depth === 0) return null;
-  const left = connectorLeft(depth);
-  const width = connectorWidth(widthScale);
+  const left = leftOverride ?? connectorLeft(depth);
+  const width = widthOverride ?? connectorWidth(widthScale);
   const firstLineMid = `calc(${topPad} + 0.5lh)`;
   return (
     <>

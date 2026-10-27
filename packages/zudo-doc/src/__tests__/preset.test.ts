@@ -517,7 +517,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     });
     expect(byName["@takazudo/zudo-doc/plugins/theme-packs"]).toEqual({
       base: "/",
-      themePack: undefined,
+      themePack: "graphite",
       themePacks: undefined,
     });
     expect(byName["@takazudo/zudo-doc/plugins/llms-txt"]).toEqual({
@@ -623,6 +623,30 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       themePack: "foundry",
       themePacks: ["default", "foundry"],
     });
+  });
+
+  it("normalizes an omitted themePack for direct callers like zudoDoc() does", () => {
+    const packOf = (args: Partial<Parameters<typeof zudoDocPreset>[0]>) => {
+      const r = zudoDocPreset({
+        settings: fixtureSettings,
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+        ...args,
+      });
+      const routes = r.plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/routes");
+      const packs = r.plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/theme-packs");
+      const routeSettings = (routes?.options as { settings: { themePack?: string } }).settings;
+      expect(routeSettings.themePack).toBe((packs?.options as { themePack?: string }).themePack);
+      return routeSettings.themePack;
+    };
+    expect(packOf({})).toBe("graphite");
+    expect(packOf({ settings: { ...fixtureSettings, themePack: null } })).toBe("graphite");
+    expect(packOf({ colorSchemes: {} })).toBe("default");
+    expect(packOf({ settings: { ...fixtureSettings, colorMode: false } })).toBe("default");
+    expect(
+      packOf({ settings: { ...fixtureSettings, themePack: "graphite", colorMode: false }, colorSchemes: {} }),
+    ).toBe("graphite");
+    expect(packOf({ settings: { ...fixtureSettings, themePack: "default" } })).toBe("default");
   });
 
   it("defaults doc-history exclude patterns to an empty array", () => {

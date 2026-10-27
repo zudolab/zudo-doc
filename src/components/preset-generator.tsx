@@ -219,7 +219,7 @@ export default function PresetGenerator() {
   const darkScheme = signal("Default Dark");
   const defaultMode = signal<FormState["defaultMode"]>("dark");
   const respectPrefersColorScheme = signal(true);
-  const themePack = signal("default");
+  const themePack = signal("graphite");
   const features = signal(FEATURES.filter((feature) => feature.default).map((feature) => feature.value));
   const cjkFriendly = signal(true);
   const packageManager = signal("pnpm");

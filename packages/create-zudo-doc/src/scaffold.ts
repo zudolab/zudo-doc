@@ -60,7 +60,7 @@ export function deriveDocSkillName(projectName: string): string {
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^8.1.3";
+export const ZUDO_DOC_PIN = "^9.0.0";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -710,7 +710,7 @@ function generatePackageJson(
   const deps: Record<string, string> = {
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
-    // @takazudo/zfb-<platform>); pinned to the exact stable 5.1.4 package
+    // @takazudo/zfb-<platform>); pinned to the exact stable 5.1.5 package
     // family required by the zfb v5 pin.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
@@ -988,9 +988,9 @@ function generatePackageJson(
     // 2.22.1: zfb fixes dev live reload and lazy boot; md-wasm retains
     // workerd-specific parse/highlight exports while retaining browser paths.
     // No scaffold config migration is required.
-    "@takazudo/zfb": "5.1.4",
-    "@takazudo/zfb-runtime": "5.1.4",
-    "@takazudo/zfb-md-wasm": "5.1.4",
+    "@takazudo/zfb": "5.1.5",
+    "@takazudo/zfb-runtime": "5.1.5",
+    "@takazudo/zfb-md-wasm": "5.1.5",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -1056,7 +1056,7 @@ function generatePackageJson(
     // barebone sites remain provider-independent.
     // Keep the adapter in lockstep with the zfb family (and root pin), checked
     // by scripts/check-pin-parity.mjs.
-    deps["@takazudo/zfb-adapter-cloudflare"] = "5.1.4";
+    deps["@takazudo/zfb-adapter-cloudflare"] = "5.1.5";
     // Match @takazudo/zudo-doc's optional peer exactly. The package-owned MCP
     // route imports the SDK only when this feature is enabled.
     deps["@modelcontextprotocol/sdk"] = "1.32.2";
@@ -1075,7 +1075,7 @@ function generatePackageJson(
   if (choices.features.includes("mcp")) {
     // Match the root Wrangler dev pin. Wrangler is never installed or invoked
     // by scaffolding itself; preview and deployment remain owner-controlled.
-    devDeps["wrangler"] = "4.152.0";
+    devDeps["wrangler"] = "4.153.0";
   }
 
   // search ships as @takazudo/zudo-doc's own self-contained generated
@@ -1101,9 +1101,10 @@ function generatePackageJson(
     // `@takazudo/zdtp/styles.css` (see features/design-token-panel.ts). Both are
     // no-ops with the feature off, so an OFF project must not carry the dep
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
-    // zdtp 0.8.6+ owns Preact as a regular dependency (it was a peer through
-    // 0.8.5), so a generated project no longer declares Preact itself.
-    deps["@takazudo/zdtp"] = "0.8.7";
+    // zdtp 0.9.0 renders with its own bundled zudo-react runtime and depends on
+    // no Preact at all (0.8.6-0.8.7 owned it as a dependency; through 0.8.5 it
+    // was a peer), so a generated project never declares Preact.
+    deps["@takazudo/zdtp"] = "0.9.0";
   }
 
   if (
@@ -1129,7 +1130,7 @@ function generatePackageJson(
     // `/exclude` at module scope from the always-bundled chrome graph; #3110
     // moved compileExclude into @takazudo/zudo-doc, so projects with both
     // docHistory and assetViewer off no longer need the package at all.
-    deps["@takazudo/zudo-doc-history-server"] = "^8.1.3";
+    deps["@takazudo/zudo-doc-history-server"] = "^9.0.0";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).

@@ -1,6 +1,6 @@
 {
   "name": "@takazudo/zudo-doc",
-  "version": "8.1.3",
+  "version": "9.0.0",
   "type": "module",
   "description": "zudo-doc framework primitives layer that sits on top of zfb's engine — sidebar, theme, TOC, breadcrumb, layouts, head injection, View Transitions, SSR-skip wrappers (per ADR-003).",
   "license": "MIT",
@@ -771,11 +771,11 @@
   ],
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@takazudo/zdtp": "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0",
-    "@takazudo/zfb": "^5.1.4",
-    "@takazudo/zfb-md-wasm": "^5.1.4",
-    "@takazudo/zfb-runtime": "^5.1.4",
-    "@takazudo/zudo-doc-history-server": "^8.0.0",
+    "@takazudo/zdtp": "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0",
+    "@takazudo/zfb": "^5.1.5",
+    "@takazudo/zfb-md-wasm": "^5.1.5",
+    "@takazudo/zfb-runtime": "^5.1.5",
+    "@takazudo/zudo-doc-history-server": "^9.0.0",
     "diff": "^8.0.0",
     "katex": "^0.18.2 || ^0.19.0",
     "zod": "^4.3.6"
@@ -815,9 +815,9 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
     "@takazudo/mdx-formatter": "1.3.0",
-    "@takazudo/zfb": "5.1.4",
-    "@takazudo/zfb-md-wasm": "5.1.4",
-    "@takazudo/zfb-runtime": "5.1.4",
+    "@takazudo/zfb": "5.1.5",
+    "@takazudo/zfb-md-wasm": "5.1.5",
+    "@takazudo/zfb-runtime": "5.1.5",
     "@takazudo/zudo-doc-history-server": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",

@@ -256,9 +256,18 @@ describe("buildCliCommand", () => {
 });
 
 describe("buildJson — themePack (ADR #2818 / #2823)", () => {
-  it("omits themePack when it equals the default", () => {
-    const json = buildJson(makeState({ themePack: "default" }));
-    expect(json).not.toHaveProperty("themePack");
+  it("omits Graphite, which create-zudo-doc fills in for an omitted pack", () => {
+    expect(buildJson(makeState({ themePack: "graphite" }))).not.toHaveProperty("themePack");
+    expect(
+      buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "graphite" })),
+    ).not.toHaveProperty("themePack");
+  });
+
+  it("emits Classic in both color-scheme modes", () => {
+    expect(buildJson(makeState({ themePack: "default" }))).toHaveProperty("themePack", "default");
+    expect(
+      buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "default" })),
+    ).toHaveProperty("themePack", "default");
   });
 
   it("emits themePack when a non-default pack is chosen", () => {
@@ -364,7 +373,7 @@ describe("default generator state — regression: matches target JSON (#4007)", 
       darkScheme: "Default Dark",
       defaultMode: "dark",
       respectPrefersColorScheme: true,
-      themePack: "default",
+      themePack: "graphite",
       features: FEATURES.filter((f) => f.default).map((f) => f.value),
       cjkFriendly: true,
       packageManager: "pnpm",

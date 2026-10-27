@@ -309,8 +309,8 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 Release 8.0.0 shipped ZFB 5.0.1 (peers `^5.0.1`), MCP SDK 1.32.2, and history-server peer floor `^8.0.0`. Node.js 24 remains the minimum.
 
-The current engine tuple is workspace zfb family **5.1.4**, peers **^5.1.4** (unreleased; 8.1.1 shipped 5.1.3).
-The three lockstep packages are **8.1.1 on npm `latest`**, requiring ZFB 5.1.3.
+The current engine tuple is workspace zfb family **5.1.5**, peers **^5.1.5** (unreleased; 8.1.2 shipped 5.1.4).
+The three lockstep packages are **8.1.3 on npm `latest`**, requiring ZFB 5.1.4.
 The history-server peer floor is
 `^8.0.0` (raised in the 8.0.0 major). The original 6.0.0 migration evidence is in the
 [6.0.0 publication record](../../docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
@@ -560,9 +560,10 @@ specifier end-to-end.
 
 The base owns `jsxImportSource: "@takazudo/zfb/zudo-react"`. Remove React→Preact
 compatibility paths and React/Preact type imports. Use `Child`, `Description`,
-`Component<P>` and `JSX.IntrinsicElements` from the owned runtime. Preact remains
-only as zdtp 0.8.7's own dependency (`^10.29.1`; a peer through 0.8.5) for its opaque subtree; zdtp's
-internal Tailwind browser dependency does not become a host engine dependency.
+`Component<P>` and `JSX.IntrinsicElements` from the owned runtime. No Preact is
+installed: zdtp 0.9.0 renders with its own bundled zudo-react runtime (older zdtp still in the
+optional peer range carried Preact). zdtp's internal Tailwind browser dependency does not become a
+host engine dependency.
 
 The base sets no `baseUrl`: TypeScript 7 removed the option (TS5102 in every
 project extending a config that sets it — #4558). Declare host aliases in the

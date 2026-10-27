@@ -127,7 +127,11 @@ describe("packed math consumers", () => {
         expect(html).toContain(`${base === "/" ? "" : base}/assets/`);
         const origin = "https://consumer.invalid";
         const assetPrefix = `${base === "/" ? "" : base}/assets/`;
-        const styles = [...html.matchAll(/<link\b[^>]*href=["']?([^"'\s>]+\.css)["']?[^>]*>/g)].map((match) => match[1]!);
+        // The configured theme pack (Graphite by default) ships its own
+        // stylesheet under theme-packs/, outside the bundled assets.
+        const styles = [...html.matchAll(/<link\b[^>]*href=["']?([^"'\s>]+\.css(?:\?[^"'\s>]*)?)["']?[^>]*>/g)]
+          .map((match) => match[1]!)
+          .filter((href) => !href.includes("/theme-packs/"));
         expect(styles.length).toBeGreaterThan(0);
         const mathStyles = styles.map((href) => {
           const url = new URL(href, `${origin}${base === "/" ? "" : base}/docs/math/`);

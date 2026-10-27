@@ -33,6 +33,17 @@ export const SUPPORTED_LANGS: SupportedLang[] = [
   { value: "pt", label: "Portuguese" },
 ];
 
+// New projects start on Graphite whatever their color-scheme mode.
+export const DEFAULT_THEME_PACK_CHOICE = "graphite";
+
+// The pack an omitted `themePack` resolves to inside zudoDoc() — Graphite,
+// except that a fixed single-scheme config (colorMode: false) keeps Classic.
+// Mirrors resolveConfiguredThemePack in @takazudo/zudo-doc; used only to
+// decide whether the chosen pack must be written out.
+export function effectiveOmittedThemePack(colorSchemeMode: "single" | "light-dark" | undefined): string {
+  return colorSchemeMode === "single" ? "default" : "graphite";
+}
+
 export interface ThemePackOption {
   slug: string;
   label: string;
@@ -46,12 +57,18 @@ export interface ThemePackOption {
 // zfb-config-gen.ts: create-zudo-doc cannot import @takazudo/zudo-doc at
 // generator-build time, so the CLI/prompt catalog is a local copy. Order
 // mirrors the package's own default enablement order (resolveEnabledPacks):
-// "default" first, then the rest alphabetically by slug.
+// "graphite" (the omitted-themePack default), then "default" (Classic), then
+// the rest alphabetically by slug.
 export const THEME_PACKS: ThemePackOption[] = [
   {
+    slug: "graphite",
+    label: "Graphite",
+    hint: "Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent (the default)",
+  },
+  {
     slug: "default",
-    label: "Default",
-    hint: "Stock zudo-doc look — no extra stylesheet loaded",
+    label: "Classic",
+    hint: "The original zudo-doc look — no extra stylesheet loaded",
   },
   {
     slug: "academia",
@@ -159,6 +176,11 @@ export const THEME_PACKS: ThemePackOption[] = [
     hint: "Green CRT terminal — phosphor glow, scanlines, inverse-video nav",
   },
   {
+    slug: "quiet-slate",
+    label: "Quiet Slate",
+    hint: "Quiet blue-grey slate — misty slate paper by day, cool slate at night, a muted copper accent",
+  },
+  {
     slug: "riso",
     label: "Riso",
     hint: "Risograph duotone print — warm paper, two inks (riso blue + fluorescent coral), misregistered offset shadows, soft linear paper grain",
@@ -197,6 +219,11 @@ export const THEME_PACKS: ThemePackOption[] = [
     slug: "timberline",
     label: "Timberline",
     hint: "Forest cabin after dark — pine & umber planks, cream prose, and matte lantern-amber accents",
+  },
+  {
+    slug: "warm-mineral",
+    label: "Warm Mineral",
+    hint: "Warm mineral tones — sandstone paper by day, umber stone at night, a terracotta accent",
   },
   {
     slug: "washi",

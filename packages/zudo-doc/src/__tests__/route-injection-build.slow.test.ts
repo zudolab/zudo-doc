@@ -38,6 +38,7 @@ import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, 
 import { join, resolve, dirname, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { parse, type DefaultTreeAdapterMap } from "parse5";
+import { ZDTP_DISABLED_MESSAGE_PREFIX } from "../plugins/zdtp-loader";
 
 // ---------------------------------------------------------------------------
 // Parity helpers — imported from the shared, side-effect-free module also
@@ -1349,6 +1350,54 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // byte lengths (57025, 67457, 78909). 5.1.4 changes only version pins and
   // rebuilt native/WASM binaries. Causal review:
   // docs/findings/zfb-5.1.4-a2-causal-review.md.
+  //
+  // 2026-10-26 re-baseline (zudolab/zudo-doc#4661, soft-tone theme packs):
+  // captured this fixture locally at main (9d7bd416, which reproduced all
+  // three accepted references) and at this PR's source. The fixture still
+  // renders data-theme-pack=default. Replacing native data-zfb-build
+  // identities (ece5cd410dae15e4 -> 5409c8c490a5fb98) and the inline
+  // theme-pack loader's `var packs={...}` version map makes every normalized
+  // page byte-identical. The map gains exactly the three new bundled packs
+  // ("graphite", "quiet-slate", "warm-mineral", all 1.0.0), which is the
+  // whole +64-byte raw growth: 404.html 57025 -> 57089,
+  // getting-started/index.html 67457 -> 67521, and
+  // getting-started/coverage/index.html 78909 -> 78973. Raw pages otherwise
+  // differ only in the islands entry (islands-ad134e49.js ->
+  // islands-6342ab16.js); new pack CSS and catalog sources change zfb's build
+  // identity globally.
+  //
+  // 2026-10-27 re-baseline (zfb 5.1.4 -> 5.1.5 bump, #4662): compared the CI
+  // A2 captures of #4661's accepted head (e8e5fa36) and this bump. Replacing
+  // native data-zfb-build identities only (1967cdd98144b301 ->
+  // 5409c8c490a5fb98) makes every normalized page hash to the accepted #4661
+  // reference; raw pages additionally differ only in the islands entry
+  // (islands-6342ab16.js -> islands-d48fa873.js) and keep their byte lengths
+  // (57089, 67521, 78973). 5.1.5 changes only version pins and rebuilt
+  // native/WASM binaries. Causal review:
+  // docs/findings/zfb-5.1.5-a2-causal-review.md.
+  //
+  // 2026-10-27 re-baseline (zudolab/zudo-doc#4665, note-tray group guide line
+  // on the toggle center): compared the CI A2 capture of #4663's run
+  // 40393079612 (artifact 12686066301, whose normalized pages hash to the
+  // accepted 9.0.0 reference) with this PR's run 40472443638 (artifact
+  // 12718976787). Replacing native data-zfb-build identities only
+  // (7a1fdf6e234ce3c8 -> 682abb0e0686b7dd) makes every normalized page
+  // byte-identical; raw pages additionally differ only in the islands entry
+  // (islands-d5efa665.js -> islands-8c7115bf.js) and keep their byte lengths
+  // (57089, 67521, 78973). The changed sidebar island source changes zfb's
+  // build identity globally; these routes render no note-tray rows.
+  //
+  // 2026-10-27 re-baseline (zudolab/zudo-doc#4674, sweep cleanup: categoryMatch
+  // segment match #4676 + HtmlPreview hover fg #4677): compared the CI A2
+  // capture of #4665's run 40472443638 (artifact 12718976787, the accepted
+  // reference) with this PR's run 40496420926 (artifact 12730254253).
+  // Replacing native data-zfb-build identities only (342c6f8360395e38 ->
+  // 682abb0e0686b7dd) makes every normalized page byte-identical; raw pages
+  // additionally differ only in the islands entry (islands-8c7115bf.js ->
+  // islands-4bb59b6b.js) and keep their byte lengths (57089, 67521, 78973).
+  // The changed sidebar-utils/nav-scope and HtmlPreview island sources change
+  // zfb's build identity globally; this fixture's single getting-started
+  // category has no prefix sibling, so its visible sidebar is unchanged.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
@@ -2217,12 +2266,13 @@ describe("DTP host-owned: designTokenPanel false + bundleZdtp true keeps the rea
     expect(findDistFilesContaining(fixtureDir, ZDTP_CHUNK_MARKERS)).not.toEqual([]);
   });
 
-  // Assertion 2: no emitted file carries the throwing stub's own source text
+  // Assertion 2: no emitted file carries the zdtp throwing stub's own message
   // (`plugins/zdtp-loader.ts`'s `DISABLED_LOADER_SOURCE`, the literal #4261
   // symptom — a green build shipping a chunk that throws the moment it's
-  // opened).
-  it("not shadowed: no emitted file contains the throwing stub's \"is not bundled\" text", () => {
-    expect(findDistFilesContaining(fixtureDir, ["is not bundled"])).toEqual([]);
+  // opened). Searches the zdtp-specific prefix, not the generic "is not
+  // bundled": the katex and diff stubs legitimately emit that phrase too.
+  it("not shadowed: no emitted file contains the zdtp throwing stub's \"@takazudo/zdtp is not bundled\" text", () => {
+    expect(findDistFilesContaining(fixtureDir, [ZDTP_DISABLED_MESSAGE_PREFIX])).toEqual([]);
   });
 
   // Assertion 3: module-graph laziness proof, same technique as the existing

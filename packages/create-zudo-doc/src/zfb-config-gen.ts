@@ -1,5 +1,6 @@
 import type { UserChoices } from "./prompts.js";
 import type { LocalePlan } from "./locale-plan.js";
+import { DEFAULT_THEME_PACK_CHOICE, effectiveOmittedThemePack } from "./constants.js";
 import { resolveLocalePlan } from "./locale-plan.js";
 import { capitalize, getLangLabel } from "./utils.js";
 
@@ -40,7 +41,10 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
   },
-  themePack: "default",
+  // Omitted resolves inside zudoDoc() (Graphite, or Classic under
+  // colorMode: false); buildDesiredConfig leaves it undefined when the
+  // choice equals that effective pack, so nothing is emitted.
+  themePack: undefined,
   themePackSwitcher: false,
   themePacks: undefined,
   siteName: "Docs",
@@ -191,7 +195,13 @@ function buildDesiredConfig(
   // themePacks (the enabled-slugs allowlist) is intentionally NOT set here —
   // it is an advanced, hand-edited-only field with no CLI/prompt surface
   // (locked spec, #2823).
-  desired.themePack = choices.themePack ?? "default";
+  // Emit themePack only when it differs from what omission resolves to — so
+  // picking Classic emits `themePack: "default"` in light-dark mode, and a
+  // single-scheme project keeps an explicit Graphite instead of falling back
+  // to Classic.
+  const omittedPack = effectiveOmittedThemePack(choices.colorSchemeMode);
+  const chosenPack = choices.themePack ?? DEFAULT_THEME_PACK_CHOICE;
+  desired.themePack = chosenPack === omittedPack ? undefined : chosenPack;
   desired.themePackSwitcher = choices.features.includes("themePackSwitcher");
 
   // ── i18n ──────────────────────────────────────────────────────────────

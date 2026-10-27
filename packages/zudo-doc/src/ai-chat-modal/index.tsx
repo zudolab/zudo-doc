@@ -243,6 +243,7 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
   return (
     <dialog
       ref={dialogRef}
+      data-zd-ai-chat
       on:click={handleBackdropClick}
       class="z-modal m-0 h-dvh max-h-none w-dvw max-w-none border-none bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80 lg:m-auto lg:h-[90vh] lg:max-h-[90vh] lg:w-[90vw] lg:max-w-[52.5rem] lg:border-solid lg:border lg:border-fg"
     >

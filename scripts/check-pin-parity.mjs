@@ -179,7 +179,7 @@ export const FIRST_PARTY_PEER_CHECKS = [
     pkg: "@takazudo/zudo-doc-history-server",
     sourceKind: "lockstep (root version)",
     comparison: "satisfies",
-    approvedBaseline: "^8.0.0",
+    approvedBaseline: "^9.0.0",
     // Released at the same lockstep version as the root package.
     getSource: (rootPkg) => rootPkg.version,
   },
@@ -187,7 +187,7 @@ export const FIRST_PARTY_PEER_CHECKS = [
     pkg: "@takazudo/zdtp",
     sourceKind: 'pinned (root dependencies["@takazudo/zdtp"])',
     comparison: "union-admits-pin",
-    approvedBaseline: "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0",
+    approvedBaseline: "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0",
     // External dependency pinned in root dependencies — NOT lockstep.
     getSource: (rootPkg) => rootPkg.dependencies?.["@takazudo/zdtp"],
   },

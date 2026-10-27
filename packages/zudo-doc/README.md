@@ -9,7 +9,7 @@ instead of editing the generated markdown directly.
 This package provides the missing-by-design framework concerns:
 
 - **Sidebar tree builder** (`./sidebar-tree`) — turns collection entries + `_category_.json` into breadcrumb/navigation nodes.
-- **Theme controls** (`./theme`) — color scheme provider + design-token panel bootstrap (the optional zdtp package owns its opaque Preact UI).
+- **Theme controls** (`./theme`) — color scheme provider + design-token panel bootstrap (the optional zdtp package owns its opaque panel UI).
 - **Theme toggle (bare)** (`./theme-toggle`) — the un-wrapped ThemeToggle component for call sites that compose their own `<Island>` (the `./theme` barrel exports an Island-wrapped variant of the same component).
 - **TOC** (`./toc`) — desktop and mobile TOC zudo-react islands fed by MDX `headings` export.
 - **Breadcrumb** (`./breadcrumb`) — JSX breadcrumb fed by the sidebar tree.
@@ -109,7 +109,7 @@ If your project renders **semi-trusted or user-submitted** HTML in a preview, ov
 
 **6.0.0** is the coordinated major release of `@takazudo/zudo-doc`,
 `@takazudo/zudo-doc-history-server` and `create-zudo-doc`. The current workspace
-targets the published **zfb 5.1.4** family (peer floor **^5.1.4**).
+targets the published **zfb 5.1.5** family (peer floor **^5.1.5**).
 [Upstream #4097](https://github.com/Takazudo/zudo-front-builder/issues/4097) is
 resolved; its strict published 4.3.1 consumer control passed 3/3 with no skips or
 retries in the [source-bound verification](../../docs/findings/zfb-4.3.1/verification.md).
@@ -126,9 +126,10 @@ are feature-dependent. Package defaults for `agentExport`, `mcp`, and `llmsTxt`
 are all `false`. The create-zudo-doc initializer enables `llmsTxt` by default;
 agent export and MCP remain opt-in.
 
-For the panel, the installed **zdtp 0.8.7** manifest carries **Preact ^10.29.1** as
-its own dependency (it was a peer through 0.8.5) and exports `./styles.css` (also `./styles`) to `dist/zdtp.css`. Its internal
-Tailwind browser dependency and Preact subtree are isolated from host JSX.
+For the panel, the installed **zdtp 0.9.0** renders with its own bundled zudo-react
+runtime and has **no Preact dependency** (0.8.6–0.8.7 carried Preact as a dependency; it
+was a peer through 0.8.5). It exports `./styles.css` (also `./styles`) to `dist/zdtp.css`. Its internal
+Tailwind browser dependency is isolated from host JSX.
 Install `@takazudo/zdtp` and import `@takazudo/zdtp/styles.css` when enabling it.
 
 ## Styling — Wind and public CSS

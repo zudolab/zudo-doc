@@ -7,7 +7,7 @@ tags:
   - customization
 ---
 
-Thirty-one theme packs ship with `@takazudo/zudo-doc`: the reserved `default` plus thirty designed looks. This page is the full catalog. For how packs work — the config fields, the switcher UI, the CLI, and the authoring contract — see [Theme Packs](./theme-packs.mdx).
+Thirty-four theme packs ship with `@takazudo/zudo-doc`: Graphite (the default look), the reserved Classic pack (slug `default`), and thirty-two other designed looks. This page is the full catalog. For how packs work — the config fields, the switcher UI, the CLI, and the authoring contract — see [Theme Packs](./theme-packs.mdx).
 
 Every pack's fonts now style the entire chrome — header, sidebar, and table of contents included — not just the article body.
 
@@ -31,11 +31,22 @@ This showcase site has the switcher enabled — use the round launcher at the bo
 
 </Tip>
 
-Packs are listed in the default switcher order: `default` first, the rest alphabetical.
+Packs are listed in the default switcher order: `graphite` first, then `default` (Classic), then the rest alphabetical.
 
-## Default
+## Graphite
 
-The stock zudo-doc look. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged, at zero extra requests.
+The default look. Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent and quiet hairline rules. A project that does not set `themePack` gets this pack.
+
+- **Badge:** Dark
+- **Fonts:** system stacks (nothing loaded)
+
+```sh
+pnpm exec zudo-doc theme apply graphite
+```
+
+## Classic
+
+The original zudo-doc look, kept under the slug `default`. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged, at zero extra requests. It is also the look you get when you omit `themePack` but pass custom `colorSchemes` or set `colorMode: false`.
 
 - **Badge:** Dark
 - **Fonts:** system stacks (nothing loaded)
@@ -275,6 +286,17 @@ Green CRT terminal — phosphor glow, scanlines, inverse-video nav, monospace ev
 pnpm exec zudo-doc theme apply phosphor
 ```
 
+## Quiet Slate
+
+Quiet blue-grey slate — misty slate paper by day, cool slate at night, a muted copper accent and quiet hairline rules. Shares Graphite's component treatment.
+
+- **Badge:** Dark
+- **Fonts:** system stacks (nothing loaded)
+
+```sh
+pnpm exec zudo-doc theme apply quiet-slate
+```
+
 ## Riso
 
 Risograph duotone print — warm paper, two inks (riso blue + fluorescent coral), misregistered offset shadows, and a soft linear paper grain.
@@ -361,6 +383,17 @@ Forest cabin after dark — pine & umber planks, cream prose, and matte lantern-
 
 ```sh
 pnpm exec zudo-doc theme apply timberline
+```
+
+## Warm Mineral
+
+Warm mineral tones — sandstone paper by day, umber stone at night, a terracotta accent and quiet hairline rules. Shares Graphite's component treatment.
+
+- **Badge:** Dark
+- **Fonts:** system stacks (nothing loaded)
+
+```sh
+pnpm exec zudo-doc theme apply warm-mineral
 ```
 
 ## Washi

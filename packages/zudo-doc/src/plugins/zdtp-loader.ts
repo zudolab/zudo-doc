@@ -26,8 +26,12 @@ export const ZDTP_LOADER_SPECIFIER = "@takazudo/zudo-doc/zdtp-loader";
 // by importing `@takazudo/zudo-doc/design-token-panel-bootstrap` with the
 // package panel off and `bundleZdtp` unset lands here (#4261). The message is
 // therefore written for that host — it names the setting that fixes it.
+// The message prefix is exported so the build tests can search emitted files for
+// zdtp's stub specifically: katex and diff stubs also say "is not bundled".
+export const ZDTP_DISABLED_MESSAGE_PREFIX = "@takazudo/zdtp is not bundled";
+
 const DISABLED_LOADER_SOURCE =
-  'throw new Error("@takazudo/zdtp is not bundled: designTokenPanel is false and ' +
+  `throw new Error("${ZDTP_DISABLED_MESSAGE_PREFIX}: designTokenPanel is false and ` +
   "bundleZdtp is not set, so this build shadows @takazudo/zudo-doc/zdtp-loader. If " +
   "you reached this through @takazudo/zudo-doc/design-token-panel-bootstrap to mount " +
   'your own panel, set bundleZdtp: true and install @takazudo/zdtp.");\n' +

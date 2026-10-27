@@ -147,6 +147,7 @@ import {
   buildPackCssUrl,
 } from "../theme-pack-switcher/theme-pack-sync.js";
 import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
+import { resolveConfiguredThemePack } from "../theme-packs-registry/configured-theme-pack.js";
 
 /**
  * Transient `<html>` attribute the bootstrap sets while the pack stylesheet
@@ -181,7 +182,8 @@ export const THEME_PACK_LOAD_WATCHDOG_MS = 2000;
 export const THEME_PACK_LATCH_CSS = `html[${THEME_PACK_LOADING_ATTR}] body{visibility:hidden}`;
 
 export interface ThemePackProviderProps {
-  /** The build-configured pack slug (`settings.themePack`, default `"default"`). */
+  /** The build-configured pack slug (`settings.themePack`, normalized by
+   *  `resolveConfiguredThemePack` — `"graphite"` when omitted). */
   configuredSlug: string;
   /**
    * Ordered `{ slug → meta.version }` map of the ENABLED packs — build with
@@ -217,10 +219,10 @@ export function themePackVersionMap(
  */
 export function resolveThemePackSsrSlug(
   registry: ThemePackRegistry | null,
-  settings: { themePack?: string },
+  settings: { themePack?: string | null; colorMode?: unknown },
 ): string | undefined {
   if (registry === null) return undefined;
-  return settings.themePack ?? DEFAULT_THEME_PACK_SLUG;
+  return resolveConfiguredThemePack(settings);
 }
 
 /**

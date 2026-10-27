@@ -2061,7 +2061,7 @@ describe("scaffold — generated package.json", () => {
       ROOT_ZFB_PINS["@takazudo/zfb-adapter-cloudflare"],
     );
     expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBe("1.32.2");
-    expect(pkg.devDependencies.wrangler).toBe("4.152.0");
+    expect(pkg.devDependencies.wrangler).toBe("4.153.0");
     const workspace = await fs.readFile(path.join(project, "pnpm-workspace.yaml"), "utf8");
     expect(workspace).toContain("onlyBuiltDependencies:\n  - esbuild\n  - workerd\n  - sharp\n");
     expect(workspace).toContain("allowBuilds:\n  esbuild: true\n  workerd: true\n  sharp: true\n");
@@ -2239,8 +2239,8 @@ describe("scaffold — generated package.json", () => {
       features: ["designTokenPanel"],
     });
     const pkg = await fs.readJson(projectPath("test-doc-dtp", "package.json"));
-    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.8.7");
-    // zdtp 0.8.6+ carries Preact as its own dependency; the project does not.
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.9.0");
+    // zdtp 0.9.0 has no Preact dependency, and the project does not declare one.
     expect(pkg.dependencies["preact"]).toBeUndefined();
   });
 
@@ -2818,6 +2818,30 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
     });
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
     expect(config).toContain('themePack: "foundry"');
+  });
+
+  it("createZudoDoc() keeps Graphite explicit for a single-scheme project with no pack chosen", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "graphite-single-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('themePack: "graphite"');
+  });
+
+  it("createZudoDoc() writes Classic explicitly for a light-dark project", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "classic-light-dark-test",
+      colorSchemeMode: "light-dark",
+      themePack: "default",
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('themePack: "default"');
   });
 });
 

@@ -1,0 +1,24 @@
+---
+title: 9.0.0
+description: 9.0.0のリリースノート。
+sidebar_position: 1146
+---
+
+リリース日: 2026-10-27
+
+### 破壊的変更
+
+- `themePack` を設定していないサイトは Graphite の見た目に変わります。Classic の見た目を保つには `themePack: "default"` を追加してください。(d8c2e5ae)
+- `"graphite"` を含まない明示的な `themePacks` リストがあり、`themePack` を設定していない設定は、修正方法を示すエラーでビルドが失敗するようになりました。`themePacks` に `"graphite"` を追加するか、`themePack`（たとえば `"default"`）を設定してください。(d8c2e5ae)
+- ドキュメント履歴を使う場合は `@takazudo/zudo-doc-history-server` も 9.x に更新してください。peer 下限を `^8.0.0` から `^9.0.0` に引き上げます。
+
+### 機能
+
+- ソフトトーンのテーマパック **Graphite**・**Warm Mineral**・**Quiet Slate** を追加しました。どれもライトとダークの対になったパレットを持ち、読みやすいミュートテキスト、控えめな装飾罫線、3:1 のコントロール境界線、アクセントマーカー付きのやわらかいアクティブ状態、不透明なタグ・アドモニション・コードハイライト・diff の塗り、切れることのない 2px のアクセント色フォーカスリングを備えます。(d8c2e5ae, b3f5cda5)
+- Graphite が新しいデフォルトの見た目になりました。`themePack` を省略したプロジェクトは Graphite になります。独自の `colorSchemes` を渡すか `colorMode: false` を設定しているプロジェクトは従来の見た目のままで、明示的な `themePack` は常に優先されます。(d8c2e5ae)
+- 従来の見た目は **Classic** パックとして、スラッグ `default` のまま残ります。維持するには `themePack: "default"` を設定してください。閲覧者が保存した選択は引き続き有効です。(d8c2e5ae)
+- タグチップとフッターのタグ数に、テーマパック用の安定したフック（`data-zd-tag-chip`、`data-zd-tag-chip-outline`、`data-zd-tag-chip-label`、`data-zd-tag-count`）を追加しました。Classic での見た目は変わりません。(d8c2e5ae)
+
+### その他の変更
+
+- zfb 5.1.5 が必須になり、`@takazudo/zfb`・`zfb-runtime`・`zfb-md-wasm` の peer 下限を `^5.1.4` から `^5.1.5` に引き上げます。zfb 5.1.5 はネイティブバイナリを tokio 1.54.1（RUSTSEC-2026-0386）でビルドし、WASM バイナリを再ビルドしたリリースで、JavaScript API に変更はありません。このリリースと合わせて zfb 系（使用時は `zfb-adapter-cloudflare` も）を 5.1.5 に更新してください。(c63f8df0)

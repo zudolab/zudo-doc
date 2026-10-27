@@ -145,7 +145,7 @@ const ZUDO_DOC_PKG_ROOT = path.resolve(
  * scaffolded project's `zfb build`/`zfb check` fails with `Could not resolve
  * "@takazudo/zudo-doc/config"` regardless of what the generator emits — a
  * publish-lag gap, not a generator regression. Overriding just this one
- * dependency (everything else — zfb, zudo-wind, and optional Preact for zdtp
+ * dependency (everything else — zfb, zudo-wind, and the optional zdtp
  * — still resolves from the real registry) keeps the slow tests exercising "does today's
  * generator + today's in-repo package work end to end" without waiting on
  * the lockstep release. Remove this override once `@takazudo/zudo-doc` on

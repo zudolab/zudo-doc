@@ -6,7 +6,32 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Bug Fixes
+
+- The page-loading scrim covers the full viewport again, including the header and sidebar, with the spinner centered in the viewport. Since #4580 its bootstrap clipped it to the content area at runtime. The header and an unchanged desktop sidebar still stay undimmed and still during the page animation, because they use their own transition snapshots and the scrim is excluded from the animation.
+
+### Other Changes
+
+- The optional `@takazudo/zdtp` peer now also accepts 0.9 (`^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0`). zdtp 0.9.0 renders the design token panel without Preact, so a site on zdtp 0.9 installs no Preact at all; the panel's API, storage keys and CSS are unchanged. It also fixes undo on a generic token tab leaving the edited value on `:root` until reload.
+
+## [9.0.0] - 2026-10-27
+
+### Breaking Changes
+
+- Sites that do not set `themePack` change appearance to Graphite. Add `themePack: "default"` to keep the Classic look. (d8c2e5ae)
+- A config with an explicit `themePacks` list that omits `"graphite"` and no `themePack` now fails the build with a hint: add `"graphite"` to `themePacks`, or set `themePack` (for example `"default"`). (d8c2e5ae)
+- When using document history, upgrade `@takazudo/zudo-doc-history-server` to 9.x as well: its peer floor moves from `^8.0.0` to `^9.0.0`.
+
+### Features
+
+- Add three soft-tone theme packs: **Graphite**, **Warm Mineral** and **Quiet Slate**. Each defines paired light and dark palettes with readable muted text, quiet decorative rules, 3:1 control borders, a soft active state with an accent marker, opaque tag, admonition, code-highlight and diff fills, and a 2px accent focus ring that is never clipped. (d8c2e5ae, b3f5cda5)
+- Graphite is the new default look: a project that omits `themePack` now gets Graphite. Projects that pass custom `colorSchemes` or set `colorMode: false` keep the previous look, and an explicit `themePack` always wins. (d8c2e5ae)
+- The original look stays available as the **Classic** pack, still under the slug `default`. To keep it, set `themePack: "default"`. Stored reader selections stay valid. (d8c2e5ae)
+- Tag chips and the footer tag counts gain stable theme-pack hooks (`data-zd-tag-chip`, `data-zd-tag-chip-outline`, `data-zd-tag-chip-label`, `data-zd-tag-count`); the rendered look on Classic is unchanged. (d8c2e5ae)
+
+### Other Changes
+
+- Requires zfb 5.1.5: the `@takazudo/zfb`, `zfb-runtime` and `zfb-md-wasm` peer floors move from `^5.1.4` to `^5.1.5`. zfb 5.1.5 builds the native binary against tokio 1.54.1 (RUSTSEC-2026-0386) and rebuilds the WASM binaries; the JavaScript API is unchanged. Update the zfb family (and `zfb-adapter-cloudflare` when used) to 5.1.5 together with this release. (c63f8df0)
 
 ## [8.1.3] - 2026-10-26
 

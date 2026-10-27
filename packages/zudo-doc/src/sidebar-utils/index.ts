@@ -183,6 +183,11 @@ function resolveItem(
 // Parameterized nav subtree filter (replaces the `getNavSubtree` import)
 // ---------------------------------------------------------------------------
 
+/** Whole-segment match so `foo` claims `foo` and `foo/bar` but not `foo2`. */
+function matchesCategory(slug: string, match: string): boolean {
+  return slug === match || slug.startsWith(match + "/");
+}
+
 /**
  * Filter top-level nav nodes by categoryMatch. Accepts an explicit prefix set
  * so the function does not need to re-read `headerNav`.
@@ -196,11 +201,11 @@ function filterByCategory(
 
   if (categoryMatch === "!") {
     return tree.filter(
-      (node) => !explicitPrefixes.some((prefix) => node.slug.startsWith(prefix)),
+      (node) => !explicitPrefixes.some((prefix) => matchesCategory(node.slug, prefix)),
     );
   }
 
-  return tree.filter((node) => node.slug.startsWith(categoryMatch));
+  return tree.filter((node) => matchesCategory(node.slug, categoryMatch));
 }
 
 // ---------------------------------------------------------------------------

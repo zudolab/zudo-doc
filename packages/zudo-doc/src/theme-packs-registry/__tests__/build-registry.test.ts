@@ -71,6 +71,7 @@ const CATALOG: ThemePacksCatalogManifest = {
     { slug: "zeta", meta: makeMeta("zeta"), hasStylesheet: true },
     { slug: "default", meta: makeMeta("default"), hasStylesheet: false },
     { slug: "alpha", meta: makeMeta("alpha"), hasStylesheet: true },
+    { slug: "graphite", meta: makeMeta("graphite"), hasStylesheet: true },
   ],
 };
 
@@ -79,11 +80,11 @@ describe("buildThemePackRegistry", () => {
     expect(schemaVersion).toBe(1);
   });
 
-  it("accepts the whole catalog v2 manifest and resolves default first, then alphabetically", () => {
+  it("accepts the whole catalog v2 manifest and resolves graphite, default, then alphabetically", () => {
     const registry = buildThemePackRegistry(CATALOG, {});
 
-    expect(registry.map((entry) => entry.slug)).toEqual(["default", "alpha", "zeta"]);
-    expect(registry.map((entry) => entry.hasStylesheet)).toEqual([false, true, true]);
+    expect(registry.map((entry) => entry.slug)).toEqual(["graphite", "default", "alpha", "zeta"]);
+    expect(registry.map((entry) => entry.hasStylesheet)).toEqual([true, false, true, true]);
   });
 
   it("passes the settings projection through to the existing resolver", () => {

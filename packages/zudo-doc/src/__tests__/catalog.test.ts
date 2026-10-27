@@ -16,14 +16,16 @@ const PKG_ROOT = resolve(__dirname, "../..");
 const DIST_DTS = resolve(PKG_ROOT, "dist/catalog.d.ts");
 
 describe("@takazudo/zudo-doc/catalog", () => {
-  it("aggregates every bundled theme pack, default first then alphabetical", async () => {
+  it("aggregates every bundled theme pack: graphite, Classic (default), then alphabetical", async () => {
     const { default: catalog } = await import(resolve(PKG_ROOT, "dist/catalog.js"));
 
     expect(catalog.schemaVersion).toBe(2);
-    expect(catalog.packs.length).toBe(31);
-    expect(catalog.packs[0].slug).toBe("default");
+    expect(catalog.packs.length).toBe(34);
+    expect(catalog.packs[0].slug).toBe("graphite");
+    expect(catalog.packs[1].slug).toBe("default");
+    expect(catalog.packs[1].hasStylesheet).toBe(false);
 
-    const rest = catalog.packs.slice(1).map((pack: { slug: string }) => pack.slug);
+    const rest = catalog.packs.slice(2).map((pack: { slug: string }) => pack.slug);
     expect(rest).toEqual([...rest].sort());
   });
 

@@ -780,6 +780,11 @@ jobs:
         # build now fails fast on a content-bridge fallback, so the separate
         # post-build check:content-fallback step (which used to catch what
         # `pnpm build` missed) is redundant here and was removed.
+        # build-history generates the dropdown JSON and the deploy merge
+        # prefers it, so skip the redundant postBuild copy (it hit zfb's 120s
+        # postBuild budget). Not SKIP_DOC_HISTORY: preBuild metadata must stay.
+        env:
+          DOC_HISTORY_SKIP_POSTBUILD: "1"
         run: pnpm build
 
       - name: Check links

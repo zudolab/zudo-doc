@@ -720,7 +720,9 @@ describe("themePackVersionMap / resolveThemePackSsrSlug", () => {
 
   it("resolves the SSR html-attribute slug: configured slug, default fallback, inert on null registry", () => {
     expect(resolveThemePackSsrSlug(registry, { themePack: "foundry" })).toBe("foundry");
-    expect(resolveThemePackSsrSlug(registry, {})).toBe("default");
+    expect(resolveThemePackSsrSlug(registry, {})).toBe("graphite");
+    expect(resolveThemePackSsrSlug(registry, { colorMode: false })).toBe("default");
+    expect(resolveThemePackSsrSlug(registry, { themePack: "default" })).toBe("default");
     expect(resolveThemePackSsrSlug(null, { themePack: "foundry" })).toBeUndefined();
   });
 });

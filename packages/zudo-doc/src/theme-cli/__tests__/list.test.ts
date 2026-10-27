@@ -25,7 +25,7 @@ afterEach(async () => {
 describe("listThemePacks", () => {
   it("lists every installed pack, in canonical (alphabetical) order", async () => {
     const result = await listThemePacks({ cwd: projectDir, themePacksDir });
-    expect(result.rows.map((r) => r.slug)).toEqual(["default", "sample"]);
+    expect(result.rows.map((r) => r.slug)).toEqual(["default", "graphite", "sample"]);
   });
 
   it("carries slug/name/mode/version/description for each row", async () => {
@@ -62,11 +62,12 @@ export default defineConfig(
     expect(result.rows.find((r) => r.slug === "default")?.active).toBe(false);
   });
 
-  it("marks \"default\" active (with detected: false) when zfb.config.ts is missing", async () => {
+  it("marks \"graphite\" active (with detected: false) when zfb.config.ts is missing", async () => {
     const result = await listThemePacks({ cwd: projectDir, themePacksDir });
-    expect(result.activeSlug).toBe("default");
+    expect(result.activeSlug).toBe("graphite");
     expect(result.activeDetected).toBe(false);
-    expect(result.rows.find((r) => r.slug === "default")?.active).toBe(true);
+    expect(result.rows.find((r) => r.slug === "graphite")?.active).toBe(true);
+    expect(result.rows.find((r) => r.slug === "default")?.active).toBe(false);
   });
 });
 

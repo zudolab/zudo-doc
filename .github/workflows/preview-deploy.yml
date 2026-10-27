@@ -36,6 +36,7 @@
 # Category (g) doc-history is handled by a dedicated build-history job
 # (full clone, fetch-depth: 0) that runs in parallel with build-site.
 # The deploy job merges both artifacts — same shape as main-deploy.yml.
+# build-site sets DOC_HISTORY_SKIP_POSTBUILD so only build-history emits the JSON.
 # The prior single-job inline approach (pnpm build without SKIP_DOC_HISTORY)
 # did not reliably emit doc-history JSONs in CI, producing empty
 # Created/Updated values in preview deploys (#1479, #1468).
@@ -99,6 +100,11 @@ jobs:
         # build now fails fast on a content-bridge fallback, so the separate
         # post-build check:content-fallback step (which used to catch what
         # `pnpm build` missed) is redundant here and was removed.
+        # build-history generates the dropdown JSON and the deploy merge
+        # prefers it, so skip the redundant postBuild copy (it hit zfb's 120s
+        # postBuild budget). Not SKIP_DOC_HISTORY: preBuild metadata must stay.
+        env:
+          DOC_HISTORY_SKIP_POSTBUILD: "1"
         run: pnpm build
 
       - name: Check images

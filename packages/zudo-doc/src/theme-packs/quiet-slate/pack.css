@@ -1,0 +1,401 @@
+/* ============================================================
+   Quiet Slate — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Misty blue-grey slate, carrying a muted copper accent.
+   One of the three soft-tone packs (graphite, warm-mineral,
+   quiet-slate) that share the same component treatment and differ
+   only in palette. Colour only: typography, spacing, geometry and
+   heading hierarchy are the package defaults (no fonts loaded).
+
+   Roles beyond the public --zd-* tokens are inlined per mode:
+     line           decorative rules, separators and tree guides
+     control border necessary field / control / diagram boundaries
+     heading        heading ink, one step stronger than body text
+     hover bg       inactive navigation hover fill
+     active bg      current navigation fill (90% bg + 10% accent)
+     state bgs      admonition fills (90% bg + 10% state colour)
+   Classic (the reserved "default" pack) shares one muted role for
+   text, borders and comments; these packs keep muted at readable
+   text contrast and give decorative rules their own quieter line.
+
+   Production-only contrast repairs (not part of the ordinary
+   palette): diff rows use the opaque state fills instead of the
+   15% foreground tint, and code line / word highlights use opaque
+   active / hover fills (no stacked alpha) keeping the accent marker
+   and underline, so every syntax role stays >= 4.6:1.
+
+   Every rule is scoped under html[data-theme-pack="quiet-slate"]; the
+   pack never declares color-scheme and follows the mode the page
+   already resolved (light-dark()).
+   ============================================================ */
+
+html[data-theme-pack="quiet-slate"] {
+  /* Tier-2 semantic roles */
+  --zd-bg: light-dark(#EDF1F3, #2B3238);
+  --zd-fg: light-dark(#3E4953, #D8DDE0);
+  --zd-surface: light-dark(#E2E8EC, #343D45);
+  --zd-muted: light-dark(#52606D, #B3BFC9);
+  --zd-accent: light-dark(#95491E, #E4AF89);
+  --zd-accent-hover: light-dark(#8F461D, #E6B48E);
+  --zd-code-bg: light-dark(#E2E8EC, #252D33);
+  --zd-code-fg: light-dark(#3E4953, #D8DDE0);
+  --zd-success: light-dark(#4D6356, #A9BFAD);
+  --zd-danger: light-dark(#825151, #D8B0AD);
+  --zd-warning: light-dark(#6F5C36, #D0B688);
+  --zd-info: light-dark(#476274, #A3BDCD);
+  --zd-selection-bg: light-dark(#95491E, #E4AF89);
+  --zd-selection-fg: light-dark(#F9F5EF, #252D33);
+  --zd-matched-keyword-bg: light-dark(#95491E, #E4AF89);
+  --zd-matched-keyword-fg: light-dark(#F9F5EF, #252D33);
+  --zd-chat-user-bg: light-dark(#95491E, #E4AF89);
+  --zd-chat-user-text: light-dark(#F9F5EF, #252D33);
+  --zd-chat-assistant-bg: light-dark(#E2E8EC, #343D45);
+  --zd-chat-assistant-text: light-dark(#3E4953, #D8DDE0);
+  --zd-image-overlay-bg: light-dark(#EDF1F3, #2B3238);
+  --zd-image-overlay-fg: light-dark(#3E4953, #D8DDE0);
+  /* Mermaid: text is body text; edges are necessary diagram lines */
+  --zd-mermaid-node-bg: light-dark(#E2E8EC, #343D45);
+  --zd-mermaid-text: light-dark(#3E4953, #D8DDE0);
+  --zd-mermaid-line: light-dark(#6C7D88, #98A6B2);
+  --zd-mermaid-label-bg: light-dark(#EDF1F3, #2B3238);
+  --zd-mermaid-note-bg: light-dark(#DBE2E7, #3C4650);
+  
+  /* syntax — explicit role mapping */
+  --zd-syntax-comment: light-dark(#52606D, #B3BFC9);
+  --zd-syntax-string: light-dark(#4D6356, #A9BFAD);
+  --zd-syntax-number: light-dark(#6F5C36, #D0B688);
+  --zd-syntax-keyword: light-dark(#95491E, #E4AF89);
+  --zd-syntax-callable: light-dark(#476274, #A3BDCD);
+  --zd-syntax-type: light-dark(#6F5C36, #D0B688);
+  --zd-syntax-name: light-dark(#3E4953, #D8DDE0);
+  --zd-syntax-inserted: light-dark(#4D6356, #A9BFAD);
+  --zd-syntax-deleted: light-dark(#825151, #D8B0AD);
+  /* diff rows: opaque audited state fills instead of the 15% tint */
+  --zfb-hi-ins-bg: light-dark(#DDE3E3, #384044);
+  --zfb-hi-del-bg: light-dark(#E2E1E3, #3C3F44);
+  
+  /* Tier-3 seams */
+  --zdc-nav-active-indicator-color: light-dark(#E4E0DE, #3E3E40);
+}
+
+/* ---- page, chrome surfaces and decorative rules ---- */
+
+html[data-theme-pack="quiet-slate"] header[data-header],
+html[data-theme-pack="quiet-slate"] footer[data-footer] {
+  background-color: var(--zd-surface);
+  border-color: light-dark(#CBD5DD, #4A5661);
+}
+
+html[data-theme-pack="quiet-slate"] footer[data-footer] div {
+  border-color: light-dark(#CBD5DD, #4A5661);
+}
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar],
+html[data-theme-pack="quiet-slate"] #desktop-sidebar div,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] div,
+html[data-theme-pack="quiet-slate"] #desktop-sidebar nav,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] nav {
+  border-color: light-dark(#CBD5DD, #4A5661);
+}
+
+html[data-theme-pack="quiet-slate"] nav[data-zd-toc] ul,
+html[data-theme-pack="quiet-slate"] div[data-zd-mobile-toc],
+html[data-theme-pack="quiet-slate"] div[data-zd-mobile-toc] ul {
+  border-color: light-dark(#CBD5DD, #4A5661);
+}
+
+html[data-theme-pack="quiet-slate"] [data-site-nav] div,
+html[data-theme-pack="quiet-slate"] [data-tabs-nav],
+html[data-theme-pack="quiet-slate"] [data-version-menu] > li,
+html[data-theme-pack="quiet-slate"] [data-nav-more-menu] > li,
+html[data-theme-pack="quiet-slate"] [data-language-menu] > li,
+html[data-theme-pack="quiet-slate"] dialog[data-search-dialog] > div div,
+html[data-theme-pack="quiet-slate"] dialog[data-search-dialog] [data-search-count-narrow],
+html[data-theme-pack="quiet-slate"] dialog[data-doc-history-panel] > div,
+html[data-theme-pack="quiet-slate"] [data-theme-pack-switcher] dialog div,
+html[data-theme-pack="quiet-slate"] dialog[data-zd-ai-chat] > div > div {
+  border-color: light-dark(#CBD5DD, #4A5661);
+}
+
+html[data-theme-pack="quiet-slate"] .zd-content h1,
+html[data-theme-pack="quiet-slate"] .zd-content table,
+html[data-theme-pack="quiet-slate"] .zd-content th,
+html[data-theme-pack="quiet-slate"] .zd-content td,
+html[data-theme-pack="quiet-slate"] .zd-content hr,
+html[data-theme-pack="quiet-slate"] .zd-content pre,
+html[data-theme-pack="quiet-slate"] .zd-content .code-block-title,
+html[data-theme-pack="quiet-slate"] .zd-content > section,
+html[data-theme-pack="quiet-slate"] .zd-content > ol > li:not(:hover):not(:focus-within),
+html[data-theme-pack="quiet-slate"] .zd-content > nav[data-doc-pager] > a:not(:hover),
+html[data-theme-pack="quiet-slate"] .zd-home-rule {
+  border-color: light-dark(#CBD5DD, #4A5661);
+}
+
+/* ---- necessary control and field boundaries ---- */
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar button,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] button,
+html[data-theme-pack="quiet-slate"] header[data-header] button,
+html[data-theme-pack="quiet-slate"] [data-nav-item-dropdown] > div > div,
+html[data-theme-pack="quiet-slate"] [data-version-menu],
+html[data-theme-pack="quiet-slate"] button[data-version-toggle]:not(:hover),
+html[data-theme-pack="quiet-slate"] button[data-language-toggle]:not(:hover),
+html[data-theme-pack="quiet-slate"] button[data-doc-history-trigger]:not(:hover),
+html[data-theme-pack="quiet-slate"] button[data-switcher-launcher]:not(:hover),
+html[data-theme-pack="quiet-slate"] dialog[data-search-dialog] > div,
+html[data-theme-pack="quiet-slate"] [data-site-nav] button,
+html[data-theme-pack="quiet-slate"] [data-nav-more-menu],
+html[data-theme-pack="quiet-slate"] [data-language-menu],
+html[data-theme-pack="quiet-slate"] [data-theme-pack-switcher] dialog,
+html[data-theme-pack="quiet-slate"] dialog[data-zd-ai-chat] input,
+html[data-theme-pack="quiet-slate"] dialog.zd-enlarge-dialog,
+html[data-theme-pack="quiet-slate"] dialog.zd-mermaid-dialog,
+html[data-theme-pack="quiet-slate"] .code-btn:not(:hover),
+html[data-theme-pack="quiet-slate"] .zd-desktop-sidebar-toggle,
+html[data-theme-pack="quiet-slate"] .zd-desktop-toc-toggle,
+html[data-theme-pack="quiet-slate"] kbd {
+  border-color: light-dark(#6C7D88, #98A6B2);
+}
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar [data-sidebar-filter-region] > div,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] [data-sidebar-filter-region] > div {
+  box-shadow: inset 0 0 0 1px light-dark(#6C7D88, #98A6B2);
+}
+
+/* ---- headings ---- */
+
+html[data-theme-pack="quiet-slate"] .zd-content h1,
+html[data-theme-pack="quiet-slate"] .zd-content h2,
+html[data-theme-pack="quiet-slate"] .zd-content h3,
+html[data-theme-pack="quiet-slate"] .zd-content h4,
+html[data-theme-pack="quiet-slate"] .zd-content h5,
+html[data-theme-pack="quiet-slate"] .zd-content h6 {
+  color: light-dark(#313F4B, #DEE4EA);
+}
+
+html[data-theme-pack="quiet-slate"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  border-image: linear-gradient(to right, color-mix(in srgb, light-dark(#6C7D88, #98A6B2) 65%, light-dark(#EDF1F3, #2B3238)), transparent) 1 !important;
+}
+
+html[data-theme-pack="quiet-slate"] .zd-content h3:where(:not(.zd-compact-prose *)),
+html[data-theme-pack="quiet-slate"] .zd-content h4:where(:not(.zd-compact-prose *)) {
+  border-image: linear-gradient(to right, light-dark(#CBD5DD, #4A5661), transparent) 1 !important;
+}
+
+/* ---- code ---- */
+
+html[data-theme-pack="quiet-slate"] .zd-content .code-block-title {
+  background-color: var(--zd-code-bg);
+  color: var(--zd-muted);
+}
+
+html[data-theme-pack="quiet-slate"] pre.hi-root .line.highlighted,
+html[data-theme-pack="quiet-slate"] pre.hi-root [data-line-highlight="true"] {
+  background-color: light-dark(#E4E0DE, #3E3E40);
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] pre.hi-root .line .highlighted-word {
+  background-color: light-dark(#DBE2E7, #3C4650);
+}
+
+html[data-theme-pack="quiet-slate"] .zd-content th,
+html[data-theme-pack="quiet-slate"] .zd-content thead {
+  background-color: var(--zd-surface);
+}
+
+/* ---- current navigation: active fill, accent text, 3px marker ---- */
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar a[aria-current="page"],
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] a[aria-current="page"],
+html[data-theme-pack="quiet-slate"] #desktop-sidebar div:has(> a[aria-current="page"]),
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) {
+  background-color: light-dark(#E4E0DE, #3E3E40);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar a[aria-current="page"],
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] a[aria-current="page"] {
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar a[aria-current="page"] *,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] a[aria-current="page"] *,
+html[data-theme-pack="quiet-slate"] #desktop-sidebar div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="quiet-slate"] #desktop-sidebar div:has(> a[aria-current="page"]) > button *,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button * {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button {
+  background-color: transparent;
+  border-color: light-dark(#6C7D88, #98A6B2);
+}
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar a[aria-current="page"]:hover,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:hover,
+html[data-theme-pack="quiet-slate"] #desktop-sidebar a[aria-current="page"]:focus-visible,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:focus-visible,
+html[data-theme-pack="quiet-slate"] #desktop-sidebar div:has(> a[aria-current="page"]) > button:hover,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button:hover,
+html[data-theme-pack="quiet-slate"] #desktop-sidebar div:has(> a[aria-current="page"]) > button:focus-visible,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button:focus-visible {
+  background-color: light-dark(#E4E0DE, #3E3E40);
+  color: var(--zd-accent-hover);
+}
+
+html[data-theme-pack="quiet-slate"] [data-header-nav] a[aria-current="page"],
+html[data-theme-pack="quiet-slate"] [data-header-nav] a[aria-current="page"]:hover,
+html[data-theme-pack="quiet-slate"] [data-header-nav] a[aria-current="page"]:focus-visible {
+  background-color: light-dark(#E4E0DE, #3E3E40);
+  color: var(--zd-accent);
+  box-shadow: inset 0 -3px 0 var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] [data-header-nav] a[aria-current="page"] * {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] nav[data-zd-toc] a {
+  padding-inline: 0.5rem;
+}
+
+html[data-theme-pack="quiet-slate"] nav[data-zd-toc] a[aria-current="true"] {
+  background-color: light-dark(#E4E0DE, #3E3E40);
+  color: var(--zd-accent);
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+/* ---- inactive navigation hover ---- */
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar [data-sidebar-tree-root] a:not([aria-current="page"]):hover,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] [data-sidebar-tree-root] a:not([aria-current="page"]):hover {
+  background-color: light-dark(#DBE2E7, #3C4650);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] [data-site-nav] a:hover {
+  color: var(--zd-accent);
+}
+
+/* ---- tag chips: line outline, bg fill, opaque muted count ---- */
+
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip] > [data-zd-tag-chip-outline] {
+  background-color: light-dark(#CBD5DD, #4A5661);
+}
+
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip] > [data-zd-tag-chip-label] {
+  background-color: var(--zd-bg);
+  color: var(--zd-fg);
+}
+
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip] [data-zd-tag-count],
+html[data-theme-pack="quiet-slate"] footer[data-footer] [data-zd-tag-count] {
+  opacity: 1;
+  color: var(--zd-muted);
+}
+
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip]:hover > [data-zd-tag-chip-outline],
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip]:focus-visible > [data-zd-tag-chip-outline] {
+  background-color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip]:hover > [data-zd-tag-chip-label],
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip]:focus-visible > [data-zd-tag-chip-label] {
+  background-color: light-dark(#DBE2E7, #3C4650);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip]:hover [data-zd-tag-count],
+html[data-theme-pack="quiet-slate"] a[data-zd-tag-chip]:focus-visible [data-zd-tag-count],
+html[data-theme-pack="quiet-slate"] footer[data-footer] a:hover [data-zd-tag-count],
+html[data-theme-pack="quiet-slate"] footer[data-footer] a:focus-visible [data-zd-tag-count] {
+  color: var(--zd-accent);
+}
+
+/* ---- admonitions: soft fills, semantic title + stripe (labels/icons kept) ---- */
+
+html[data-theme-pack="quiet-slate"] [data-admonition="note"] {
+  background-color: light-dark(#E4E0DE, #3E3E40);
+  border-left-color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="note"] .admonition-title {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="important"] {
+  background-color: light-dark(#E4E0DE, #3E3E40);
+  border-left-color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="important"] .admonition-title {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="info"] {
+  background-color: light-dark(#DCE3E6, #374047);
+  border-left-color: var(--zd-info);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="info"] .admonition-title {
+  color: var(--zd-info);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="tip"] {
+  background-color: light-dark(#DDE3E3, #384044);
+  border-left-color: var(--zd-success);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="tip"] .admonition-title {
+  color: var(--zd-success);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="warning"] {
+  background-color: light-dark(#E0E2E0, #3C3F40);
+  border-left-color: var(--zd-warning);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="warning"] .admonition-title {
+  color: var(--zd-warning);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="danger"] {
+  background-color: light-dark(#E2E1E3, #3C3F44);
+  border-left-color: var(--zd-danger);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="danger"] .admonition-title {
+  color: var(--zd-danger);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="caution"] {
+  background-color: light-dark(#E2E1E3, #3C3F44);
+  border-left-color: var(--zd-danger);
+}
+
+html[data-theme-pack="quiet-slate"] [data-admonition="caution"] .admonition-title {
+  color: var(--zd-danger);
+}
+
+/* ---- keyboard focus: 2px accent outline, 3px offset (inset inside scrollers so it is never clipped) ---- */
+
+html[data-theme-pack="quiet-slate"] :focus-visible {
+  outline: 2px solid var(--zd-accent);
+  outline-offset: 3px;
+}
+
+html[data-theme-pack="quiet-slate"] #desktop-sidebar :focus-visible,
+html[data-theme-pack="quiet-slate"] aside[data-zd-mobile-sidebar] :focus-visible,
+html[data-theme-pack="quiet-slate"] nav[data-zd-toc] :focus-visible,
+html[data-theme-pack="quiet-slate"] div[data-zd-mobile-toc] :focus-visible {
+  outline-offset: -2px;
+}
+
+html[data-theme-pack="quiet-slate"] .zd-content a,
+html[data-theme-pack="quiet-slate"] .zd-content button {
+  text-underline-offset: 3px;
+}

@@ -84,7 +84,7 @@ import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
 // type-only import silently kills island registration — the #2480 lesson).
 import { ThemePackSwitcher, type ThemePackSwitcherProps } from "../theme-pack-switcher/index.js";
 import { createThemePackSwitcherIsland } from "../doc-body-end-islands/theme-pack-switcher-island.js";
-import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
+import { resolveConfiguredThemePack } from "../theme-packs-registry/configured-theme-pack.js";
 import { SearchWidget } from "../search-widget/index.js";
 import { createMdxComponents } from "../mdx-components/index.js";
 import { createAssetCard, createAssetCode } from "../asset-components/index.js";
@@ -396,7 +396,7 @@ function deriveThemePackSwitcherProps(ctx: ChromeContext): ThemePackSwitcherProp
   const registry = ctx.themePackRegistry;
   if (registry == null) return null;
   return {
-    active: ctx.settings.themePack ?? DEFAULT_THEME_PACK_SLUG,
+    active: resolveConfiguredThemePack(ctx.settings),
     order: registry.map((entry) => ({
       slug: entry.slug,
       name: entry.meta.name,

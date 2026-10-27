@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const THEME_PACKS_DIR = resolve(__dirname, "../../theme-packs");
 
 describe("loadThemePackRegistry (real bundled packs)", () => {
-  it("aggregates the 31 shipped packs, in canonical alphabetical order", () => {
+  it("aggregates the 34 shipped packs, in canonical alphabetical order", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     expect(registry.map((e) => e.slug)).toEqual([
       "academia",
@@ -27,6 +27,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "fjord",
       "foundry",
       "futura-editorial",
+      "graphite",
       "hearth",
       "hollow",
       "ledger",
@@ -36,6 +37,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "quiet-slate",
       "riso",
       "sakura",
       "scandi",
@@ -44,6 +46,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "swissgrid",
       "tidepool",
       "timberline",
+      "warm-mineral",
       "washi",
     ]);
   });
@@ -55,6 +58,19 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
     expect(byslug["foundry"]?.hasStylesheet).toBe(true);
   });
 
+  it("Classic keeps the reserved no-CSS default slug; the three soft packs ship CSS", () => {
+    const registry = loadThemePackRegistry(THEME_PACKS_DIR);
+    const byslug = Object.fromEntries(registry.map((e) => [e.slug, e]));
+    expect(byslug["default"]?.meta.name).toBe("Classic");
+    expect(byslug["default"]?.hasStylesheet).toBe(false);
+    for (const slug of ["graphite", "warm-mineral", "quiet-slate"]) {
+      expect(byslug[slug]?.hasStylesheet, slug).toBe(true);
+      expect(byslug[slug]?.meta.version, slug).toBe("1.0.0");
+      expect(byslug[slug]?.meta.fonts.loaded, slug).toEqual([]);
+    }
+    expect(registry.filter((e) => e.meta.name === "Classic" || e.meta.name === "Graphite")).toHaveLength(2);
+  });
+
   it("every pack passes its own validator (throws otherwise, proven by not throwing)", () => {
     expect(() => loadThemePackRegistry(THEME_PACKS_DIR)).not.toThrow();
   });
@@ -62,10 +78,11 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
   it("resolveEnabledPacks accepts the real registry with default settings", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     const enabled = resolveEnabledPacks(registry, {});
-    // `resolveEnabledPacks` pins the reserved `default` pack first, then the
-    // rest alphabetically (distinct from `loadThemePackRegistry`'s pure
-    // alphabetical order above).
+    // `resolveEnabledPacks` pins the configured default (graphite) first and
+    // the reserved `default` (Classic) second, then the rest alphabetically
+    // (distinct from `loadThemePackRegistry`'s pure alphabetical order above).
     expect(enabled.map((e) => e.slug)).toEqual([
+      "graphite",
       "default",
       "academia",
       "bauhaus",
@@ -88,6 +105,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "quiet-slate",
       "riso",
       "sakura",
       "scandi",
@@ -96,6 +114,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "swissgrid",
       "tidepool",
       "timberline",
+      "warm-mineral",
       "washi",
     ]);
   });

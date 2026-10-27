@@ -439,9 +439,9 @@ colorMode: false, // single fixed scheme (colorScheme only)
 
 ### themePack
 
-アクティブなテーマパックのスラッグ。`"default"` は zudo-doc 標準の見た目です（パックのスタイルシートは読み込まれません）。解決済みの `themePacks` リストのメンバーである必要があり、未知のスラッグはビルドを大きな声で失敗させます。
+アクティブなテーマパックのスラッグ。省略すると、やわらかいニュートラルなデフォルトの見た目である `"graphite"` になります。独自の `colorSchemes` を渡すか `colorMode: false` を設定した場合は、代わりに `"default"`（Classic。パックのスタイルシートを読み込まない従来の見た目）になります。明示的な値は常に優先されます。解決済みの `themePacks` リストのメンバーである必要があり、未知のスラッグはビルドを大きな声で失敗させます。
 
-デフォルト: `"default"`
+デフォルト: 省略（`"graphite"`。独自の `colorSchemes` や `colorMode: false` の場合は `"default"`）
 
 ### themePackSwitcher
 
@@ -451,7 +451,7 @@ colorMode: false, // single fixed scheme (colorScheme only)
 
 ### themePacks
 
-有効化するパックのスラッグをスイッチャー順で並べたリスト — この並び順がそのままスイッチャーの Prev/Next の巡回順と一覧ダイアログのグリッド順になります。`undefined` は同梱パックすべてを有効化します（`"default"` が先頭、残りはアルファベット順）。明示的なリストが正となります — `"default"` を省いても、自由に並べ替えても構いませんが、重複や未知のスラッグはビルドを大きな声で失敗させます。
+有効化するパックのスラッグをスイッチャー順で並べたリスト — この並び順がそのままスイッチャーの Prev/Next の巡回順と一覧ダイアログのグリッド順になります。`undefined` は同梱パックすべてを有効化します（`"graphite"` が先頭、次に `"default"`（Classic）、残りはアルファベット順）。明示的なリストが正となります — `"default"` を省いても、自由に並べ替えても構いません。Graphite が自動で追加されることはなく、重複や未知のスラッグはビルドを大きな声で失敗させます。`themePack` を省略する場合は、リストに `"graphite"` を含めてください（または `themePack` をリスト内のスラッグに設定します）。
 
 デフォルト: `undefined`
 

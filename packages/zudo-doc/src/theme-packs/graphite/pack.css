@@ -1,0 +1,401 @@
+/* ============================================================
+   Graphite — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Neutral grey paper and graphite night, with a single warm copper accent.
+   One of the three soft-tone packs (graphite, warm-mineral,
+   quiet-slate) that share the same component treatment and differ
+   only in palette. Colour only: typography, spacing, geometry and
+   heading hierarchy are the package defaults (no fonts loaded).
+
+   Roles beyond the public --zd-* tokens are inlined per mode:
+     line           decorative rules, separators and tree guides
+     control border necessary field / control / diagram boundaries
+     heading        heading ink, one step stronger than body text
+     hover bg       inactive navigation hover fill
+     active bg      current navigation fill (90% bg + 10% accent)
+     state bgs      admonition fills (90% bg + 10% state colour)
+   Classic (the reserved "default" pack) shares one muted role for
+   text, borders and comments; these packs keep muted at readable
+   text contrast and give decorative rules their own quieter line.
+
+   Production-only contrast repairs (not part of the ordinary
+   palette): diff rows use the opaque state fills instead of the
+   15% foreground tint, and code line / word highlights use opaque
+   active / hover fills (no stacked alpha) keeping the accent marker
+   and underline, so every syntax role stays >= 4.6:1.
+
+   Every rule is scoped under html[data-theme-pack="graphite"]; the
+   pack never declares color-scheme and follows the mode the page
+   already resolved (light-dark()).
+   ============================================================ */
+
+html[data-theme-pack="graphite"] {
+  /* Tier-2 semantic roles */
+  --zd-bg: light-dark(#F2F3F2, #242629);
+  --zd-fg: light-dark(#3A4146, #D3D5D9);
+  --zd-surface: light-dark(#E8EBEA, #2D3034);
+  --zd-muted: light-dark(#566168, #ADB2B8);
+  --zd-accent: light-dark(#9A4919, #E9AA79);
+  --zd-accent-hover: light-dark(#934619, #EAAF81);
+  --zd-code-bg: light-dark(#E8EBEA, #202225);
+  --zd-code-fg: light-dark(#3A4146, #D3D5D9);
+  --zd-success: light-dark(#4E6552, #9DBA9A);
+  --zd-danger: light-dark(#89504E, #CE9B97);
+  --zd-warning: light-dark(#775B2E, #CEB077);
+  --zd-info: light-dark(#4B6373, #9DB6C5);
+  --zd-selection-bg: light-dark(#9A4919, #E9AA79);
+  --zd-selection-fg: light-dark(#F9F5EF, #242629);
+  --zd-matched-keyword-bg: light-dark(#9A4919, #E9AA79);
+  --zd-matched-keyword-fg: light-dark(#F9F5EF, #242629);
+  --zd-chat-user-bg: light-dark(#9A4919, #E9AA79);
+  --zd-chat-user-text: light-dark(#F9F5EF, #242629);
+  --zd-chat-assistant-bg: light-dark(#E8EBEA, #2D3034);
+  --zd-chat-assistant-text: light-dark(#3A4146, #D3D5D9);
+  --zd-image-overlay-bg: light-dark(#F2F3F2, #242629);
+  --zd-image-overlay-fg: light-dark(#3A4146, #D3D5D9);
+  /* Mermaid: text is body text; edges are necessary diagram lines */
+  --zd-mermaid-node-bg: light-dark(#E8EBEA, #2D3034);
+  --zd-mermaid-text: light-dark(#3A4146, #D3D5D9);
+  --zd-mermaid-line: light-dark(#737D86, #858D96);
+  --zd-mermaid-label-bg: light-dark(#F2F3F2, #242629);
+  --zd-mermaid-note-bg: light-dark(#E1E5E4, #35383D);
+  
+  /* syntax — explicit role mapping */
+  --zd-syntax-comment: light-dark(#566168, #ADB2B8);
+  --zd-syntax-string: light-dark(#4E6552, #9DBA9A);
+  --zd-syntax-number: light-dark(#775B2E, #CEB077);
+  --zd-syntax-keyword: light-dark(#9A4919, #E9AA79);
+  --zd-syntax-callable: light-dark(#4B6373, #9DB6C5);
+  --zd-syntax-type: light-dark(#775B2E, #CEB077);
+  --zd-syntax-name: light-dark(#3A4146, #D3D5D9);
+  --zd-syntax-inserted: light-dark(#4E6552, #9DBA9A);
+  --zd-syntax-deleted: light-dark(#89504E, #CE9B97);
+  /* diff rows: opaque audited state fills instead of the 15% tint */
+  --zfb-hi-ins-bg: light-dark(#E2E5E2, #303534);
+  --zfb-hi-del-bg: light-dark(#E8E3E2, #353234);
+  
+  /* Tier-3 seams */
+  --zdc-nav-active-indicator-color: light-dark(#E9E2DC, #383331);
+}
+
+/* ---- page, chrome surfaces and decorative rules ---- */
+
+html[data-theme-pack="graphite"] header[data-header],
+html[data-theme-pack="graphite"] footer[data-footer] {
+  background-color: var(--zd-surface);
+  border-color: light-dark(#D2D8DC, #41464D);
+}
+
+html[data-theme-pack="graphite"] footer[data-footer] div {
+  border-color: light-dark(#D2D8DC, #41464D);
+}
+
+html[data-theme-pack="graphite"] #desktop-sidebar,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar],
+html[data-theme-pack="graphite"] #desktop-sidebar div,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] div,
+html[data-theme-pack="graphite"] #desktop-sidebar nav,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] nav {
+  border-color: light-dark(#D2D8DC, #41464D);
+}
+
+html[data-theme-pack="graphite"] nav[data-zd-toc] ul,
+html[data-theme-pack="graphite"] div[data-zd-mobile-toc],
+html[data-theme-pack="graphite"] div[data-zd-mobile-toc] ul {
+  border-color: light-dark(#D2D8DC, #41464D);
+}
+
+html[data-theme-pack="graphite"] [data-site-nav] div,
+html[data-theme-pack="graphite"] [data-tabs-nav],
+html[data-theme-pack="graphite"] [data-version-menu] > li,
+html[data-theme-pack="graphite"] [data-nav-more-menu] > li,
+html[data-theme-pack="graphite"] [data-language-menu] > li,
+html[data-theme-pack="graphite"] dialog[data-search-dialog] > div div,
+html[data-theme-pack="graphite"] dialog[data-search-dialog] [data-search-count-narrow],
+html[data-theme-pack="graphite"] dialog[data-doc-history-panel] > div,
+html[data-theme-pack="graphite"] [data-theme-pack-switcher] dialog div,
+html[data-theme-pack="graphite"] dialog[data-zd-ai-chat] > div > div {
+  border-color: light-dark(#D2D8DC, #41464D);
+}
+
+html[data-theme-pack="graphite"] .zd-content h1,
+html[data-theme-pack="graphite"] .zd-content table,
+html[data-theme-pack="graphite"] .zd-content th,
+html[data-theme-pack="graphite"] .zd-content td,
+html[data-theme-pack="graphite"] .zd-content hr,
+html[data-theme-pack="graphite"] .zd-content pre,
+html[data-theme-pack="graphite"] .zd-content .code-block-title,
+html[data-theme-pack="graphite"] .zd-content > section,
+html[data-theme-pack="graphite"] .zd-content > ol > li:not(:hover):not(:focus-within),
+html[data-theme-pack="graphite"] .zd-content > nav[data-doc-pager] > a:not(:hover),
+html[data-theme-pack="graphite"] .zd-home-rule {
+  border-color: light-dark(#D2D8DC, #41464D);
+}
+
+/* ---- necessary control and field boundaries ---- */
+
+html[data-theme-pack="graphite"] #desktop-sidebar button,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] button,
+html[data-theme-pack="graphite"] header[data-header] button,
+html[data-theme-pack="graphite"] [data-nav-item-dropdown] > div > div,
+html[data-theme-pack="graphite"] [data-version-menu],
+html[data-theme-pack="graphite"] button[data-version-toggle]:not(:hover),
+html[data-theme-pack="graphite"] button[data-language-toggle]:not(:hover),
+html[data-theme-pack="graphite"] button[data-doc-history-trigger]:not(:hover),
+html[data-theme-pack="graphite"] button[data-switcher-launcher]:not(:hover),
+html[data-theme-pack="graphite"] dialog[data-search-dialog] > div,
+html[data-theme-pack="graphite"] [data-site-nav] button,
+html[data-theme-pack="graphite"] [data-nav-more-menu],
+html[data-theme-pack="graphite"] [data-language-menu],
+html[data-theme-pack="graphite"] [data-theme-pack-switcher] dialog,
+html[data-theme-pack="graphite"] dialog[data-zd-ai-chat] input,
+html[data-theme-pack="graphite"] dialog.zd-enlarge-dialog,
+html[data-theme-pack="graphite"] dialog.zd-mermaid-dialog,
+html[data-theme-pack="graphite"] .code-btn:not(:hover),
+html[data-theme-pack="graphite"] .zd-desktop-sidebar-toggle,
+html[data-theme-pack="graphite"] .zd-desktop-toc-toggle,
+html[data-theme-pack="graphite"] kbd {
+  border-color: light-dark(#737D86, #858D96);
+}
+
+html[data-theme-pack="graphite"] #desktop-sidebar [data-sidebar-filter-region] > div,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] [data-sidebar-filter-region] > div {
+  box-shadow: inset 0 0 0 1px light-dark(#737D86, #858D96);
+}
+
+/* ---- headings ---- */
+
+html[data-theme-pack="graphite"] .zd-content h1,
+html[data-theme-pack="graphite"] .zd-content h2,
+html[data-theme-pack="graphite"] .zd-content h3,
+html[data-theme-pack="graphite"] .zd-content h4,
+html[data-theme-pack="graphite"] .zd-content h5,
+html[data-theme-pack="graphite"] .zd-content h6 {
+  color: light-dark(#2E363C, #E0E3E6);
+}
+
+html[data-theme-pack="graphite"] .zd-content h2:where(:not(.zd-home-heading)):where(:not(.zd-compact-prose *)) {
+  border-image: linear-gradient(to right, color-mix(in srgb, light-dark(#737D86, #858D96) 65%, light-dark(#F2F3F2, #242629)), transparent) 1 !important;
+}
+
+html[data-theme-pack="graphite"] .zd-content h3:where(:not(.zd-compact-prose *)),
+html[data-theme-pack="graphite"] .zd-content h4:where(:not(.zd-compact-prose *)) {
+  border-image: linear-gradient(to right, light-dark(#D2D8DC, #41464D), transparent) 1 !important;
+}
+
+/* ---- code ---- */
+
+html[data-theme-pack="graphite"] .zd-content .code-block-title {
+  background-color: var(--zd-code-bg);
+  color: var(--zd-muted);
+}
+
+html[data-theme-pack="graphite"] pre.hi-root .line.highlighted,
+html[data-theme-pack="graphite"] pre.hi-root [data-line-highlight="true"] {
+  background-color: light-dark(#E9E2DC, #383331);
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] pre.hi-root .line .highlighted-word {
+  background-color: light-dark(#E1E5E4, #35383D);
+}
+
+html[data-theme-pack="graphite"] .zd-content th,
+html[data-theme-pack="graphite"] .zd-content thead {
+  background-color: var(--zd-surface);
+}
+
+/* ---- current navigation: active fill, accent text, 3px marker ---- */
+
+html[data-theme-pack="graphite"] #desktop-sidebar a[aria-current="page"],
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] a[aria-current="page"],
+html[data-theme-pack="graphite"] #desktop-sidebar div:has(> a[aria-current="page"]),
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) {
+  background-color: light-dark(#E9E2DC, #383331);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] #desktop-sidebar a[aria-current="page"],
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] a[aria-current="page"] {
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] #desktop-sidebar a[aria-current="page"] *,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] a[aria-current="page"] *,
+html[data-theme-pack="graphite"] #desktop-sidebar div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="graphite"] #desktop-sidebar div:has(> a[aria-current="page"]) > button *,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button * {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] #desktop-sidebar div:has(> a[aria-current="page"]) > button,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button {
+  background-color: transparent;
+  border-color: light-dark(#737D86, #858D96);
+}
+
+html[data-theme-pack="graphite"] #desktop-sidebar a[aria-current="page"]:hover,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:hover,
+html[data-theme-pack="graphite"] #desktop-sidebar a[aria-current="page"]:focus-visible,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:focus-visible,
+html[data-theme-pack="graphite"] #desktop-sidebar div:has(> a[aria-current="page"]) > button:hover,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button:hover,
+html[data-theme-pack="graphite"] #desktop-sidebar div:has(> a[aria-current="page"]) > button:focus-visible,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] div:has(> a[aria-current="page"]) > button:focus-visible {
+  background-color: light-dark(#E9E2DC, #383331);
+  color: var(--zd-accent-hover);
+}
+
+html[data-theme-pack="graphite"] [data-header-nav] a[aria-current="page"],
+html[data-theme-pack="graphite"] [data-header-nav] a[aria-current="page"]:hover,
+html[data-theme-pack="graphite"] [data-header-nav] a[aria-current="page"]:focus-visible {
+  background-color: light-dark(#E9E2DC, #383331);
+  color: var(--zd-accent);
+  box-shadow: inset 0 -3px 0 var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] [data-header-nav] a[aria-current="page"] * {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] nav[data-zd-toc] a {
+  padding-inline: 0.5rem;
+}
+
+html[data-theme-pack="graphite"] nav[data-zd-toc] a[aria-current="true"] {
+  background-color: light-dark(#E9E2DC, #383331);
+  color: var(--zd-accent);
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+
+/* ---- inactive navigation hover ---- */
+
+html[data-theme-pack="graphite"] #desktop-sidebar [data-sidebar-tree-root] a:not([aria-current="page"]):hover,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] [data-sidebar-tree-root] a:not([aria-current="page"]):hover {
+  background-color: light-dark(#E1E5E4, #35383D);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] [data-site-nav] a:hover {
+  color: var(--zd-accent);
+}
+
+/* ---- tag chips: line outline, bg fill, opaque muted count ---- */
+
+html[data-theme-pack="graphite"] a[data-zd-tag-chip] > [data-zd-tag-chip-outline] {
+  background-color: light-dark(#D2D8DC, #41464D);
+}
+
+html[data-theme-pack="graphite"] a[data-zd-tag-chip] > [data-zd-tag-chip-label] {
+  background-color: var(--zd-bg);
+  color: var(--zd-fg);
+}
+
+html[data-theme-pack="graphite"] a[data-zd-tag-chip] [data-zd-tag-count],
+html[data-theme-pack="graphite"] footer[data-footer] [data-zd-tag-count] {
+  opacity: 1;
+  color: var(--zd-muted);
+}
+
+html[data-theme-pack="graphite"] a[data-zd-tag-chip]:hover > [data-zd-tag-chip-outline],
+html[data-theme-pack="graphite"] a[data-zd-tag-chip]:focus-visible > [data-zd-tag-chip-outline] {
+  background-color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] a[data-zd-tag-chip]:hover > [data-zd-tag-chip-label],
+html[data-theme-pack="graphite"] a[data-zd-tag-chip]:focus-visible > [data-zd-tag-chip-label] {
+  background-color: light-dark(#E1E5E4, #35383D);
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] a[data-zd-tag-chip]:hover [data-zd-tag-count],
+html[data-theme-pack="graphite"] a[data-zd-tag-chip]:focus-visible [data-zd-tag-count],
+html[data-theme-pack="graphite"] footer[data-footer] a:hover [data-zd-tag-count],
+html[data-theme-pack="graphite"] footer[data-footer] a:focus-visible [data-zd-tag-count] {
+  color: var(--zd-accent);
+}
+
+/* ---- admonitions: soft fills, semantic title + stripe (labels/icons kept) ---- */
+
+html[data-theme-pack="graphite"] [data-admonition="note"] {
+  background-color: light-dark(#E9E2DC, #383331);
+  border-left-color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="note"] .admonition-title {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="important"] {
+  background-color: light-dark(#E9E2DC, #383331);
+  border-left-color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="important"] .admonition-title {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="info"] {
+  background-color: light-dark(#E1E5E5, #303439);
+  border-left-color: var(--zd-info);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="info"] .admonition-title {
+  color: var(--zd-info);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="tip"] {
+  background-color: light-dark(#E2E5E2, #303534);
+  border-left-color: var(--zd-success);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="tip"] .admonition-title {
+  color: var(--zd-success);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="warning"] {
+  background-color: light-dark(#E6E4DE, #353431);
+  border-left-color: var(--zd-warning);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="warning"] .admonition-title {
+  color: var(--zd-warning);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="danger"] {
+  background-color: light-dark(#E8E3E2, #353234);
+  border-left-color: var(--zd-danger);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="danger"] .admonition-title {
+  color: var(--zd-danger);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="caution"] {
+  background-color: light-dark(#E8E3E2, #353234);
+  border-left-color: var(--zd-danger);
+}
+
+html[data-theme-pack="graphite"] [data-admonition="caution"] .admonition-title {
+  color: var(--zd-danger);
+}
+
+/* ---- keyboard focus: 2px accent outline, 3px offset (inset inside scrollers so it is never clipped) ---- */
+
+html[data-theme-pack="graphite"] :focus-visible {
+  outline: 2px solid var(--zd-accent);
+  outline-offset: 3px;
+}
+
+html[data-theme-pack="graphite"] #desktop-sidebar :focus-visible,
+html[data-theme-pack="graphite"] aside[data-zd-mobile-sidebar] :focus-visible,
+html[data-theme-pack="graphite"] nav[data-zd-toc] :focus-visible,
+html[data-theme-pack="graphite"] div[data-zd-mobile-toc] :focus-visible {
+  outline-offset: -2px;
+}
+
+html[data-theme-pack="graphite"] .zd-content a,
+html[data-theme-pack="graphite"] .zd-content button {
+  text-underline-offset: 3px;
+}
