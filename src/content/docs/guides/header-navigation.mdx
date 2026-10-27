@@ -91,7 +91,7 @@ Children can also have `categoryMatch`. For example, placing `categoryMatch: "co
 
 #### Sidebar Membership and Section Ownership
 
-A page belongs to the section whose `categoryMatch` matches the start of its slug (or to the `"!"` fallback item when none does). That owner decides the active header item and the sidebar the page renders. Listing a page in another section's sidebar — a `type: "doc"` item or an [editorial tree](./editorial-navigation.mdx) — only adds a link there. Following that link opens the page in its owning section. Changing the owner is a separate host decision; see [Destination Ownership](./editorial-navigation.mdx#destination-ownership).
+A page belongs to the section whose `categoryMatch` equals the first segment of its slug (or to the `"!"` fallback item when none does). That owner decides the active header item and the sidebar the page renders. Listing a page in another section's sidebar — a `type: "doc"` item or an [editorial tree](./editorial-navigation.mdx) — only adds a link there. Following that link opens the page in its owning section. Changing the owner is a separate host decision; see [Destination Ownership](./editorial-navigation.mdx#destination-ownership).
 
 #### Nested Children Under One Category
 
