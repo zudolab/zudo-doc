@@ -90,6 +90,7 @@ check("zudo-doc and zfb-runtime resolve the consumer's own zfb/zudo-react (same 
   [rootZfb, zfbFromZudoDoc, zfbFromRuntime].map((p) => p && path.relative(consumer, p)).join(" | "));
 check("installed @takazudo/zudo-doc lives in the consumer store", zudoDocDir?.startsWith(consumer), zudoDocDir && path.relative(consumer, zudoDocDir));
 
+const zdtpPin = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).dependencies["@takazudo/zdtp"];
 const zdtpCopies = copies("@takazudo+zdtp@");
 const zdtpFromZudoDoc = pkgDir(zudoDocDir, "@takazudo/zdtp");
 const zfbBin = path.join(consumer, "node_modules/.bin/zfb");
@@ -109,12 +110,13 @@ const versions = {
   zdtpStoreDirs: zdtpCopies,
 };
 if (versions["@takazudo/zdtp (consumer root)"]) {
-  check("single zdtp copy on disk, 0.9.0, and it is the one zudo-doc's loader resolves",
-    zdtpCopies.length === 1 && versions["@takazudo/zdtp (consumer root)"] === "0.9.0" && zdtpFromZudoDoc === pkgDir(consumer, "@takazudo/zdtp"),
+  check(`single zdtp copy on disk, ${zdtpPin}, and it is the one zudo-doc's loader resolves`,
+    zdtpCopies.length === 1 && versions["@takazudo/zdtp (consumer root)"] === zdtpPin && zdtpFromZudoDoc === pkgDir(consumer, "@takazudo/zdtp"),
     `${zdtpCopies.join(", ")} -> ${zdtpFromZudoDoc && path.relative(consumer, zdtpFromZudoDoc)}`);
 } else {
   check("no zdtp installed (designTokenPanel off)", zdtpCopies.length === 0 && !zdtpFromZudoDoc, zdtpCopies.join(", ") || "none");
 }
+check("no preact copy on disk (zdtp 0.9+ and zudo-doc are Preact-free)", copies("preact@").length === 0, copies("preact@").join(", ") || "none");
 
 // Built-dist fingerprint: which zdtp version's unique string literals appear.
 let zdtpBundle = null;
@@ -154,8 +156,8 @@ if (zdtpRef && existsSync(dist)) {
   }
   const matched = zdtpBundle.groups.filter((g) => g.foundInDist > 0);
   zdtpBundle.bundledGroup = matched.length === 1 ? matched[0].versions : matched.map((g) => g.versions);
-  check("built dist bundles exactly one zdtp copy, fingerprinted as 0.9.0's dist",
-    matched.length === 1 && matched[0].versions.includes("0.9.0") && matched[0].foundInDist > 0,
+  check(`built dist bundles exactly one zdtp copy, fingerprinted as ${zdtpPin}'s dist`,
+    matched.length === 1 && matched[0].versions.includes(zdtpPin) && matched[0].foundInDist > 0,
     matched.map((g) => `${g.versions.join("=")}: ${g.foundInDist}/${g.uniqueLiterals} unique literals in ${g.chunks.join(", ")}`).join("; ") || "no version-unique literal found");
 }
 

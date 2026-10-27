@@ -12,7 +12,7 @@ import type { PanelConfig, PanelInstanceHandle } from "@takazudo/zdtp";
 export * from "@takazudo/zdtp";
 
 /**
- * Mount zdtp's opaque Preact root only while the activating island still owns
+ * Mount zdtp's opaque panel root only while the activating island still owns
  * the pending import. Once configured, zdtp keeps its document-lifetime root
  * and its existing navigation cleanup semantics.
  */
