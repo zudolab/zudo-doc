@@ -297,6 +297,16 @@ describe("site-schema pure surface", () => {
     expect(grouped[0]?.children.map((c) => c.slug)).toEqual(["api-legacy"]);
   });
 
+  it("leaves a more specific prefix's satellites with that prefix in any order", () => {
+    const n = (slug: string): DocNavNode => ({ slug, label: slug, position: 0, hasPage: true, children: [] });
+    for (const prefixes of [["foo", "foo-bar"], ["foo-bar", "foo"]]) {
+      const grouped = groupSatelliteNodes([n("foo"), n("foo-bar"), n("foo-bar-baz"), n("foo-baz")], prefixes);
+      expect(grouped.map((g) => g.slug)).toEqual(["foo", "foo-bar"]);
+      expect(grouped[0]?.children.map((c) => c.slug)).toEqual(["foo-baz"]);
+      expect(grouped[1]?.children.map((c) => c.slug)).toEqual(["foo-bar-baz"]);
+    }
+  });
+
   it("hides unlisted and standalone docs from navigation", () => {
     expect(isNavVisible(entry("a"))).toBe(true);
     expect(isNavVisible(entry("b", { unlisted: true }))).toBe(false);

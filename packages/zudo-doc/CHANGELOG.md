@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Bug Fixes
+
+- `categoryMatch` once again owns its dash "satellite" directories, fixing a 9.1.0 regression. With the 9.1.0 whole-segment rule, `categoryMatch: "claude"` stopped claiming the generated `claude-md/`, `claude-skills/`, and `claude-commands/` trees (and `"codex"` its `codex-*` trees), so those pages lost the Claude tab and its sidebar. A value now owns `foo`, `foo/...`, and `foo-*`, but still not `foo2`; the longest matching value wins, so an explicit `foo-bar` keeps its own section. (#4689)
 
 ## [9.1.0] - 2026-10-28
 

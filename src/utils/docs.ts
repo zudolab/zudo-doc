@@ -1,5 +1,6 @@
 import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 import { toRouteSlug } from "@takazudo/zudo-doc/slug";
+import { resolveCategoryOwner } from "@takazudo/zudo-doc/nav-scope";
 import { docsUrl, withBase } from "@/utils/base";
 import { defaultLocale, type Locale } from "@/config/i18n";
 import {
@@ -343,7 +344,8 @@ export function groupSatelliteNodes(tree: NavNode[], prefixes: string[]): NavNod
     const satelliteIdxs: number[] = [];
     for (let i = 0; i < result.length; i++) {
       const node = result[i];
-      if (node && i !== primaryIdx && node.slug.startsWith(`${prefix}-`)) {
+      if (node && i !== primaryIdx && node.slug.startsWith(`${prefix}-`) &&
+        resolveCategoryOwner(node.slug, prefixes) === prefix) {
         satelliteIdxs.push(i);
       }
     }

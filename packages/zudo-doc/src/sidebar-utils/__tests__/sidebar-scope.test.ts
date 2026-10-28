@@ -364,3 +364,18 @@ describe("categoryMatch matches the whole top-level segment", () => {
     expect(section("!", ["foo"])).toEqual(["foo2", "misc"]);
   });
 });
+
+describe("categoryMatch owns dash satellites", () => {
+  const satTree = [leaf("claude"), leaf("claude-md"), leaf("claude-skills"), leaf("foo"), leaf("foo-bar"), leaf("foo-baz"), leaf("misc")];
+  const section = (match: string, explicit: string[]) => buildSidebarForSection([], "en", match, undefined, {}, () => satTree, explicit).map((n) => n.slug);
+
+  it("claude section includes its generated sibling trees", () => {
+    expect(section("claude", ["claude"])).toEqual(["claude", "claude-md", "claude-skills"]);
+  });
+
+  it("a more specific explicit match keeps its own section", () => {
+    expect(section("foo", ["foo", "foo-bar"])).toEqual(["foo", "foo-baz"]);
+    expect(section("foo-bar", ["foo-bar", "foo"])).toEqual(["foo-bar"]);
+    expect(section("!", ["claude", "foo-bar", "foo"])).toEqual(["misc"]);
+  });
+});
