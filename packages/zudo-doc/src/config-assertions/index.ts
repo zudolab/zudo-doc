@@ -219,8 +219,8 @@ export function assertValidSearchMaxBodyLength(searchMaxBodyLength: number | und
  * Warn about `categoryMatch` values that cannot express the intended
  * dropdown grouping.
  *
- * A category matcher is compared with the first slug segment by the nav-scope
- * resolver, so a value containing `/` never matches. Likewise, duplicate
+ * A category matcher is compared with the first slug segment (and its `-`
+ * satellites) by the nav-scope resolver, so a value containing `/` never matches. Likewise, duplicate
  * child values make every matching child category-active. Children grouped
  * under one top-level directory should omit `categoryMatch` and rely on the
  * deepest matching child path; Learn-style children should use distinct

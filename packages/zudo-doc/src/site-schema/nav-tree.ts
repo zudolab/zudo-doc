@@ -18,6 +18,7 @@
 import { buildSidebarTree } from "../sidebar-tree/build-tree.js";
 import type { CategoryMeta, SidebarNode } from "../sidebar-tree/types.js";
 import { toRouteSlug } from "../slug/index.js";
+import { resolveCategoryOwner } from "../nav-scope/index.js";
 import type {
   BreadcrumbItem,
   DocEntryLike,
@@ -151,7 +152,8 @@ export function groupSatelliteNodes(tree: DocNavNode[], prefixes: string[]): Doc
     const satelliteIdxs: number[] = [];
     for (let i = 0; i < result.length; i++) {
       const node = result[i];
-      if (node && i !== primaryIdx && node.slug.startsWith(`${prefix}-`)) {
+      if (node && i !== primaryIdx && node.slug.startsWith(`${prefix}-`) &&
+        resolveCategoryOwner(node.slug, prefixes) === prefix) {
         satelliteIdxs.push(i);
       }
     }

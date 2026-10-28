@@ -39,6 +39,30 @@ export function getCategoryOrder(headerNav: NavScopeHeaderNavItem[]): string[] {
 }
 
 /**
+ * Resolve which explicit categoryMatch owns a slug's top-level category.
+ *
+ * A matcher `m` owns the top-level segment `m` itself and its dash
+ * "satellites" (`m-*`), the same convention `groupSatelliteNodes` uses for the
+ * generated `claude-md/`, `claude-skills/`, `codex-agents-md/`, … trees. `foo`
+ * does not own `foo2`. When several matchers apply, the longest wins, so an
+ * explicit `foo-bar` keeps `foo-bar` and `foo-bar-*` out of `foo`. `"!"` is
+ * ignored; callers apply the fallback themselves.
+ */
+export function resolveCategoryOwner(
+  slug: string,
+  explicitMatches: readonly string[],
+): string | undefined {
+  const topCategory = slug.split("/")[0] ?? "";
+  let owner: string | undefined;
+  for (const cm of explicitMatches) {
+    if (cm === "!" || !cm) continue;
+    if (topCategory !== cm && !topCategory.startsWith(cm + "-")) continue;
+    if (owner === undefined || cm.length > owner.length) owner = cm;
+  }
+  return owner;
+}
+
+/**
  * Given a doc's slug (e.g. "getting-started/introduction" or "guides/overview"),
  * return the categoryMatch value of the headerNav item it belongs to.
  *
@@ -49,29 +73,21 @@ export function getNavSectionForSlug(
   slug: string,
   headerNav: NavScopeHeaderNavItem[],
 ): string | undefined {
-  const topCategory = slug.split("/")[0] ?? "";
-  const all = getCategoryOrder(headerNav);
-
-  // First pass: find explicit matchers (not "!")
-  const explicitMatch = all.find((cm) => cm !== "!" && topCategory === cm);
+  const explicitMatch = resolveCategoryOwner(slug, getCategoryOrder(headerNav));
   if (explicitMatch !== undefined) return explicitMatch;
 
-  // Second pass: return the default ("!") matcher
+  // Fallback: return the default ("!") matcher
   const defaultItem = headerNav.find(
     (item) => item.categoryMatch === "!",
   );
   return defaultItem?.categoryMatch;
 }
 
-/** Whole-segment match so `foo` claims `foo` and `foo/bar` but not `foo2`. */
-function matchesCategory(slug: string, match: string): boolean {
-  return slug === match || slug.startsWith(match + "/");
-}
-
 /**
  * Filter top-level NavNodes by a headerNav categoryMatch value.
  * - `"!"` means everything NOT claimed by explicit matchers
- * - `"claude"` means nodes whose slug is `"claude"` or under `"claude/"`
+ * - `"claude"` means nodes owned by `"claude"` per `resolveCategoryOwner`
+ *   (`claude`, `claude/…`, and dash satellites such as `claude-md`)
  * - `undefined` means all nodes
  *
  * Parameterized version of the host's `getNavSubtree()` — receives the
@@ -88,12 +104,14 @@ export function getNavSubtree<T extends NavScopeNode>(
 ): T[] {
   if (!categoryMatch) return tree;
 
+  const explicitMatches = getCategoryOrder(headerNav);
   if (categoryMatch === "!") {
-    const explicitPrefixes = getCategoryOrder(headerNav).filter((cm) => cm !== "!");
-    return tree.filter(
-      (node) => !explicitPrefixes.some((prefix) => matchesCategory(node.slug, prefix)),
-    );
+    return tree.filter((node) => resolveCategoryOwner(node.slug, explicitMatches) === undefined);
   }
 
-  return tree.filter((node) => matchesCategory(node.slug, categoryMatch));
+  // Include the requested matcher even when the headerNav does not list it.
+  const candidates = explicitMatches.includes(categoryMatch)
+    ? explicitMatches
+    : [...explicitMatches, categoryMatch];
+  return tree.filter((node) => resolveCategoryOwner(node.slug, candidates) === categoryMatch);
 }
