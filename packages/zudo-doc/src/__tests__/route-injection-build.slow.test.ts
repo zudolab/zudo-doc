@@ -1413,6 +1413,17 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // 12767463008, source 56d1b974) differs from 40575355711 only by the native
   // build identity (92fb283d67891f70 -> f9a21a36004da117); these hashes are
   // taken from that final capture.
+  //
+  // 2026-10-28 re-baseline (zudolab/zudo-doc#4689, categoryMatch dash
+  // satellites): compared the A2 capture of #4688's run 40601430138 (artifact
+  // 12778837465, the accepted 9.1.0 reference) with this PR's run 40663103871
+  // (artifact 12804887608). Replacing the native data-zfb-build identity only
+  // (ca0ecf7705f8db4b -> e306665fef0d5754) makes every normalized page
+  // byte-identical; raw pages additionally differ only in the islands entry
+  // (islands-c18ecec5.js -> islands-25fa3554.js) and keep their byte lengths
+  // (57089, 68052, 79443). The changed nav-scope/sidebar-utils/nav-tree
+  // sources change zfb's build identity globally; this fixture's single
+  // getting-started category has no dash sibling, so its sidebar is unchanged.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
