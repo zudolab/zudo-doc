@@ -1,6 +1,6 @@
 {
   "name": "zudo-doc",
-  "version": "9.1.0",
+  "version": "9.1.1",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -144,6 +144,6 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.7",
     "vitest": "^4.1.12",
-    "wrangler": "4.154.0"
+    "wrangler": "4.156.0"
   }
 }
