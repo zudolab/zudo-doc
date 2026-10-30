@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.1] - 2026-10-30
+
+### Other Changes
+
+- MCP-enabled projects pin Wrangler 4.156.0. (3a45511f)
+
 ## [9.1.0] - 2026-10-28
 
 ### Other Changes
