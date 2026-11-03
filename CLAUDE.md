@@ -1,5 +1,7 @@
 # zudo-doc
 
+Current adoption checkpoint (2026-11-03): workspace and generated scaffolds use the published ZFB 5.2.0 family; package peer floors are `^5.2.0`. The published zudo-doc/history-server/create-zudo-doc release remains 9.1.1. This dependency update is unreleased; earlier version receipts below remain historical. ZDTP stays 0.9.0 and Node 24 remains the minimum.
+
 Minimal documentation framework built with zfb, MDX, zudo-wind, and zudo-react islands.
 
 The current repository contract targets zfb exclusively.
