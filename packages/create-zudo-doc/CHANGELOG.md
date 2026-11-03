@@ -8,6 +8,16 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.2] - 2026-11-03
+
+### Bug Fixes
+
+- Generated projects pin the ZFB 5.2.0 family, bringing native link-target and form-action handling plus cancellation of obsolete navigation during same-document history traversal. Framework and history-server pins advance together to `^9.1.2`. (aaef3135)
+
+### Other Changes
+
+- Generated Cloudflare projects pin Wrangler 4.157.0, satisfying the release-time scaffold freshness check.
+
 ## [9.1.1] - 2026-10-30
 
 ### Other Changes
