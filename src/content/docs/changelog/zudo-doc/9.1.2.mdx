@@ -1,0 +1,11 @@
+---
+title: 9.1.2
+description: Release notes for 9.1.2.
+sidebar_position: 1149
+---
+
+Released: 2026-11-03
+
+### Bug Fixes
+
+- Require the ZFB 5.2.0 family (`^5.2.0`) so client navigation respects native link targets, including document base targets, resolves form actions against the document base, and cancels obsolete navigation when the browser traverses same-document history. This prevents a delayed navigation from overwriting the page selected by Back. (aaef3135)

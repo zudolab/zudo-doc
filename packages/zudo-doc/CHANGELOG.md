@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.2] - 2026-11-03
+
+### Bug Fixes
+
+- Require the ZFB 5.2.0 family (`^5.2.0`) so client navigation respects native link targets, including document base targets, resolves form actions against the document base, and cancels obsolete navigation when the browser traverses same-document history. This prevents a delayed navigation from overwriting the page selected by Back. (aaef3135)
+
 ## [9.1.1] - 2026-10-30
 
 ### Bug Fixes
