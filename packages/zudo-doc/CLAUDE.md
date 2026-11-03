@@ -1,5 +1,7 @@
 # @takazudo/zudo-doc
 
+Current adoption checkpoint (2026-11-03): workspace and generated scaffolds use the published ZFB 5.2.0 family; package peer floors are `^5.2.0`. The published zudo-doc/history-server/create-zudo-doc release remains 9.1.1. This dependency update is unreleased; earlier version receipts below remain historical. ZDTP stays 0.9.0 and Node 24 remains the minimum.
+
 Shared layout + content-rendering package consumed by both this repo's showcase
 (`workspace:*`) and every project scaffolded by `create-zudo-doc` (published npm).
 Components are zudo-react `.tsx` compiled by tsup (`bundle:false`, 1:1 source→`dist/`
@@ -309,8 +311,8 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 Release 8.0.0 shipped ZFB 5.0.1 (peers `^5.0.1`), MCP SDK 1.32.2, and history-server peer floor `^8.0.0`. Node.js 24 remains the minimum.
 
-The current engine tuple is workspace zfb family **5.1.5**, peers **^5.1.5** (unreleased; 8.1.2 shipped 5.1.4).
-The three lockstep packages are **8.1.3 on npm `latest`**, requiring ZFB 5.1.4.
+The current engine tuple is workspace zfb family **5.2.0**, peers **^5.2.0** (unreleased; 9.1.1 shipped 5.1.5).
+The three lockstep packages are **9.1.1 on npm `latest`**, requiring ZFB 5.1.5.
 The history-server peer floor is
 `^8.0.0` (raised in the 8.0.0 major). The original 6.0.0 migration evidence is in the
 [6.0.0 publication record](../../docs/findings/4430-zfb3-migration/release-6.0.0/README.md).

@@ -1,5 +1,7 @@
 # Dependency audits
 
+Current adoption checkpoint (2026-11-03): workspace and generated scaffolds use the published ZFB 5.2.0 family; package peer floors are `^5.2.0`. The published zudo-doc/history-server/create-zudo-doc release remains 9.1.1. This dependency update is unreleased; earlier version receipts below remain historical. ZDTP stays 0.9.0 and Node 24 remains the minimum.
+
 ## 2026-10-27 audit: stale overrides dropped, advisories cleared, Vite+ not adopted
 
 Audited against `093defd96` on Node 24.22.1 and pnpm 10.30.3, covering the root
