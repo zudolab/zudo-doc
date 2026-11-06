@@ -1,0 +1,170 @@
+---
+title: Maintaining Documentation Structure
+description: Add pages without eroding the category map — when to just place a page, when to review the structure, and how people and AI agents share one editorial policy.
+sidebar_position: 3.3
+---
+
+Documentation sets drift one reasonable page at a time. This guide gives people and AI agents one shared procedure for adding content to a zudo-doc site while keeping its categories and the relations between pages meaningful. It is written for the projects that install zudo-doc, not only for zudo-doc itself.
+
+The procedure has two speeds. An ordinary addition gets a short placement check and a one-line reason. A structure review starts only when there is evidence that the current categories no longer fit what readers need. Keeping the structure as it is counts as a successful outcome of a review, not as a failure to act.
+
+## Three Layers and Who Owns Them
+
+| Layer | Where it lives | Who changes it |
+|-------|----------------|----------------|
+| Common guide | This page, shipped with zudo-doc's documentation | zudo-doc maintainers |
+| Project editorial policy | One file in your project — `AUTHORING.md` in a new scaffold, or an existing file you designate | Your project's owners |
+| Instructions and skills | `README.md`, `CLAUDE.md`, `AGENTS.md`, and optional skills | Your project, pointing at the policy |
+
+The project policy is the single source of truth for your categories. `README.md`, `CLAUDE.md`, `AGENTS.md`, and any skill only point to it. Do not copy detailed category rules into several files: copies drift, and an agent that reads a stale copy will apply the wrong boundary with confidence.
+
+## When a Change Needs a Placement Check
+
+Typo fixes, wording changes, and formatting fixes follow the normal writing rules. They need no placement check and no structure review.
+
+Answer four questions when you add a page, add a new reader task or topic to a page, or change what a page is for:
+
+1. **Who can do what with this content?** Name the reader and the task, such as "a site owner can add a locale".
+2. **Does an existing page already serve that role?** Search titles, descriptions, and the category listings first.
+3. **Why this category, and is there a competing destination?** Name the boundary in the policy that decides it.
+4. **Does this addition change what the category means?** For example, a reference category that starts collecting tutorials.
+
+When the answers are clear, place the content and report the reason in one line, for example: "Placed under `guides/` as a task guide for site owners; no existing page covers locale setup." That is the whole procedure for most additions.
+
+## When to Start a Structure Review
+
+Start a structure review only when the four questions surface evidence of one of these:
+
+- **Category conflict** — the content fits two categories equally, or none, under the boundaries the policy states.
+- **Duplication** — an existing page already serves the same reader task.
+- **An independent cluster** — several pages now serve a distinct reader task that the category was not defined for.
+- **A findability problem** — a concrete report or observation that readers cannot find something, or land on the wrong page.
+
+Read progressively. Start from the category map (the sidebar tree or the directory listing) and the policy. Then read the bodies of the pages that are related, competing, or listed as exceptions. You do not need to read every page body, and you do not need to write a long audit report. If you only surveyed part of the site, say which part. Never report a partial survey as a full audit.
+
+## Comparing Options
+
+Write the concrete reader problem first, in one or two sentences. Then compare the options that would solve it:
+
+| Option | Fits when |
+|--------|-----------|
+| Add to an existing page | The new content serves the same reader task as that page |
+| Improve while keeping the structure | Clearer titles, a category index intro, or a policy boundary note fixes the problem |
+| Local reorganization | Split or merge pages, or rename, split, or merge one category, because a distinct reader task needs its own home |
+| Related links, an index, or another entry point | The content is cross-cutting: one primary home plus links from the other places readers look |
+
+Pick among the options that actually solve the reader problem, and only then compare how much change each one needs. "It changes fewer files" is a tiebreaker, not a reason to skip a reorganization the problem needs. Equally, do not reorganize when an option that keeps the structure solves the problem.
+
+Do not decide by page count, by how evenly categories are balanced, or by a score with no stated basis. Do not impose Diátaxis's four types or a topic taxonomy on a project whose policy does not use them; use the categories the project defined.
+
+Ask the owners only when important editorial goals conflict and you cannot resolve the conflict from the policy, for example keeping a published URL versus moving a page to its correct category. Present the concrete options and what each one affects. Routine placements and changes the policy already permits need no confirmation.
+
+## Recording Category Meaning
+
+Record in the policy only what a later author needs to make the same decision:
+
+- what each category contains, what it excludes, and how it differs from its neighbours;
+- important exceptions, such as a page that stays in an old category to keep its URL;
+- the reason for a reorganization that actually happened.
+
+Label where each statement comes from. A **decision** was made by the project owners. A **fact** is stated in existing documentation or configuration. A **hypothesis** is an inference by an author or an AI agent that nobody has confirmed. Treat unfilled policy fields as undecided rather than guessing them, and do not promote an unconfirmed hypothesis into a permanent rule.
+
+Do not record routine placements. Do not reorganize the same category again without new evidence. A re-evaluation of the same input should reach the same conclusion.
+
+## zudo-doc Constraints to Check
+
+- **Filesystem navigation is the default.** A directory is a category and its `index.mdx` is the landing page. When the wanted hierarchy differs from the directories, moving files is normally the first choice ([How to Structure Navigations](../getting-started/structuring-navigations.mdx)).
+- **A logical reclassification is not the same as a file move.** Moving a file changes its URL. Decide both separately.
+- **URLs that must stay** can be re-parented with an [editorial or umbrella tree](./editorial-navigation.mdx). These change only the paired header and sidebar. Breadcrumbs, the previous/next pager, search, the sitemap, and `<CategoryNav>` keep following the URL tree, so a sidebar change alone does not make them agree.
+- **`categoryMatch` is one top-level directory**, and a linked parent row stays a real category node. See [Header Navigation](./header-navigation.mdx) and [Sidebar](./sidebar.mdx).
+- **Note trays stay flat.** A [note tray](./note-tray.mdx) is a sequence such as a journal or a course. Many entries are not a reason to convert it into a topic tree; convert it only when readers need topic access that the sequence cannot give.
+- **Locale roots come from configuration.** Read `docsDir` and each `locales.<code>.dir` from `zfb.config.ts`. Version snapshots such as `docs-v1/` are not locales; do not restructure them along with current content ([Internationalization](./i18n.mdx), [Versioning](./versioning.mdx)).
+- **Generator-owned content** carries `generated: true` or is written by a resource generator such as [Claude Code Resources](./claude-resources.mdx). Reorganize its source or its settings, not the generated files.
+- **`defaultLocaleOnlyPrefixes`** lists paths that intentionally have no locale mirror ([Default-Locale-Only Prefixes](./i18n.mdx#default-locale-only-prefixes)).
+- **`draft` and `unlisted`** pages still count when you look for duplicates: `draft` pages are excluded from the build, and `unlisted` pages are built but hidden from navigation ([Frontmatter](./frontmatter.mdx)).
+
+## Worked Examples
+
+Each example names the input, the reasoning, and a short decision. The decisions are examples of reasoning, not a single correct tree.
+
+| Input | Reasoning | Decision |
+|-------|-----------|----------|
+| A fourth deployment target page for a `deploy/` category that already has three target pages | Same reader task (deploy to a host), the policy's boundary already covers it | Keep the structure; add the page with a one-line reason |
+| `guides/` gains five pages about writing plugins for the site's API, while it was defined as end-user how-tos | A distinct reader (plugin authors) with a distinct task; readers report they cannot find the plugin pages | Structure review: compare a new `plugins/` category, a nested `guides/plugins/` category, and an index page; choose by the reader problem, then by change size |
+| `reference/` also reaches twelve pages, all API reference entries of the same kind | Same count as above, but homogeneous content with no reader problem | Keep the structure; count alone is not a reason to split |
+| A request to write "How to configure search" when `guides/search.mdx` exists | Same reader task as an existing page | Update the existing page; no new page |
+| A page about authentication that matters to both setup and API usage | Cross-cutting content | One primary home (for example `guides/authentication.mdx`) plus related links from the API pages; do not copy the body |
+| A `notes/` note tray reaches 120 dated entries | The tray serves sequential reading; nobody reports a topic-access problem | Keep the note tray; consider tags or a topic index page if topic access becomes a real need |
+| A page belongs in another category, but its URL is linked from external sites | Correct category versus a public URL | Keep the file; re-parent with an editorial tree if needed, and record the exception in the policy. Do not move generated, locale-mirror, or version-snapshot files independently |
+| A typo fix in a page title | Wording only | No placement check, no review |
+| The same review requested again a week later with no new pages or reports | No new evidence | Keep the previous decision; say that nothing changed |
+
+## Adopting in a New Project
+
+A project created with [`create-zudo-doc`](../reference/create-zudo-doc.mdx) contains these files at the project root:
+
+| File | Role |
+|------|------|
+| `AUTHORING.md` | The editorial policy template. Fill it in; unfilled fields are undecided |
+| `README.md` | A short "Adding or reorganizing docs" section for people |
+| `CLAUDE.md` | A "Documentation structure" section for Claude Code |
+| `AGENTS.md` | The same pointer for Codex and other agents that read `AGENTS.md` |
+
+All three entry points name the same `AUTHORING.md`, which also holds the four questions and the minimal procedure, so the basic workflow works offline and without any optional feature. When the `claudeSkillsWriting` feature is enabled, the `zudo-doc-writing` skill adds detailed navigation rules and reads the same policy. When the `skillSymlinker` feature is enabled, the generated documentation skill's update mode also reads the policy before it writes ([Documentation Skill Symlinker](./doc-skill-symlinker.mdx)). When the Codex Resources or Claude Code Resources feature is enabled, the contents of `AGENTS.md` and `CLAUDE.md` are also published on the site as resource pages.
+
+Replace the placeholders in `AUTHORING.md` with your readers, scope, entry points, and category boundaries as you decide them.
+
+## Adopting in an Existing Project
+
+No migration command is needed. Work through these steps:
+
+1. **Inspect** `README.md`, `CLAUDE.md`, `AGENTS.md`, any nested instruction files, and any writing policy inside your documentation.
+2. **Choose one canonical policy.** Reuse what exists: a `CONTRIBUTING.md` section, an `AUTHORING.md`, or a page in your published docs. You do not need to create `AUTHORING.md` or rename an existing file.
+3. **Add only the missing reference sections.** Search each file for the policy path first. If a file already points to the policy, leave it alone. If the project uses Codex or another agent that reads `AGENTS.md` and has no `AGENTS.md` yet, create one that contains only the reference section. Never overwrite an instruction file wholesale.
+4. **Connect skills you use** — a hand-written writing skill or a copied `zudo-doc-writing` skill — to the same policy path.
+5. **Check the result**: every reference names a file that exists, there is only one canonical policy, no two files point at each other as the policy, and no reference uses an old path.
+
+### Where the Canonical Policy Can Live
+
+- **Outside the published content** (`AUTHORING.md` or `CONTRIBUTING.md`). Readers of the site never see it. Agents read it directly from the repository.
+- **Inside the published content**, for example `src/content/docs/contributing/authoring.mdx`. Contributors can read it on the site. In `CLAUDE.md` and `AGENTS.md`, reference the source file path, not only the site URL, so agents reach the local source without a network connection.
+
+### Reference Snippets
+
+Add a section like this to `CLAUDE.md` and `AGENTS.md`, replacing the path with your canonical policy:
+
+```md
+## Documentation structure
+
+Before adding a page, changing what a page is for, or changing a category, read
+`AUTHORING.md` (the project's editorial policy). Check for an existing page with
+the same role, the right category, and whether the change alters what a category
+means. Typo, wording, and formatting fixes skip this structure check.
+```
+
+Add a section like this to `README.md`:
+
+```md
+## Adding or reorganizing docs
+
+Read `AUTHORING.md` before adding pages or changing categories. It describes who
+the docs are for, what each category contains, and the steps for placing a new page.
+```
+
+## Keeping It Current
+
+These are separate operations; one does not perform another:
+
+- **Updating the `@takazudo/zudo-doc` package** updates the framework only. It does not touch `AUTHORING.md`, `README.md`, `CLAUDE.md`, `AGENTS.md`, or copied skills.
+- **Generating a new scaffold** writes the current templates once. Later template changes do not reach an existing project.
+- **Updating a distributed skill** means copying the newer skill into `.claude/skills/` by hand, or re-running `setup:doc-skill` for the generated documentation skill.
+- **Updating your policy** is an edit to your canonical file, made by your project's owners.
+
+When you move a category or the policy file, update the paths in `README.md`, `CLAUDE.md`, `AGENTS.md`, and any skill in the same change. Before applying advice from this page, check which zudo-doc version you use; features such as note trays and editorial trees require the version documented on their pages.
+
+## See Also
+
+- [Writing Docs](../getting-started/writing-docs.mdx) — per-page writing rules
+- [How to Structure Navigations](../getting-started/structuring-navigations.mdx) — designing the initial tree
+- [Editorial Navigation](./editorial-navigation.mdx) — re-parenting pages without moving URLs
+- [Claude Skills](./claude-skills.mdx) — the optional `zudo-doc-writing` skill

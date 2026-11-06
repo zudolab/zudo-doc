@@ -4,6 +4,12 @@ import { fileURLToPath } from "url";
 import type { UserChoices } from "./prompts.js";
 import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
+import {
+  AUTHORING_POLICY_FILE,
+  generateAgentsFile,
+  generateAuthoringFile,
+  generateReadmeFile,
+} from "./authoring-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
 import {
@@ -684,6 +690,22 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
   const claudeContent = generateCLAUDEFile(choices, localePlan);
   await fs.outputFile(path.join(targetDir, "CLAUDE.md"), claudeContent);
+
+  // The editorial policy and its two other entry points. Written before
+  // composeFeatures so a feature postProcess (mcp) appends to README.md
+  // instead of replacing it.
+  await fs.outputFile(
+    path.join(targetDir, AUTHORING_POLICY_FILE),
+    generateAuthoringFile(choices, localePlan),
+  );
+  await fs.outputFile(
+    path.join(targetDir, "AGENTS.md"),
+    generateAgentsFile(choices),
+  );
+  await fs.outputFile(
+    path.join(targetDir, "README.md"),
+    generateReadmeFile(choices),
+  );
 
   // 4. Compose features (copy feature files + inject into shared files)
   await composeFeatures(

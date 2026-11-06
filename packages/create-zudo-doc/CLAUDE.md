@@ -6,7 +6,7 @@ CLI scaffold tool for creating new zudo-doc documentation sites. Generates a pro
 
 ## Architecture (minimal-scaffold, epic zudolab/zudo-doc#2651 Wave 6 #2660)
 
-The generator emits the **locked ~18-file minimal manifest** — one config file
+The generator emits the **locked ~21-file minimal manifest** — one config file
 (`zfb.config.ts`, `zudoDoc({ ...only fields you chose })`) plus markdown
 content plus a handful of unavoidable root files. Everything else (layout,
 chrome, islands, default design-token custom properties, even the doc ROUTES themselves via
@@ -53,6 +53,7 @@ remain in parity for this value as well as the other preset-only options.
 | `src/compose.ts` | Composition engine: injection system (mostly unused now — see below), feature resolution |
 | `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches. 20 module files, 20 `featureModules` keys in `index.ts` — one of which (`footer`) is a pseudo-feature triggered by `footerNavGroup`/`footerCopyright`/`footerTaglist`. `sidebarFilter` has no module (built into the package's sidebar tree); `skillSymlinker`, `claudeSkills`, `claudeSkillsWriting`, and `changelog` are handled directly in `scaffold.ts` |
 | `src/zfb-config-gen.ts` | The SINGLE config generator — emits the one `zfb.config.ts` (`defineConfig(zudoDoc({...}))`), diff-from-defaults against a local mirror of `packages/zudo-doc/src/config.ts`'s `DEFAULT_SETTINGS`. Replaces the former `settings-gen.ts` + `zfb-config-gen.ts` two-file split — there is no more `src/config/settings.ts` in a fresh scaffold |
+| `src/authoring-gen.ts` | Generates the scaffold's editorial policy (`AUTHORING.md`) and its entry points (`README.md`, `AGENTS.md`, and the `Documentation structure` section shared with `CLAUDE.md`). The policy is the one canonical file; entry points only point to it and must not reference optional skills. Feature `postProcess` hooks append to `README.md` (mcp) rather than replace it |
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site, including the current zfb semantic-highlighting contract, chrome bindings, and binding-aware eject guidance |
 | `src/preset.ts` | Resolves a JSON `--preset` file (or CLI flags) into `UserChoices` — unrelated to the package's own `@takazudo/zudo-doc/preset`, despite the similar name |
 | `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the current Default light/dark scheme pairing |
@@ -66,7 +67,7 @@ remain in parity for this value as well as the other preset-only options.
 
 | Directory | Role |
 |-----------|------|
-| `templates/base/` | The static half of the locked ~18-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form), `scripts/check-links.js` (source-first link/anchor validation), `scripts/setup-doc-skill.sh`, and four `public/` favicon files. `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
+| `templates/base/` | The static half of the locked ~21-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form), `scripts/check-links.js` (source-first link/anchor validation), `scripts/setup-doc-skill.sh`, and four `public/` favicon files. `zfb.config.ts`/`package.json`/`CLAUDE.md`/`AGENTS.md`/`README.md`/`AUTHORING.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
 | `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Exactly five have a template directory: `claudeSkills` (skill copies, driven from `scaffold.ts`), `claudeSkillsWriting` (the zudo-doc-writing skill, also driven from `scaffold.ts`), `i18n` (locale doc stub), `tauri` and `tauriDev` (Rust shells). `tagGovernance` has **no** template directory — it writes one explicit tag vocabulary/config module inline in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
 
 ### Injection anchors — mostly retired

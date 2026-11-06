@@ -2,6 +2,7 @@ import type { UserChoices } from "./prompts.js";
 import type { LocalePlan } from "./locale-plan.js";
 import { resolveLocalePlan } from "./locale-plan.js";
 import { capitalize, getLangLabel, pmRunCommand } from "./utils.js";
+import { documentationStructureSection } from "./authoring-gen.js";
 
 /**
  * Generate the per-project `CLAUDE.md` (minimal-scaffold shape, epic
@@ -106,6 +107,9 @@ export function generateCLAUDEFile(
   lines.push(``);
   lines.push("```");
   lines.push(`zfb.config.ts             # THE one config file — zudoDoc({ ...only fields you chose })`);
+  lines.push(`AUTHORING.md              # editorial policy: readers, categories, placement procedure`);
+  lines.push(`AGENTS.md                 # pointer for Codex and other AGENTS.md readers`);
+  lines.push(`README.md                 # human entry point`);
   lines.push(`pages/`);
   lines.push(`├── index.tsx             # 1-line re-export of the package home route`);
   lines.push(`└── docs/[[...slug]].tsx  # self-contained doc-route stub (required for \`${pm} dev\`)`);
@@ -135,6 +139,8 @@ export function generateCLAUDEFile(
     `Everything else — layout, header, sidebar, footer, doc chrome, islands, and the default design tokens — lives in \`node_modules/@takazudo/zudo-doc\`. For supported markup replacement, create \`src/chrome-bindings.tsx\` with \`defineChromeBindings\`, set \`chromeBindingsModule\`, and use the primary \`Header\` / \`Footer\` / \`Sidebar\` / \`Toc\` / \`Breadcrumb\` / \`DocPager\` slots or the named \`headerRightComponents\` registry. The generated default, locale, and doc-history route shapes already consume the same binding object; do not fork a route stub for presentational customization. \`npx zudo-doc eject <component>\` only copies source: heed its primary, nested-chrome, or content-layer remediation before expecting the copy to render. Settings you didn't set explicitly in \`zfb.config.ts\` use the package's documented defaults — hover \`zudoDoc\`'s \`ZudoDocConfig\` argument in your editor to see every field and its \`@default\`.`,
   );
   lines.push(``);
+
+  lines.push(...documentationStructureSection());
 
   // Content conventions
   lines.push(`## Content Conventions`);

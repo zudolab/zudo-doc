@@ -112,7 +112,7 @@ packages/
 ├── search-worker/        # CF Worker search API (opt-in; the showcase does not deploy it)
 ├── doc-history-server/   # Doc history REST API + CLI generator
 ├── zudo-doc/             # Shared layout + integration package — owns chrome/routes/islands/plugins/preset
-└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~18-file minimal manifest
+└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~21-file minimal manifest
                           # (the zudo-doc-online app that used to live here was extracted to
                           # the private repo zudolab/zudo-doc-cloud — #3371)
 src/

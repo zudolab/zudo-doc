@@ -158,7 +158,10 @@ my-docs/
 ├── .gitignore              # node_modules, dist, .zfb
 ├── .npmrc                  # trust-policy-exclude[]=undici-types@6.21.0
 ├── pnpm-workspace.yaml     # minimumReleaseAge: 0 (disables pnpm 11's release-age gate)
-├── CLAUDE.md               # project notes for Claude Code
+├── AUTHORING.md            # editorial policy: readers, categories, placement steps
+├── README.md               # human entry point → AUTHORING.md
+├── CLAUDE.md               # project notes for Claude Code → AUTHORING.md
+├── AGENTS.md               # agent entry point for Codex and others → AUTHORING.md
 ├── package.json            # deps + dev/build/preview/check scripts
 ├── tsconfig.json           # 5-line extends of the package base config
 ├── zfb.config.ts           # the ONE config file — a zudoDoc({ … }) call
@@ -186,6 +189,7 @@ When additional locales are configured, the same `src/content/` tree also contai
 | `src/styles/global.css` | `@import`s the package's `theme.css` / `content.css` / `features.css` and leaves you a `:root { … }` block for token overrides. |
 | `src/content/docs/` | Your documentation, authored as MDX. The scaffold seeds a few `getting-started/` pages to replace. |
 | `pages/index.tsx`, `pages/docs/[[...slug]].tsx` | Thin route stubs — see below. |
+| `AUTHORING.md` | The project's editorial policy template. `README.md`, `CLAUDE.md`, and `AGENTS.md` point to it; see [Maintaining Documentation Structure](../guides/maintaining-documentation-structure.mdx). |
 
 ### Why so little?
 

@@ -34,6 +34,10 @@ JA mirrors the EN directory tree exactly. Exceptions below.
   repository currently configures no such prefixes; the legacy resource prefixes are not
   package or showcase defaults.
 
+## Adding pages or changing categories
+
+Before adding a page, changing what a page is for, or changing a category, run the placement check in the `zudo-doc-navigation-design` skill (four questions; a structure review only on evidence of conflict, duplication, a new reader-task cluster, or a findability problem). The full procedure is `guides/maintaining-documentation-structure.mdx`. Typo and wording fixes skip it.
+
 ## Navigation Structure
 
 By default, navigation is filesystem-driven — directory structure becomes sidebar navigation. Re-parenting existing pages without moving their URLs is an advanced chrome-bindings recipe (`guides/editorial-navigation.mdx`); prefer moving files. Write the intended tree and each destination's behavior before choosing configuration (`zudo-doc-navigation-design` skill).

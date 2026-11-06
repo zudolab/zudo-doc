@@ -69,6 +69,8 @@ pnpm create zudo-doc my-docs --claude-skills
 pnpm create zudo-doc my-docs --claude-skills-writing
 ```
 
+このスキルは、ナビゲーション規則より先にプロジェクトの編集方針 `AUTHORING.md` を読みます。すべてのscaffoldにこの方針が含まれ、`README.md`、`CLAUDE.md`、`AGENTS.md` がそこを指しているため、この機能が無効でも基本の配置手順は使えます。[文書構造を維持する](./maintaining-documentation-structure.mdx)を参照してください。
+
 <Tip>
 
 ドキュメントの大部分をAIエージェントに書かせる予定なら、この機能を有効にしてください — そして、ページを作成する前に`/zudo-doc-writing`を呼び出すようエージェントに指示してください。ナビゲーション計画のステップはエージェントが最も省略しがちで、かつ最も重要な部分です。

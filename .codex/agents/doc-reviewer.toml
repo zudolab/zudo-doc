@@ -7,5 +7,6 @@ Review the requested zudo-doc content and report findings before offering praise
 Check that the content follows the repository's CLAUDE.md guidance and uses the current project terminology.
 Verify examples against the surrounding source and flag commands or configuration that would not run here.
 Check titles, structure, clarity, accessibility, and completeness without rewriting unrelated files.
+For a new page or a changed page role, check for an existing page with the same reader task, the category choice, and whether the change alters what the category means, following src/content/docs/guides/maintaining-documentation-structure.mdx. Report only concrete reader problems; page count alone is not a finding. Skip this check for typo or wording-only changes.
 Group findings by severity and include a precise file and line reference for every actionable issue.
 """

@@ -136,14 +136,20 @@ describe("locale validation happens before scaffold I/O", () => {
 // The locked manifest (#2653 Decision 4 / #2660 completion comment).
 // ---------------------------------------------------------------------------
 
-/** The locked ~18-file barebone (EN-only) manifest. Grew from 12 to 13 with
+/** The locked ~21-file barebone (EN-only) manifest. Grew from 12 to 13 with
  *  pnpm-workspace.yaml (#2923 — disables pnpm 11's minimumReleaseAge gate),
- *  then from 13 to 17 with the default public/ favicon set (#3186), and to
- *  18 with the generated-project link checker (#3552). */
+ *  then from 13 to 17 with the default public/ favicon set (#3186), to
+ *  18 with the generated-project link checker (#3552), and to 21 with the
+ *  editorial policy (AUTHORING.md) and its README.md / AGENTS.md entry
+ *  points — an intended contract change: every scaffold, with every
+ *  optional feature off, carries one real policy file and three pointers. */
 const BAREBONE_MANIFEST = [
   ".gitignore",
   ".npmrc",
+  "AGENTS.md",
+  "AUTHORING.md",
   "CLAUDE.md",
+  "README.md",
   "package.json",
   "pages/docs/[[...slug]].tsx",
   "pages/index.tsx",
@@ -199,7 +205,7 @@ const ALL_FEATURES = [
   "noindex",
 ];
 
-describe("scaffold — barebone manifest (locked 18-file shape, #2653 Decision 4)", () => {
+describe("scaffold — barebone manifest (locked 21-file shape, #2653 Decision 4)", () => {
   let files: string[];
 
   beforeAll(async () => {
@@ -212,7 +218,7 @@ describe("scaffold — barebone manifest (locked 18-file shape, #2653 Decision 4
     await fs.remove(dir);
   });
 
-  it("emits EXACTLY the 18 locked-manifest files — no more, no less", () => {
+  it("emits EXACTLY the 21 locked-manifest files — no more, no less", () => {
     expect(files).toEqual(BAREBONE_MANIFEST);
   });
 });
@@ -1238,7 +1244,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 48-file set", async () => {
+  it("all-on scaffold emits exactly the expected 50-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -1253,6 +1259,8 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       ".claude/skills/zudo-doc-writing/SKILL.md",
       ".gitignore",
       ".npmrc",
+      "AGENTS.md",
+      "AUTHORING.md",
       "CLAUDE.md",
       "package.json",
       "pages/[locale]/docs/[[...slug]].tsx",
@@ -2014,7 +2022,10 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.scripts["preview:worker"]).toBeUndefined();
     expect(pkg.scripts.deploy).toBeUndefined();
     expect(files).not.toContain("wrangler.jsonc");
-    expect(files).not.toContain("README.md");
+    // README.md is part of every scaffold now; only MCP appends a deployment section.
+    expect(
+      await fs.readFile(path.join(project, "README.md"), "utf-8"),
+    ).not.toContain("Cloudflare MCP deployment");
   });
 
   it("emits the locked Cloudflare Worker preset only when MCP is enabled", async () => {
@@ -2087,7 +2098,6 @@ describe("scaffold — generated package.json", () => {
         .sort(),
     ).toEqual(["deploy", "preview:worker"]);
     expect(files.filter((file) => !baseFiles.includes(file))).toEqual([
-      "README.md",
       "scripts/stage-cloudflare-base.mjs",
       "wrangler.jsonc",
     ]);
@@ -2115,13 +2125,16 @@ describe("scaffold — generated package.json", () => {
     expect(readme).not.toContain("account_id");
     expect(readme).not.toContain("kv_namespaces");
     expect(readme).not.toContain("durable_objects");
+    // Scope to the MCP section: the base README's Develop section also names
+    // install/build and would otherwise satisfy the order check by itself.
+    const mcpSection = readme.slice(readme.indexOf("## Cloudflare MCP deployment"));
     const workflowOrder = [
-      readme.indexOf("pnpm install"),
-      readme.indexOf("pnpm build"),
-      readme.indexOf("pnpm preview:worker"),
-      readme.indexOf("wrangler login"),
-      readme.indexOf("pnpm deploy"),
-      readme.indexOf("### Connect an MCP client"),
+      mcpSection.indexOf("pnpm install"),
+      mcpSection.indexOf("pnpm build"),
+      mcpSection.indexOf("pnpm preview:worker"),
+      mcpSection.indexOf("wrangler login"),
+      mcpSection.indexOf("pnpm deploy"),
+      mcpSection.indexOf("### Connect an MCP client"),
     ];
     expect(workflowOrder.every((index) => index >= 0)).toBe(true);
     expect(workflowOrder).toEqual([...workflowOrder].sort((a, b) => a - b));

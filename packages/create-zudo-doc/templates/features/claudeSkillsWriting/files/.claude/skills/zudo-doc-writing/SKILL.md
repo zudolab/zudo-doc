@@ -1,12 +1,27 @@
 ---
 name: zudo-doc-writing
-description: "Doc-writing and navigation-structure guide for this zudo-doc project. Consult BEFORE creating pages, adding categories, designing header navigation, or writing/editing mdx content under src/content/. Covers: plan-the-nav-tree-first workflow, the recommended 3-level hierarchy (header → sidebar → nested), filesystem navigation as the default, linked versus heading-only category rows, category index pages, sidebar_position discipline, frontmatter schema, no-h1 rule, relative .mdx links, and admonition syntax. Triggered by 'write docs', 'add a page', 'create a page', 'add category', 'structure navigation', 'nav design', 'zudo-doc-writing'."
+description: "Doc-writing and navigation-structure guide for this zudo-doc project. Consult BEFORE creating pages, adding categories, designing header navigation, or writing/editing mdx content under src/content/. Covers: reading the AUTHORING.md editorial policy and its four placement questions, when to run a structure review, plan-the-nav-tree-first workflow, tree vs note-tray categories, the recommended 3-level hierarchy (header → sidebar → nested), filesystem navigation as the default, linked versus heading-only category rows, category index pages, sidebar_position discipline, frontmatter schema, no-h1 rule, relative .mdx links, and admonition syntax. Triggered by 'write docs', 'add a page', 'create a page', 'add category', 'structure navigation', 'nav design', 'zudo-doc-writing'."
 user-invocable: true
 ---
 
 # zudo-doc Writing & Navigation Guide
 
 **IMPORTANT**: Follow this guide strictly when creating or editing documentation in this project. AI tools that skip the navigation-planning step produce chaotic, hard-to-navigate doc structures almost every time — this skill exists to prevent exactly that.
+
+## The Project Policy Comes First
+
+This project's editorial policy is `AUTHORING.md` at the project root — the same file `README.md`, `CLAUDE.md`, and `AGENTS.md` point to. It records who the docs are for, what each category contains and excludes, and the project's URL, translation, and generated-content constraints. This skill adds zudo-doc's navigation mechanics on top of it; when the two disagree about a category, the policy wins. If the project moved its policy elsewhere, follow the path its `CLAUDE.md` names.
+
+- **Typo, wording, or formatting fix only** → skip everything below except the per-page writing rules.
+- **Adding a page, a new reader task or topic, or changing a page's role** → answer the policy's four questions before writing:
+  1. Who can do what with this content?
+  2. Does an existing page already serve that role? Prefer updating it over creating a near-duplicate.
+  3. Why this category, and is there a competing destination?
+  4. Does this addition change what the category means?
+- **Answers are clear** → place the page and report the placement reason in one line.
+- **Evidence of a category conflict, duplication, a new independent cluster of reader tasks, or a findability problem** → run the structure review described in the policy: write the concrete reader problem first, read the category map plus only the related or competing pages (say what you surveyed — a partial look is not a full audit), and compare adding to an existing page, improving while keeping the structure, a local reorganization, and related links or an index. Keep only options that solve the reader problem, then prefer the smaller change. Keeping the structure is a valid result. Never decide by page count or category balance.
+- **Recording** → only category meaning, important exceptions, and the reason for a reorganization that happened go into the policy, labeled [decision], [fact], or [hypothesis]. Leave TBD fields TBD instead of guessing, and do not reorganize the same category again without new evidence.
+- **Ask the owners** only when important goals conflict and the policy does not resolve it — for example, a published URL that must stay versus the correct category — and present the concrete options with their effects.
 
 ## Step 0 — Plan the Navigation Tree BEFORE Writing Anything
 
@@ -16,7 +31,7 @@ Never create pages one by one "wherever seems closest." Before writing the first
 2. Draw the full navigation tree (header items → sidebar categories → pages) as a plain-text outline.
 3. Only then create directories and files matching that tree exactly.
 
-When adding to an existing site, read the current tree under `src/content/docs/` first, draw it out, and place the new page where it fits the hierarchy — never skip this step.
+When adding to an existing site, read the current tree under `src/content/docs/` first, draw it out, and place the new page where it fits the hierarchy — never skip this step. Separate a *logical* reclassification from a *physical* file move: moving a file changes its URL, so check the policy's list of URLs that must stay before moving anything.
 
 Before choosing any navigation configuration, also write down how each destination behaves: which header section owns it (its URL's `categoryMatch`), what a fresh visit and **Restore** show in the sidebar, which branches start open, and how far **Broaden tree** may go. Choose the pattern from that list:
 
@@ -48,7 +63,16 @@ Each level narrows scope. Never jump levels — do not put a specific page direc
 
 **Consequence**: design the filesystem with navigation in mind from the start. When the wanted hierarchy differs from the directories, move the files.
 
-Editorial trees are supported for the case where existing URLs must stay but the sidebar needs different parents, including links to pages in other sections. That is an advanced chrome-bindings recipe (see the Editorial navigation link under Full Guides below); recommend it only when moving files is not an option.
+Editorial trees are supported for the case where existing URLs must stay but the sidebar needs different parents, including links to pages in other sections. That is an advanced chrome-bindings recipe (see the Editorial navigation link under Full Guides below); recommend it only when moving files is not an option. An editorial or umbrella tree changes only the paired header and sidebar: breadcrumbs, the previous/next pager, search, the sitemap, and `<CategoryNav>` keep following the URL tree, so a sidebar change alone does not make them agree.
+
+## Category Shapes — Tree or Note Tray
+
+Choose the shape before writing a category's `index.mdx`:
+
+- **Tree (default)** — a topic hierarchy that may contain subdirectories. Its `index.mdx` is a short intro plus `<CategoryNav category="<dir>" />`.
+- **Note tray** — a top-level, flat sequence such as a journal, course, or notebook. Declare `category_shape: "note-tray"` on a visible routed `index.mdx`, keep only direct child files, and use `<NoteTrayIndex />` instead of `<CategoryNav>`. Order always comes from `sidebar_position` plus `category_sort_order`. `note_tray_dated: true` requires a `date` on every child, including unlisted ones; `note_tray_sidebar` accepts `"index"`, `"year"`, or `"month"`, and the grouped styles need a dated tray.
+
+A note tray that holds many entries is still a sequence. Do not convert it into a topic tree because of its size; do that only when readers need topic access the sequence cannot give, and record the reason in the policy.
 
 ## Linked Parents vs Heading-Only Groups
 
@@ -237,10 +261,11 @@ already translated.
 Apply Japanese writing conventions only when the locale code is `ja`; do not
 infer Japanese guidance for another code.
 
-Two carve-outs — do NOT create additional-locale mirrors for these:
+Carve-outs — do NOT create additional-locale mirrors for these:
 
 - Pages with `generated: true` in frontmatter (build-generated content).
-- Paths listed in the `defaultLocaleOnlyPrefixes` setting in `zfb.config.ts` — default-locale-only by design (the Claude Resources and Codex Resources features, when enabled, register four `/docs/claude-*` prefixes and six `/docs/codex-*` prefixes there; their top-level `/docs/claude/` and `/docs/codex/` indexes remain bilingual).
+- Claude Resources and Codex Resources pages (when those features are enabled). Their generators write the overview and category indexes into the default and every configured locale directory themselves, and keep each resource detail page only in the default directory; locale routes show that body through fallback. Do not hand-write locale copies or locale index stubs — the generator refuses to overwrite an authored file at one of its index paths.
+- Paths listed in the `defaultLocaleOnlyPrefixes` setting in `zfb.config.ts`, if any — default-locale-only by design. It is empty unless you add prefixes; the resource features do not add any.
 
 ## Common Mistakes (Do Not Do)
 
@@ -257,9 +282,14 @@ Two carve-outs — do NOT create additional-locale mirrors for these:
 - **camelCase/PascalCase file names** — break on case-sensitive filesystems.
 - **Expecting a header dropdown or a list of section pages to create a sidebar parent** — both leave the sections as peers. Use an umbrella tree for complete sections under one landing page.
 - **Reorganizing navigation via config instead of moving files** — the filesystem is the default navigation; reach for an editorial tree only when URLs must stay.
+- **Using `<CategoryNav>` for a note tray, or turning a long note tray into a topic tree by count** — use `<NoteTrayIndex />`, and keep the sequence unless readers need topic access.
+- **Creating a near-duplicate page** — when an existing page serves the same reader task, update it.
+- **Copying a cross-cutting page's body into several categories** — give it one primary home and link to it from the others.
+- **Splitting or reorganizing by page count** — a large homogeneous category can be fine; reorganize only for a concrete reader problem.
 
 ## Checklist Before Creating Any Page
 
+- [ ] Have you read `AUTHORING.md` and answered its four questions?
 - [ ] Have you drawn (or re-read) the full navigation tree?
 - [ ] Which header category does the page belong under? (If none fits, add a header category or reconsider the page.)
 - [ ] Which sidebar section inside that header category?
@@ -271,8 +301,9 @@ Two carve-outs — do NOT create additional-locale mirrors for these:
 
 ## Full Guides
 
-The complete versions of this guidance (with more examples) are published in the zudo-doc showcase docs:
+The complete versions of this guidance (with more examples) are published in the zudo-doc showcase docs. They are optional reading: the project policy and this skill contain everything needed to place a page offline.
 
+- Maintaining documentation structure (placement checks, structure reviews, adoption): https://github.com/zudolab/zudo-doc/blob/main/src/content/docs/guides/maintaining-documentation-structure.mdx
 - Writing docs: https://zudo-doc.takazudomodular.com/docs/getting-started/writing-docs/
 - Structuring navigations: https://zudo-doc.takazudomodular.com/docs/getting-started/structuring-navigations/
 - Sidebar (category rows, sidebar configuration, scope recipes): https://zudo-doc.takazudomodular.com/docs/guides/sidebar/

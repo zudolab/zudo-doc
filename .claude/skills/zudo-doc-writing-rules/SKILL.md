@@ -139,7 +139,7 @@ All admonition components accept an optional `title` prop. (`caution` is danger-
 
 ## Recommended Workflow
 
-1. Decide *where* the page belongs (see `zudo-doc-navigation-design` for the category decision).
+1. Decide *where* the page belongs: for a new page or a changed role, run the four-question placement check in `zudo-doc-navigation-design` (skip it for typo/wording-only edits).
 2. Create the EN file under `src/content/docs/<category>/<page>.mdx` with `title` and `sidebar_position`.
 3. Write content starting with `## h2` headings only.
 4. Use `./` relative links with `.mdx` extension for cross-refs.
