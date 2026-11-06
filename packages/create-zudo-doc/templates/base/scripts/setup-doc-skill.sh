@@ -612,11 +612,23 @@ locale_link_name() {
   printf '%s\n' "$name"
 }
 
+# LOCALE_PRESENT holds the ONE existence decision per locale that the
+# guidance, the Japanese section, and generate_skill's symlink step all read,
+# so the three can never disagree (#4047). It tests MAIN_PROJECT_DIR, the tree
+# the locale symlinks target: testing ROOT_DIR from a linked worktree could
+# link or mention a directory main lacks, or skip one main has (#4702, as
+# #4698 for AUTHORING.md).
+LOCALE_PRESENT=()
 for locale_index in "${!LOCALE_CODES[@]}"; do
   locale_code="${LOCALE_CODES[$locale_index]}"
   locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
   locale_link="$(locale_link_name "$locale_code" "$locale_dir")"
   LOCALE_LINK_NAMES+=("$locale_link")
+  if [ -d "$MAIN_PROJECT_DIR/$locale_dir" ]; then
+    LOCALE_PRESENT+=("true")
+  else
+    LOCALE_PRESENT+=("false")
+  fi
 done
 
 locale_starter_note() {
@@ -628,18 +640,15 @@ locale_starter_note() {
 }
 
 # Build exact locale-map guidance for the generated skill. Entries come from
-# configured `locales`, but only when the directory exists on disk -- gated
-# by the SAME existence check generate_skill uses below before symlinking,
-# so the guidance can never point at a locale link that was never created
-# (#4047). The check tests MAIN_PROJECT_DIR, the tree the locale symlinks
-# target: testing ROOT_DIR from a linked worktree could link or mention a
-# directory main lacks, or skip one main has (#4702, as #4698 for AUTHORING.md).
+# configured `locales`, but only when LOCALE_PRESENT (above) says the
+# directory exists, so the guidance can never point at a locale link that was
+# never created (#4047).
 LOCALE_GUIDANCE="- \`$DEFAULT_LOCALE\` (default): \`${DOCS_DIR_REL%/}/\` — \`/docs/...\` ($(locale_starter_note "$DEFAULT_LOCALE"))"
 LOCALE_GUIDANCE+=$'\n'
 for locale_index in "${!LOCALE_CODES[@]}"; do
   locale_code="${LOCALE_CODES[$locale_index]}"
   locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
-  [ -d "$MAIN_PROJECT_DIR/$locale_dir" ] || continue
+  [ "${LOCALE_PRESENT[$locale_index]}" = "true" ] || continue
   locale_link="${LOCALE_LINK_NAMES[$locale_index]}"
   locale_note="$(locale_starter_note "$locale_code")"
   LOCALE_GUIDANCE+="- \`$locale_code\`: \`${locale_dir%/}/\` — \`/$locale_code/docs/...\` (${locale_note}); lookup link: \`$locale_link/\`"
@@ -654,10 +663,9 @@ if [ "$DEFAULT_LOCALE" = "ja" ]; then
 else
   for locale_index in "${!LOCALE_CODES[@]}"; do
     if [ "${LOCALE_CODES[$locale_index]}" = "ja" ]; then
-      locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
-      # Same existence check as the LOCALE_GUIDANCE loop above and
+      # Same LOCALE_PRESENT decision as the LOCALE_GUIDANCE loop above and
       # generate_skill's symlink step below (#4047).
-      [ -d "$MAIN_PROJECT_DIR/$locale_dir" ] || break
+      [ "${LOCALE_PRESENT[$locale_index]}" = "true" ] || break
       JA_DOCS_LINK="${LOCALE_LINK_NAMES[$locale_index]}"
       JA_DOCS_PATH="${LOCALE_DIR_RELS[$locale_index]}"
       break
@@ -760,10 +768,12 @@ generate_skill() {
     locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
     locale_link="${LOCALE_LINK_NAMES[$locale_index]}"
     locale_target="$MAIN_PROJECT_DIR/$locale_dir"
-    if [ -d "$locale_target" ]; then
+    if [ "${LOCALE_PRESENT[$locale_index]}" = "true" ]; then
       ensure_symlink "$skill_dir/$locale_link" "$locale_target"
       echo "  [$target] Created $locale_link symlink for $locale_code -> $locale_target"
     else
+      # Drop a link an earlier run left behind: SKILL.md no longer names it.
+      [ -L "$skill_dir/$locale_link" ] && rm "$skill_dir/$locale_link"
       echo "  [$target] Skipping $locale_code link; configured directory not found at $locale_target"
     fi
   done

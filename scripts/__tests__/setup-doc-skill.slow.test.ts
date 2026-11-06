@@ -1463,6 +1463,59 @@ describe("tracked-skill linking (#3156)", () => {
   });
 });
 
+/**
+ * Build a git repo with the project nested at `doc/`, commit it, and add a
+ * linked worktree at `wt/`. `populate` writes the main project's files
+ * before the commit, so the worktree starts as an identical checkout.
+ */
+function makeWorktreeFixture(
+  prefix: string,
+  branch: string,
+  populate: (projectDir: string) => void,
+): {
+  fixtureRoot: string;
+  fixtureHome: string;
+  projectDir: string;
+  worktreeProjectDir: string;
+} {
+  const fixtureRoot = mkdtempSync(
+    join(tmpdir(), `zudo-doc-${prefix}-fixture-`),
+  );
+  const fixtureHome = mkdtempSync(join(tmpdir(), `zudo-doc-${prefix}-home-`));
+  const projectDir = join(fixtureRoot, "doc");
+
+  execSync("git init -q", { cwd: fixtureRoot });
+  mkdirSync(join(projectDir, "scripts"), { recursive: true });
+  cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
+  populate(projectDir);
+  execSync("git add -A", { cwd: fixtureRoot });
+  execSync(
+    "git -c user.email=test@test.com -c user.name=test commit -q -m init",
+    { cwd: fixtureRoot },
+  );
+
+  const worktreeDir = join(fixtureRoot, "wt");
+  execSync(`git worktree add -q "${worktreeDir}" -b ${branch}`, {
+    cwd: fixtureRoot,
+  });
+  return {
+    fixtureRoot,
+    fixtureHome,
+    projectDir,
+    worktreeProjectDir: join(worktreeDir, "doc"),
+  };
+}
+
+function writeStarterDoc(projectDir: string, docsDir: string): void {
+  mkdirSync(join(projectDir, "src", "content", docsDir, "getting-started"), {
+    recursive: true,
+  });
+  writeFileSync(
+    join(projectDir, "src", "content", docsDir, "getting-started", "index.mdx"),
+    "---\ntitle: Test\n---\n",
+  );
+}
+
 describe("editorial-policy pointer across worktrees (#4698)", () => {
   // The generated SKILL.md is linked from the main worktree and names
   // MAIN_PROJECT_DIR paths, so the AUTHORING.md existence check must test that
@@ -1477,47 +1530,17 @@ describe("editorial-policy pointer across worktrees (#4698)", () => {
   const FALLBACK = "Read the project's editorial policy: the file that";
 
   function makeFixture({ mainHasPolicy }: { mainHasPolicy: boolean }): void {
-    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-policy-fixture-"));
-    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-policy-home-"));
-    projectDir = join(fixtureRoot, "doc");
-
-    execSync("git init -q", { cwd: fixtureRoot });
-    mkdirSync(join(projectDir, "scripts"), { recursive: true });
-    mkdirSync(join(projectDir, "src", "content", "docs", "getting-started"), {
-      recursive: true,
-    });
-    writeFileSync(
-      join(
-        projectDir,
-        "src",
-        "content",
-        "docs",
-        "getting-started",
-        "index.mdx",
-      ),
-      "---\ntitle: Test\n---\n",
-    );
-    cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
-    writeFileSync(
-      join(projectDir, "package.json"),
-      JSON.stringify({ name: "policy-fixture", scripts: {} }),
-    );
-    if (mainHasPolicy) {
-      writeFileSync(join(projectDir, "AUTHORING.md"), "# Authoring\n");
-    }
-    execSync("git add -A", { cwd: fixtureRoot });
-    execSync(
-      "git -c user.email=test@test.com -c user.name=test commit -q -m init",
-      {
-        cwd: fixtureRoot,
-      },
-    );
-
-    const worktreeDir = join(fixtureRoot, "wt");
-    execSync(`git worktree add -q "${worktreeDir}" -b policy-wt`, {
-      cwd: fixtureRoot,
-    });
-    worktreeProjectDir = join(worktreeDir, "doc");
+    ({ fixtureRoot, fixtureHome, projectDir, worktreeProjectDir } =
+      makeWorktreeFixture("policy", "policy-wt", (dir) => {
+        writeStarterDoc(dir, "docs");
+        writeFileSync(
+          join(dir, "package.json"),
+          JSON.stringify({ name: "policy-fixture", scripts: {} }),
+        );
+        if (mainHasPolicy) {
+          writeFileSync(join(dir, "AUTHORING.md"), "# Authoring\n");
+        }
+      }));
   }
 
   function runFromWorktree(): string {
@@ -1596,30 +1619,17 @@ describe("locale-directory gating across worktrees (#4702)", () => {
   const SKILL = "locale-wt-fixture-wisdom";
 
   function makeFixture({ mainHasJa }: { mainHasJa: boolean }): void {
-    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-locale-wt-fixture-"));
-    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-locale-wt-home-"));
-    projectDir = join(fixtureRoot, "doc");
-
-    execSync("git init -q", { cwd: fixtureRoot });
-    mkdirSync(join(projectDir, "scripts"), { recursive: true });
-    const locales = mainHasJa ? ["docs", "docs-ja"] : ["docs"];
-    for (const dir of locales) {
-      mkdirSync(join(projectDir, "src", "content", dir, "getting-started"), {
-        recursive: true,
-      });
-      writeFileSync(
-        join(projectDir, "src", "content", dir, "getting-started", "index.mdx"),
-        "---\ntitle: Test\n---\n",
-      );
-    }
-    cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
-    writeFileSync(
-      join(projectDir, "package.json"),
-      JSON.stringify({ name: "locale-wt-fixture", scripts: {} }),
-    );
-    writeFileSync(
-      join(projectDir, "zfb.config.ts"),
-      `import { defineConfig } from "zfb/config";
+    ({ fixtureRoot, fixtureHome, projectDir, worktreeProjectDir } =
+      makeWorktreeFixture("locale-wt", "locale-wt", (dir) => {
+        writeStarterDoc(dir, "docs");
+        if (mainHasJa) writeStarterDoc(dir, "docs-ja");
+        writeFileSync(
+          join(dir, "package.json"),
+          JSON.stringify({ name: "locale-wt-fixture", scripts: {} }),
+        );
+        writeFileSync(
+          join(dir, "zfb.config.ts"),
+          `import { defineConfig } from "zfb/config";
 import { zudoDoc } from "@takazudo/zudo-doc/config";
 
 export default defineConfig(zudoDoc({
@@ -1630,18 +1640,8 @@ export default defineConfig(zudoDoc({
   },
 }));
 `,
-    );
-    execSync("git add -A", { cwd: fixtureRoot });
-    execSync(
-      "git -c user.email=test@test.com -c user.name=test commit -q -m init",
-      { cwd: fixtureRoot },
-    );
-
-    const worktreeDir = join(fixtureRoot, "wt");
-    execSync(`git worktree add -q "${worktreeDir}" -b locale-wt`, {
-      cwd: fixtureRoot,
-    });
-    worktreeProjectDir = join(worktreeDir, "doc");
+        );
+      }));
   }
 
   function runFromWorktree(): { output: string; skillDir: string } {
@@ -1698,6 +1698,20 @@ export default defineConfig(zudoDoc({
     expect(() => lstatSync(join(skillDir, "docs-ja"))).toThrow();
     expect(skillMd).not.toContain("docs-ja");
     expect(skillMd).not.toContain("## Japanese Documentation");
+  });
+
+  it("removes a locale link an earlier run left once main no longer has the directory", () => {
+    makeFixture({ mainHasJa: true });
+    const first = runFromWorktree();
+    expect(lstatSync(join(first.skillDir, "docs-ja")).isSymbolicLink()).toBe(
+      true,
+    );
+
+    rmSync(join(projectDir, "src", "content", "docs-ja"), { recursive: true });
+    const { output, skillDir } = runFromWorktree();
+
+    expect(output).toContain("Skipping ja link");
+    expect(() => lstatSync(join(skillDir, "docs-ja"))).toThrow();
   });
 });
 
