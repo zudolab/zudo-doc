@@ -178,8 +178,24 @@ if [ "$SKILL_NAME" = "$DEFAULT_SKILL_NAME" ] && [ "$DEFAULT_SKILL_NAME" != "$LEG
 fi
 
 # Resolve the main repo root (handles git worktrees correctly)
-# Use the main worktree path so symlinks survive worktree removal
-REPO_ROOT="$(git -C "$ROOT_DIR" worktree list | head -1 | awk '{print $1}')"
+# Use the main worktree path so symlinks survive worktree removal. Read the
+# porcelain form: the plain listing is space-separated, so a checkout path
+# containing a space would be cut short (#4705). When the main entry is a bare
+# repository it has no checkout to link into, so fall back to the current
+# worktree's top level.
+WORKTREE_PORCELAIN="$(git -C "$ROOT_DIR" worktree list --porcelain)"
+REPO_ROOT=""
+MAIN_WORKTREE_IS_BARE="false"
+while IFS= read -r porcelain_line; do
+  [ -z "$porcelain_line" ] && break
+  case "$porcelain_line" in
+    "worktree "*) REPO_ROOT="${porcelain_line#worktree }" ;;
+    bare) MAIN_WORKTREE_IS_BARE="true" ;;
+  esac
+done <<< "$WORKTREE_PORCELAIN"
+if [ "$MAIN_WORKTREE_IS_BARE" = "true" ] || [ -z "$REPO_ROOT" ]; then
+  REPO_ROOT="$(git -C "$ROOT_DIR" rev-parse --show-toplevel)"
+fi
 
 # Path from the repository root to the project directory: "" at the repo
 # root, "doc/" (trailing slash) when the project lives in a subdirectory
@@ -488,8 +504,11 @@ while IFS=$'\t' read -r record_type record_value record_extra; do
   esac
 done <<< "$CONFIG_LOCALE_DATA"
 
-DOCS_DIR="$ROOT_DIR/$DOCS_DIR_REL"
-REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}${DOCS_DIR_REL}"
+# Validate and enumerate the same tree the docs symlink targets (main), not
+# the worktree the script runs from, so the category list in SKILL.md matches
+# what the link shows (#4704, as #4698/#4702 for AUTHORING.md and locales).
+REPO_DOCS_DIR="$MAIN_PROJECT_DIR/$DOCS_DIR_REL"
+DOCS_DIR="$REPO_DOCS_DIR"
 
 # Validate docs directory exists
 if [ ! -d "$DOCS_DIR" ]; then
