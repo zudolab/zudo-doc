@@ -158,7 +158,10 @@ my-docs/
 ├── .gitignore              # node_modules, dist, .zfb
 ├── .npmrc                  # trust-policy-exclude[]=undici-types@6.21.0
 ├── pnpm-workspace.yaml     # minimumReleaseAge: 0 (disables pnpm 11's release-age gate)
-├── CLAUDE.md               # project notes for Claude Code
+├── AUTHORING.md            # editorial policy: readers, categories, placement steps
+├── README.md               # human entry point → AUTHORING.md
+├── CLAUDE.md               # project notes for Claude Code → AUTHORING.md
+├── AGENTS.md               # agent entry point for Codex and others → AUTHORING.md
 ├── package.json            # deps + dev/build/preview/check scripts
 ├── tsconfig.json           # 5-line extends of the package base config
 ├── zfb.config.ts           # the ONE config file — a zudoDoc({ … }) call
@@ -186,6 +189,7 @@ my-docs/
 | `src/styles/global.css` | パッケージの `theme.css` / `content.css` / `features.css` を `@import` し、トークン上書き用に `:root { … }` ブロックを残します。 |
 | `src/content/docs/` | MDX で書くドキュメント本体。スキャフォールドは差し替え用に `getting-started/` ページをいくつかシードします。 |
 | `pages/index.tsx`, `pages/docs/[[...slug]].tsx` | 薄いルートスタブ — 下記を参照。 |
+| `AUTHORING.md` | プロジェクトの編集方針のひな形。`README.md`、`CLAUDE.md`、`AGENTS.md` がここを指します。[文書構造を維持する](../guides/maintaining-documentation-structure.mdx)を参照してください。 |
 
 ### なぜこんなに少ないのか
 

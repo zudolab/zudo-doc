@@ -67,6 +67,8 @@ Once set up, use the skill in any Claude Code session:
 
 Claude will look up the relevant documentation article and use it to answer your question. In Codex, mention the skill by name when asking about this documentation. This works from any project directory because the skill is symlinked globally.
 
+Pass `-u` (or `--update`) to add or update documentation instead of looking it up. Before writing, update mode reads the project's editorial policy (`AUTHORING.md` when it exists, otherwise the policy your instruction files name) and answers the four placement questions from [Maintaining Documentation Structure](./maintaining-documentation-structure.mdx). Lookup mode only reads the articles it needs; it never audits the whole site.
+
 ### Example Workflow
 
 Suppose you're building a site with zudo-doc and want to know how to configure the footer:

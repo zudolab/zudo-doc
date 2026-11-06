@@ -69,6 +69,8 @@ Select **Claude skills (writing)** in the interactive prompts, or pass the CLI f
 pnpm create zudo-doc my-docs --claude-skills-writing
 ```
 
+The skill reads the project's editorial policy, `AUTHORING.md`, before its navigation rules. Every scaffold ships that policy and points `README.md`, `CLAUDE.md`, and `AGENTS.md` at it, so the basic placement procedure works even with this feature off. See [Maintaining Documentation Structure](./maintaining-documentation-structure.mdx).
+
 <Tip>
 
 If you plan to let an AI agent write most of your documentation, enable this feature — then tell the agent to invoke `/zudo-doc-writing` before it creates pages. The nav-planning step is the part agents skip most often, and the one that matters most.

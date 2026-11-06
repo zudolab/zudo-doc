@@ -15,8 +15,20 @@ This skill is the short version. The authoritative guides are:
 - `src/content/docs/getting-started/structuring-navigations.mdx` — choosing a pattern (decision table) and the gaming-wiki walkthrough.
 - `src/content/docs/guides/sidebar.mdx` — category rows, sidebar item semantics, `initialPath`/`initialPathMode`, `scopeRoot`, and scope recipes.
 - `src/content/docs/guides/editorial-navigation.mdx` — the advanced recipes for re-parenting existing pages without moving their URLs: a curated editorial tree, and an umbrella tree that keeps complete sections under one linked landing page.
+- `src/content/docs/guides/maintaining-documentation-structure.mdx` — the placement check, when a structure review is warranted, how to compare keeping versus reorganizing, and how a project records its editorial policy.
 
 Link to those guides instead of copying their advanced implementation into another file.
+
+## Placement Check Before Adding or Re-scoping Content
+
+Typo, wording, and formatting fixes need no placement check. When a change adds a page, adds a new reader task or topic, or changes a page's role, answer four questions first:
+
+1. Who can do what with this content?
+2. Does an existing page already serve that role? (Prefer updating it.)
+3. Why this category, and is there a competing destination?
+4. Does this addition change what the category means?
+
+Clear answers → place the page and report the reason in one line. Evidence of a category conflict, duplication, a new independent cluster of reader tasks, or a findability problem → structure review: write the concrete reader problem, read the category map plus only the related or competing pages (say what you surveyed), and compare adding to an existing page, improving while keeping the structure, a local reorganization, and related links or an index. Keep the options that solve the problem, then prefer the smaller change; keeping the structure is a valid outcome. Never decide by page count or balance, and do not re-reorganize a category without new evidence. Distinguish a logical reclassification from a file move (which changes the URL).
 
 ## Write the Intended Tree Before Choosing Configuration
 
@@ -140,7 +152,7 @@ Before creating any new category directory:
 - [ ] Does it need a header nav entry, or is it a nested sidebar category inside an existing header entry?
 - [ ] Have you chosen tree vs note-tray shape and created `index.mdx` with the matching list component, a short intro, and `sidebar_position`?
 - [ ] If you added a header entry, does its `categoryMatch` value equal the new top-level directory name (single segment)?
-- [ ] Does the new category have at least 3 pages? Fewer than 3 usually means the pages belong under a broader category instead.
+- [ ] Does it serve a reader task that no existing category is defined for? Page count alone is not a reason to create or split a category — a small category with a distinct reader task can be right, and a large homogeneous one can stay whole.
 
 ## Common Mistakes (Do Not Do)
 

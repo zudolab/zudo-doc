@@ -208,7 +208,7 @@ After fixes:
 | `packages/create-zudo-doc/src/features/index.ts` | Registers every feature module |
 | `packages/create-zudo-doc/src/scaffold.ts` | Orchestrates generation pipeline, generates `package.json`, `.gitignore`, `.npmrc`, seeds starter content |
 | `packages/create-zudo-doc/src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` |
-| `packages/create-zudo-doc/templates/base/` | The locked ~18-file (barebone) minimal manifest's static half — 10 files, no `@slot:` anchors |
+| `packages/create-zudo-doc/templates/base/` | The locked ~21-file (barebone) minimal manifest's static half — 10 files, no `@slot:` anchors |
 | `packages/create-zudo-doc/templates/features/` | Feature-specific files copied when a feature is enabled — only `i18n`, `tagGovernance`, `tauri`, `tauriDev` still have any |
 | `packages/zudo-doc/src/preset.ts` | `zudoDocPreset()` — wires plugins/collections/markdown from settings fields; the generator never wires plugins directly |
 | `packages/create-zudo-doc/src/__tests__/scaffold.test.ts` | Manifest-shape assertions (exact 12-file barebone list, exact all-on list, settings-drift guard) |

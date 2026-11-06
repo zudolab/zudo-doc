@@ -3,7 +3,7 @@ import fs from "fs-extra";
 import path from "path";
 import type { FeatureModule } from "../compose.js";
 import type { UserChoices } from "../prompts.js";
-import { capitalize, pmRunCommand } from "../utils.js";
+import { pmRunCommand } from "../utils.js";
 
 // zfb writes prerendered routes and bundle assets flat under dist even when
 // `base` prefixes their URLs. Wrangler serves dist literally, so a site and
@@ -92,17 +92,12 @@ function cloudflareWorkerName(projectName: string): string {
   return prefix + "-" + suffix;
 }
 
-function generateMcpReadme(choices: UserChoices): string {
-  const siteName = capitalize(choices.projectName.replace(/-/g, " "));
+function generateMcpReadmeSection(choices: UserChoices): string {
   const build = pmRunCommand(choices.packageManager, "build");
   const verify = pmRunCommand(choices.packageManager, "preview:worker");
   const deploy = pmRunCommand(choices.packageManager, "deploy");
 
   return [
-    "# " + siteName,
-    "",
-    "Documentation site generated with the zudo-doc framework.",
-    "",
     "## Cloudflare MCP deployment",
     "",
     "This project enables the read-only <code>search</code> and <code>fetch</code> MCP tools for the current published documentation. It also builds the static agent documentation feed under <code>/agent/v1/</code> relative to the configured site base; that feed can be published separately as static files.",
@@ -163,9 +158,16 @@ export const mcpFeature: FeatureModule = (choices) => ({
       path.join(targetDir, "wrangler.jsonc"),
       wranglerConfig(choices),
     );
+    // The base README.md (with the documentation-policy pointer) is written
+    // before features compose; append the deployment section to it.
+    const readmePath = path.join(targetDir, "README.md");
+    const baseReadme = (await fs.pathExists(readmePath))
+      ? await fs.readFile(readmePath, "utf-8")
+      : "";
     await fs.outputFile(
-      path.join(targetDir, "README.md"),
-      generateMcpReadme(choices),
+      readmePath,
+      (baseReadme ? baseReadme.replace(/\n*$/, "\n\n") : "") +
+        generateMcpReadmeSection(choices),
     );
     await fs.outputFile(
       path.join(targetDir, "scripts/stage-cloudflare-base.mjs"),

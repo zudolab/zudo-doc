@@ -699,6 +699,16 @@ fi
 # package.json, #2918).
 VERIFY_STEP="Run \`pnpm build\` from \`$MAIN_PROJECT_DIR\` to confirm the site builds correctly."
 
+# Name the project's editorial policy when it uses the scaffold default
+# (AUTHORING.md); otherwise defer to whatever policy the instruction files
+# name. The four placement questions are embedded either way so Update mode
+# never depends on a network connection.
+if [ -f "$ROOT_DIR/AUTHORING.md" ]; then
+  POLICY_STEP="Read the editorial policy \`$MAIN_PROJECT_DIR/AUTHORING.md\` (categories, boundaries, URL and translation constraints)."
+else
+  POLICY_STEP="Read the project's editorial policy: the file that \`CLAUDE.md\`, \`AGENTS.md\`, or \`README.md\` in \`$MAIN_PROJECT_DIR\` names for adding or organizing docs. If none is named, treat category boundaries as undecided and rely on the questions below."
+fi
+
 resolve_targets() {
   case "$TARGET_MODE" in
     claude) echo "claude" ;;
@@ -795,9 +805,23 @@ The user has new information and wants to add or update documentation in this re
    document. The topic keyword (if provided) hints at the subject area.
 2. **Find existing docs**: Search the default \`docs/\` directory or the exact configured locale link for articles related to
    the topic. Read them to understand what is already covered.
-3. **Decide create vs update**: If an existing article covers the topic, update
-   it. Otherwise, create a new \`.mdx\` file in the appropriate subdirectory.
-4. **Write the content**: Follow the doc-authoring rules in this project's CLAUDE.md (\`$MAIN_PROJECT_DIR/CLAUDE.md\`):
+3. **Check placement**: Skip this step for a typo, wording, or formatting fix.
+   Otherwise: ${POLICY_STEP} Then answer:
+   1. Who can do what with this content?
+   2. Does an existing article already serve that role?
+   3. Why this category, and is there a competing destination?
+   4. Does this addition change what the category means?
+   If the answers are clear, report the placement reason in one line. Only
+   when there is evidence of a category conflict, duplication, a new cluster
+   of reader tasks, or a findability problem, write the concrete reader
+   problem and compare updating an existing article, improving while keeping
+   the structure, a local reorganization, and related links or an index —
+   keep the options that solve the problem, then prefer the smaller change.
+   Read only the related or competing articles, and say what you surveyed.
+   Keeping the structure is a valid result; do not decide by page count.
+4. **Decide create vs update**: If an existing article covers the topic, update
+   it. Otherwise, create a new \`.mdx\` file in the subdirectory chosen above.
+5. **Write the content**: Follow the doc-authoring rules in this project's CLAUDE.md (\`$MAIN_PROJECT_DIR/CLAUDE.md\`):
    - Required frontmatter: \`title\` (string). Always set \`sidebar_position\`.
      Optional: \`description\`, \`sidebar_label\`, \`tags\`, etc.
    - Do NOT use \`# h1\` in content — the frontmatter \`title\` renders as h1.
@@ -806,7 +830,7 @@ The user has new information and wants to add or update documentation in this re
      \`<Danger>\`, \`<HtmlPreview>\`) where appropriate.
    - For live demos, use \`<HtmlPreview>\` with \`js\`/\`displayJs\` props.
    - Link to other docs using relative paths with \`.mdx\` extension.
-5. **Update configured locale docs**: For every additional locale listed below,
+6. **Update configured locale docs**: For every additional locale listed below,
    create or update the corresponding file under its exact configured directory,
    mirroring the default directory structure. Keep code blocks, Mermaid
    diagrams, and \`<HtmlPreview>\` blocks identical — only translate surrounding
@@ -814,8 +838,8 @@ The user has new information and wants to add or update documentation in this re
    conventions. Other non-EN locales currently contain English placeholder prose
    pending translation; do not claim they are already translated. Exception:
    pages with \`generated: true\` skip translation.
-6. **Format**: ${FORMAT_STEP}
-7. **Verify**: ${VERIFY_STEP}
+7. **Format**: ${FORMAT_STEP}
+8. **Verify**: ${VERIFY_STEP}
 
 ## Documentation Structure
 
