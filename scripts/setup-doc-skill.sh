@@ -702,8 +702,11 @@ VERIFY_STEP="Run \`pnpm build\` from \`$MAIN_PROJECT_DIR\` to confirm the site b
 # Name the project's editorial policy when it uses the scaffold default
 # (AUTHORING.md); otherwise defer to whatever policy the instruction files
 # name. The four placement questions are embedded either way so Update mode
-# never depends on a network connection.
-if [ -f "$ROOT_DIR/AUTHORING.md" ]; then
+# never depends on a network connection. Test the same tree the pointer
+# names (MAIN_PROJECT_DIR, like every other path in the skill text): checking
+# ROOT_DIR from a linked worktree could name a file main lacks, or drop a
+# pointer main has (#4698).
+if [ -f "$MAIN_PROJECT_DIR/AUTHORING.md" ]; then
   POLICY_STEP="Read the editorial policy \`$MAIN_PROJECT_DIR/AUTHORING.md\` (categories, boundaries, URL and translation constraints)."
 else
   POLICY_STEP="Read the project's editorial policy: the file that \`CLAUDE.md\`, \`AGENTS.md\`, or \`README.md\` in \`$MAIN_PROJECT_DIR\` names for adding or organizing docs. If none is named, treat category boundaries as undecided and rely on the questions below."

@@ -1462,6 +1462,127 @@ describe("tracked-skill linking (#3156)", () => {
   });
 });
 
+describe("editorial-policy pointer across worktrees (#4698)", () => {
+  // The generated SKILL.md is linked from the main worktree and names
+  // MAIN_PROJECT_DIR paths, so the AUTHORING.md existence check must test that
+  // same tree -- not the linked worktree the script happens to run from.
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+  let worktreeProjectDir: string;
+
+  const SKILL = "policy-fixture-wisdom";
+  const POINTER = "Read the editorial policy";
+  const FALLBACK = "Read the project's editorial policy: the file that";
+
+  function makeFixture({ mainHasPolicy }: { mainHasPolicy: boolean }): void {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-policy-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-policy-home-"));
+    projectDir = join(fixtureRoot, "doc");
+
+    execSync("git init -q", { cwd: fixtureRoot });
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    mkdirSync(join(projectDir, "src", "content", "docs", "getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(
+        projectDir,
+        "src",
+        "content",
+        "docs",
+        "getting-started",
+        "index.mdx",
+      ),
+      "---\ntitle: Test\n---\n",
+    );
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: "policy-fixture", scripts: {} }),
+    );
+    if (mainHasPolicy) {
+      writeFileSync(join(projectDir, "AUTHORING.md"), "# Authoring\n");
+    }
+    execSync("git add -A", { cwd: fixtureRoot });
+    execSync(
+      "git -c user.email=test@test.com -c user.name=test commit -q -m init",
+      {
+        cwd: fixtureRoot,
+      },
+    );
+
+    const worktreeDir = join(fixtureRoot, "wt");
+    execSync(`git worktree add -q "${worktreeDir}" -b policy-wt`, {
+      cwd: fixtureRoot,
+    });
+    worktreeProjectDir = join(worktreeDir, "doc");
+  }
+
+  function runFromWorktree(): string {
+    execSync(
+      `bash "${join(worktreeProjectDir, "scripts", "setup-doc-skill.sh")}"`,
+      {
+        cwd: worktreeProjectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    return readFileSync(
+      join(worktreeProjectDir, ".claude", "skills", SKILL, "SKILL.md"),
+      "utf-8",
+    );
+  }
+
+  afterEach(() => {
+    for (const dir of [fixtureRoot, fixtureHome]) {
+      if (dir && existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the pointer when main has AUTHORING.md but the linked worktree does not", () => {
+    makeFixture({ mainHasPolicy: true });
+    rmSync(join(worktreeProjectDir, "AUTHORING.md"));
+
+    const skillMd = runFromWorktree();
+    expect(skillMd).toContain(
+      `${POINTER} \`${realpathSync(projectDir)}/AUTHORING.md\``,
+    );
+    expect(skillMd).not.toContain(FALLBACK);
+    expect(skillMd).not.toContain(
+      `${realpathSync(worktreeProjectDir)}/AUTHORING.md`,
+    );
+  });
+
+  it("names AUTHORING.md from the primary checkout when it exists", () => {
+    makeFixture({ mainHasPolicy: true });
+    execSync(`bash "${join(projectDir, "scripts", "setup-doc-skill.sh")}"`, {
+      cwd: projectDir,
+      encoding: "utf-8",
+      timeout: 30_000,
+      env: scriptEnv(fixtureHome),
+    });
+    const skillMd = readFileSync(
+      join(projectDir, ".claude", "skills", SKILL, "SKILL.md"),
+      "utf-8",
+    );
+    expect(skillMd).toContain(
+      `${POINTER} \`${realpathSync(projectDir)}/AUTHORING.md\``,
+    );
+  });
+
+  it("falls back instead of naming a missing file when only the linked worktree has AUTHORING.md", () => {
+    makeFixture({ mainHasPolicy: false });
+    writeFileSync(join(worktreeProjectDir, "AUTHORING.md"), "# Authoring\n");
+
+    const skillMd = runFromWorktree();
+    expect(skillMd).toContain(FALLBACK);
+    expect(skillMd).not.toContain(POINTER + " `");
+    expect(existsSync(join(projectDir, "AUTHORING.md"))).toBe(false);
+  });
+});
+
 /**
  * Locate a genuine bash 3.2 binary. Stock macOS still ships 3.2.57 at
  * /bin/bash, which is the shell a `pnpm setup:doc-skill` on a fresh Mac
