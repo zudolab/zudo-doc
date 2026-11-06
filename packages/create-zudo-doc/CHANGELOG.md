@@ -8,6 +8,22 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.3] - 2026-11-06
+
+### Features
+
+- Every generated project now ships an editorial policy: `AUTHORING.md` (readers, scope, categories pre-filled from the scaffold's choices, and a minimal page-placement procedure), plus an `AGENTS.md` pointer and a `README.md` entry point that both lead to it. The generated `CLAUDE.md` gains a "Documentation structure" section pointing at the same file. (0d162828, 947aa27f)
+- The scaffolded `zudo-doc-writing` skill reads `AUTHORING.md` first and runs placement checks before adding pages; `setup-doc-skill.sh` Update mode gains a placement check that folds the create-vs-update decision into it. (0d162828, 947aa27f)
+
+### Bug Fixes
+
+- Generated projects pin the ZFB 5.2.2 family, bringing client-router fixes for form submission (native encoding, form ownership, shadowed form properties, submit activation) and SVG/xlink URL resolution against the document base. Framework and history-server pins advance together to `^9.1.3`. (3e7f4620)
+- With the MCP feature enabled, the Cloudflare deployment section is appended to the generated `README.md` instead of replacing it. (0d162828, 947aa27f)
+
+### Other Changes
+
+- Generated Cloudflare projects pin Wrangler 4.158.0, satisfying the release-time scaffold freshness check. (3e7f4620)
+
 ## [9.1.2] - 2026-11-03
 
 ### Bug Fixes
