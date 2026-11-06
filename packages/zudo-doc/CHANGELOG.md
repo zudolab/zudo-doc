@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.3] - 2026-11-06
+
+### Bug Fixes
+
+- Require the ZFB 5.2.2 family (`^5.2.2`) so client navigation submits forms like the browser does (native and `text/plain` encoding, URL-encoded entries with filenames and newline normalization, form ownership for adopted and external submitters, controls that shadow built-in form properties) and resolves SVG/xlink URLs against the document base. (3e7f4620)
+
 ## [9.1.2] - 2026-11-03
 
 ### Bug Fixes
