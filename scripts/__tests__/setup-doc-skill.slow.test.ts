@@ -1715,6 +1715,164 @@ export default defineConfig(zudoDoc({
   });
 });
 
+describe("default docs directory across worktrees (#4704)", () => {
+  // The docs symlink targets main's docs dir, so the category list written
+  // into SKILL.md must come from that same tree, not the linked worktree.
+  let fx: ReturnType<typeof makeWorktreeFixture> | undefined;
+
+  afterEach(() => {
+    for (const dir of [fx?.fixtureRoot, fx?.fixtureHome]) {
+      if (dir && existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+    }
+    fx = undefined;
+  });
+
+  it("lists main's categories, not a category only the linked worktree has", () => {
+    fx = makeWorktreeFixture("docs-wt", "docs-wt", (dir) => {
+      writeStarterDoc(dir, "docs");
+      writeFileSync(
+        join(dir, "package.json"),
+        JSON.stringify({ name: "docs-wt-fixture", scripts: {} }),
+      );
+    });
+    mkdirSync(
+      join(fx.worktreeProjectDir, "src", "content", "docs", "worktree-only"),
+      { recursive: true },
+    );
+
+    execSync(
+      `bash "${join(fx.worktreeProjectDir, "scripts", "setup-doc-skill.sh")}" --target claude docs-wt-wisdom`,
+      {
+        cwd: fx.worktreeProjectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fx.fixtureHome),
+      },
+    );
+    const skillDir = join(
+      fx.worktreeProjectDir,
+      ".claude",
+      "skills",
+      "docs-wt-wisdom",
+    );
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(fx.projectDir, "src", "content", "docs")),
+    );
+    expect(skillMd).toContain("- getting-started/");
+    expect(skillMd).not.toContain("worktree-only/");
+  });
+});
+
+describe("main-worktree resolution (#4705)", () => {
+  let tempDirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of tempDirs) {
+      if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+    }
+    tempDirs = [];
+  });
+
+  function populate(dir: string): void {
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SCRIPT_PATH, join(dir, "scripts", "setup-doc-skill.sh"));
+    writeStarterDoc(dir, "docs");
+    writeStarterDoc(dir, "docs-ja");
+    writeFileSync(join(dir, "AUTHORING.md"), "# Authoring\n");
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "root-fixture", scripts: {} }),
+    );
+    writeFileSync(
+      join(dir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+}));
+`,
+    );
+  }
+
+  function commitAll(cwd: string): void {
+    execSync("git add -A", { cwd });
+    execSync(
+      "git -c user.email=test@test.com -c user.name=test commit -q -m init",
+      { cwd },
+    );
+  }
+
+  function runSetup(projectDir: string, home: string): string {
+    execSync(
+      `bash "${join(projectDir, "scripts", "setup-doc-skill.sh")}" --target claude root-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(home),
+      },
+    );
+    return join(projectDir, ".claude", "skills", "root-wisdom");
+  }
+
+  it("keeps the full main path when it contains a space", () => {
+    const parent = mkdtempSync(join(tmpdir(), "zudo-doc-space-fixture-"));
+    const home = mkdtempSync(join(tmpdir(), "zudo-doc-space-home-"));
+    tempDirs.push(parent, home);
+    const projectDir = join(parent, "My Docs");
+    mkdirSync(projectDir);
+    execSync("git init -q", { cwd: projectDir });
+    populate(projectDir);
+    commitAll(projectDir);
+
+    const skillDir = runSetup(projectDir, home);
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(projectDir, "src", "content", "docs")),
+    );
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(projectDir, "src", "content", "docs-ja")),
+    );
+    expect(skillMd).toContain(
+      `Read the editorial policy \`${realpathSync(projectDir)}/AUTHORING.md\``,
+    );
+  });
+
+  it("falls back to the current worktree when the main entry is a bare repository", () => {
+    const parent = mkdtempSync(join(tmpdir(), "zudo-doc-bare-fixture-"));
+    const home = mkdtempSync(join(tmpdir(), "zudo-doc-bare-home-"));
+    tempDirs.push(parent, home);
+    const seed = join(parent, "seed");
+    mkdirSync(seed);
+    execSync("git init -q", { cwd: seed });
+    populate(seed);
+    commitAll(seed);
+    const bare = join(parent, "repo.git");
+    execSync(`git clone -q --bare "${seed}" "${bare}"`);
+    const worktree = join(parent, "wt");
+    execSync(`git -C "${bare}" worktree add -q "${worktree}" -b bare-wt`);
+
+    const skillDir = runSetup(worktree, home);
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(worktree, "src", "content", "docs")),
+    );
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(worktree, "src", "content", "docs-ja")),
+    );
+    expect(skillMd).toContain("## Japanese Documentation");
+  });
+});
+
 /**
  * Locate a genuine bash 3.2 binary. Stock macOS still ships 3.2.57 at
  * /bin/bash, which is the shell a `pnpm setup:doc-skill` on a fresh Mac
