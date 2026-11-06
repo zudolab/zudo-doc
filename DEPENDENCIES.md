@@ -1,6 +1,6 @@
 # Dependency audits
 
-Current adoption checkpoint (2026-11-03): workspace and generated scaffolds use the published ZFB 5.2.0 family; package peer floors are `^5.2.0`. The published zudo-doc/history-server/create-zudo-doc release remains 9.1.1. This dependency update is unreleased; earlier version receipts below remain historical. ZDTP stays 0.9.0 and Node 24 remains the minimum.
+Current adoption checkpoint (2026-11-06): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. ZDTP stays 0.9.0 and Node 24 remains the minimum.
 
 ## 2026-10-27 audit: stale overrides dropped, advisories cleared, Vite+ not adopted
 

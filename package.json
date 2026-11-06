@@ -114,10 +114,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
     "@takazudo/zdtp": "0.9.0",
-    "@takazudo/zfb": "5.2.0",
-    "@takazudo/zfb-adapter-cloudflare": "5.2.0",
-    "@takazudo/zfb-md-wasm": "5.2.0",
-    "@takazudo/zfb-runtime": "5.2.0",
+    "@takazudo/zfb": "5.2.2",
+    "@takazudo/zfb-adapter-cloudflare": "5.2.2",
+    "@takazudo/zfb-md-wasm": "5.2.2",
+    "@takazudo/zfb-runtime": "5.2.2",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "katex": "^0.19.1",
@@ -144,6 +144,6 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.7",
     "vitest": "^4.1.12",
-    "wrangler": "4.157.0"
+    "wrangler": "4.158.0"
   }
 }
