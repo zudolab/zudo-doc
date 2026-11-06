@@ -10,6 +10,7 @@ import {
   rmSync,
   realpathSync,
   symlinkSync,
+  lstatSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -1580,6 +1581,123 @@ describe("editorial-policy pointer across worktrees (#4698)", () => {
     expect(skillMd).toContain(FALLBACK);
     expect(skillMd).not.toContain(POINTER + " `");
     expect(existsSync(join(projectDir, "AUTHORING.md"))).toBe(false);
+  });
+});
+
+describe("locale-directory gating across worktrees (#4702)", () => {
+  // Locale symlinks target MAIN_PROJECT_DIR, so the existence check that
+  // gates the symlink, the locale guidance, and the Japanese section must
+  // test that same tree -- not the linked worktree the script runs from.
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+  let worktreeProjectDir: string;
+
+  const SKILL = "locale-wt-fixture-wisdom";
+
+  function makeFixture({ mainHasJa }: { mainHasJa: boolean }): void {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-locale-wt-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-locale-wt-home-"));
+    projectDir = join(fixtureRoot, "doc");
+
+    execSync("git init -q", { cwd: fixtureRoot });
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    const locales = mainHasJa ? ["docs", "docs-ja"] : ["docs"];
+    for (const dir of locales) {
+      mkdirSync(join(projectDir, "src", "content", dir, "getting-started"), {
+        recursive: true,
+      });
+      writeFileSync(
+        join(projectDir, "src", "content", dir, "getting-started", "index.mdx"),
+        "---\ntitle: Test\n---\n",
+      );
+    }
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: "locale-wt-fixture", scripts: {} }),
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+}));
+`,
+    );
+    execSync("git add -A", { cwd: fixtureRoot });
+    execSync(
+      "git -c user.email=test@test.com -c user.name=test commit -q -m init",
+      { cwd: fixtureRoot },
+    );
+
+    const worktreeDir = join(fixtureRoot, "wt");
+    execSync(`git worktree add -q "${worktreeDir}" -b locale-wt`, {
+      cwd: fixtureRoot,
+    });
+    worktreeProjectDir = join(worktreeDir, "doc");
+  }
+
+  function runFromWorktree(): { output: string; skillDir: string } {
+    const output = execSync(
+      `bash "${join(worktreeProjectDir, "scripts", "setup-doc-skill.sh")}" --target claude ${SKILL}`,
+      {
+        cwd: worktreeProjectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    return {
+      output,
+      skillDir: join(worktreeProjectDir, ".claude", "skills", SKILL),
+    };
+  }
+
+  afterEach(() => {
+    for (const dir of [fixtureRoot, fixtureHome]) {
+      if (dir && existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("links and documents a locale main has even when the linked worktree lacks it", () => {
+    makeFixture({ mainHasJa: true });
+    rmSync(join(worktreeProjectDir, "src", "content", "docs-ja"), {
+      recursive: true,
+    });
+
+    const { output, skillDir } = runFromWorktree();
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(output).not.toContain("Skipping ja link");
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(projectDir, "src", "content", "docs-ja")),
+    );
+    expect(skillMd).toContain("`src/content/docs-ja/`");
+    expect(skillMd).toContain("## Japanese Documentation");
+  });
+
+  it("skips a locale only the linked worktree has instead of linking a missing main directory", () => {
+    makeFixture({ mainHasJa: false });
+    mkdirSync(
+      join(worktreeProjectDir, "src", "content", "docs-ja", "getting-started"),
+      { recursive: true },
+    );
+
+    const { output, skillDir } = runFromWorktree();
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(output).toContain("Skipping ja link");
+    // existsSync follows links, so also rule out a dangling symlink.
+    expect(() => lstatSync(join(skillDir, "docs-ja"))).toThrow();
+    expect(skillMd).not.toContain("docs-ja");
+    expect(skillMd).not.toContain("## Japanese Documentation");
   });
 });
 
