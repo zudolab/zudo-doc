@@ -805,23 +805,24 @@ The user has new information and wants to add or update documentation in this re
    document. The topic keyword (if provided) hints at the subject area.
 2. **Find existing docs**: Search the default \`docs/\` directory or the exact configured locale link for articles related to
    the topic. Read them to understand what is already covered.
-3. **Check placement**: Skip this step for a typo, wording, or formatting fix.
+3. **Check placement and decide create vs update**: For a typo, wording, or
+   formatting fix, update the article and skip the rest of this step.
    Otherwise: ${POLICY_STEP} Then answer:
    1. Who can do what with this content?
-   2. Does an existing article already serve that role?
+   2. Does an existing page already serve that role? If so, update it.
    3. Why this category, and is there a competing destination?
    4. Does this addition change what the category means?
    If the answers are clear, report the placement reason in one line. Only
-   when there is evidence of a category conflict, duplication, a new cluster
-   of reader tasks, or a findability problem, write the concrete reader
+   when there is evidence of a category conflict, duplication, a new independent
+   cluster of reader tasks, or a findability problem, write the concrete reader
    problem and compare updating an existing article, improving while keeping
    the structure, a local reorganization, and related links or an index —
    keep the options that solve the problem, then prefer the smaller change.
    Read only the related or competing articles, and say what you surveyed.
    Keeping the structure is a valid result; do not decide by page count.
-4. **Decide create vs update**: If an existing article covers the topic, update
-   it. Otherwise, create a new \`.mdx\` file in the subdirectory chosen above.
-5. **Write the content**: Follow the doc-authoring rules in this project's CLAUDE.md (\`$MAIN_PROJECT_DIR/CLAUDE.md\`):
+   If no existing page serves the role, create a new \`.mdx\` file in the
+   subdirectory chosen above.
+4. **Write the content**: Follow the doc-authoring rules in this project's CLAUDE.md (\`$MAIN_PROJECT_DIR/CLAUDE.md\`):
    - Required frontmatter: \`title\` (string). Always set \`sidebar_position\`.
      Optional: \`description\`, \`sidebar_label\`, \`tags\`, etc.
    - Do NOT use \`# h1\` in content — the frontmatter \`title\` renders as h1.
@@ -830,7 +831,7 @@ The user has new information and wants to add or update documentation in this re
      \`<Danger>\`, \`<HtmlPreview>\`) where appropriate.
    - For live demos, use \`<HtmlPreview>\` with \`js\`/\`displayJs\` props.
    - Link to other docs using relative paths with \`.mdx\` extension.
-6. **Update configured locale docs**: For every additional locale listed below,
+5. **Update configured locale docs**: For every additional locale listed below,
    create or update the corresponding file under its exact configured directory,
    mirroring the default directory structure. Keep code blocks, Mermaid
    diagrams, and \`<HtmlPreview>\` blocks identical — only translate surrounding
@@ -838,8 +839,8 @@ The user has new information and wants to add or update documentation in this re
    conventions. Other non-EN locales currently contain English placeholder prose
    pending translation; do not claim they are already translated. Exception:
    pages with \`generated: true\` skip translation.
-7. **Format**: ${FORMAT_STEP}
-8. **Verify**: ${VERIFY_STEP}
+6. **Format**: ${FORMAT_STEP}
+7. **Verify**: ${VERIFY_STEP}
 
 ## Documentation Structure
 

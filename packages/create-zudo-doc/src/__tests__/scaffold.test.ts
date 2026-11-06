@@ -2125,13 +2125,16 @@ describe("scaffold — generated package.json", () => {
     expect(readme).not.toContain("account_id");
     expect(readme).not.toContain("kv_namespaces");
     expect(readme).not.toContain("durable_objects");
+    // Scope to the MCP section: the base README's Develop section also names
+    // install/build and would otherwise satisfy the order check by itself.
+    const mcpSection = readme.slice(readme.indexOf("## Cloudflare MCP deployment"));
     const workflowOrder = [
-      readme.indexOf("pnpm install"),
-      readme.indexOf("pnpm build"),
-      readme.indexOf("pnpm preview:worker"),
-      readme.indexOf("wrangler login"),
-      readme.indexOf("pnpm deploy"),
-      readme.indexOf("### Connect an MCP client"),
+      mcpSection.indexOf("pnpm install"),
+      mcpSection.indexOf("pnpm build"),
+      mcpSection.indexOf("pnpm preview:worker"),
+      mcpSection.indexOf("wrangler login"),
+      mcpSection.indexOf("pnpm deploy"),
+      mcpSection.indexOf("### Connect an MCP client"),
     ];
     expect(workflowOrder.every((index) => index >= 0)).toBe(true);
     expect(workflowOrder).toEqual([...workflowOrder].sort((a, b) => a - b));

@@ -303,7 +303,7 @@ Carve-outs — do NOT create additional-locale mirrors for these:
 
 The complete versions of this guidance (with more examples) are published in the zudo-doc showcase docs. They are optional reading: the project policy and this skill contain everything needed to place a page offline.
 
-- Maintaining documentation structure (placement checks, structure reviews, adoption): https://zudo-doc.takazudomodular.com/docs/guides/maintaining-documentation-structure/
+- Maintaining documentation structure (placement checks, structure reviews, adoption): https://github.com/zudolab/zudo-doc/blob/main/src/content/docs/guides/maintaining-documentation-structure.mdx
 - Writing docs: https://zudo-doc.takazudomodular.com/docs/getting-started/writing-docs/
 - Structuring navigations: https://zudo-doc.takazudomodular.com/docs/getting-started/structuring-navigations/
 - Sidebar (category rows, sidebar configuration, scope recipes): https://zudo-doc.takazudomodular.com/docs/guides/sidebar/

@@ -42,7 +42,7 @@ export function generateAgentsFile(choices: UserChoices): string {
     ...documentationStructureSection(),
     `## Verify`,
     ``,
-    `Run \`${pmRunCommand(pm, "build")}\` after content changes; it validates frontmatter and internal links.`,
+    `After content changes, run \`${pmRunCommand(pm, "build")}\` (validates frontmatter) and \`${pmRunCommand(pm, "check:links")}\` (validates internal links and anchors).`,
     ``,
   ];
   return lines.join("\n");
@@ -176,7 +176,7 @@ export function generateAuthoringFile(
   }
   if (has("versioning")) {
     lines.push(
-      `- **Version snapshots**: \`src/content/docs-v*/\` trees are frozen snapshots, not locales; do not restructure them with current content [fact].`,
+      `- **Version snapshots**: each entry in \`versions\` in \`zfb.config.ts\` names a snapshot \`docsDir\`; those trees are frozen snapshots, not locales, so do not restructure them with current content [fact]. Read the directories from the config instead of guessing a path pattern.`,
     );
   }
   lines.push(``);

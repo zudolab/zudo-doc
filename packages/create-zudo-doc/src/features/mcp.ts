@@ -161,13 +161,10 @@ export const mcpFeature: FeatureModule = (choices) => ({
     // The base README.md (with the documentation-policy pointer) is written
     // before features compose; append the deployment section to it.
     const readmePath = path.join(targetDir, "README.md");
-    const baseReadme = (await fs.pathExists(readmePath))
-      ? await fs.readFile(readmePath, "utf-8")
-      : "";
+    const baseReadme = await fs.readFile(readmePath, "utf-8");
     await fs.outputFile(
       readmePath,
-      (baseReadme ? baseReadme.replace(/\n*$/, "\n\n") : "") +
-        generateMcpReadmeSection(choices),
+      baseReadme.replace(/\n*$/, "\n\n") + generateMcpReadmeSection(choices),
     );
     await fs.outputFile(
       path.join(targetDir, "scripts/stage-cloudflare-base.mjs"),

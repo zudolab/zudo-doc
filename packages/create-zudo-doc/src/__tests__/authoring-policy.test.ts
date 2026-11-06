@@ -139,6 +139,7 @@ describe("editorial policy — features on", () => {
       await generate({ features: ["versioning", "claudeResources"] })
     )("AUTHORING.md");
     expect(policy).toContain("frozen snapshots, not locales");
+    expect(policy).not.toContain("docs-v*");
     expect(policy).toContain("Do not hand-edit or move those pages");
   });
 });
