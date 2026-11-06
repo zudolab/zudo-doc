@@ -8,6 +8,14 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.4] - 2026-11-06
+
+### Bug Fixes
+
+- The generated `setup-doc-skill.sh` checks `AUTHORING.md` in the main worktree its doc skill points at, not the current worktree, so a run from a linked worktree no longer names a missing file or drops a valid pointer. (b473b687)
+- Locale links and guidance in the generated doc skill are decided once per locale against the main worktree, so a linked worktree can no longer link or mention a locale directory main lacks, or skip one main has; a symlink left by an earlier run for a now-skipped locale is removed. (ce3ec772, a171c56a)
+- The generated `setup-doc-skill.sh` validates the default docs directory and lists `SKILL.md` categories from the main worktree, and resolves that worktree from the porcelain `git worktree list` output, so checkout paths containing spaces and bare main repositories work. (53feb9e5)
+
 ## [9.1.3] - 2026-11-06
 
 ### Features
