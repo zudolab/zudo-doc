@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.4] - 2026-11-06
+
+- No package-specific changes.
+
 ## [9.1.3] - 2026-11-06
 
 ### Bug Fixes
