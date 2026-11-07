@@ -132,7 +132,7 @@ export const chromeBindings = defineChromeBindings({
 | `DocPager` | パッケージの `DocPager`。`DocPagerSlotProps` を受け取る |
 | `SearchWidget` | サイトの base を内部で束縛したパッケージ検索ウィジェット |
 | `headerRightComponents` | `{}` — パッケージ組み込みのヘッダー右名だけを解決する |
-| `docHistoryMeta` | `{}` — Created/Updated ブロックなし |
+| `docHistoryMeta` | `docHistory` が有効なときはビルド時の `.zfb/doc-history-meta.json` マニフェスト（ホスト側のバインディングで上書き可能）。それ以外は `{}` — Created/Updated ブロックとソース表示リンクなし |
 | `sidebarsConfig` | `{}` — 自動生成ツリーのみ |
 | `frontmatterRenderers` | `{}` — カスタム[フロントマタープレビュー](./frontmatter-preview.mdx)レンダラーなし |
 | `buildFrontmatterPreviewEntries` | `() => []` — プレビューテーブルが描画されない |

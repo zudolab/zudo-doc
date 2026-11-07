@@ -13,9 +13,9 @@
 // stub → DocHistory chain. The factory receives the DocHistory constructor via
 // deps so no `@/` alias is imported here.
 //
-// docHistoryMeta JSON: stays in the host stub — the `#doc-history-meta` alias
-// resolves only in the host project's tsconfig. The factory receives the parsed
-// manifest as a plain object.
+// docHistoryMeta JSON: supplied by the routes plugin's chrome-bindings virtual
+// module when docHistory is on (#4708); a host binding overrides it. The
+// factory receives the parsed manifest as a plain object.
 
 import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { Island } from "@takazudo/zfb";

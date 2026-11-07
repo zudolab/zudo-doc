@@ -44,6 +44,7 @@ const choices: UserChoices = {
     "i18n",
     "changelog",
     "docHistory",
+    "bodyFootUtil",
     "docTags",
     "tagGovernance",
     "skillSymlinker",
@@ -52,6 +53,7 @@ const choices: UserChoices = {
     "versioning",
   ],
   changelogPackages: ["core", "cli"],
+  githubUrl: "https://github.com/example/three-locale-proof",
   packageManager: "pnpm",
 };
 
@@ -260,6 +262,24 @@ describe("three-locale generated project", () => {
       const history = await fs.readJson(historyPath);
       expect(history.slug).toBe("getting-started/introduction");
       expect(history.entries.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("renders the view-source link from the package-supplied doc-history manifest (#4708)", async () => {
+    // The scaffold has no host `docHistoryMeta` binding and was built from a
+    // tree with no pre-existing `.zfb/`, so this proves the routes plugin
+    // feeds the preBuild manifest into both generated doc-route stubs.
+    for (const [locale, contentDir] of [
+      ["docs", "src/content/docs"],
+      ["ja/docs", "src/content/docs-ja"],
+    ] as const) {
+      const html = await fs.readFile(
+        path.join(projectDir, "dist", locale, "getting-started/introduction/index.html"),
+        "utf8",
+      );
+      expect(html).toContain(
+        `https://github.com/example/three-locale-proof/blob/HEAD/${contentDir}/getting-started/introduction.mdx`,
+      );
     }
   });
 

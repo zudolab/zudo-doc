@@ -78,7 +78,7 @@
 
 import { prepareHomeIntros, type HomeIntroSettings } from "../home-intro/prepare.js";
 import { createRequire } from "node:module";
-import { existsSync, statSync, readFileSync, cpSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, statSync, readFileSync, cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 import { loadThemePackRegistry } from "../theme-packs-registry/load-registry.js";
@@ -130,6 +130,9 @@ interface RoutesSettings {
    *  diagnostic must not tell such a host to wire up a panel that never
    *  renders either way. Nothing else in this plugin gates on it. */
   designTokenPanel?: boolean;
+  /** See `settings.ts` — gates the package-supplied `docHistoryMeta` default
+   *  in the chrome-bindings virtual module (#4708). */
+  docHistory?: boolean;
   /** See `settings.ts` — project-root-relative path to a host bindings module. */
   chromeBindingsModule?: string;
   /** See `settings.ts` — project-root-relative path to a host design-token
@@ -422,6 +425,51 @@ function assetContentRoots(
 }
 
 // ---------------------------------------------------------------------------
+// Chrome-bindings virtual module source (#2501, docHistoryMeta default #4708).
+// ---------------------------------------------------------------------------
+
+/**
+ * Ensure `<projectRoot>/.zfb/doc-history-meta.json` exists so a static import
+ * of it always resolves, writing a `{}` seed only when the file is missing.
+ * The doc-history plugin's preBuild overwrites it with real data before
+ * bundling. Returns the absolute, forward-slash-normalized manifest path.
+ */
+export function ensureDocHistoryMetaSeed(projectRoot: string): string {
+  const metaPath = join(projectRoot, ".zfb", "doc-history-meta.json");
+  if (!existsSync(metaPath)) {
+    mkdirSync(dirname(metaPath), { recursive: true });
+    writeFileSync(metaPath, "{}\n");
+  }
+  return metaPath.split("\\").join("/");
+}
+
+/**
+ * ESM source for `virtual:zudo-doc-chrome-bindings`. With docHistory off the
+ * output is byte-identical to the pre-#4708 shapes. With docHistory on, the
+ * build-time manifest becomes a default `docHistoryMeta` that the host
+ * bindings (spread last) can override.
+ */
+export function buildChromeBindingsModuleSource(
+  hostModuleAbsPath: string | undefined,
+  docHistoryMetaAbsPath: string | null,
+): string {
+  if (!docHistoryMetaAbsPath) {
+    return hostModuleAbsPath
+      ? `export { chromeBindings } from ${JSON.stringify(hostModuleAbsPath)};\n`
+      : `export const chromeBindings = {};\n`;
+  }
+  const metaImport = `import docHistoryMeta from ${JSON.stringify(docHistoryMetaAbsPath)};\n`;
+  if (!hostModuleAbsPath) {
+    return `${metaImport}export const chromeBindings = { docHistoryMeta };\n`;
+  }
+  return (
+    metaImport +
+    `import { chromeBindings as hostChromeBindings } from ${JSON.stringify(hostModuleAbsPath)};\n` +
+    `export const chromeBindings = { docHistoryMeta, ...hostChromeBindings };\n`
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Host-callables channel helper — shared guard/resolve logic for the
 // module-path settings (`chromeBindingsModule` #2501,
 // `designTokenPanelConfigModule` #2658, and any future channel).
@@ -647,10 +695,19 @@ const plugin = definePlugin({
         mustExport: "chromeBindings: ChromeHostBindings",
       },
     );
+    // (2a) Package-supplied `docHistoryMeta` default (#4708). Generated stubs
+    // and package routes never had a host `#doc-history-meta` import, so the
+    // view-source link and Created/Updated block got no data. The manifest is
+    // pulled in by a STATIC import resolved at bundle time: zfb runs these
+    // loaders eagerly after `setup`, BEFORE `preBuild` writes the file, so an
+    // fs read here would see a missing or stale manifest. The `{}` seed keeps
+    // the import resolvable when the doc-history plugin is not registered
+    // (preBuild overwrites it when it is). Host bindings spread last and win.
+    const docHistoryMetaAbsPath = settings.docHistory
+      ? ensureDocHistoryMetaSeed(ctx.projectRoot)
+      : null;
     ctx.addVirtualModule("virtual:zudo-doc-chrome-bindings", () =>
-      chromeBindingsAbsPath
-        ? `export { chromeBindings } from ${JSON.stringify(chromeBindingsAbsPath)};\n`
-        : `export const chromeBindings = {};\n`,
+      buildChromeBindingsModuleSource(chromeBindingsAbsPath, docHistoryMetaAbsPath),
     );
 
     // (3) Design-token-panel-config virtual module — the THIRD virtual module

@@ -7,9 +7,9 @@
 // receives those as arguments so the logic lives in the package while the host
 // stub keeps the singleton imports.
 //
-// The `docHistoryMeta` JSON import stays in the host stub — it depends on the
-// `#doc-history-meta` path alias which the zfb bundler resolves for the host
-// project only (it's a shadow-tree tsconfig alias — not portable to the package).
+// The `docHistoryMeta` manifest arrives through `ctx.hostBindings`: the routes
+// plugin's `virtual:zudo-doc-chrome-bindings` module supplies it by default
+// when `settings.docHistory` is on (#4708), and a host binding overrides it.
 // The factory receives the parsed manifest as a plain JS object.
 
 import type { Child } from "@takazudo/zfb/zudo-react";
@@ -59,7 +59,8 @@ export interface DocMetainfoAreaProps {
  *
  * Reads `settings`/`defaultLocale`/`t` directly and `toHistorySlug` from the
  * package slug helper; the per-page git-history manifest is a HOST-bound slot
- * (`ctx.hostBindings.docHistoryMeta`, default `{}` → no Created/Updated block).
+ * (`ctx.hostBindings.docHistoryMeta`; the routes plugin supplies the build-time
+ * manifest by default when docHistory is on, otherwise `{}` → no block).
  */
 export function createDocMetainfoArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,

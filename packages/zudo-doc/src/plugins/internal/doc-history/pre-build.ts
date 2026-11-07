@@ -1,8 +1,9 @@
 // Package-internal preBuild runner used by the public doc-history plugin.
 //
 // Emits `<projectRoot>/.zfb/doc-history-meta.json`, the per-page git
-// metadata manifest consumed at bundle time through the host's
-// `#doc-history-meta` binding. The host imports the JSON statically so esbuild
+// metadata manifest consumed at bundle time through the routes plugin's
+// `virtual:zudo-doc-chrome-bindings` module (or a host `#doc-history-meta`
+// binding that overrides it, #4708). Both import the JSON statically so esbuild
 // inlines it; this avoids pulling Node-only `fs` / `child_process` code into
 // the client bundle.
 //

@@ -44,7 +44,7 @@ function makeEntryProps(
         ...data,
       },
       body: "",
-      module_specifier: "test-page.mdx",
+      module_specifier: "mdx://docs/test-page#2bd6dd1c",
       Content: () => h("div", {}),
     },
     breadcrumbs: [],
@@ -93,6 +93,9 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
   it.each([
     ["page.md", ".md"],
     ["page.mdx", ".mdx"],
+    // zfb 5.2.x shape: carries no extension, so the manifest `ext` must
+    // supply it downstream (#4708).
+    ["mdx://docs/page#2bd6dd1c", undefined],
   ] as const)(
     "passes the current entry extension from %s to DocHistoryArea",
     (specifier, ext) => {
