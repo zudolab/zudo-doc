@@ -1,0 +1,11 @@
+---
+title: 9.1.5
+description: Release notes for 9.1.5.
+sidebar_position: 1152
+---
+
+Released: 2026-11-08
+
+### Bug Fixes
+
+- When `docHistory` is enabled, the routes plugin now supplies the doc-history manifest (`.zfb/doc-history-meta.json`) as the default `docHistoryMeta` chrome binding, so the body-foot view-source link and the Created/Updated block render in projects that do not pass `hostBindings.docHistoryMeta` themselves. A missing manifest falls back to `{}`, host bindings still take precedence, and output with `docHistory` off is unchanged. (8df74e68)
