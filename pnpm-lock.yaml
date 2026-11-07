@@ -22,8 +22,8 @@ importers:
         specifier: 1.32.2
         version: 1.32.2(zod@4.6.7)
       '@takazudo/zdtp':
-        specifier: 0.9.0
-        version: 0.9.0(@takazudo/zfb@5.2.2)
+        specifier: 0.9.1
+        version: 0.9.1(@takazudo/zfb@5.2.2)
       '@takazudo/zfb':
         specifier: 5.2.2
         version: 5.2.2
@@ -188,7 +188,7 @@ importers:
         version: 8.7.5(@types/node@25.9.9)
       '@takazudo/zdtp':
         specifier: ^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0
-        version: 0.9.0(@takazudo/zfb@5.2.2)
+        version: 0.9.1(@takazudo/zfb@5.2.2)
       diff:
         specifier: ^8.0.0
         version: 8.0.3
@@ -1168,8 +1168,8 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
-  '@takazudo/zdtp@0.9.0':
-    resolution: {integrity: sha512-8kXEoi+K82v7akI1jOzuBqnoy6P4z6tMB0dtd6N1nBxppogkIX0MhjiToFwyBye0QL9bQFwmzSG3/M3eYtCaHQ==}
+  '@takazudo/zdtp@0.9.1':
+    resolution: {integrity: sha512-qm7whjw99qXR9NxB7OrMB1IiIFnw3Nl8SgjLWKYqltxCRMFjh6eyNNj3JYevtD1WnNIG5qsDuUS7H12BRD/ufA==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -3549,7 +3549,7 @@ snapshots:
       '@takazudo/mdx-formatter-linux-x64-gnu': 1.3.0
       '@takazudo/mdx-formatter-win32-x64-msvc': 1.3.0
 
-  '@takazudo/zdtp@0.9.0(@takazudo/zfb@5.2.2)':
+  '@takazudo/zdtp@0.9.1(@takazudo/zfb@5.2.2)':
     dependencies:
       '@tailwindcss/browser': 4.3.2
       culori: 4.0.2

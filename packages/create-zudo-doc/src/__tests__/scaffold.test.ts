@@ -2252,7 +2252,7 @@ describe("scaffold — generated package.json", () => {
       features: ["designTokenPanel"],
     });
     const pkg = await fs.readJson(projectPath("test-doc-dtp", "package.json"));
-    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.9.0");
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.9.1");
     // zdtp 0.9.0 has no Preact dependency, and the project does not declare one.
     expect(pkg.dependencies["preact"]).toBeUndefined();
   });
