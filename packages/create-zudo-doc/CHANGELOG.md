@@ -8,6 +8,16 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [9.1.5] - 2026-11-08
+
+### Bug Fixes
+
+- Generated projects with `docHistory` enabled now render the body-foot view-source link and the Created/Updated block, through the `@takazudo/zudo-doc` 9.1.5 pin that supplies the doc-history manifest by default. (8df74e68)
+
+### Other Changes
+
+- Generated projects now pin `@takazudo/zdtp` 0.9.1, which adds a non-visual `data-zdtp-version` marker on the mounted Design Token Panel shell. (5891ec5c)
+
 ## [9.1.4] - 2026-11-06
 
 ### Bug Fixes

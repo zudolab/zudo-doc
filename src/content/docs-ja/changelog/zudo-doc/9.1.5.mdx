@@ -1,0 +1,11 @@
+---
+title: 9.1.5
+description: 9.1.5のリリースノート。
+sidebar_position: 1152
+---
+
+リリース日: 2026-11-08
+
+### バグ修正
+
+- `docHistory`が有効な場合、routesプラグインがドキュメント履歴のマニフェスト（`.zfb/doc-history-meta.json`）を既定の`docHistoryMeta`クロームバインディングとして供給するようになりました。`hostBindings.docHistoryMeta`を自分で渡さないプロジェクトでも、本文末尾のソース表示リンクと作成日・更新日のブロックが表示されます。マニフェストがない場合は`{}`を使い、ホスト側のバインディングが引き続き優先されます。`docHistory`が無効な場合の出力は変わりません。(8df74e68)
