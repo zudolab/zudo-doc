@@ -102,6 +102,70 @@ describe("MCP route injection", () => {
   });
 });
 
+describe("routes plugin — virtual:zudo-doc-chrome-bindings docHistoryMeta default (#4708)", () => {
+  async function chromeBindingsSource(projectRoot: string, settings: Record<string, unknown>): Promise<string> {
+    const { ctx, virtualModules } = makeCtx(projectRoot, settings, { packageOwnedRoutes: false });
+    await routesPlugin.setup!(ctx as never);
+    const loader = virtualModules.get("virtual:zudo-doc-chrome-bindings");
+    if (!loader) throw new Error("chrome-bindings virtual module not registered");
+    return loader();
+  }
+  function writeHostBindings(projectRoot: string): string {
+    mkdirSync(join(projectRoot, "src"), { recursive: true });
+    writeFileSync(join(projectRoot, "src", "chrome-bindings.tsx"), "export const chromeBindings = {};\n");
+    return "./src/chrome-bindings.tsx";
+  }
+
+  it("keeps the empty-object output byte-identical when docHistory is off", async () => {
+    const projectRoot = makeProjectRoot();
+    expect(await chromeBindingsSource(projectRoot, { docHistory: false })).toBe("export const chromeBindings = {};\n");
+    expect(readdirSync(projectRoot)).not.toContain(".zfb");
+  });
+
+  it("keeps the plain host re-export when docHistory is off", async () => {
+    const projectRoot = makeProjectRoot();
+    const chromeBindingsModule = writeHostBindings(projectRoot);
+    const hostPath = join(projectRoot, "src", "chrome-bindings.tsx").split("\\").join("/");
+    expect(await chromeBindingsSource(projectRoot, { docHistory: false, chromeBindingsModule })).toBe(
+      `export { chromeBindings } from ${JSON.stringify(hostPath)};\n`,
+    );
+  });
+
+  it("statically imports the manifest as a default docHistoryMeta with no host module", async () => {
+    const projectRoot = makeProjectRoot();
+    const metaPath = join(projectRoot, ".zfb", "doc-history-meta.json").split("\\").join("/");
+    const source = await chromeBindingsSource(projectRoot, { docHistory: true });
+    expect(source).toBe(
+      `import docHistoryMeta from ${JSON.stringify(metaPath)};\nexport const chromeBindings = { docHistoryMeta };\n`,
+    );
+    // No fs read of the manifest happens in the loader — only a static import.
+    expect(source).not.toContain("{}");
+  });
+
+  it("spreads host bindings after the default so a host docHistoryMeta wins", async () => {
+    const projectRoot = makeProjectRoot();
+    const chromeBindingsModule = writeHostBindings(projectRoot);
+    const source = await chromeBindingsSource(projectRoot, { docHistory: true, chromeBindingsModule });
+    expect(source).toContain("import docHistoryMeta from ");
+    expect(source).toContain("export const chromeBindings = { docHistoryMeta, ...hostChromeBindings };");
+  });
+
+  it("seeds an empty manifest when none exists so the import always resolves", async () => {
+    const projectRoot = makeProjectRoot();
+    await chromeBindingsSource(projectRoot, { docHistory: true });
+    expect(readFileSync(join(projectRoot, ".zfb", "doc-history-meta.json"), "utf8")).toBe("{}\n");
+  });
+
+  it("never overwrites an existing manifest", async () => {
+    const projectRoot = makeProjectRoot();
+    mkdirSync(join(projectRoot, ".zfb"), { recursive: true });
+    const existing = '{"intro":{"ext":".md"}}';
+    writeFileSync(join(projectRoot, ".zfb", "doc-history-meta.json"), existing);
+    await chromeBindingsSource(projectRoot, { docHistory: true });
+    expect(readFileSync(join(projectRoot, ".zfb", "doc-history-meta.json"), "utf8")).toBe(existing);
+  });
+});
+
 /** Resolve the design-token-panel-config virtual module's emitted source for
  *  a given settings object. Throws if `setup()` throws. */
 async function emittedSource(projectRoot: string, settings: Record<string, unknown>): Promise<string> {

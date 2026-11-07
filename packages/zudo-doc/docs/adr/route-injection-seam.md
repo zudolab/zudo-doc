@@ -226,7 +226,11 @@ scanner-safe. Every other host slot remains intact.
   module is loader-emitted ESM source (a one-line re-export), not JSON payload.
 - **Registered UNCONDITIONALLY** — the shim always imports the specifier.
   Setting absent → the loader emits `export const chromeBindings = {};` and
-  behavior is byte-identical to before. Setting present but the resolved file
+  behavior is byte-identical to before. With `settings.docHistory` on, the
+  loader additionally emits a static import of `.zfb/doc-history-meta.json`
+  as a default `docHistoryMeta` (seeding `{}` when missing; the host module's
+  bindings spread after it and win) — a bundle-time import, because loaders
+  run before `preBuild` writes the manifest (#4708). Setting present but the resolved file
   missing → the plugin **throws at setup**, naming the resolved absolute path
   and the setting name (never a silent empty fallback).
 - **Published route sources are staged.** zfb's virtual-module aliases resolve

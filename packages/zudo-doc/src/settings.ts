@@ -544,7 +544,10 @@ export interface Settings {
    * `ChromeHostBindings` (from `@takazudo/zudo-doc/factory-context`).
    *
    * - Absent (the default) → the virtual module emits
-   *   `export const chromeBindings = {};` — behavior byte-identical to today.
+   *   `export const chromeBindings = {};` — behavior byte-identical to today —
+   *   except with `docHistory` on, where it emits
+   *   `{ docHistoryMeta }` from a static import of `.zfb/doc-history-meta.json`
+   *   (#4708). A host module's own bindings are spread after that default.
    * - Explicitly empty string → build fails loudly at plugin setup.
    * - Present but the resolved file does not exist → the build fails loudly
    *   at plugin setup, naming the resolved absolute path (never a silent

@@ -132,7 +132,7 @@ The live DOM governs the opt-out; adding the attribute only to the incoming page
 | `DocPager` | Package `DocPager`; receives `DocPagerSlotProps` |
 | `SearchWidget` | Package search widget, with the site base bound internally |
 | `headerRightComponents` | `{}` — only package built-in header-right names resolve |
-| `docHistoryMeta` | `{}` — no Created/Updated block |
+| `docHistoryMeta` | the build-time `.zfb/doc-history-meta.json` manifest when `docHistory` is on (a host binding overrides it); otherwise `{}` — no Created/Updated block or view-source link |
 | `sidebarsConfig` | `{}` — auto-generated tree only |
 | `frontmatterRenderers` | `{}` — no custom [frontmatter preview](./frontmatter-preview.mdx) renderers |
 | `buildFrontmatterPreviewEntries` | `() => []` — the preview table never renders |

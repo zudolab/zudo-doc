@@ -387,6 +387,10 @@ export function createRenderDocPage<S extends Settings = Settings>(
               slug={slug}
               locale={locale}
               entrySlug={props.entry.slug}
+              // Fallback only for file-shaped specifiers: zfb 5.2.x specifiers
+              // are `mdx://<collection>/<slug>#<hash>` and CollectionEntry has
+              // no `rel_path`, so the manifest's `ext` is the real source of
+              // the view-source extension there (#4708).
               sourceFileExt={
                 props.entry.module_specifier.endsWith(".mdx")
                   ? ".mdx"
