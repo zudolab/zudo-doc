@@ -52,7 +52,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     darkScheme: "Default Dark",
     defaultMode: "dark",
     respectPrefersColorScheme: true,
-    themePack: "default",
+    themePack: "classic",
     features: FEATURES.filter((f) => f.default).map((f) => f.value),
     cjkFriendly: false,
     packageManager: "pnpm",
@@ -156,7 +156,7 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
   it("Graphite and Classic packs in both color-scheme modes", () => {
     for (const colorSchemeMode of ["single", "light-dark"] as const) {
       verifyRoundtrip(makeState({ colorSchemeMode, themePack: "graphite" }));
-      verifyRoundtrip(makeState({ colorSchemeMode, themePack: "default" }));
+      verifyRoundtrip(makeState({ colorSchemeMode, themePack: "classic" }));
     }
   });
 

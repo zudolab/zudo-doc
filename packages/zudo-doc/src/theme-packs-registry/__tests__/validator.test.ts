@@ -65,12 +65,12 @@ describe("validateThemePack", () => {
     expect(result.meta?.slug).toBe("foundry");
   });
 
-  it("accepts the reserved default pack (meta.json only, no pack.css)", () => {
+  it("accepts the reserved Classic pack (meta.json only, no pack.css)", () => {
     const result = validateThemePack({
-      dirName: "default",
+      dirName: "classic",
       metaRaw: {
         schemaVersion: 1,
-        slug: "default",
+        slug: "classic",
         name: "Default",
         description: "Stock look.",
         mode: "dark",
@@ -107,12 +107,20 @@ describe("validateThemePack", () => {
     expect(result.valid).toBe(true);
   });
 
-  it("rejects the default pack shipping a pack.css", () => {
+  it("rejects the Classic pack shipping a pack.css", () => {
+    const result = validateThemePack(
+      baseInput({ dirName: "classic", metaRaw: { ...VALID_FOUNDRY_META, slug: "classic" } }),
+    );
+    expect(result.valid).toBe(false);
+    expect(result.issues.some((i) => i.rule === "css-presence")).toBe(true);
+  });
+
+  it("rejects a pack directory named after the reserved \"default\" alias", () => {
     const result = validateThemePack(
       baseInput({ dirName: "default", metaRaw: { ...VALID_FOUNDRY_META, slug: "default" } }),
     );
     expect(result.valid).toBe(false);
-    expect(result.issues.some((i) => i.rule === "css-presence")).toBe(true);
+    expect(result.issues.some((i) => i.message.includes("reserved alias"))).toBe(true);
   });
 
   it("rejects a non-default pack with a missing/empty pack.css", () => {

@@ -26,7 +26,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     darkScheme: "Default Dark",
     defaultMode: "dark",
     respectPrefersColorScheme: true,
-    themePack: "default",
+    themePack: "classic",
     features: [],
     cjkFriendly: false,
     packageManager: "pnpm",
@@ -264,10 +264,10 @@ describe("buildJson — themePack (ADR #2818 / #2823)", () => {
   });
 
   it("emits Classic in both color-scheme modes", () => {
-    expect(buildJson(makeState({ themePack: "default" }))).toHaveProperty("themePack", "default");
+    expect(buildJson(makeState({ themePack: "classic" }))).toHaveProperty("themePack", "classic");
     expect(
-      buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "default" })),
-    ).toHaveProperty("themePack", "default");
+      buildJson(makeState({ colorSchemeMode: "light-dark", themePack: "classic" })),
+    ).toHaveProperty("themePack", "classic");
   });
 
   it("emits themePack when a non-default pack is chosen", () => {
@@ -278,8 +278,8 @@ describe("buildJson — themePack (ADR #2818 / #2823)", () => {
 
 describe("buildCliCommand — themePack (ADR #2818 / #2823)", () => {
   it("always emits --theme-pack with the chosen slug", () => {
-    expect(buildCliCommand(makeState({ themePack: "default" }))).toContain(
-      "--theme-pack default",
+    expect(buildCliCommand(makeState({ themePack: "classic" }))).toContain(
+      "--theme-pack classic",
     );
     expect(buildCliCommand(makeState({ themePack: "foundry" }))).toContain(
       "--theme-pack foundry",

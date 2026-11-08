@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Breaking Changes
+
+- The Classic theme pack's slug is now `classic`. Choosing Classic writes `themePack: "classic"`, and `--theme-pack classic` (or `"themePack": "classic"` in a preset) selects it; `--theme-pack default` is rejected as an unknown pack.
 
 ## [9.1.5] - 2026-11-08
 

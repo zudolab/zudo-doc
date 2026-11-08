@@ -219,7 +219,7 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
     page,
   }) => {
     await page.goto(HOME, { waitUntil: "load" });
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
 
     await openPanel(page);
     await openSpacingTab(page);
@@ -259,7 +259,7 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
     await closePanel(page);
 
     // foundry (B) -> default (A)
-    await switchPackViaFlyout(page, "prev", "default");
+    await switchPackViaFlyout(page, "prev", "classic");
 
     // (b) — restored VERBATIM: both the live CSS custom property...
     await expect
@@ -269,7 +269,7 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
     expect(await readResolvedAccentColor(page)).toBe(accentA);
 
     // ...and the panel's own displayed row values (re-seeded from pack A's
-    // `zudo-doc-tweak` namespace — the "default" pack's storage prefix stays
+    // `zudo-doc-tweak` namespace — the "classic" pack's storage prefix stays
     // byte-unchanged per ADR Decision 4).
     await openPanel(page);
     await openSpacingTab(page);
@@ -309,7 +309,7 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
     );
     await page.goto(HOME, { waitUntil: "load" });
     await waitForThemePreference(page, "light");
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
 
     await openPanel(page);
     await openSpacingTab(page);

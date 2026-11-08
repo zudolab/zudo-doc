@@ -70,7 +70,7 @@ test.describe("Theme-pack sidebar active-row shape", () => {
     test.slow();
     await page.goto(PAGE, { waitUntil: "load" });
     const packSlugs = await enabledPackSlugs(page);
-    expect(packSlugs[0]).toBe("default");
+    expect(packSlugs[0]).toBe("classic");
 
     for (const packSlug of packSlugs) {
       await activatePack(page, packSlug);

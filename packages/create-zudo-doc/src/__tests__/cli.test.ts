@@ -321,14 +321,14 @@ describe("validateArgs — project-name validation (F4 #2013)", () => {
 // #2823 — theme-pack CLI catalog validation
 describe("validateArgs — theme-pack (ADR #2818)", () => {
   it("accepts a known theme pack slug", () => {
-    expect(validateArgs({ themePack: "default" })).toBeNull();
+    expect(validateArgs({ themePack: "classic" })).toBeNull();
     expect(validateArgs({ themePack: "foundry" })).toBeNull();
   });
 
   it("rejects an unknown theme pack slug and lists the catalog", () => {
     const error = validateArgs({ themePack: "not-a-real-pack" });
     expect(error).toMatch(/Unknown theme pack "not-a-real-pack"/);
-    expect(error).toMatch(/default/);
+    expect(error).toMatch(/classic/);
     expect(error).toMatch(/foundry/);
   });
 });

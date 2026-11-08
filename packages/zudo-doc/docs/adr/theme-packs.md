@@ -102,6 +102,15 @@ upgraded existing site with all defaults is byte-identical modulo the html
 attribute and bootstrap script). Its `preview` swatches are the Default
 Light/Default Dark resolved role colors.
 
+> **Amendment (10.0.0).** The reserved no-stylesheet pack is now the slug
+> `classic` (`CLASSIC_THEME_PACK_SLUG`, displayed as "Classic"), and
+> `default` (`DEFAULT_THEME_PACK_ALIAS`) is no longer a pack directory: it
+> is an alias that `resolveThemePackAlias()` maps to the configured default,
+> `graphite`, wherever a slug is read from settings (`themePack`,
+> `themePacks`) or the CLI (`theme apply default`). The validator rejects a
+> pack directory named `default`. Every mention of the `default` pack below
+> describes the pre-10.0.0 slug and now applies to `classic`.
+
 ### 2. Asset emission path (build, npm tarball, dev, preview)
 
 Pack sources live in the package at
@@ -651,8 +660,9 @@ themePacks?: string[];
 - `themePack` may name a non-default pack while `themePackSwitcher` stays
   `false` — a build-pinned look with no UI.
 - **Configured default vs reserved sentinel (soft-tone packs).**
-  `DEFAULT_THEME_PACK_SLUG = "default"` stays the reserved no-stylesheet
-  sentinel (displayed as "Classic"); `CONFIGURED_DEFAULT_THEME_PACK_SLUG =
+  `CLASSIC_THEME_PACK_SLUG = "classic"` is the reserved no-stylesheet
+  sentinel (displayed as "Classic"; `"default"` before 10.0.0, now an alias
+  for Graphite — see the Decision 1 amendment); `CONFIGURED_DEFAULT_THEME_PACK_SLUG =
   "graphite"` is what an omitted `themePack` resolves to. The one resolver,
   `resolveConfiguredThemePack({ themePack, colorMode, customColorSchemes })`,
   is applied by `zudoDoc()`, `zudoDocPreset()` and

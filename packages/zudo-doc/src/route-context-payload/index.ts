@@ -49,7 +49,7 @@ export type RouteContextTranslations = Record<string, Record<string, string>>;
  * - `settings` is a shallow, top-level merge over that result and wins last.
  *   Nested settings objects replace wholesale; they are never deep-merged.
  * - A `themePack` still omitted (nullish) after that merge resolves through
- *   `resolveConfiguredThemePack`: `"graphite"`, or `"default"` (Classic)
+ *   `resolveConfiguredThemePack`: `"graphite"`, or `"classic"`
  *   when `colorSchemes` data is supplied or `settings.colorMode` is `false`.
  * - `translations` deep-merges into `defaultTranslations` in two levels:
  *   locales are retained and individual keys within an overridden locale are

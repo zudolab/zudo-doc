@@ -6,7 +6,7 @@ import { spaClickSelector } from "./nav-helpers";
 
 // The built fixture includes generated utilities. Washi's explicit logo rule
 // outranks the base selector, so this catches a registry-only implementation.
-for (const pack of ["default", "washi"]) {
+for (const pack of ["classic", "washi"]) {
   for (const mode of ["light", "dark"] as const) {
     for (const width of [1280, 390]) {
       test(`${pack} logo tokens in ${mode} at ${width}px preserve controls and restore typography`, async ({ page, assertNoConsoleErrors }) => {
@@ -14,7 +14,7 @@ for (const pack of ["default", "washi"]) {
         await page.emulateMedia({ colorScheme: mode });
         await page.addInitScript(({ key, mode }) => localStorage.setItem(key, mode), { key: THEME_STORAGE_KEY, mode });
         await page.goto("/docs/getting-started/", { waitUntil: "load" });
-        await waitForActivePack(page, "default");
+        await waitForActivePack(page, "classic");
         if (pack === "washi") {
           await openFlyout(page);
           await browseAllButton(page).click();
@@ -27,7 +27,7 @@ for (const pack of ["default", "washi"]) {
         await expect(page.locator("html")).toHaveAttribute("data-theme", mode);
         await page.evaluate(() => document.fonts.ready);
         const logo = page.locator(LOGO);
-        const expectedFamily = pack === "default"
+        const expectedFamily = pack === "classic"
           ? (await typography(page.locator("header[data-header]"))).family
           : await page.evaluate(() => {
             const probe = document.createElement("span");

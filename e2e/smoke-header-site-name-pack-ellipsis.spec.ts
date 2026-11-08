@@ -8,9 +8,9 @@ import { THEME_PACK_STORAGE_KEY, waitForActivePack } from "./theme-pack-helpers"
  *
  * `smoke-header-site-name-truncation.spec.ts` proves the header
  * truncate-instead-of-overflow fix (#4287/#4288/#4289) against the single
- * pack the smoke fixture ships by default ("default"). This spec sweeps
+ * pack the smoke fixture ships by default ("classic"). This spec sweeps
  * every theme pack the fixture runs — the switcher UI is off here
- * (`themePack: "default"` in `e2e/fixtures/smoke/src/config/settings.ts`),
+ * (`themePack: "classic"` in `e2e/fixtures/smoke/src/config/settings.ts`),
  * but the runtime still ships all pack stylesheets and the
  * `window.__zudoDocThemePacks` global, so a pack can be activated the same
  * way `theme-pack-sidebar-active.spec.ts` does: write

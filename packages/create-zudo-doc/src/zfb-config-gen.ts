@@ -196,7 +196,7 @@ function buildDesiredConfig(
   // it is an advanced, hand-edited-only field with no CLI/prompt surface
   // (locked spec, #2823).
   // Emit themePack only when it differs from what omission resolves to — so
-  // picking Classic emits `themePack: "default"` in light-dark mode, and a
+  // picking Classic emits `themePack: "classic"` in light-dark mode, and a
   // single-scheme project keeps an explicit Graphite instead of falling back
   // to Classic.
   const omittedPack = effectiveOmittedThemePack(choices.colorSchemeMode);

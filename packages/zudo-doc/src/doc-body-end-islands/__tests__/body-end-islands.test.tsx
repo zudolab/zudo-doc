@@ -101,9 +101,9 @@ function RealThemePackBoundary(props: ThemePackSwitcherProps) {
 
 /** Serializable flyout props (ADR theme-packs.md Decision 7 shape). */
 const THEME_PACK_SWITCHER_PROPS: ThemePackSwitcherProps = {
-  active: "default",
+  active: "classic",
   order: [
-    { slug: "default", name: "Default", mode: "light", description: "The stock look." },
+    { slug: "classic", name: "Default", mode: "light", description: "The stock look." },
     { slug: "foundry", name: "Foundry", mode: "dark", description: "Industrial dark pack." },
   ],
   base: "/",
@@ -582,7 +582,7 @@ describe("deriveBodyEndIslands — ThemePackSwitcher registry-derived props (#28
    *  here, so the registry is cast. */
   const FAKE_REGISTRY = [
     {
-      slug: "default",
+      slug: "classic",
       meta: { name: "Default", mode: "light", description: "The stock look." },
       hasStylesheet: false,
     },

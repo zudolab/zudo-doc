@@ -75,7 +75,7 @@ test.describe("Theme pack chrome font seam", () => {
     // default pack before driving it — mirrors theme-pack-switcher.spec.ts.
     // Opening the browse-all dialog before hydration lands it empty, so the
     // pack card never appears.
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
 
     const sidebarLink = desktopSidebar(page).locator("a").first();
     const tocLink = page.locator(TOC_LINK_SELECTOR).first();

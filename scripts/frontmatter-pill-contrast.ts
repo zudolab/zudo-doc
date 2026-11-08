@@ -100,10 +100,10 @@ export function parsePillCssRecipe(css: string): PillCssRecipe {
 export function getShippedPillPacks(repoRoot = REPO_ROOT): string[] {
   const packsDir = resolve(repoRoot, "packages/zudo-doc/src/theme-packs");
   const slugs = readdirSync(packsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && entry.name !== "default")
+    .filter((entry) => entry.isDirectory() && entry.name !== "classic")
     .map((entry) => entry.name)
     .sort();
-  return ["default", ...slugs];
+  return ["classic", ...slugs];
 }
 
 function resolveDefaultColors(mode: ColorMode): ResolvedColors {
@@ -125,7 +125,7 @@ function resolvePackColors(
   pack: string,
   mode: ColorMode,
 ): ResolvedColors {
-  if (pack === "default") return resolveDefaultColors(mode);
+  if (pack === "classic") return resolveDefaultColors(mode);
   const css = readFileSync(
     resolve(repoRoot, "packages/zudo-doc/src/theme-packs", pack, "pack.css"),
     "utf8",

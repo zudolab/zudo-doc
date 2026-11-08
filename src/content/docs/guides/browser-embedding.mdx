@@ -119,7 +119,7 @@ The strictly graph-clean subpaths, guarded across both their runtime and declara
 
 ## 3. Layer a theme pack
 
-Publish the selected pack directory, including its fonts, under your asset base. Then use the catalog's `hasStylesheet` field to decide whether a link is needed. The reserved `default` pack reports `false`; styled packs report `true`.
+Publish the selected pack directory, including its fonts, under your asset base. Then use the catalog's `hasStylesheet` field to decide whether a link is needed. The reserved `classic` pack reports `false`; styled packs report `true`.
 
 ```ts title="src/browser-embed.tsx (continued)"
 async function applyThemePack(slug: string) {

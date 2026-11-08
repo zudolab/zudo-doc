@@ -6,7 +6,7 @@
 // Two layers of coverage:
 //   1. RENDER — `ThemePackProvider` emits the latch <style>, the inline
 //      script, and the configured-pack <noscript> fallback (omitted for
-//      "default") via the zudo-react server renderer.
+//      "classic") via the zudo-react server renderer.
 //   2. BEHAVIOR — the emitted script STRING is executed against a fake
 //      document/localStorage/window (the script references those three globals
 //      plus `setTimeout`, so `new Function` parameter shadowing injects the
@@ -35,7 +35,7 @@ import {
 } from "../../theme-pack-switcher/theme-pack-sync.js";
 import type { ThemePackRegistry } from "../../theme-packs-registry/index.js";
 
-const ENABLED = { default: "0.0.0", foundry: "1.2.3" };
+const ENABLED = { classic: "0.0.0", foundry: "1.2.3" };
 
 // ---------------------------------------------------------------------------
 // Fake browser surface for executing the bootstrap string
@@ -229,7 +229,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
   it("uses a VALID persisted slug over the configured one and head-appends exactly one link", () => {
     const env = makeBootstrapEnv("foundry");
-    runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+    runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
     expect(env.attr(THEME_PACK_ATTR)).toBe("foundry");
     expectPackLink(onlyPackLink(env), "/theme-packs/foundry/pack.css?v=1.2.3");
@@ -239,9 +239,9 @@ describe("buildThemePackBootstrap (executed)", () => {
 
   it("falls back to the configured slug on an INVALID stored slug (no crash, no link for default)", () => {
     const env = makeBootstrapEnv("no-such-pack");
-    runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+    runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
-    expect(env.attr(THEME_PACK_ATTR)).toBe("default");
+    expect(env.attr(THEME_PACK_ATTR)).toBe("classic");
     expect(env.head.children).toHaveLength(0);
   });
 
@@ -255,9 +255,9 @@ describe("buildThemePackBootstrap (executed)", () => {
 
   it("inserts no stylesheet AND never arms the latch when the resolved pack is default (stock look = zero requests)", () => {
     const env = makeBootstrapEnv(null);
-    runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+    runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
-    expect(env.attr(THEME_PACK_ATTR)).toBe("default");
+    expect(env.attr(THEME_PACK_ATTR)).toBe("classic");
     expect(env.head.children).toHaveLength(0);
     expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
     expect(env.document.write).not.toHaveBeenCalled();
@@ -265,7 +265,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
   it("prefixes pack URLs with the deployment base", () => {
     const env = makeBootstrapEnv("foundry");
-    runBootstrap(buildThemePackBootstrap("default", ENABLED, "/sub/"), env);
+    runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/sub/"), env);
 
     expectPackLink(onlyPackLink(env), "/sub/theme-packs/foundry/pack.css?v=1.2.3");
   });
@@ -284,7 +284,7 @@ describe("buildThemePackBootstrap (executed)", () => {
         realAppend(el);
       };
 
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       // Ordering is the whole point: arming after the append would race the
       // request it is supposed to cover.
@@ -294,7 +294,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("is cleared when the stylesheet loads", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       onlyPackLink(env).onload!();
 
@@ -305,7 +305,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("is cleared when the stylesheet errors (a 404 pack must not blank the page)", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       onlyPackLink(env).onerror!();
 
@@ -314,7 +314,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("is cleared by the watchdog on a sheet that never resolves — blank-screen avoidance wins", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       // Still latched right up to the deadline (the contract is "no FOUC
       // within the watchdog", not "clear early").
@@ -327,7 +327,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("survives the watchdog firing after an ordinary load (release is idempotent)", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       onlyPackLink(env).onload!();
       // The watchdog still fires; clearing an already-cleared latch must be a
@@ -360,7 +360,7 @@ describe("buildThemePackBootstrap (executed)", () => {
       existing.setAttribute("href", "/theme-packs/foundry/pack.css?v=1.2.3");
       env.head.appendChild(existing);
 
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       const links = env.document.querySelectorAll(`link[${THEME_PACK_LINK_ATTR}]`);
       expect(links).toHaveLength(1);
@@ -370,7 +370,7 @@ describe("buildThemePackBootstrap (executed)", () => {
     it("inserts exactly one link when NONE is present in the head before the bootstrap runs", () => {
       const env = makeBootstrapEnv("foundry");
 
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       const links = env.document.querySelectorAll(`link[${THEME_PACK_LINK_ATTR}]`);
       expect(links).toHaveLength(1);
@@ -384,7 +384,7 @@ describe("buildThemePackBootstrap (executed)", () => {
   describe("duplicate evaluation is inert", () => {
     it("does not re-request or re-latch while the FIRST link is still pending", () => {
       const env = makeBootstrapEnv("foundry");
-      const script = buildThemePackBootstrap("default", ENABLED, "/");
+      const script = buildThemePackBootstrap("classic", ENABLED, "/");
       runBootstrap(script, env);
       const first = onlyPackLink(env);
 
@@ -404,7 +404,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("does not re-request or arm the latch when a matching link is ALREADY LOADED", () => {
       const env = makeBootstrapEnv("foundry");
-      const script = buildThemePackBootstrap("default", ENABLED, "/");
+      const script = buildThemePackBootstrap("classic", ENABLED, "/");
       runBootstrap(script, env);
       const first = onlyPackLink(env);
       first.onload!();
@@ -432,7 +432,7 @@ describe("buildThemePackBootstrap (executed)", () => {
       stale.setAttribute("href", "/theme-packs/foundry/pack.css?v=0.0.1");
       env.head.appendChild(stale);
 
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       expect(env.head.children).toHaveLength(2);
       const inserted = env.head.children.find((l) => l !== stale)!;
@@ -454,7 +454,7 @@ describe("buildThemePackBootstrap (executed)", () => {
       stale.setAttribute("href", "/theme-packs/foundry/pack.css?v=0.0.1");
       env.head.appendChild(stale);
 
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       expect(env.head.children).toHaveLength(2);
       const inserted = env.head.children.find((l) => l !== stale)!;
@@ -468,31 +468,31 @@ describe("buildThemePackBootstrap (executed)", () => {
 
   it("publishes the runtime global applyThemePack validates against", () => {
     const env = makeBootstrapEnv(null);
-    runBootstrap(buildThemePackBootstrap("default", ENABLED, "/sub/"), env);
+    runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/sub/"), env);
 
     expect(env.window[THEME_PACK_RUNTIME_GLOBAL]).toEqual({
       base: "/sub/",
       packs: ENABLED,
-      configured: "default",
+      configured: "classic",
     });
   });
 
   describe("AFTER_NAVIGATE re-apply handler (SPA navigation)", () => {
     it("registers exactly one listener on the zfb after-swap event", () => {
       const env = makeBootstrapEnv(null);
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
       expect(env.listeners.get(AFTER_NAVIGATE_EVENT)).toHaveLength(1);
     });
 
     it("re-asserts the attribute and re-inserts a dropped link via appendChild — never document.write", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
       onlyPackLink(env).onload!();
 
       // Simulate zfb's head swap dropping the pack link + the root-attribute
       // reset a missing preserve-list would cause.
       env.head.children.length = 0;
-      env.document.documentElement.setAttribute(THEME_PACK_ATTR, "default");
+      env.document.documentElement.setAttribute(THEME_PACK_ATTR, "classic");
 
       env.fireAfterNavigate();
 
@@ -506,7 +506,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("is idempotent when the correct link survived the swap", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
       const bootstrapped = onlyPackLink(env);
       bootstrapped.onload!();
 
@@ -520,7 +520,7 @@ describe("buildThemePackBootstrap (executed)", () => {
       // localStorage.setItem failed (private mode) — the live html attribute
       // (which rides preserveHtmlAttrs) is the only surviving record.
       const env = makeBootstrapEnv(null);
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
       env.document.documentElement.setAttribute(THEME_PACK_ATTR, "foundry");
       // The head swap dropped the runtime link.
       env.head.children.length = 0;
@@ -538,7 +538,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("removes stale pack links (wrong slug) and removes the link entirely for default", () => {
       const env = makeBootstrapEnv(null);
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       const stale = new FakeBootstrapLink();
       stale.setAttribute("rel", "stylesheet");
@@ -548,23 +548,23 @@ describe("buildThemePackBootstrap (executed)", () => {
 
       env.fireAfterNavigate();
 
-      // Resolved slug is "default" → no pack link may remain.
+      // Resolved slug is "classic" → no pack link may remain.
       expect(env.head.children).toHaveLength(0);
-      expect(env.attr(THEME_PACK_ATTR)).toBe("default");
+      expect(env.attr(THEME_PACK_ATTR)).toBe("classic");
     });
   });
 
   describe("BEFORE_SWAP injection handler (primary SPA soft-nav persistence, #3137)", () => {
     it("registers exactly one listener on the zfb before-swap event, alongside the after-swap one", () => {
       const env = makeBootstrapEnv(null);
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
       expect(env.listeners.get(BEFORE_SWAP_EVENT)).toHaveLength(1);
       expect(env.listeners.get(AFTER_NAVIGATE_EVENT)).toHaveLength(1);
     });
 
     it("injects a matching link into newDocument.head for a CONFIGURED pack with EMPTY localStorage", () => {
       // The scaffolded fixed-theme-site path the bug report is about: no
-      // switcher, no stored preference — just settings.themePack != "default".
+      // switcher, no stored preference — just settings.themePack != "classic".
       const env = makeBootstrapEnv(null);
       runBootstrap(buildThemePackBootstrap("foundry", ENABLED, "/"), env);
       expectPackLink(onlyPackLink(env), "/theme-packs/foundry/pack.css?v=1.2.3");
@@ -581,7 +581,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("does nothing when the resolved slug is default (stock look has no pack.css)", () => {
       const env = makeBootstrapEnv(null);
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       const newDoc = new FakeNewDocument();
       env.fireBeforeSwap(newDoc);
@@ -591,7 +591,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("does nothing when newDocument is the live document (defensive no-op)", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
       const live = onlyPackLink(env);
 
       // Fire with the SAME reference used as the shadowed `document` global.
@@ -605,7 +605,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("does nothing when newDocument.head already has a stylesheet link with the exact href", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       const existing = new FakeBootstrapLink();
       existing.setAttribute("rel", "stylesheet");
@@ -619,7 +619,7 @@ describe("buildThemePackBootstrap (executed)", () => {
 
     it("does NOT count a rel=preload link with the same href as present — a stylesheet link is still injected", () => {
       const env = makeBootstrapEnv("foundry");
-      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      runBootstrap(buildThemePackBootstrap("classic", ENABLED, "/"), env);
 
       const preload = new FakeBootstrapLink();
       preload.setAttribute("rel", "preload");
@@ -640,7 +640,7 @@ describe("buildThemePackBootstrap (executed)", () => {
     // The behavior tests above prove the paths they exercise; this pins the
     // whole string, so a document.write reintroduced on a branch no test walks
     // still fails. It is the single defect #3399 exists to prevent.
-    for (const configured of ["default", "foundry"]) {
+    for (const configured of ["classic", "foundry"]) {
       const script = buildThemePackBootstrap(configured, ENABLED, "/sub/");
       expect(script).not.toContain("document.write");
       expect(script).not.toContain("document.open");
@@ -684,7 +684,7 @@ describe("ThemePackProvider (rendered)", () => {
 
   it("emits the latch style even for the default pack (build-static, inert until armed)", () => {
     const out = render(
-      <ThemePackProvider configuredSlug="default" enabled={ENABLED} base="/" />,
+      <ThemePackProvider configuredSlug="classic" enabled={ENABLED} base="/" />,
     );
     expect(out).toContain(`<style>${THEME_PACK_LATCH_CSS}</style>`);
     expect(out).toContain("<script>");
@@ -706,23 +706,23 @@ describe("ThemePackProvider (rendered)", () => {
 
 describe("themePackVersionMap / resolveThemePackSsrSlug", () => {
   const registry = [
-    { slug: "default", meta: { version: "0.0.0" }, hasStylesheet: false },
+    { slug: "classic", meta: { version: "0.0.0" }, hasStylesheet: false },
     { slug: "foundry", meta: { version: "1.2.3" }, hasStylesheet: true },
   ] as unknown as ThemePackRegistry;
 
   it("builds the ordered slug → version map from the registry", () => {
     expect(themePackVersionMap(registry)).toEqual({
-      default: "0.0.0",
+      classic: "0.0.0",
       foundry: "1.2.3",
     });
-    expect(Object.keys(themePackVersionMap(registry))).toEqual(["default", "foundry"]);
+    expect(Object.keys(themePackVersionMap(registry))).toEqual(["classic", "foundry"]);
   });
 
   it("resolves the SSR html-attribute slug: configured slug, default fallback, inert on null registry", () => {
     expect(resolveThemePackSsrSlug(registry, { themePack: "foundry" })).toBe("foundry");
     expect(resolveThemePackSsrSlug(registry, {})).toBe("graphite");
-    expect(resolveThemePackSsrSlug(registry, { colorMode: false })).toBe("default");
-    expect(resolveThemePackSsrSlug(registry, { themePack: "default" })).toBe("default");
+    expect(resolveThemePackSsrSlug(registry, { colorMode: false })).toBe("classic");
+    expect(resolveThemePackSsrSlug(registry, { themePack: "classic" })).toBe("classic");
     expect(resolveThemePackSsrSlug(null, { themePack: "foundry" })).toBeUndefined();
   });
 });

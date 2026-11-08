@@ -51,12 +51,12 @@ function fixtureMeta(slug: string): ThemePackMeta {
 describe("copyEnabledThemePacks", () => {
   it("no-ops (writes nothing) when the enabled set has no CSS-bearing pack", () => {
     const packsDir = makeTempDir("zudo-doc-theme-packs-src-");
-    mkdirSync(join(packsDir, "default"), { recursive: true });
-    writeFileSync(join(packsDir, "default", "meta.json"), JSON.stringify(fixtureMeta("default")));
+    mkdirSync(join(packsDir, "classic"), { recursive: true });
+    writeFileSync(join(packsDir, "classic", "meta.json"), JSON.stringify(fixtureMeta("classic")));
     const outDir = makeTempDir("zudo-doc-theme-packs-out-");
 
     const enabled: ThemePackRegistry = [
-      { slug: "default", meta: fixtureMeta("default"), hasStylesheet: false },
+      { slug: "classic", meta: fixtureMeta("classic"), hasStylesheet: false },
     ];
     const result = copyEnabledThemePacks({ packsDir, enabled, outDir });
 
@@ -66,8 +66,8 @@ describe("copyEnabledThemePacks", () => {
 
   it("copies meta.json + pack.css + fonts/* for a CSS-bearing pack and writes the aggregated index.json", () => {
     const packsDir = makeTempDir("zudo-doc-theme-packs-src-");
-    mkdirSync(join(packsDir, "default"), { recursive: true });
-    writeFileSync(join(packsDir, "default", "meta.json"), JSON.stringify(fixtureMeta("default")));
+    mkdirSync(join(packsDir, "classic"), { recursive: true });
+    writeFileSync(join(packsDir, "classic", "meta.json"), JSON.stringify(fixtureMeta("classic")));
     mkdirSync(join(packsDir, "acme", "fonts"), { recursive: true });
     writeFileSync(join(packsDir, "acme", "meta.json"), JSON.stringify(fixtureMeta("acme")));
     writeFileSync(join(packsDir, "acme", "pack.css"), 'html[data-theme-pack="acme"]{--zd-bg:#fff}');
@@ -76,7 +76,7 @@ describe("copyEnabledThemePacks", () => {
 
     const outDir = makeTempDir("zudo-doc-theme-packs-out-");
     const enabled: ThemePackRegistry = [
-      { slug: "default", meta: fixtureMeta("default"), hasStylesheet: false },
+      { slug: "classic", meta: fixtureMeta("classic"), hasStylesheet: false },
       { slug: "acme", meta: fixtureMeta("acme"), hasStylesheet: true },
     ];
 
@@ -85,8 +85,8 @@ describe("copyEnabledThemePacks", () => {
     expect(result.copied).toBe(true);
     const destRoot = join(outDir, "theme-packs");
     expect(result.destDir).toBe(destRoot);
-    expect(existsSync(join(destRoot, "default", "meta.json"))).toBe(true);
-    expect(existsSync(join(destRoot, "default", "pack.css"))).toBe(false);
+    expect(existsSync(join(destRoot, "classic", "meta.json"))).toBe(true);
+    expect(existsSync(join(destRoot, "classic", "pack.css"))).toBe(false);
     expect(existsSync(join(destRoot, "acme", "meta.json"))).toBe(true);
     expect(existsSync(join(destRoot, "acme", "pack.css"))).toBe(true);
     expect(existsSync(join(destRoot, "acme", "fonts", "Acme.woff2"))).toBe(true);
@@ -95,7 +95,7 @@ describe("copyEnabledThemePacks", () => {
     const manifest = JSON.parse(readFileSync(join(destRoot, "index.json"), "utf8"));
     expect(manifest).toEqual({
       schemaVersion: 1,
-      packs: [fixtureMeta("default"), fixtureMeta("acme")],
+      packs: [fixtureMeta("classic"), fixtureMeta("acme")],
     });
   });
 

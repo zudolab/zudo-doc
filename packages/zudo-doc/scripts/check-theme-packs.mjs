@@ -9,7 +9,7 @@
 // Asserts: dist/theme-packs/ exists, every discovered pack still passes the
 // Decision 6.7 validator (re-scanned via the compiled loader — dist/ may
 // have been hand-edited or partially copied since the last build), and at
-// least the two reserved slugs this package ships today ("default" — meta
+// least the two reserved slugs this package ships today ("classic" — meta
 // only, "foundry" — the CSS-bearing reference pack) are present with the
 // right css-presence shape.
 //
@@ -26,8 +26,8 @@ const PKG_ROOT = resolve(__dirname, "..");
 const DIST_THEME_PACKS = resolve(PKG_ROOT, "dist/theme-packs");
 
 // slug -> whether it must ship a non-empty pack.css (ADR Decision 1: the
-// reserved "default" pack ships meta.json ONLY).
-const REQUIRED_SLUGS = { default: false, foundry: true };
+// reserved "classic" pack ships meta.json ONLY).
+const REQUIRED_SLUGS = { classic: false, foundry: true };
 
 if (!existsSync(DIST_THEME_PACKS)) {
   process.stderr.write(

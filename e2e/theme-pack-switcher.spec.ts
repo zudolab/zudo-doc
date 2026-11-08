@@ -38,7 +38,7 @@ import {
  * vocabulary (`zudo-doc-theme`, `data-theme`) to prove the two systems are
  * independent.
  *
- * Bundled packs available in this fixture: "default" (no stylesheet),
+ * Bundled packs available in this fixture: "classic" (no stylesheet),
  * "foundry", "broadsheet", "ledger", "manuscript", "swissgrid" — see
  * `packages/zudo-doc/src/theme-packs/`. The fixture PINS `themePacks` to a
  * fixed order with "foundry" held SECOND (see this fixture's settings.ts), so
@@ -60,7 +60,7 @@ const HOME = "/";
  * a stale subset.
  */
 const FULL_PACK_CYCLE = [
-  "default",
+  "classic",
   "foundry",
   "broadsheet",
   "ledger",
@@ -184,7 +184,7 @@ test.describe("Theme pack switcher", () => {
     page,
   }) => {
     await page.goto(HOME, { waitUntil: "load" });
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
     await expect(page.locator(THEME_PACK_LINK_SELECTOR)).toHaveCount(0);
 
     const runtime = await page.evaluate(
@@ -195,7 +195,7 @@ test.describe("Theme pack switcher", () => {
       },
     );
     expect(runtime.base).toBe("/");
-    expect(runtime.configured).toBe("default");
+    expect(runtime.configured).toBe("classic");
     expect(Object.keys(runtime.packs).sort()).toEqual([
       "academia",
       "bauhaus",
@@ -204,7 +204,7 @@ test.describe("Theme pack switcher", () => {
       "botanica",
       "broadsheet",
       "brutalist",
-      "default",
+      "classic",
       "drift",
       "eink",
       "fjord",
@@ -257,7 +257,7 @@ test.describe("Theme pack switcher", () => {
     await nextPackButton(page).click();
     await waitForActivePack(page, "foundry");
 
-    expect(await readThemePackChangeDetail(page)).toEqual({ pack: "foundry", previous: "default" });
+    expect(await readThemePackChangeDetail(page)).toEqual({ pack: "foundry", previous: "classic" });
     await expect(page.locator(THEME_PACK_LINK_SELECTOR)).toHaveCount(1);
     await expect(page.locator(THEME_PACK_LINK_SELECTOR)).toHaveAttribute(
       "href",
@@ -274,11 +274,11 @@ test.describe("Theme pack switcher", () => {
 
     await armThemePackChangeCapture(page);
     await prevPackButton(page).click();
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
 
-    expect(await readThemePackChangeDetail(page)).toEqual({ pack: "default", previous: "foundry" });
+    expect(await readThemePackChangeDetail(page)).toEqual({ pack: "classic", previous: "foundry" });
     await expect(page.locator(THEME_PACK_LINK_SELECTOR)).toHaveCount(0);
-    expect(await readStoredPack(page)).toBe("default");
+    expect(await readStoredPack(page)).toBe("classic");
     await expect(flyoutCard(page)).toContainText("Classic");
   });
 
@@ -287,25 +287,25 @@ test.describe("Theme pack switcher", () => {
   }) => {
     test.slow();
     await page.goto(HOME, { waitUntil: "load" });
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
     await openFlyout(page);
 
     // Forward: default -> foundry -> ... -> solar -> (wrap) -> default.
-    for (const slug of [...FULL_PACK_CYCLE.slice(1), "default"]) {
+    for (const slug of [...FULL_PACK_CYCLE.slice(1), "classic"]) {
       await nextPackButton(page).click();
       await waitForActivePack(page, slug);
     }
-    expect(await readActivePack(page)).toBe("default");
+    expect(await readActivePack(page)).toBe("classic");
 
     // Backward: default -> solar -> ... -> foundry -> (wrap) -> default,
     // i.e. the reverse of FULL_PACK_CYCLE (whose own last element is
-    // "default", so this sequence needs no extra wrap-around append).
+    // "classic", so this sequence needs no extra wrap-around append).
     const reverseOrder = [...FULL_PACK_CYCLE].reverse();
     for (const slug of reverseOrder) {
       await prevPackButton(page).click();
       await waitForActivePack(page, slug);
     }
-    expect(await readActivePack(page)).toBe("default");
+    expect(await readActivePack(page)).toBe("classic");
   });
 
   test("browse-all dialog: selecting a card applies the pack immediately and the dialog stays open; Escape restores focus to the launcher", async ({
@@ -381,11 +381,11 @@ test.describe("Theme pack switcher", () => {
     await preseedTheme(page, "light");
     await page.goto(HOME, { waitUntil: "load" });
     await waitForAppearanceHydrated(page, "light");
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
 
     // No pack has been switched yet — changing appearance must not write the
     // theme-pack storage key at all.
-    await assertAppearanceIndependentOfPack(page, "default");
+    await assertAppearanceIndependentOfPack(page, "classic");
     expect(await readStoredPack(page)).toBeNull();
 
     await openFlyout(page);
@@ -449,7 +449,7 @@ test.describe("Theme pack switcher", () => {
     // longer hold 360px without exceeding calc(100vw - 2rem)).
     expect(width).toBeLessThan(340);
     // Matches the calc(100vw - 2rem) formula (2rem = 32px at the unmodified
-    // "default" pack's root font-size — no pack sets a root font-size override
+    // "classic" pack's root font-size — no pack sets a root font-size override
     // on this fixture's HOME hard-load state).
     //
     // The tolerance MUST stay below 16px: a regression from

@@ -3,7 +3,7 @@ import { THEME_STORAGE_KEY } from "./theme-helpers";
 import { THEME_PACK_STORAGE_KEY, waitForActivePack } from "./theme-pack-helpers";
 
 const packs = [
-  "default", "academia", "bauhaus", "beacon", "blueprint", "botanica", "broadsheet",
+  "classic", "academia", "bauhaus", "beacon", "blueprint", "botanica", "broadsheet",
   "brutalist", "drift", "eink", "fjord", "foundry", "futura-editorial", "hearth",
   "hollow", "ledger", "manuscript", "matcha", "nocturne", "observatory", "onyx",
   "phosphor", "riso", "sakura", "scandi", "solar", "sumi", "swissgrid", "tidepool",

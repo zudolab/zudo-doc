@@ -21,7 +21,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "botanica",
       "broadsheet",
       "brutalist",
-      "default",
+      "classic",
       "drift",
       "eink",
       "fjord",
@@ -54,15 +54,15 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
   it("the default pack has no stylesheet; foundry does", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     const byslug = Object.fromEntries(registry.map((e) => [e.slug, e]));
-    expect(byslug["default"]?.hasStylesheet).toBe(false);
+    expect(byslug["classic"]?.hasStylesheet).toBe(false);
     expect(byslug["foundry"]?.hasStylesheet).toBe(true);
   });
 
   it("Classic keeps the reserved no-CSS default slug; the three soft packs ship CSS", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     const byslug = Object.fromEntries(registry.map((e) => [e.slug, e]));
-    expect(byslug["default"]?.meta.name).toBe("Classic");
-    expect(byslug["default"]?.hasStylesheet).toBe(false);
+    expect(byslug["classic"]?.meta.name).toBe("Classic");
+    expect(byslug["classic"]?.hasStylesheet).toBe(false);
     for (const slug of ["graphite", "warm-mineral", "quiet-slate"]) {
       expect(byslug[slug]?.hasStylesheet, slug).toBe(true);
       expect(byslug[slug]?.meta.version, slug).toBe("1.0.0");
@@ -83,7 +83,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
     // (distinct from `loadThemePackRegistry`'s pure alphabetical order above).
     expect(enabled.map((e) => e.slug)).toEqual([
       "graphite",
-      "default",
+      "classic",
       "academia",
       "bauhaus",
       "beacon",

@@ -28,7 +28,7 @@ describe("runPrompts — agent export and MCP", () => {
       defaultLang: "en",
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
-      themePack: "default",
+      themePack: "classic",
       packageManager: "pnpm",
       githubUrl: "",
     });
@@ -55,7 +55,7 @@ describe("runPrompts — agent export and MCP", () => {
         defaultLang: "en",
         colorSchemeMode: "single",
         singleScheme: "Default Dark",
-        themePack: "default",
+        themePack: "classic",
         packageManager: "pnpm",
         githubUrl: "",
         features: { mcp: true },

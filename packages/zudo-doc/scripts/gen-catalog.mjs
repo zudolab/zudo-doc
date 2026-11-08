@@ -6,7 +6,7 @@
 // zudo-doc#3349, epic #3345 "theme catalog single-sourcing"). Aggregates
 // EVERY bundled theme pack's validated `meta.json` into one
 // `{ schemaVersion: 2, packs: ThemePackCatalogEntry[] }` manifest, `"graphite"`
-// first, `"default"` (Classic) second, then alphabetical (the
+// first, `"classic"` second, then alphabetical (the
 // `resolveEnabledPacks` convention — this script
 // calls that same pure resolver with no settings so it resolves every pack, in
 // that canonical order). Catalog schema v2 is independent from the schema
@@ -55,7 +55,7 @@ try {
   process.exit(1);
 }
 
-// No settings filter → every bundled pack: graphite, default, then alphabetical.
+// No settings filter → every bundled pack: graphite, classic, then alphabetical.
 let enabled;
 try {
   enabled = resolveEnabledPacks(registry, {});

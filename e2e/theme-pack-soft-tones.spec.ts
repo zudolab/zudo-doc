@@ -14,7 +14,7 @@ import {
 /**
  * The soft-tone packs (graphite, warm-mineral, quiet-slate) share one
  * component treatment. These checks run on the `theme` fixture, which pins
- * themePack: "default" (Classic) and appends the three packs to its
+ * themePack: "classic" (Classic) and appends the three packs to its
  * themePacks list. Contrast is measured on the actually rendered colors.
  */
 
@@ -126,7 +126,7 @@ test.describe("soft-tone theme packs", () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(DOC, { waitUntil: "load" });
-    await waitForActivePack(page, "default");
+    await waitForActivePack(page, "classic");
     const classic = await chromeSnapshot(page);
 
     await openFlyout(page);
@@ -140,7 +140,7 @@ test.describe("soft-tone theme packs", () => {
       expect(await chromeSnapshot(page)).not.toEqual(classic);
 
       await packCard(page, "Classic").click();
-      await waitForActivePack(page, "default");
+      await waitForActivePack(page, "classic");
       await expect(page.locator(THEME_PACK_LINK_SELECTOR)).toHaveCount(0);
       expect(await chromeSnapshot(page)).toEqual(classic);
     }

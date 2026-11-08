@@ -9,6 +9,8 @@
 
 import fs from "fs-extra";
 
+import { resolveThemePackAlias } from "../theme-packs-registry/configured-theme-pack.js";
+
 import { applyThemePackToConfigSource } from "./config-rewriter.js";
 import { resolveZfbConfigPath } from "./config-io.js";
 import { writeThemePackProvenance } from "./provenance.js";
@@ -34,9 +36,12 @@ export interface ApplyThemePackResult {
 }
 
 export async function applyThemePack(
-  slug: string,
+  requestedSlug: string,
   options: ApplyThemePackOptions = {},
 ): Promise<ApplyThemePackResult> {
+  // `apply default` writes the pack the alias resolves to, so the config
+  // and provenance always name a real pack directory.
+  const slug = resolveThemePackAlias(requestedSlug);
   const cwd = options.cwd ?? process.cwd();
   const now = options.now ?? (() => new Date());
 

@@ -26,7 +26,7 @@ export interface ThemePackOption {
 
 /** Mirrors THEME_PACKS from packages/create-zudo-doc/src/constants.ts (ADR
  *  #2818; full catalog synced by #2855). Order: "graphite" (the omitted
- *  default), then "default" (Classic), then the rest alphabetically by slug
+ *  default), then "classic", then the rest alphabetically by slug
  *  (matches resolveEnabledPacks). */
 export const THEME_PACKS: ThemePackOption[] = [
   {
@@ -35,7 +35,7 @@ export const THEME_PACKS: ThemePackOption[] = [
     hint: "Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent (the default)",
   },
   {
-    slug: "default",
+    slug: "classic",
     label: "Classic",
     hint: "The original zudo-doc look — no extra stylesheet loaded",
   },
@@ -467,7 +467,7 @@ export interface FormState {
   defaultMode: "light" | "dark";
   respectPrefersColorScheme: boolean;
   /** Theme pack slug (ADR #2818 Decision 7). "graphite" = the default look,
-   *  "default" = Classic. */
+   *  "classic" = Classic. */
   themePack: string;
   features: string[];
   cjkFriendly: boolean;
@@ -503,7 +503,7 @@ export function buildJson(state: FormState): Record<string, unknown> {
 
   // "Omit when default" (ADR #2818 Decision 7 / #2823): create-zudo-doc
   // fills an omitted preset themePack with Graphite in every color-scheme
-  // mode, so only another pack is written (picking Classic emits "default").
+  // mode, so only another pack is written (picking Classic emits "classic").
   if (state.themePack && state.themePack !== DEFAULT_THEME_PACK_CHOICE) {
     base.themePack = state.themePack;
   }

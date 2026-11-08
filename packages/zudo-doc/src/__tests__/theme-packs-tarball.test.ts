@@ -131,8 +131,8 @@ describe("npm tarball ships theme-pack assets (ADR docs/adr/theme-packs.md, #282
   it("includes every bundled pack's meta.json, pack.css (when shipped), and fonts/*", () => {
     // "default" — meta.json only; the reserved no-op pack must NOT ship
     // pack.css (ADR Decision 1).
-    expect(files).toContain("dist/theme-packs/default/meta.json");
-    expect(files).not.toContain("dist/theme-packs/default/pack.css");
+    expect(files).toContain("dist/theme-packs/classic/meta.json");
+    expect(files).not.toContain("dist/theme-packs/classic/pack.css");
 
     // "foundry" — the CSS-bearing reference pack, incl. self-hosted fonts +
     // the OFL license text (ADR Decision 5's redistribution requirement).

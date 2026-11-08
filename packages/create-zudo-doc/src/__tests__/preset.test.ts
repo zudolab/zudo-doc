@@ -167,7 +167,7 @@ describe("presetToChoices — themePack (ADR #2818)", () => {
 
 describe("validatePreset — themePack (ADR #2818)", () => {
   it("accepts a known theme pack slug", () => {
-    expect(validatePreset({ themePack: "default" })).toBeNull();
+    expect(validatePreset({ themePack: "classic" })).toBeNull();
     expect(validatePreset({ themePack: "foundry" })).toBeNull();
   });
 

@@ -96,7 +96,7 @@ export async function waitForActivePack(page: Page, slug: string, timeout = 1000
 }
 
 export async function readActivePack(page: Page): Promise<string> {
-  return (await page.locator("html").getAttribute(THEME_PACK_ATTR)) ?? "default";
+  return (await page.locator("html").getAttribute(THEME_PACK_ATTR)) ?? "classic";
 }
 
 export async function readStoredPack(page: Page): Promise<string | null> {
