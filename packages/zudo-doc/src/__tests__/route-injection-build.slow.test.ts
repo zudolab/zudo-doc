@@ -1424,6 +1424,18 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // (57089, 68052, 79443). The changed nav-scope/sidebar-utils/nav-tree
   // sources change zfb's build identity globally; this fixture's single
   // getting-started category has no dash sibling, so its sidebar is unchanged.
+  //
+  // 2026-11-08 re-baseline (zudolab/zudo-doc#4715, "default" theme pack becomes
+  // an alias for Graphite; Classic moves to the slug "classic"): this PR's run
+  // 42500770566 (A2 job 128792799972, artifact 13625785567) reports the three
+  // new hashes below, and a local capture of the same head reproduces them
+  // exactly. Replacing only the native data-zfb-build identity
+  // (5dc2d91b39c32ee6 -> 7b593adcb637b443, the accepted 9.1.5 capture's value)
+  // and the four "classic" slug occurrences per page (the html
+  // data-theme-pack attribute and the bootstrap's inlined packs map) with
+  // "default" reproduces every accepted 9.1.5 reference hash, with no residual.
+  // Normalized byte lengths are unchanged (57095, 68058, 79449) because both
+  // slugs are seven bytes.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
