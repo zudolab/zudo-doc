@@ -108,7 +108,8 @@ The sidebar is generated from the filesystem. The rules are about how you organi
 - **Nesting depth: prefer 2–3 levels.** Deep nesting hides content. If you need more, the header nav is probably missing a category — split it out. This is a readability rule, not an enforced limit.
 - **Each sidebar section should cover one cohesive topic.** Do not mix unrelated themes in the same sidebar (e.g. "Hardware" and "Community Events" under the same section).
 - **Use kebab-case directory and file names.** `my-article.mdx`, not `myArticle.mdx`.
-- A header section keeps the full editorial tree unless its sidebar definition sets `scopeRoot: "configured"`. That cap is the highest Broaden can reach. It does not replace `initialPath`. Omit it to preserve the default. Do not add the cap to invent a directory boundary the filesystem does not have.
+- **Recommend each major category landing page as the sidebar ceiling.** Keep its linked row and native descendants on its landing page and articles; use the header to switch major categories. Bind `{ items: [], scopeRoot: "configured" }` for each `categoryMatch`. At that root Broaden is absent. Omitted definitions retain the package's broader editorial default; this is an authoring recommendation, not a changed runtime default.
+- **Narrow further only for a large or deep category with substantial nested groups.** A short, flat category should show its whole tree without a narrower `initialPath`. Branch focus can broaden back to the configured category ceiling. A whole-site sidebar is usually appropriate only for very small documentation.
 
 ## Checklist for Adding a New Page
 

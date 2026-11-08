@@ -16,6 +16,29 @@ Each level narrows the scope. The header gives users a high-level map of the sit
 
 Three levels is a usability recommendation, not a technical limit. The sidebar is recursive and renders any depth, but shallow trees are easier to scan.
 
+## Recommended Sidebar Boundary
+
+**Use each major category landing page as the top of its sidebar.** Keep the linked category row and all its native descendants visible on both the landing page and its articles. Use the header to switch between major categories. A whole-site sidebar mixes unrelated sections and is usually appropriate only when the documentation is small enough to scan as one tree.
+
+Set `scopeRoot: "configured"` for each header section, keeping `items: []` to use its filesystem tree:
+
+```ts title="src/sidebars.ts"
+import type { SidebarsConfig } from "@takazudo/zudo-doc/sidebar-utils";
+
+const sidebars: SidebarsConfig = {
+  guides: { items: [], scopeRoot: "configured" },
+  reference: { items: [], scopeRoot: "configured" },
+};
+
+export default sidebars;
+```
+
+Bind this file through `chromeBindings.sidebarsConfig` and `chromeBindingsModule` as shown in [Sidebar Configuration](../guides/sidebar.mdx#sidebar-configuration). The keys must match the header's `categoryMatch` values. This is the recommended authoring setup; omitting a definition still uses the package's broader editorial default.
+
+For example, a CLI section starts with its linked CLI row and its pages. **Broaden tree** is absent at that section root, so readers cannot expand it into the other major categories. The same boundary applies in the mobile drawer.
+
+Further branch focus and narrowing are useful when a category is large, deeply structured, or contains substantial nested groups. For a short, flat category, keep the whole category visible; do not add a narrower `initialPath` just to expose those controls. With the configured boundary, readers who focus a nested branch can broaden back to the major category, but no further. See [Capping the Broadening Boundary](../guides/sidebar.mdx#broader-tree).
+
 ## Choosing a Navigation Pattern
 
 Start with the first row. Move down the table only when the default cannot express what readers need.
