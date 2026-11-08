@@ -41,7 +41,7 @@ export interface CopyThemePacksResult {
  * (`{ schemaVersion: 1, packs: ThemePackMeta[] }`) in resolved order.
  *
  * No-ops (writes nothing, returns `{ copied: false }`) when the enabled set
- * has no CSS-bearing pack — i.e. only `"default"` is enabled — per the ADR's
+ * has no CSS-bearing pack — i.e. only `"classic"` is enabled — per the ADR's
  * dead-weight-avoidance rule.
  */
 export function copyEnabledThemePacks({

@@ -40,7 +40,7 @@ export interface CreateOptions {
   darkScheme?: string;
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
-  /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. Default: "graphite" ("default" = Classic). */
+  /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. Default: "graphite" ("classic" = Classic). */
   themePack?: string;
   features: string[];
   /** MCP deployment preset; currently Cloudflare Workers Static Assets only. */

@@ -115,7 +115,7 @@ import {
 // existing `color-scheme-changed` one. Plain browser-only helpers — importing
 // them does not widen the island graph (no "use client" in that module).
 import {
-  DEFAULT_THEME_PACK_SLUG,
+  CLASSIC_THEME_PACK_SLUG,
   THEME_PACK_CHANGED_EVENT,
   readThemePackFromDom,
 } from "./theme-pack-switcher/theme-pack-sync.js";
@@ -280,7 +280,7 @@ export function withPackScopedStoragePrefix(
   config: PanelConfig,
   activePack: string,
 ): PanelConfig {
-  if (activePack === DEFAULT_THEME_PACK_SLUG) return config;
+  if (activePack === CLASSIC_THEME_PACK_SLUG) return config;
   return { ...config, storagePrefix: `${config.storagePrefix}--${activePack}` };
 }
 

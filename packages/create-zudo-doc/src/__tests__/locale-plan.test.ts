@@ -129,7 +129,7 @@ describe("resolveLocalePlan compatibility contract", () => {
       additionalLangs: [" JA ", "de-DE"],
       colorSchemeMode: "single",
       singleScheme: "Default Dark",
-      themePack: "default",
+      themePack: "classic",
       features,
       githubUrl: "",
       packageManager: "pnpm",

@@ -66,7 +66,7 @@ describe("applyThemePack — unknown slug", () => {
     const result = await applyThemePack("does-not-exist", { cwd: projectDir, themePacksDir });
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Unknown theme pack "does-not-exist"');
-    expect(result.message).toContain("default");
+    expect(result.message).toContain("classic");
     expect(result.message).toContain("sample");
     expect(await fs.readFile(configPath, "utf8")).toBe(CANONICAL_CONFIG);
   });
@@ -176,8 +176,31 @@ describe("applyThemePack — noncanonical config (refusal, never corrupt)", () =
   });
 });
 
+describe("applyThemePack — apply classic", () => {
+  it("sets themePack to \"classic\" explicitly (not a field removal)", async () => {
+    await fs.writeFile(
+      configPath,
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    themePack: "sample",
+    siteName: "Docs",
+  }),
+);
+`,
+      "utf8",
+    );
+
+    const result = await applyThemePack("classic", { cwd: projectDir, themePacksDir });
+    expect(result.ok).toBe(true);
+    const rewritten = await fs.readFile(configPath, "utf8");
+    expect(rewritten).toContain('themePack: "classic",');
+  });
+});
 describe("applyThemePack — apply default", () => {
-  it("sets themePack to \"default\" explicitly (not a field removal)", async () => {
+  it("resolves the \"default\" alias and writes \"graphite\"", async () => {
     await fs.writeFile(
       configPath,
       `import { defineConfig } from "zfb/config";
@@ -196,6 +219,9 @@ export default defineConfig(
     const result = await applyThemePack("default", { cwd: projectDir, themePacksDir });
     expect(result.ok).toBe(true);
     const rewritten = await fs.readFile(configPath, "utf8");
-    expect(rewritten).toContain('themePack: "default",');
+    expect(rewritten).toContain('themePack: "graphite",');
+    expect(rewritten).not.toContain('themePack: "default"');
+    const provenance = await fs.readJson(path.join(projectDir, ".zudo-doc.json"));
+    expect(provenance.themePack.slug).toBe("graphite");
   });
 });

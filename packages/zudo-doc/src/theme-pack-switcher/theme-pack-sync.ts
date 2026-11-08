@@ -23,12 +23,12 @@ export const THEME_PACK_CHANGED_EVENT = "theme-pack-changed";
 export const THEME_PACK_STORAGE_KEY = "zudo-doc-theme-pack";
 
 /** `<html>` attribute carrying the ACTIVE pack slug (always present on a
- *  theme-pack-enabled page, also for `"default"`). */
+ *  theme-pack-enabled page, also for `"classic"`). */
 export const THEME_PACK_ATTR = "data-theme-pack";
 
 /** Marker attribute of the ACTIVE pack's stylesheet `<link>` (id-free; this
  *  attribute is the canonical selector). Absent when the active pack is
- *  `"default"`. */
+ *  `"classic"`. */
 export const THEME_PACK_LINK_ATTR = "data-zd-theme-pack-css";
 
 /** Marker attribute of an in-flight (not yet committed) pack stylesheet
@@ -37,12 +37,12 @@ export const THEME_PACK_LINK_LOADING_ATTR = "data-zd-theme-pack-css-loading";
 
 /**
  * The reserved slug meaning "the stock zudo-doc look" — no pack stylesheet is
- * ever inserted for it. Literal parity with `DEFAULT_THEME_PACK_SLUG` in
+ * ever inserted for it. Literal parity with `CLASSIC_THEME_PACK_SLUG` in
  * `../theme-packs-registry/meta-schema.ts` is guarded by a unit test; the
  * constant is re-declared here (rather than imported) because `meta-schema.ts`
  * imports `zod`, which must stay out of client island bundles.
  */
-export const DEFAULT_THEME_PACK_SLUG = "default";
+export const CLASSIC_THEME_PACK_SLUG = "classic";
 
 /**
  * `window` global published by the theme-pack bootstrap script
@@ -96,12 +96,12 @@ function readRuntimeConfig(): ThemePackRuntimeConfig | null {
 
 /**
  * Read the ACTIVE theme pack from `<html data-theme-pack>`. Falls back to
- * `"default"` when the attribute is missing or empty (e.g. a page rendered
+ * `"classic"` when the attribute is missing or empty (e.g. a page rendered
  * without the theme-pack feature).
  */
 export function readThemePackFromDom(): string {
   const actual = document.documentElement.getAttribute(THEME_PACK_ATTR);
-  return actual !== null && actual !== "" ? actual : DEFAULT_THEME_PACK_SLUG;
+  return actual !== null && actual !== "" ? actual : CLASSIC_THEME_PACK_SLUG;
 }
 
 /** Await a link element's `load`, racing `error` and the 10s timeout. Must be
@@ -183,10 +183,10 @@ export async function applyThemePack(next: string): Promise<boolean> {
   // 3. Take the race token.
   const token = ++seq;
 
-  // 4. Load the incoming stylesheet (skipped for "default" — the stock look
+  // 4. Load the incoming stylesheet (skipped for "classic" — the stock look
   //    has no pack.css by design, ADR Decision 1).
   let newLink: HTMLLinkElement | null = null;
-  if (next !== DEFAULT_THEME_PACK_SLUG) {
+  if (next !== CLASSIC_THEME_PACK_SLUG) {
     newLink = document.createElement("link");
     newLink.setAttribute("rel", "stylesheet");
     newLink.setAttribute(THEME_PACK_LINK_LOADING_ATTR, "");

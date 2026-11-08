@@ -18,10 +18,11 @@ export type { ThemePackMeta, ThemePackSwatches } from "../route-context-payload/
  *  (Decision 6.7 "slug regex + dir-name parity"). */
 export const THEME_PACK_SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
 
-/** The reserved slug meaning "the stock zudo-doc look" — ships `meta.json`
- *  ONLY (no `pack.css`); the runtime never inserts a stylesheet link for it
- *  (ADR Decision 1, "The reserved `default` pack"). */
-export const DEFAULT_THEME_PACK_SLUG = "default";
+/** The reserved slug meaning "the stock zudo-doc look" (Classic) — ships
+ *  `meta.json` ONLY (no `pack.css`); the runtime never inserts a stylesheet
+ *  link for it (ADR Decision 1, "The reserved Classic pack"). */
+export const CLASSIC_THEME_PACK_SLUG = "classic";
+
 
 /** Loose semver — `MAJOR.MINOR.PATCH` with an optional `-prerelease`/`+build`
  *  suffix. Intentionally permissive (this is a display/cache-busting value,

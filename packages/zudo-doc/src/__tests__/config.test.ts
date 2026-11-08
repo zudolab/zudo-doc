@@ -433,13 +433,19 @@ describe("zudoDoc() effective theme pack", () => {
     expect(packOf(zudoDoc({ themePack: null }))).toBe("graphite");
   });
 
-  it("keeps an explicit \"default\" as the Classic pack", () => {
-    expect(packOf(zudoDoc({ themePack: "default" }))).toBe("default");
+  it("keeps an explicit \"classic\" as the Classic pack", () => {
+    expect(packOf(zudoDoc({ themePack: "classic" }))).toBe("classic");
+  });
+
+  it("resolves an explicit \"default\" to Graphite (alias)", () => {
+    expect(packOf(zudoDoc({ themePack: "default" }))).toBe("graphite");
+    const custom = { Mine: defaultColorSchemes[Object.keys(defaultColorSchemes)[0]!]! };
+    expect(packOf(zudoDoc({ themePack: "default", colorSchemes: custom }))).toBe("graphite");
   });
 
   it("keeps Classic when custom colorSchemes are supplied without a pack", () => {
     const custom = { Mine: defaultColorSchemes[Object.keys(defaultColorSchemes)[0]!]! };
-    expect(packOf(zudoDoc({ colorSchemes: custom }))).toBe("default");
+    expect(packOf(zudoDoc({ colorSchemes: custom }))).toBe("classic");
   });
 
   it("does not treat the package's own colorSchemes as custom", () => {
@@ -447,7 +453,7 @@ describe("zudoDoc() effective theme pack", () => {
   });
 
   it("keeps Classic for a fixed colorMode:false without a pack", () => {
-    expect(packOf(zudoDoc({ colorMode: false }))).toBe("default");
+    expect(packOf(zudoDoc({ colorMode: false }))).toBe("classic");
   });
 
   it("lets an explicit pack win over custom schemes and fixed mode", () => {

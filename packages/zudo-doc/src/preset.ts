@@ -233,7 +233,8 @@ export interface PresetSettings {
    * Threaded into the `@takazudo/zudo-doc/plugins/theme-packs` descriptor's
    * options; the plugin's `setup()` validates it against the resolved
    * registry and throws loudly on an unknown slug. Omitted is normalized by
-   * `resolveConfiguredThemePack`: `"graphite"`, or `"default"` (Classic) when
+   * `resolveConfiguredThemePack`: `"graphite"` (also for the `"default"`
+   * alias), or `"classic"` when
    * custom `colorSchemes` are passed or `colorMode` is `false`.
    */
   themePack?: string | null;
@@ -814,7 +815,7 @@ function buildPlugins(
     // above (never an imported plugin function, keeping this preset's
     // node-free eval-graph guard green). The plugin internally no-ops
     // (postBuild/devMiddleware write/serve nothing) when the resolved
-    // enabled set has no CSS-bearing pack (i.e. only "default" is enabled),
+    // enabled set has no CSS-bearing pack (i.e. only "classic" is enabled),
     // so an unconfigured project pays no asset cost beyond the bundled
     // registry scan at plugin setup.
     {

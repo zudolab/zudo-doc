@@ -25,7 +25,7 @@ afterEach(async () => {
 describe("listThemePacks", () => {
   it("lists every installed pack, in canonical (alphabetical) order", async () => {
     const result = await listThemePacks({ cwd: projectDir, themePacksDir });
-    expect(result.rows.map((r) => r.slug)).toEqual(["default", "graphite", "sample"]);
+    expect(result.rows.map((r) => r.slug)).toEqual(["classic", "graphite", "sample"]);
   });
 
   it("carries slug/name/mode/version/description for each row", async () => {
@@ -59,7 +59,7 @@ export default defineConfig(
     expect(result.activeSlug).toBe("sample");
     expect(result.activeDetected).toBe(true);
     expect(result.rows.find((r) => r.slug === "sample")?.active).toBe(true);
-    expect(result.rows.find((r) => r.slug === "default")?.active).toBe(false);
+    expect(result.rows.find((r) => r.slug === "classic")?.active).toBe(false);
   });
 
   it("marks \"graphite\" active (with detected: false) when zfb.config.ts is missing", async () => {
@@ -67,7 +67,7 @@ export default defineConfig(
     expect(result.activeSlug).toBe("graphite");
     expect(result.activeDetected).toBe(false);
     expect(result.rows.find((r) => r.slug === "graphite")?.active).toBe(true);
-    expect(result.rows.find((r) => r.slug === "default")?.active).toBe(false);
+    expect(result.rows.find((r) => r.slug === "classic")?.active).toBe(false);
   });
 });
 
@@ -76,7 +76,7 @@ describe("formatThemeList", () => {
     const result = await listThemePacks({ cwd: projectDir, themePacksDir });
     const output = formatThemeList(result);
 
-    expect(output).toContain("default");
+    expect(output).toContain("classic");
     expect(output).toContain("sample");
     expect(output).toContain("Sample");
     expect(output).toContain("2.1.0");
@@ -92,7 +92,7 @@ describe("formatThemeList", () => {
   });
 
   it("reports an empty catalog without crashing", () => {
-    const output = formatThemeList({ rows: [], activeSlug: "default", activeDetected: false });
+    const output = formatThemeList({ rows: [], activeSlug: "classic", activeDetected: false });
     expect(output.length).toBeGreaterThan(0);
   });
 });

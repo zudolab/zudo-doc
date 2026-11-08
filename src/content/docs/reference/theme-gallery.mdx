@@ -7,7 +7,7 @@ tags:
   - customization
 ---
 
-Thirty-four theme packs ship with `@takazudo/zudo-doc`: Graphite (the default look), the reserved Classic pack (slug `default`), and thirty-two other designed looks. This page is the full catalog. For how packs work — the config fields, the switcher UI, the CLI, and the authoring contract — see [Theme Packs](./theme-packs.mdx).
+Thirty-four theme packs ship with `@takazudo/zudo-doc`: Graphite (the default look), the reserved Classic pack (slug `classic`), and thirty-two other designed looks. This page is the full catalog. For how packs work — the config fields, the switcher UI, the CLI, and the authoring contract — see [Theme Packs](./theme-packs.mdx).
 
 Every pack's fonts now style the entire chrome — header, sidebar, and table of contents included — not just the article body.
 
@@ -23,6 +23,8 @@ pnpm exec zudo-doc theme apply <slug>
 themePack: "<slug>",
 ```
 
+`default` is not a pack of its own. It is an alias for Graphite, so `themePack: "default"` and `theme apply default` both select Graphite.
+
 One caveat: if your project sets an explicit `themePacks` list, that list is authoritative — a `themePack` slug it omits **fails the build loudly**. Add the slug to `themePacks` too (or drop the list to enable every bundled pack).
 
 <Tip>
@@ -31,11 +33,11 @@ This showcase site has the switcher enabled — use the round launcher at the bo
 
 </Tip>
 
-Packs are listed in the default switcher order: `graphite` first, then `default` (Classic), then the rest alphabetical.
+Packs are listed in the default switcher order: `graphite` first, then `classic`, then the rest alphabetical.
 
 ## Graphite
 
-The default look. Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent and quiet hairline rules. A project that does not set `themePack` gets this pack.
+The default look. Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent and quiet hairline rules. A project that does not set `themePack`, or sets it to the `default` alias, gets this pack.
 
 - **Badge:** Dark
 - **Fonts:** system stacks (nothing loaded)
@@ -46,13 +48,13 @@ pnpm exec zudo-doc theme apply graphite
 
 ## Classic
 
-The original zudo-doc look, kept under the slug `default`. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged, at zero extra requests. It is also the look you get when you omit `themePack` but pass custom `colorSchemes` or set `colorMode: false`.
+The original zudo-doc look, under the slug `classic`. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged, at zero extra requests. It is also the look you get when you omit `themePack` but pass custom `colorSchemes` or set `colorMode: false`.
 
 - **Badge:** Dark
 - **Fonts:** system stacks (nothing loaded)
 
 ```sh
-pnpm exec zudo-doc theme apply default
+pnpm exec zudo-doc theme apply classic
 ```
 
 ## Academia

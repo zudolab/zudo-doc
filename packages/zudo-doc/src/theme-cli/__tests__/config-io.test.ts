@@ -60,7 +60,7 @@ export default defineConfig(
 );
 `);
     const result = await detectActiveThemePack(tempDir);
-    expect(result).toEqual({ slug: "default", detected: true });
+    expect(result).toEqual({ slug: "classic", detected: true });
   });
 
   it("does not count the package's own defaultColorSchemes as custom", async () => {
@@ -89,7 +89,7 @@ export default defineConfig(
 );
 `);
     const result = await detectActiveThemePack(tempDir);
-    expect(result).toEqual({ slug: "default", detected: true });
+    expect(result).toEqual({ slug: "classic", detected: true });
   });
 
   it("is not confident when colorMode is an unreadable expression", async () => {

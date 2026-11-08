@@ -13,7 +13,8 @@ import path from "node:path";
 
 import {
   CONFIGURED_DEFAULT_THEME_PACK_SLUG,
-  DEFAULT_THEME_PACK_SLUG,
+  CLASSIC_THEME_PACK_SLUG,
+  resolveThemePackAlias,
 } from "../theme-packs-registry/index.js";
 import {
   ConfigSyntaxError,
@@ -78,7 +79,7 @@ export async function detectActiveThemePack(cwd: string): Promise<DetectActiveTh
     const themePackMember = members.find((m) => m.key === "themePack");
 
     // Field absent = the documented omitted-pack rule genuinely applies —
-    // Graphite, or Classic ("default") when the config authors its own
+    // Graphite, or Classic ("classic") when the config authors its own
     // `colorSchemes` or fixes the palette with `colorMode: false`. Only a
     // reading of literal values counts; any other expression is unconfident.
     if (!themePackMember) {
@@ -99,7 +100,7 @@ export async function detectActiveThemePack(cwd: string): Promise<DetectActiveTh
         colorSchemes !== "null" &&
         colorSchemes !== "defaultColorSchemes";
       if (customSchemes || colorMode === "false") {
-        return { slug: DEFAULT_THEME_PACK_SLUG, detected: true };
+        return { slug: CLASSIC_THEME_PACK_SLUG, detected: true };
       }
       const colorModeKnownNotFalse =
         colorMode === undefined ||
@@ -119,7 +120,7 @@ export async function detectActiveThemePack(cwd: string): Promise<DetectActiveTh
     }
 
     const slug = unquoteStringLiteralSpan(source, themePackMember.valueStart, themePackMember.valueEnd);
-    return { slug, detected: true };
+    return { slug: resolveThemePackAlias(slug), detected: true };
   } catch (err) {
     if (err instanceof ConfigSyntaxError) return fallback;
     throw err;

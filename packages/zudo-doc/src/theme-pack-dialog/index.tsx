@@ -5,7 +5,7 @@ import { computed, For, getScope, Show, signal, type Ref } from "@takazudo/zfb/z
 import { Close } from "../icons/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import type { ThemePackMeta } from "../theme-packs-registry/index.js";
-import { applyThemePack, DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
+import { applyThemePack, CLASSIC_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
 import { connectActivePackSync } from "../theme-pack-switcher/switcher-state.js";
 import type { ThemePackDialogProps } from "../theme-pack-switcher/index.js";
 import { modalDialog } from "../use-modal-dialog/index.js";
@@ -24,7 +24,7 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
   const activeSlug = signal(active);
   const retryToken = signal(0);
   const launcherFocusRef: Ref<HTMLElement> = { current: null };
-  const hasBrowsablePacks = order.some((entry) => entry.slug !== DEFAULT_THEME_PACK_SLUG);
+  const hasBrowsablePacks = order.some((entry) => entry.slug !== CLASSIC_THEME_PACK_SLUG);
 
   scope.onActivate(() => connectActivePackSync((slug) => { activeSlug.value = slug; }));
   scope.onActivate(() => {

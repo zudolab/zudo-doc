@@ -4,10 +4,11 @@
 // imports — safe to unit-test with plain in-memory fixtures and to reuse from
 // any future browser-side tooling.
 
-import { DEFAULT_THEME_PACK_SLUG } from "./meta-schema.js";
+import { CLASSIC_THEME_PACK_SLUG } from "./meta-schema.js";
 import {
   CONFIGURED_DEFAULT_THEME_PACK_SLUG,
   resolveConfiguredThemePack,
+  resolveThemePackAlias,
 } from "./configured-theme-pack.js";
 import type { ThemePackRegistry } from "./types.js";
 
@@ -21,8 +22,8 @@ export interface ResolveEnabledPacksSettings {
   /** The resolved `colorMode`; `false` makes an omitted `themePack` Classic. */
   colorMode?: unknown;
   /** Explicit enabled-pack order, or `undefined` for the canonical default
-   *  order (`"graphite"` first, `"default"` (Classic) second, then the rest
-   *  alphabetically). */
+   *  order (`"graphite"` first, `"classic"` second, then the rest
+   *  alphabetically). A `"default"` entry is the alias for `"graphite"`. */
   themePacks?: string[];
 }
 
@@ -31,10 +32,11 @@ export interface ResolveEnabledPacksSettings {
  * / `settings.themePack` (Decision 7):
  *
  * - `themePacks` omitted → every bundled pack: the configured default
- *   (`"graphite"`) first, `"default"` (Classic) second, then the rest in
+ *   (`"graphite"`) first, `"classic"` second, then the rest in
  *   canonical (alphabetical-by-slug) order.
- * - `themePacks` an explicit array → authoritative: may omit `"default"`,
- *   reorder freely. Duplicate or unknown slugs throw loudly.
+ * - `themePacks` an explicit array → authoritative: may omit `"classic"`,
+ *   reorder freely. A `"default"` entry is resolved to `"graphite"` first, so
+ *   listing both is a duplicate. Duplicate or unknown slugs throw loudly.
  * - `themePack` (the active slug, default `"graphite"`) must be a member of
  *   the resolved list — an unknown/excluded active slug throws loudly,
  *   naming the bad slug and the available ones.
@@ -51,13 +53,13 @@ export function resolveEnabledPacks(
 
   let orderedSlugs: string[];
   if (settings.themePacks === undefined) {
-    const leading = [CONFIGURED_DEFAULT_THEME_PACK_SLUG, DEFAULT_THEME_PACK_SLUG].filter(
+    const leading = [CONFIGURED_DEFAULT_THEME_PACK_SLUG, CLASSIC_THEME_PACK_SLUG].filter(
       (slug) => bySlug.has(slug),
     );
     const rest = availableSlugs.filter((s) => !leading.includes(s)).sort();
     orderedSlugs = [...leading, ...rest];
   } else {
-    const requested = settings.themePacks;
+    const requested = settings.themePacks.map(resolveThemePackAlias);
     const seen = new Set<string>();
     const duplicates: string[] = [];
     const unknown: string[] = [];
@@ -91,7 +93,7 @@ export function resolveEnabledPacks(
       activeSlug === CONFIGURED_DEFAULT_THEME_PACK_SLUG && settings.themePacks !== undefined
         ? ` "${CONFIGURED_DEFAULT_THEME_PACK_SLUG}" is the default pack when themePack is omitted; ` +
           `add it to themePacks, or set themePack explicitly to an enabled pack ` +
-          `(themePack: "default" keeps the Classic look).`
+          `(themePack: "classic" keeps the Classic look).`
         : "";
     throw new Error(
       `zudo-doc: settings.themePack "${activeSlug}" is not one of the enabled theme packs. ` +

@@ -119,7 +119,7 @@ document.querySelector("#browser-embed-root")!.innerHTML = html;
 
 ## 3. テーマパックを重ねる
 
-選択したパックのディレクトリを、フォントも含めてアセットベース配下に公開します。次に、カタログの `hasStylesheet` フィールドを見て、リンクが必要か判断します。予約済みの `default` パックは `false`、スタイルを持つパックは `true` です。
+選択したパックのディレクトリを、フォントも含めてアセットベース配下に公開します。次に、カタログの `hasStylesheet` フィールドを見て、リンクが必要か判断します。予約済みの `classic` パックは `false`、スタイルを持つパックは `true` です。
 
 ```ts title="src/browser-embed.tsx (continued)"
 async function applyThemePack(slug: string) {

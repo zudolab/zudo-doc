@@ -146,7 +146,7 @@ describe("generateZfbConfig — theme pack (ADR #2818)", () => {
   });
 
   it("omits Classic in single-scheme mode, where omission already keeps Classic", () => {
-    const result = generateZfbConfig({ ...baseChoices, themePack: "default" });
+    const result = generateZfbConfig({ ...baseChoices, themePack: "classic" });
     expect(result).not.toContain("themePack");
   });
 
@@ -161,8 +161,8 @@ describe("generateZfbConfig — theme pack (ADR #2818)", () => {
   });
 
   it("emits Classic in light-dark mode, where omission would select Graphite", () => {
-    const result = generateZfbConfig({ ...packageDefaultChoices, themePack: "default" });
-    expect(result).toContain('themePack: "default"');
+    const result = generateZfbConfig({ ...packageDefaultChoices, themePack: "classic" });
+    expect(result).toContain('themePack: "classic"');
   });
 
   it("treats no chosen pack as Graphite", () => {

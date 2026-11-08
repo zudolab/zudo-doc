@@ -603,7 +603,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
 
   it("threads settings.themePack / themePacks into the theme-packs plugin options", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, themePack: "foundry", themePacks: ["default", "foundry"] },
+      settings: { ...fixtureSettings, themePack: "foundry", themePacks: ["classic", "foundry"] },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
@@ -611,7 +611,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(themePacks?.options).toEqual({
       base: "/",
       themePack: "foundry",
-      themePacks: ["default", "foundry"],
+      themePacks: ["classic", "foundry"],
     });
   });
 
@@ -631,12 +631,12 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     };
     expect(packOf({})).toBe("graphite");
     expect(packOf({ settings: { ...fixtureSettings, themePack: null } })).toBe("graphite");
-    expect(packOf({ colorSchemes: {} })).toBe("default");
-    expect(packOf({ settings: { ...fixtureSettings, colorMode: false } })).toBe("default");
+    expect(packOf({ colorSchemes: {} })).toBe("classic");
+    expect(packOf({ settings: { ...fixtureSettings, colorMode: false } })).toBe("classic");
     expect(
       packOf({ settings: { ...fixtureSettings, themePack: "graphite", colorMode: false }, colorSchemes: {} }),
     ).toBe("graphite");
-    expect(packOf({ settings: { ...fixtureSettings, themePack: "default" } })).toBe("default");
+    expect(packOf({ settings: { ...fixtureSettings, themePack: "classic" } })).toBe("classic");
   });
 
   it("defaults doc-history exclude patterns to an empty array", () => {

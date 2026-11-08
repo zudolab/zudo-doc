@@ -4,4 +4,9 @@ description: Changes planned for the next release.
 sidebar_position: 1153
 ---
 
-No unreleased changes.
+### Breaking Changes
+
+- `themePack: "default"` now selects Graphite instead of Classic: `default` is an alias for Graphite, the default look, and is no longer a pack of its own. The Classic pack moves to the slug `classic`. To keep the Classic look, change `themePack: "default"` to `themePack: "classic"`, and `"default"` to `"classic"` in an explicit `themePacks` list. `zudo-doc theme apply default` now writes `themePack: "graphite"`.
+- A `themePacks` list that contains both `"default"` and `"graphite"` now fails the build as a duplicate.
+- A reader who picked Classic in the switcher before this release has `default` stored in `localStorage["zudo-doc-theme-pack"]`; that slug no longer names a pack, so the page shows the configured pack until the reader picks again.
+- Package API: `DEFAULT_THEME_PACK_SLUG` is replaced by `CLASSIC_THEME_PACK_SLUG` (`"classic"`), and `DEFAULT_THEME_PACK_ALIAS` plus `resolveThemePackAlias()` are added to `@takazudo/zudo-doc/theme-packs-registry`. The bundled pack directory `theme-packs/default/` is now `theme-packs/classic/`, and a pack directory named `default` fails validation.

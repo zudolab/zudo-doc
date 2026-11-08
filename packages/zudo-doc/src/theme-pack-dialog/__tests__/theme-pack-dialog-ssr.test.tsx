@@ -23,10 +23,10 @@ const PROPS: ThemePackDialogProps = {
   open: signal(false),
   onClose: () => {},
   order: [
-    { slug: "default", name: "Default", mode: "light", description: "The stock zudo-doc look." },
+    { slug: "classic", name: "Default", mode: "light", description: "The stock zudo-doc look." },
     { slug: "foundry", name: "Foundry", mode: "light", description: "Industrial dark pack." },
   ],
-  active: "default",
+  active: "classic",
   base: "/",
 };
 
@@ -70,15 +70,15 @@ describe("ThemePackDialog — SSR shape", () => {
 describe("ThemePackDialog — default-only configuration (no CSS-bearing pack)", () => {
   // ADR Decision 2: the theme-packs plugin emits neither a postBuild
   // index.json nor a devMiddleware route when the resolved themePacks census
-  // has no CSS-bearing pack (i.e. only "default") — so a site can enable the
-  // switcher with e.g. themePacks: ["default"] and fetching would always
+  // has no CSS-bearing pack (i.e. only "classic") — so a site can enable the
+  // switcher with e.g. themePacks: ["classic"] and fetching would always
   // 404. This must be detected from the SSR order prop and short-circuited,
   // never attempted as a fetch that can only fail (codex-review finding).
   const DEFAULT_ONLY_PROPS: ThemePackDialogProps = {
     open: signal(false),
     onClose: () => {},
-    order: [{ slug: "default", name: "Default", mode: "light", description: "The stock zudo-doc look." }],
-    active: "default",
+    order: [{ slug: "classic", name: "Default", mode: "light", description: "The stock zudo-doc look." }],
+    active: "classic",
     base: "/",
   };
 

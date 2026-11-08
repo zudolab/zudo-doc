@@ -22,7 +22,7 @@ describe("@takazudo/zudo-doc/catalog", () => {
     expect(catalog.schemaVersion).toBe(2);
     expect(catalog.packs.length).toBe(34);
     expect(catalog.packs[0].slug).toBe("graphite");
-    expect(catalog.packs[1].slug).toBe("default");
+    expect(catalog.packs[1].slug).toBe("classic");
     expect(catalog.packs[1].hasStylesheet).toBe(false);
 
     const rest = catalog.packs.slice(2).map((pack: { slug: string }) => pack.slug);

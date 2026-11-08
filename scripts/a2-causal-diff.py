@@ -162,7 +162,9 @@ def main():
                 versions[slug] = version
             elif path.endswith("/pack.css"):
                 css[path[len(PACK_ROOT): -len("/pack.css")]] = digest(git("show", source + ":" + path))
-        require("default" in versions and set(css) == set(versions) - {"default"}, "Incomplete source pack metadata/CSS set")
+        # The reserved no-stylesheet pack is "classic" from 10.0.0, "default" before.
+        reserved = {slug for slug in ("classic", "default") if slug in versions and slug not in css}
+        require(len(reserved) == 1 and set(css) == set(versions) - reserved, "Incomplete source pack metadata/CSS set")
         return versions, css
 
     maps, styles = zip(*(source_packs(source) for source in sources[:2]))

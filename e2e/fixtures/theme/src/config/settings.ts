@@ -86,7 +86,7 @@ export const settings = {
   // e2e/theme-pack-zdtp-interplay.spec.ts have the flyout to drive
   // (epic Theme Core #2812, #2826). themePack stays explicit at its own
   // default for fixture/showcase drift-diff clarity.
-  themePack: "default" as string,
+  themePack: "classic" as string,
   themePackSwitcher: true as boolean,
   // Pin the switcher's Prev/Next cycle order explicitly (resolveEnabledPacks
   // treats an explicit themePacks array as authoritative and preserves its
@@ -96,7 +96,7 @@ export const settings = {
   // themePacks undefined (default-first, then alphabetical — unit-tested in
   // load-registry.test.ts); this pin is a fixture-only cycle-order convenience.
   themePacks: [
-    "default",
+    "classic",
     "foundry",
     "broadsheet",
     "ledger",

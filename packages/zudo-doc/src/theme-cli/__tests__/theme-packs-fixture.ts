@@ -1,5 +1,5 @@
 // Shared test-only helper: builds a minimal, validator-passing `theme-packs/`
-// fixture directory (a "default"-style no-css pack + two CSS-bearing packs,
+// fixture directory (a "classic"-style no-css pack + two CSS-bearing packs,
 // one of them the omitted-themePack default "graphite")
 // so theme-cli tests don't need the real installed package's registry.
 // NOT a `*.test.ts` file — vitest's `include` glob won't pick this up as a
@@ -36,17 +36,17 @@ function sampleMeta(slug: string, name: string, version: string) {
 
 /**
  * Writes a fixture `theme-packs/` directory under `dir` with three packs:
- * `default` (meta.json only, per the reserved-pack rule), `graphite` (the
+ * `classic` (meta.json only, per the reserved-pack rule), `graphite` (the
  * omitted-themePack default) and `sample` (each shipping a minimal,
  * correctly-scoped `pack.css`). Returns the directory path.
  */
 export async function buildThemePacksFixture(dir: string): Promise<string> {
   const root = path.join(dir, "theme-packs");
 
-  await fs.ensureDir(path.join(root, "default"));
+  await fs.ensureDir(path.join(root, "classic"));
   await fs.writeJson(
-    path.join(root, "default", "meta.json"),
-    sampleMeta("default", "Classic", "1.0.0"),
+    path.join(root, "classic", "meta.json"),
+    sampleMeta("classic", "Classic", "1.0.0"),
     { spaces: 2 },
   );
 

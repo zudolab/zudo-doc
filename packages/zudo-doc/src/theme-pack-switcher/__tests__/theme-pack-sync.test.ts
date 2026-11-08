@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  DEFAULT_THEME_PACK_SLUG,
+  CLASSIC_THEME_PACK_SLUG,
   THEME_PACK_ATTR,
   THEME_PACK_CHANGED_EVENT,
   THEME_PACK_LINK_ATTR,
@@ -23,7 +23,7 @@ import {
   type ThemePackChangeDetail,
   type ThemePackRuntimeConfig,
 } from "../theme-pack-sync.js";
-import { DEFAULT_THEME_PACK_SLUG as REGISTRY_DEFAULT_SLUG } from "../../theme-packs-registry/meta-schema.js";
+import { CLASSIC_THEME_PACK_SLUG as REGISTRY_DEFAULT_SLUG } from "../../theme-packs-registry/meta-schema.js";
 import { applyColorScheme } from "../../theme-toggle/color-scheme-sync.js";
 
 // ---------------------------------------------------------------------------
@@ -123,8 +123,8 @@ function makeFakeStorage() {
 
 const RUNTIME: ThemePackRuntimeConfig = {
   base: "/",
-  packs: { default: "0.0.0", foundry: "1.2.3", mono: "2.0.0" },
-  configured: "default",
+  packs: { classic: "0.0.0", foundry: "1.2.3", mono: "2.0.0" },
+  configured: "classic",
 };
 
 let fakeDocument: ReturnType<typeof makeFakeDocument>;
@@ -173,7 +173,7 @@ describe("constants", () => {
   it("keeps the reserved default slug in literal parity with the registry constant", () => {
     // theme-pack-sync re-declares the constant (meta-schema imports zod,
     // which must stay out of client island bundles) — guard the parity here.
-    expect(DEFAULT_THEME_PACK_SLUG).toBe(REGISTRY_DEFAULT_SLUG);
+    expect(CLASSIC_THEME_PACK_SLUG).toBe(REGISTRY_DEFAULT_SLUG);
   });
 
   it("pins the cross-package contract names (ADR naming rule)", () => {
@@ -204,10 +204,10 @@ describe("readThemePackFromDom", () => {
     expect(readThemePackFromDom()).toBe("foundry");
   });
 
-  it('falls back to "default" when the attribute is absent or empty', () => {
-    expect(readThemePackFromDom()).toBe("default");
+  it('falls back to "classic" when the attribute is absent or empty', () => {
+    expect(readThemePackFromDom()).toBe("classic");
     fakeDocument.documentElement.setAttribute(THEME_PACK_ATTR, "");
-    expect(readThemePackFromDom()).toBe("default");
+    expect(readThemePackFromDom()).toBe("classic");
   });
 });
 
@@ -217,7 +217,7 @@ describe("readThemePackFromDom", () => {
 
 describe("applyThemePack", () => {
   it("commits a non-default pack: attr flip, link promotion, persistence, event", async () => {
-    fakeDocument.documentElement.setAttribute(THEME_PACK_ATTR, "default");
+    fakeDocument.documentElement.setAttribute(THEME_PACK_ATTR, "classic");
     const detail: ThemePackChangeDetail[] = [];
     fakeWindow.addEventListener(THEME_PACK_CHANGED_EVENT, (e) => {
       detail.push((e as CustomEvent<ThemePackChangeDetail>).detail);
@@ -232,7 +232,7 @@ describe("applyThemePack", () => {
     expect(link!.getAttribute("href")).toBe("/theme-packs/foundry/pack.css?v=1.2.3");
     expect(link!.getAttribute("rel")).toBe("stylesheet");
     // The attribute must NOT flip before the stylesheet loaded.
-    expect(readThemePackFromDom()).toBe("default");
+    expect(readThemePackFromDom()).toBe("classic");
 
     link!.fire("load");
     await expect(p).resolves.toBe(true);
@@ -241,12 +241,12 @@ describe("applyThemePack", () => {
     expect(link!.hasAttribute(THEME_PACK_LINK_ATTR)).toBe(true);
     expect(link!.hasAttribute(THEME_PACK_LINK_LOADING_ATTR)).toBe(false);
     expect(fakeStorage.getItem(THEME_PACK_STORAGE_KEY)).toBe("foundry");
-    expect(detail).toEqual([{ pack: "foundry", previous: "default" }]);
+    expect(detail).toEqual([{ pack: "foundry", previous: "classic" }]);
     expect(packLinks()).toHaveLength(1);
   });
 
   it("switching to \"default\" removes the pack link without inserting a new one", async () => {
-    fakeDocument.documentElement.setAttribute(THEME_PACK_ATTR, "default");
+    fakeDocument.documentElement.setAttribute(THEME_PACK_ATTR, "classic");
     const p1 = applyThemePack("foundry");
     packLinks()[0]!.fire("load");
     await p1;
@@ -256,11 +256,11 @@ describe("applyThemePack", () => {
       events.push((e as CustomEvent<ThemePackChangeDetail>).detail);
     });
 
-    await expect(applyThemePack("default")).resolves.toBe(true);
-    expect(readThemePackFromDom()).toBe("default");
+    await expect(applyThemePack("classic")).resolves.toBe(true);
+    expect(readThemePackFromDom()).toBe("classic");
     expect(packLinks()).toHaveLength(0);
-    expect(fakeStorage.getItem(THEME_PACK_STORAGE_KEY)).toBe("default");
-    expect(events).toEqual([{ pack: "default", previous: "foundry" }]);
+    expect(fakeStorage.getItem(THEME_PACK_STORAGE_KEY)).toBe("classic");
+    expect(events).toEqual([{ pack: "classic", previous: "foundry" }]);
   });
 
   it("no-ops (returns true, no event, no link) when the pack is already active", async () => {
@@ -350,7 +350,7 @@ describe("applyThemePack", () => {
 
     await vi.advanceTimersByTimeAsync(10_000);
     await expect(p).resolves.toBe(false);
-    expect(readThemePackFromDom()).toBe("default");
+    expect(readThemePackFromDom()).toBe("classic");
     expect(packLinks()).toHaveLength(0);
     expect(fakeStorage.getItem(THEME_PACK_STORAGE_KEY)).toBeNull();
     expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -384,7 +384,7 @@ describe("applyThemePack", () => {
     expect(packLinks()).toHaveLength(1);
     expect(packLinks()[0]!.getAttribute("href")).toBe("/theme-packs/mono/pack.css?v=2.0.0");
     expect(packLinks()[0]!.hasAttribute(THEME_PACK_LINK_ATTR)).toBe(true);
-    expect(detail).toEqual([{ pack: "mono", previous: "default" }]);
+    expect(detail).toEqual([{ pack: "mono", previous: "classic" }]);
     expect(fakeStorage.getItem(THEME_PACK_STORAGE_KEY)).toBe("mono");
     // The superseded abort is silent — no misleading load-failure warning.
     expect(warnSpy).not.toHaveBeenCalled();
@@ -399,12 +399,12 @@ describe("applyThemePack", () => {
     // …when the user cancels by picking the already-active pack. The no-op
     // must supersede the pending swap (its commit would otherwise land the
     // pack the user just cancelled).
-    await expect(applyThemePack("default")).resolves.toBe(true);
+    await expect(applyThemePack("classic")).resolves.toBe(true);
 
     loadingLink!.fire("load");
     await expect(p1).resolves.toBe(false);
 
-    expect(readThemePackFromDom()).toBe("default");
+    expect(readThemePackFromDom()).toBe("classic");
     expect(packLinks()).toHaveLength(0);
     expect(fakeStorage.getItem(THEME_PACK_STORAGE_KEY)).toBeNull();
     // The attribute never flipped away from default.
@@ -491,7 +491,7 @@ describe("subscribeThemePackChanged", () => {
     expect(second).toHaveBeenCalledTimes(1);
 
     unsubFirst();
-    await applyThemePack("default");
+    await applyThemePack("classic");
     expect(first).toHaveBeenCalledTimes(1);
     expect(second).toHaveBeenCalledTimes(2);
   });

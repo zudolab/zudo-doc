@@ -41,7 +41,7 @@ export const DEFAULT_THEME_PACK_CHOICE = "graphite";
 // Mirrors resolveConfiguredThemePack in @takazudo/zudo-doc; used only to
 // decide whether the chosen pack must be written out.
 export function effectiveOmittedThemePack(colorSchemeMode: "single" | "light-dark" | undefined): string {
-  return colorSchemeMode === "single" ? "default" : "graphite";
+  return colorSchemeMode === "single" ? "classic" : "graphite";
 }
 
 export interface ThemePackOption {
@@ -57,7 +57,7 @@ export interface ThemePackOption {
 // zfb-config-gen.ts: create-zudo-doc cannot import @takazudo/zudo-doc at
 // generator-build time, so the CLI/prompt catalog is a local copy. Order
 // mirrors the package's own default enablement order (resolveEnabledPacks):
-// "graphite" (the omitted-themePack default), then "default" (Classic), then
+// "graphite" (the omitted-themePack default), then "classic", then
 // the rest alphabetically by slug.
 export const THEME_PACKS: ThemePackOption[] = [
   {
@@ -66,7 +66,7 @@ export const THEME_PACKS: ThemePackOption[] = [
     hint: "Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent (the default)",
   },
   {
-    slug: "default",
+    slug: "classic",
     label: "Classic",
     hint: "The original zudo-doc look — no extra stylesheet loaded",
   },

@@ -54,11 +54,11 @@ function makeCatalog(): ThemePacksCatalogManifest {
     schemaVersion: 2,
     packs: [
       {
-        slug: "default",
+        slug: "classic",
         hasStylesheet: false,
         meta: {
           schemaVersion: 1,
-          slug: "default",
+          slug: "classic",
           name: "Default",
           description: "Default theme",
           mode: "light",
@@ -94,7 +94,7 @@ describe("createRouteContextPayload", () => {
       defaultLocale: "en",
       locales: { ja: { label: "日本語", dir: "content/ja" } },
       categories: [{ label: "Guides", path: "guides" }],
-      themePack: "default",
+      themePack: "classic",
       catalog: makeCatalog(),
       translations: {
         en: { "search.label": "Find" },
@@ -117,7 +117,7 @@ describe("createRouteContextPayload", () => {
       defaultLocale: "en",
       locales: { ja: { label: "日本語", dir: "content/ja" } },
       headerNav: [{ label: "Guides", path: "guides" }],
-      themePack: "default",
+      themePack: "classic",
       base: "/preview/",
       tocMinDepth: 2,
     });
@@ -129,7 +129,7 @@ describe("createRouteContextPayload", () => {
     expect(payload.colorSchemes).toBe(customSchemes);
     expect(payload.themePackRegistry?.map((entry) => entry.slug)).toEqual([
       "graphite",
-      "default",
+      "classic",
     ]);
     expect(payload.assetManifest?.routePrefix).toBe("files");
   });
@@ -137,15 +137,15 @@ describe("createRouteContextPayload", () => {
   it("resolves an omitted themePack to graphite, or Classic for authored palettes", () => {
     const ordinary = createRouteContextPayload({ siteTitle: "Docs", catalog: makeCatalog() });
     expect(ordinary.settings.themePack).toBe("graphite");
-    expect(ordinary.themePackRegistry?.map((entry) => entry.slug)).toEqual(["graphite", "default"]);
+    expect(ordinary.themePackRegistry?.map((entry) => entry.slug)).toEqual(["graphite", "classic"]);
 
     expect(
       createRouteContextPayload({ siteTitle: "Docs", colorSchemes: {} }).settings.themePack,
-    ).toBe("default");
+    ).toBe("classic");
     expect(
       createRouteContextPayload({ siteTitle: "Docs", settings: { colorMode: false } }).settings
         .themePack,
-    ).toBe("default");
+    ).toBe("classic");
     // Package defaults and an explicit null palette are not authored data.
     expect(
       createRouteContextPayload({ siteTitle: "Docs", colorSchemes: null }).settings.themePack,
@@ -164,13 +164,13 @@ describe("createRouteContextPayload", () => {
       createRouteContextPayload({
         siteTitle: "Docs",
         themePack: "graphite",
-        settings: { themePack: "default" },
+        settings: { themePack: "classic" },
       }).settings.themePack,
-    ).toBe("default");
+    ).toBe("classic");
     expect(
       createRouteContextPayload({
         siteTitle: "Docs",
-        themePack: "default",
+        themePack: "classic",
         settings: { themePack: undefined },
       }).settings.themePack,
     ).toBe("graphite");

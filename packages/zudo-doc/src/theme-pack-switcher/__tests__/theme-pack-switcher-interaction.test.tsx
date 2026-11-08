@@ -9,7 +9,7 @@ import {
 } from "../theme-pack-sync.js";
 
 const ORDER: ThemePackSwitcherProps["order"] = [
-  { slug: "default", name: "Default", mode: "light", description: "The stock look." },
+  { slug: "classic", name: "Default", mode: "light", description: "The stock look." },
   { slug: "foundry", name: "Foundry", mode: "dark", description: "Industrial dark pack." },
 ];
 const props: ThemePackSwitcherProps = { active: "foundry", order: ORDER, base: "/", pendingUntilHydrated: false };
@@ -43,7 +43,7 @@ async function openDialog(root: HTMLElement) {
 }
 
 const META = {
-  schemaVersion: 1, slug: "default", name: "Default", description: "The stock look.", mode: "light", version: "1",
+  schemaVersion: 1, slug: "classic", name: "Default", description: "The stock look.", mode: "light", version: "1",
   fonts: { sans: "System", mono: "System", loaded: [] },
   preview: { light: { bg: "#fff", fg: "#111", accent: "#06f", syntax: { keyword: "#a00", string: "#0a0", comment: "#666", callable: "#00a" } },
     dark: { bg: "#111", fg: "#fff", accent: "#09f", syntax: { keyword: "#f00", string: "#0f0", comment: "#aaa", callable: "#00f" } } },
@@ -71,7 +71,7 @@ describe("ThemePackSwitcher and ThemePackDialog", () => {
 
   it("opens, loads keyed cards, applies default, follows external updates, and restores focus on close", async () => {
     document.documentElement.setAttribute(THEME_PACK_ATTR, "foundry");
-    (window as unknown as Record<string, unknown>)[THEME_PACK_RUNTIME_GLOBAL] = { base: "/", packs: { default: "1", foundry: "1" }, configured: "foundry" };
+    (window as unknown as Record<string, unknown>)[THEME_PACK_RUNTIME_GLOBAL] = { base: "/", packs: { classic: "1", foundry: "1" }, configured: "foundry" };
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ schemaVersion: 1, packs: [META] }) }));
     vi.stubGlobal("fetch", fetchMock);
     const { root } = await view();
@@ -85,10 +85,10 @@ describe("ThemePackSwitcher and ThemePackDialog", () => {
     expect(dialog.querySelector('[aria-hidden="true"][style*="background-color"]')?.getAttribute("style")).toContain("#111");
     dialog.querySelector<HTMLButtonElement>('button[aria-label^="Apply "]')!.click();
     await flushAll();
-    expect(document.documentElement.getAttribute(THEME_PACK_ATTR)).toBe("default");
+    expect(document.documentElement.getAttribute(THEME_PACK_ATTR)).toBe("classic");
     expect(dialog.querySelector('button[aria-pressed="true"]')).not.toBeNull();
     document.documentElement.setAttribute(THEME_PACK_ATTR, "foundry");
-    window.dispatchEvent(new CustomEvent(THEME_PACK_CHANGED_EVENT, { detail: { pack: "foundry", previous: "default" } }));
+    window.dispatchEvent(new CustomEvent(THEME_PACK_CHANGED_EVENT, { detail: { pack: "foundry", previous: "classic" } }));
     await flushAll();
     expect(dialog.querySelector('button[aria-pressed="false"]')).not.toBeNull();
     dialog.close(); await flushAll();
@@ -138,7 +138,7 @@ describe("ThemePackSwitcher and ThemePackDialog", () => {
 
   it("does not fetch when only the default pack exists and disposes its listeners", async () => {
     const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
-    const { root, dispose } = await view({ ...props, active: "default", order: [ORDER[0]!] });
+    const { root, dispose } = await view({ ...props, active: "classic", order: [ORDER[0]!] });
     await openDialog(root);
     expect(root.textContent).toContain("No other theme packs are configured");
     expect(fetchMock).not.toHaveBeenCalled();

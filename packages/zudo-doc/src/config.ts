@@ -675,11 +675,11 @@ export interface ZudoDocConfig {
   /**
    * Active theme pack slug. Omitted selects Graphite, except that a config
    * supplying its own `colorSchemes` or setting `colorMode: false` keeps
-   * Classic (`"default"`, the original zudo-doc look — no pack stylesheet
+   * Classic (`"classic"`, the original zudo-doc look — no pack stylesheet
    * loaded) so an authored palette is never overlaid. An explicit slug always
-   * wins. Must be a member of the resolved `themePacks` list; an unknown or
+   * wins; `"default"` is an alias for `"graphite"`. Must be a member of the resolved `themePacks` list; an unknown or
    * excluded slug fails the build loudly at plugin setup.
-   * @default "graphite" (or "default" with custom colorSchemes / colorMode: false)
+   * @default "graphite" (or "classic" with custom colorSchemes / colorMode: false)
    */
   themePack?: string;
   /**
@@ -690,12 +690,13 @@ export interface ZudoDocConfig {
   themePackSwitcher?: boolean;
   /**
    * Enabled pack slugs, in switcher order. `undefined` = all bundled packs:
-   * "graphite" first, "default" (Classic) second, then the bundled registry
+   * "graphite" first, "classic" second, then the bundled registry
    * in canonical (alphabetical-by-slug) order. An explicit list is
    * authoritative — may omit any pack, reorder freely; duplicates/unknown
    * slugs fail loudly. Graphite is never inserted implicitly: a list that
-   * excludes it needs an explicit `themePack` (e.g. `themePack: "default"`,
-   * `themePacks: ["default"]` for Classic only).
+   * excludes it needs an explicit `themePack` (e.g. `themePack: "classic"`,
+   * `themePacks: ["classic"]` for Classic only). A `"default"` entry is the
+   * alias for `"graphite"`.
    * @default undefined
    */
   themePacks?: string[];

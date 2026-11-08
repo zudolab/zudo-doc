@@ -4,7 +4,7 @@
 // build`) — mirrors `routes.test.ts`'s style.
 //
 // Exercised against the REAL bundled
-// `src/theme-packs/{academia,bauhaus,beacon,blueprint,botanica,broadsheet,brutalist,default,drift,eink,fjord,foundry,futura-editorial,hearth,hollow,ledger,manuscript,matcha,nocturne,observatory,onyx,phosphor,riso,sakura,scandi,solar,sumi,swissgrid,tidepool,timberline,washi}/`
+// `src/theme-packs/{academia,bauhaus,beacon,blueprint,botanica,broadsheet,brutalist,classic,drift,eink,fjord,foundry,futura-editorial,hearth,hollow,ledger,manuscript,matcha,nocturne,observatory,onyx,phosphor,riso,sakura,scandi,solar,sumi,swissgrid,tidepool,timberline,washi}/`
 // directories (resolved via the plugin's own `new URL("../theme-packs/",
 // import.meta.url)`, which — under vitest, running the source directly —
 // resolves to `src/theme-packs/`): no fixture directory needed, and this
@@ -45,7 +45,7 @@ describe("theme-packs plugin — setup()", () => {
   it("throws naming duplicates for a themePacks list with a repeated slug", () => {
     expect(() =>
       themePacksPlugin.setup!({
-        options: { themePacks: ["default", "default"] },
+        options: { themePacks: ["classic", "classic"] },
         logger,
       } as never),
     ).toThrowError(/duplicate/);
@@ -54,7 +54,7 @@ describe("theme-packs plugin — setup()", () => {
   it("throws for an unknown slug in themePacks, naming the available packs", () => {
     expect(() =>
       themePacksPlugin.setup!({
-        options: { themePacks: ["default", "not-a-real-pack"] },
+        options: { themePacks: ["classic", "not-a-real-pack"] },
         logger,
       } as never),
     ).toThrowError(/not-a-real-pack/);
@@ -73,8 +73,8 @@ describe("theme-packs plugin — postBuild()", () => {
     } as never);
 
     const destRoot = join(outDir, "theme-packs");
-    expect(existsSync(join(destRoot, "default", "meta.json"))).toBe(true);
-    expect(existsSync(join(destRoot, "default", "pack.css"))).toBe(false);
+    expect(existsSync(join(destRoot, "classic", "meta.json"))).toBe(true);
+    expect(existsSync(join(destRoot, "classic", "pack.css"))).toBe(false);
     expect(existsSync(join(destRoot, "foundry", "meta.json"))).toBe(true);
     expect(existsSync(join(destRoot, "foundry", "pack.css"))).toBe(true);
     expect(existsSync(join(destRoot, "foundry", "fonts", "Inter-latin.woff2"))).toBe(true);
@@ -88,7 +88,7 @@ describe("theme-packs plugin — postBuild()", () => {
     expect(manifest.schemaVersion).toBe(1);
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "graphite",
-      "default",
+      "classic",
       "academia",
       "bauhaus",
       "beacon",
@@ -124,11 +124,11 @@ describe("theme-packs plugin — postBuild()", () => {
     ]);
   });
 
-  it('no-ops (writes nothing) when themePacks is explicitly ["default"]', async () => {
+  it('no-ops (writes nothing) when themePacks is explicitly ["classic"]', async () => {
     const outDir = makeOutDir();
     await themePacksPlugin.postBuild!({
       outDir,
-      options: { themePack: "default", themePacks: ["default"] },
+      options: { themePack: "classic", themePacks: ["classic"] },
       logger,
       projectRoot: outDir,
       config: {} as never,
@@ -176,7 +176,7 @@ describe("theme-packs plugin — devMiddleware()", () => {
     const manifest = JSON.parse(res!.body!) as { packs: Array<{ slug: string }> };
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "graphite",
-      "default",
+      "classic",
       "academia",
       "bauhaus",
       "beacon",
@@ -213,7 +213,7 @@ describe("theme-packs plugin — devMiddleware()", () => {
   });
 
   it("does not register anything when only default is enabled (no-op)", () => {
-    const { ctx, registered } = makeRegisterCtx({ base: "/", themePack: "default", themePacks: ["default"] });
+    const { ctx, registered } = makeRegisterCtx({ base: "/", themePack: "classic", themePacks: ["classic"] });
     themePacksPlugin.devMiddleware!(ctx as never);
     expect(registered).toHaveLength(0);
   });

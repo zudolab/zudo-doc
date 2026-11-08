@@ -16,7 +16,7 @@ describe("THEME_PACKS mirrors the bundled theme-pack registry", () => {
   it("lists Graphite first and Classic second", () => {
     expect(THEME_PACKS.slice(0, 2).map((t) => [t.slug, t.label])).toEqual([
       ["graphite", "Graphite"],
-      ["default", "Classic"],
+      ["classic", "Classic"],
     ]);
   });
 

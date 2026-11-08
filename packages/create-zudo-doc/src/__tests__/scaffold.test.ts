@@ -2849,12 +2849,12 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
     const targetDir = await createZudoDoc({
       projectName: "classic-light-dark-test",
       colorSchemeMode: "light-dark",
-      themePack: "default",
+      themePack: "classic",
       features: [],
       packageManager: "pnpm",
     });
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
-    expect(config).toContain('themePack: "default"');
+    expect(config).toContain('themePack: "classic"');
   });
 });
 

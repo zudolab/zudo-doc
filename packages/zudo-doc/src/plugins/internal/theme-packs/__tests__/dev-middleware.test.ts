@@ -49,8 +49,8 @@ function fixtureMeta(slug: string): ThemePackMeta {
 
 function makeFixturePacksDir(): string {
   const packsDir = makeTempDir();
-  mkdirSync(join(packsDir, "default"), { recursive: true });
-  writeFileSync(join(packsDir, "default", "meta.json"), JSON.stringify(fixtureMeta("default")));
+  mkdirSync(join(packsDir, "classic"), { recursive: true });
+  writeFileSync(join(packsDir, "classic", "meta.json"), JSON.stringify(fixtureMeta("classic")));
   mkdirSync(join(packsDir, "acme", "fonts"), { recursive: true });
   writeFileSync(join(packsDir, "acme", "meta.json"), JSON.stringify(fixtureMeta("acme")));
   writeFileSync(join(packsDir, "acme", "pack.css"), 'html[data-theme-pack="acme"]{--zd-bg:#fff}');
@@ -93,7 +93,7 @@ function makeRes() {
 describe("createThemePacksDevMiddleware", () => {
   function makeMiddleware(packsDir: string) {
     const enabled: ThemePackRegistry = [
-      { slug: "default", meta: fixtureMeta("default"), hasStylesheet: false },
+      { slug: "classic", meta: fixtureMeta("classic"), hasStylesheet: false },
       { slug: "acme", meta: fixtureMeta("acme"), hasStylesheet: true },
     ];
     return createThemePacksDevMiddleware({ packsDir, enabled, routePrefix: "/theme-packs" });
@@ -111,7 +111,7 @@ describe("createThemePacksDevMiddleware", () => {
     expect(result.headers["content-type"]).toBe("application/json");
     expect(JSON.parse(result.body as string)).toEqual({
       schemaVersion: 1,
-      packs: [fixtureMeta("default"), fixtureMeta("acme")],
+      packs: [fixtureMeta("classic"), fixtureMeta("acme")],
     });
   });
 
@@ -129,7 +129,7 @@ describe("createThemePacksDevMiddleware", () => {
     const middleware = makeMiddleware(packsDir);
     const { res } = makeRes();
     let calledNext = false;
-    middleware({ url: "/theme-packs/default/pack.css" } as never, res as never, () => {
+    middleware({ url: "/theme-packs/classic/pack.css" } as never, res as never, () => {
       calledNext = true;
     });
     expect(calledNext).toBe(true);

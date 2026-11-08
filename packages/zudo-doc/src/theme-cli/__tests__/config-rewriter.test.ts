@@ -51,7 +51,7 @@ export default defineConfig(
   zudoDoc({
     colorScheme: "Default Dark",
     // hand-edited note that must survive a rewrite
-    themePack: "default",
+    themePack: "classic",
     siteName: "Docs",
   }),
 );
@@ -185,7 +185,7 @@ describe("applyThemePackToConfigSource — canonical config, field present (repl
     const matches = result.source.match(/themePack\s*:/g) ?? [];
     expect(matches).toHaveLength(1);
     expect(result.source).toContain('themePack: "foundry",');
-    expect(result.source).not.toContain('themePack: "default"');
+    expect(result.source).not.toContain('themePack: "classic"');
   });
 
   it("preserves a comment adjacent to the replaced field", () => {
@@ -195,11 +195,11 @@ describe("applyThemePackToConfigSource — canonical config, field present (repl
     expect(result.source).toContain("// hand-edited note that must survive a rewrite");
   });
 
-  it("apply default explicitly SETS themePack to \"default\" rather than removing the field", () => {
-    const result = applyThemePackToConfigSource(CANONICAL_ALREADY_APPLIED, "default");
+  it("apply classic explicitly SETS themePack to \"classic\" rather than removing the field", () => {
+    const result = applyThemePackToConfigSource(CANONICAL_ALREADY_APPLIED, "classic");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.source).toContain('themePack: "default",');
+    expect(result.source).toContain('themePack: "classic",');
     const matches = result.source.match(/themePack\s*:/g) ?? [];
     expect(matches).toHaveLength(1);
   });
@@ -221,7 +221,7 @@ describe("applyThemePackToConfigSource — idempotent re-apply", () => {
   });
 
   it("re-applying the same already-applied slug on a hand-written config is stable", () => {
-    const result = applyThemePackToConfigSource(CANONICAL_ALREADY_APPLIED, "default");
+    const result = applyThemePackToConfigSource(CANONICAL_ALREADY_APPLIED, "classic");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.changed).toBe(false);
@@ -274,7 +274,7 @@ describe("applyThemePackToConfigSource — refusal contract", () => {
       "import { zudoDoc } from '@takazudo/zudo-doc/config';",
       "export default defineConfig(",
       "  zudoDoc({",
-      '    themePack: "default",',
+      '    themePack: "classic",',
       '    siteName: "x",',
       '    themePack: "foundry",',
       "  }),",

@@ -79,7 +79,7 @@ afterEach(() => {
 
 function installBrowser(
   mode: "light" | "dark" = "light",
-  pack: string = "default",
+  pack: string = "classic",
 ) {
   let currentMode = mode;
   let currentPack = pack;
@@ -676,7 +676,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
   });
 
   it("a pre-load pack switch onto a namespace with saved state triggers the eager load", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     // The boot-time (default-pack) namespace is clean, but the foundry
     // namespace has saved overrides.
     browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
@@ -699,7 +699,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
   });
 
   it("a pre-load pack switch onto a clean namespace stays lazy", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
 
     bootstrapDesignTokenPanel(makeBuilder());
     browser.setPack("foundry");
@@ -943,7 +943,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", 
   });
 
   it("a sibling pack's non-empty envelope never matches the base prefix stem", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     // The `--<slug>` separator keeps sibling namespaces out of the
     // `<prefix>-state` stem — unchanged by the content narrowing, so a
     // NON-EMPTY value is what makes this assertion meaningful.
@@ -1122,7 +1122,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
   });
 
   it("a pack switch while pending rebinds the instance channel AND unbinds the old pack's", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     const builder = makeBuilder({ storagePrefix: "test-panel" });
 
     bootstrapDesignTokenPanel(builder);
@@ -1170,12 +1170,12 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
   });
 
   it("switching back to the boot pack rebinds its channel rather than accumulating a third", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
 
     bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
     browser.setPack("foundry");
     browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
-    browser.setPack("default");
+    browser.setPack("classic");
     browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
     await settle();
 
@@ -1190,7 +1190,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
   });
 
   it("the shared channel survives a refresh whose resolved name equals it", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     // The instance channel resolves to the shared constant at boot, then moves
     // away on the pack switch. The removal branch must leave the shared
     // registration alone — it is bound for the whole pending phase.
@@ -1308,7 +1308,7 @@ describe("withPackScopedStoragePrefix", () => {
     const config = { storagePrefix: "zudo-doc-tweak" } as unknown as PanelConfig;
     // Same reference — not even a shallow copy — so the default path is
     // provably untouched.
-    expect(withPackScopedStoragePrefix(config, "default")).toBe(config);
+    expect(withPackScopedStoragePrefix(config, "classic")).toBe(config);
   });
 
   it("rewrites the prefix to <prefix>--<slug> for any other pack", () => {
@@ -1411,7 +1411,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
   });
 
   it("runs the ADR switch sequence and reapplies the incoming pack's CSS-variable spacing", async () => {
-    const browser = installBrowser("dark", "default");
+    const browser = installBrowser("dark", "classic");
     const destroy = vi.fn();
     const builder = vi.fn<PanelConfigBuilder>(() => makeTokenConfig("zudo-doc-tweak"));
     zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => {
@@ -1468,7 +1468,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
   });
 
   it("routes the pack-switch clear through the config's applySink when one is configured", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     const destroy = vi.fn();
     const sinkClear = vi.fn();
     const builder = vi.fn<PanelConfigBuilder>(() =>
@@ -1498,7 +1498,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
   });
 
   it("a throwing applySink.clear is non-fatal — the rebuild still completes", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     const destroy = vi.fn();
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const builder = vi.fn<PanelConfigBuilder>(() =>
@@ -1531,7 +1531,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
   });
 
   it("still rebuilds on pack switch when localStorage dies mid-session (open state treated as closed)", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     const destroy = vi.fn();
     const builder = vi.fn<PanelConfigBuilder>(() => makeTokenConfig("zudo-doc-tweak"));
     zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
@@ -1562,7 +1562,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
   });
 
   it("coalesces rapid pack switches into one destroy/reconfigure targeting the LATEST pack", async () => {
-    const browser = installBrowser("light", "default");
+    const browser = installBrowser("light", "classic");
     const destroy = vi.fn();
     const builder = vi.fn<PanelConfigBuilder>(() => makeTokenConfig("zudo-doc-tweak"));
     zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
@@ -1606,7 +1606,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     vi.runAllTimers();
 
     // Then switching back to the default pack restores the original prefix.
-    browser.setPack("default");
+    browser.setPack("classic");
     browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
     vi.runAllTimers();
 

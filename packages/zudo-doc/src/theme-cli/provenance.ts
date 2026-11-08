@@ -24,7 +24,7 @@
 // and vice versa.
 //
 // Written on every successful `apply` (overwrites the previous `themePack`
-// object; `apply default` writes `slug: "default"` explicitly — see
+// object; `apply default` records the resolved `slug: "graphite"` — see
 // `config-rewriter.ts`'s header comment for why "set", not "remove").
 
 import fs from "fs-extra";

@@ -78,7 +78,7 @@ export const settings = {
   designTokenPanel: true as boolean,
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
-  themePack: "default" as string,
+  themePack: "classic" as string,
   imageEnlarge: true as boolean,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,

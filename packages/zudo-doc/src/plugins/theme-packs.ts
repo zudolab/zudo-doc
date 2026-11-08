@@ -20,7 +20,7 @@
 //                   `${outDir}/theme-packs/<slug>/…` and writes the
 //                   aggregated `${outDir}/theme-packs/index.json` registry
 //                   manifest. No-ops when the enabled set has no CSS-bearing
-//                   pack (only "default") — dead-weight avoidance for the
+//                   pack (only "classic") — dead-weight avoidance for the
 //                   common case.
 //
 //   devMiddleware — serves the same three stable URL shapes

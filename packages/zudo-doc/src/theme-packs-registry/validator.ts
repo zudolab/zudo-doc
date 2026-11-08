@@ -18,9 +18,10 @@
 import {
   themePackMetaSchema,
   THEME_PACK_SLUG_RE,
-  DEFAULT_THEME_PACK_SLUG,
+  CLASSIC_THEME_PACK_SLUG,
   type ThemePackMeta,
 } from "./meta-schema.js";
+import { DEFAULT_THEME_PACK_ALIAS } from "./configured-theme-pack.js";
 import {
   KNOWN_THEME_PACK_TOKEN_NAMES,
   COMMERCIAL_FONT_DENYLIST,
@@ -169,6 +170,13 @@ function checkSlugAndDirParity(
       message: `directory name "${dirName}" does not match the required slug pattern [a-z0-9][a-z0-9-]*`,
     });
   }
+  if (dirName === DEFAULT_THEME_PACK_ALIAS) {
+    issues.push({
+      rule: "slug-dir-parity",
+      severity: "error",
+      message: `"${DEFAULT_THEME_PACK_ALIAS}" is a reserved alias for the configured default pack and cannot be a pack directory name`,
+    });
+  }
   if (meta && meta.slug !== dirName) {
     issues.push({
       rule: "slug-dir-parity",
@@ -183,12 +191,12 @@ function checkCssPresence(
   cssContent: string | null,
   issues: ThemePackValidationIssue[],
 ): void {
-  if (dirName === DEFAULT_THEME_PACK_SLUG) {
+  if (dirName === CLASSIC_THEME_PACK_SLUG) {
     if (cssContent !== null) {
       issues.push({
         rule: "css-presence",
         severity: "error",
-        message: `the reserved "${DEFAULT_THEME_PACK_SLUG}" pack must NOT ship pack.css (it is the no-op stock look)`,
+        message: `the reserved "${CLASSIC_THEME_PACK_SLUG}" pack must NOT ship pack.css (it is the no-op stock look)`,
       });
     }
     return;

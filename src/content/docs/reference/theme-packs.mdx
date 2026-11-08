@@ -37,9 +37,9 @@ Thirty-four packs ship with `@takazudo/zudo-doc` — the full catalog, with each
 
 | Slug                            | Description                                                                                                                                                                                                                                     |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `graphite`                      | **The default look.** A soft, low-glare neutral pack with one warm copper accent. A project that does not set `themePack` gets Graphite.                                                                                                          |
+| `graphite`                      | **The default look.** A soft, low-glare neutral pack with one warm copper accent. A project that does not set `themePack` gets Graphite, and the slug `default` is an alias for it.                                                                                                          |
 | `warm-mineral`, `quiet-slate`   | The other two soft-tone packs. They share Graphite's component treatment and differ only in palette: sandstone and umber with a terracotta accent, and misty blue-grey slate with a muted copper accent.                                         |
-| `default` (shown as **Classic**) | The original zudo-doc look. A reserved pack that ships only metadata — **no pack stylesheet is ever loaded** for it, so it costs zero extra requests. The slug stays `default` for compatibility, so existing configs and stored selections keep working. |
+| `classic` (shown as **Classic**) | The original zudo-doc look. A reserved pack that ships only metadata — **no pack stylesheet is ever loaded** for it, so it costs zero extra requests. Before 10.0.0 its slug was `default`. |
 | `foundry`                       | The reference pack: a GitHub-neutral baseline — white paper, near-black ink, Primer-blue links — that restyles every token surface, including all 9 `--zd-syntax-*` code-highlighting roles, in both light and dark.                               |
 
 ### The soft-tone packs
@@ -62,7 +62,7 @@ Three config fields control the feature:
 | ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `themePack`         | omitted (Graphite) | The active pack slug. Omitted means `"graphite"`, except in the two cases described below.                                       |
 | `themePackSwitcher` | `false`     | Mounts the bottom-right switcher flyout (and its browse-all dialog) on every page.                                         |
-| `themePacks`        | `undefined` | The enabled pack slugs, in switcher order. `undefined` enables all bundled packs — `"graphite"` first, then `"default"` (Classic), then the rest alphabetical. |
+| `themePacks`        | `undefined` | The enabled pack slugs, in switcher order. `undefined` enables all bundled packs — `"graphite"` first, then `"classic"`, then the rest alphabetical. |
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
@@ -70,12 +70,12 @@ export default defineConfig(
     siteName: "My Docs",
     themePack: "foundry",
     themePackSwitcher: true,
-    themePacks: ["default", "foundry"],
+    themePacks: ["classic", "foundry"],
   }),
 );
 ```
 
-- An explicit `themePacks` list is authoritative: it may omit `"default"`, and its order **is** the switcher's Prev/Next cycle and the browse-all grid order. Graphite is never inserted into it for you.
+- An explicit `themePacks` list is authoritative: it may omit `"classic"`, and its order **is** the switcher's Prev/Next cycle and the browse-all grid order. Graphite is never inserted into it for you.
 - An unknown or duplicate slug — in `themePack` or `themePacks` — **fails the build loudly** at plugin setup, naming the bad slug and the available ones. There is no silent fallback at build time.
 - `themePack` can name a non-default pack while `themePackSwitcher` stays `false`: a build-pinned look with no switching UI.
 
@@ -86,14 +86,15 @@ An omitted `themePack` resolves to Graphite, with two exceptions where your own 
 - You pass custom `colorSchemes`. A project that authors its own palettes keeps the no-stylesheet Classic look, so Graphite never paints over them.
 - You set `colorMode: false` (a single fixed scheme).
 
-An explicit `themePack` always wins over both rules. Set `themePack: "default"` to keep the Classic look in any project.
+An explicit `themePack` always wins over both rules. Set `themePack: "classic"` to keep the Classic look in any project.
 
 ### Upgrading an existing project
 
-- **No `themePack` set:** the site switches to Graphite. To keep the previous look, add `themePack: "default"`.
-- **`themePack: "default"` set:** nothing changes. The pack is now labelled Classic, but the slug is the same.
-- **An explicit `themePacks` list without `"graphite"`:** the build fails with an error that names the fix. Either add `"graphite"` to `themePacks`, or set `themePack` to one of the listed packs (`themePack: "default"` keeps the Classic look).
-- **Saved reader selections** in `localStorage["zudo-doc-theme-pack"]` stay valid, because every existing slug still exists.
+- **No `themePack` set:** the site uses Graphite. To keep the Classic look, add `themePack: "classic"`.
+- **`themePack: "default"` set:** from 10.0.0, `default` is an alias for Graphite, so the site switches to Graphite. Change it to `themePack: "classic"` to keep the Classic look.
+- **`"default"` in an explicit `themePacks` list:** it now enables Graphite. Write `"classic"` to keep Classic in the list. Listing both `"default"` and `"graphite"` fails the build as a duplicate.
+- **An explicit `themePacks` list without `"graphite"`:** the build fails with an error that names the fix. Either add `"graphite"` to `themePacks`, or set `themePack` to one of the listed packs (`themePack: "classic"` keeps the Classic look).
+- **Saved reader selections:** a reader who picked Classic in the switcher before 10.0.0 has `default` stored in `localStorage["zudo-doc-theme-pack"]`. That slug no longer names a pack, so the page falls back to the configured pack until the reader picks again. Every other stored slug stays valid.
 
 ### Packs with a fixed color mode
 
@@ -126,7 +127,7 @@ The grid dialog shows one card per enabled pack — a mini preview (heading samp
 
 - The reader's choice persists in `localStorage["zudo-doc-theme-pack"]` and is re-applied by a pre-paint bootstrap — hard loads render with the right pack from the first frame (no flash of the default look), and the choice survives SPA navigation. Visitors without JavaScript get the configured `themePack`.
 - A stored slug that is no longer enabled (removed pack, typo, tampering) silently falls back to the configured `themePack`.
-- Only the **active** pack's CSS and fonts are ever downloaded — switching fetches the incoming pack's stylesheet, waits for it to load, then flips atomically. The `default` pack loads nothing.
+- Only the **active** pack's CSS and fonts are ever downloaded — switching fetches the incoming pack's stylesheet, waits for it to load, then flips atomically. The `classic` pack loads nothing.
 - For tests and integrations: the active slug is always readable from `<html data-theme-pack="…">`, and every committed switch dispatches a `theme-pack-changed` event on `window` with `detail: { pack, previous }`.
 
 ## The theme CLI
@@ -145,7 +146,7 @@ pnpm exec zudo-doc theme apply foundry
 
 `theme apply <slug>`:
 
-- validates the slug against the installed catalog first — an unknown slug is rejected along with the list of available ones;
+- resolves the `default` alias to `graphite`, then validates the slug against the installed catalog — an unknown slug is rejected along with the list of available ones;
 - rewrites the `themePack` field inside the `zudoDoc({ … })` call in `zfb.config.ts`, adding the field if it is missing;
 - **refuses cleanly** when the config is not in the canonical scaffold shape (for example, settings hidden behind a spread) — it explains why, prints the one-line edit to make by hand, and never writes a partial change;
 - is idempotent — re-applying the already-configured slug leaves the file untouched;
@@ -162,7 +163,7 @@ pnpm create zudo-doc my-docs --theme-pack foundry --theme-pack-switcher
 ## Light/dark and the Design Token Panel
 
 - A pack's **Light/Dark badge** is its designed-primary mode — a hint about which mode the pack was designed around, not a capability flag. Every pack defines both modes, and the header appearance menu works identically on all of them.
-- [Design Token Panel](./design-token-panel.mdx) tweaks are **per-pack**: an override you save while pack A is active is stored against pack A, hidden while another pack is active, and restored verbatim when you switch back. On the Classic (`default`) pack the panel keeps using its original `zudo-doc-tweak` storage, so tweaks saved before theme packs existed survive an upgrade untouched. Graphite tweaks are stored under `zudo-doc-tweak--graphite`.
+- [Design Token Panel](./design-token-panel.mdx) tweaks are **per-pack**: an override you save while pack A is active is stored against pack A, hidden while another pack is active, and restored verbatim when you switch back. On the Classic (`classic`) pack the panel keeps using its original `zudo-doc-tweak` storage, so tweaks saved before theme packs existed survive an upgrade untouched. Graphite tweaks are stored under `zudo-doc-tweak--graphite`.
 
 ## Emitting the pack stylesheet yourself
 

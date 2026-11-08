@@ -267,10 +267,10 @@ interface ThemePacksIndex {
   packs?: Array<{ slug?: string }>;
 }
 
-/** Slugs from an index.json payload, `default` always included, order preserved. */
+/** Slugs from an index.json payload, `classic` always included, order preserved. */
 function packsFromIndex(index: ThemePacksIndex): string[] {
   const slugs = (index.packs ?? []).map((p) => p.slug).filter((s): s is string => typeof s === "string");
-  const ordered = ["default", ...slugs];
+  const ordered = ["classic", ...slugs];
   return [...new Set(ordered)];
 }
 
@@ -279,7 +279,7 @@ async function enumeratePacksFromUrl(baseUrl: string): Promise<string[]> {
   const res = await fetch(url);
   if (!res.ok) {
     // No CSS-bearing pack enabled ⇒ no index.json ⇒ baseline-only audit.
-    if (res.status === 404) return ["default"];
+    if (res.status === 404) return ["classic"];
     throw new Error(`GET ${url} responded ${res.status}`);
   }
   return packsFromIndex((await res.json()) as ThemePacksIndex);
@@ -287,7 +287,7 @@ async function enumeratePacksFromUrl(baseUrl: string): Promise<string[]> {
 
 function enumeratePacksFromDist(distDir: string): string[] {
   const indexPath = join(distDir, "theme-packs", "index.json");
-  if (!existsSync(indexPath)) return ["default"];
+  if (!existsSync(indexPath)) return ["classic"];
   return packsFromIndex(JSON.parse(readFileSync(indexPath, "utf-8")) as ThemePacksIndex);
 }
 
@@ -362,7 +362,7 @@ async function waitForPackApplied(page: Page, pack: string, mode: Mode): Promise
     { timeout: STATE_TIMEOUT_MS },
   );
 
-  if (pack !== "default") {
+  if (pack !== "classic") {
     // The switch commits only after the incoming stylesheet loads (ADR
     // Decision 3): the link exists and has shed its loading marker.
     await page.waitForFunction(

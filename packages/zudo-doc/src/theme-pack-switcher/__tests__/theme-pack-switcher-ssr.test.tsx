@@ -19,7 +19,7 @@ import { ThemePackSwitcher, type ThemePackSwitcherProps } from "../index.js";
 const PROPS: ThemePackSwitcherProps = {
   active: "foundry",
   order: [
-    { slug: "default", name: "Default", mode: "light", description: "The stock zudo-doc look." },
+    { slug: "classic", name: "Default", mode: "light", description: "The stock zudo-doc look." },
     { slug: "foundry", name: "Foundry", mode: "dark", description: "Industrial dark pack." },
   ],
   base: "/",

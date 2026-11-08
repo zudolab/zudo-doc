@@ -15,7 +15,7 @@ import { THEME_PACK_LATCH_CSS } from "../../theme/theme-pack-provider.js";
 import type { ThemePackRegistry } from "../../theme-packs-registry/index.js";
 
 const REGISTRY = [
-  { slug: "default", meta: { version: "0.0.0" }, hasStylesheet: false },
+  { slug: "classic", meta: { version: "0.0.0" }, hasStylesheet: false },
   { slug: "foundry", meta: { version: "1.2.3" }, hasStylesheet: true },
 ] as unknown as ThemePackRegistry;
 
@@ -69,7 +69,7 @@ describe("HeadWithDefaults — theme-pack bootstrap emission", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
 
-    expect(out).toContain('{"default":"0.0.0","foundry":"1.2.3"}');
+    expect(out).toContain('{"classic":"0.0.0","foundry":"1.2.3"}');
     expect(out).toContain('var configured="foundry"');
     expect(out).toContain('var base="/"');
     // Non-default configured pack → noscript fallback for the no-JS path.

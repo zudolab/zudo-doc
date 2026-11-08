@@ -139,7 +139,7 @@ import {
   BEFORE_SWAP_EVENT,
 } from "../transitions/page-events.js";
 import {
-  DEFAULT_THEME_PACK_SLUG,
+  CLASSIC_THEME_PACK_SLUG,
   THEME_PACK_ATTR,
   THEME_PACK_LINK_ATTR,
   THEME_PACK_RUNTIME_GLOBAL,
@@ -241,7 +241,7 @@ export function buildThemePackBootstrap(
   const key = JSON.stringify(THEME_PACK_STORAGE_KEY);
   const attr = JSON.stringify(THEME_PACK_ATTR);
   const linkAttr = JSON.stringify(THEME_PACK_LINK_ATTR);
-  const defaultSlug = JSON.stringify(DEFAULT_THEME_PACK_SLUG);
+  const defaultSlug = JSON.stringify(CLASSIC_THEME_PACK_SLUG);
   const runtimeGlobal = JSON.stringify(THEME_PACK_RUNTIME_GLOBAL);
   const afterNav = JSON.stringify(AFTER_NAVIGATE_EVENT);
   const beforeSwap = JSON.stringify(BEFORE_SWAP_EVENT);
@@ -321,7 +321,7 @@ export default function ThemePackProvider({
   const bootstrap = buildThemePackBootstrap(configuredSlug, enabled, base);
   const configuredVersion = enabled[configuredSlug];
   const noscriptHref =
-    configuredSlug !== DEFAULT_THEME_PACK_SLUG && configuredVersion !== undefined
+    configuredSlug !== CLASSIC_THEME_PACK_SLUG && configuredVersion !== undefined
       ? buildPackCssUrl(base, configuredSlug, configuredVersion)
       : null;
 

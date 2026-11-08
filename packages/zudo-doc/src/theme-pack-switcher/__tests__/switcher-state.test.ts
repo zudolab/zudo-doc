@@ -26,43 +26,43 @@ function entry(slug: string): ThemePackOrderEntry {
   return { slug, name: slug.toUpperCase(), mode: "light", description: `${slug} pack` };
 }
 
-const ORDER: ThemePackOrderEntry[] = [entry("default"), entry("foundry"), entry("mono")];
+const ORDER: ThemePackOrderEntry[] = [entry("classic"), entry("foundry"), entry("mono")];
 
 describe("nextPackSlug / prevPackSlug — wraparound cycling", () => {
   it("advances to the next entry in order", () => {
-    expect(nextPackSlug(ORDER, "default")).toBe("foundry");
+    expect(nextPackSlug(ORDER, "classic")).toBe("foundry");
     expect(nextPackSlug(ORDER, "foundry")).toBe("mono");
   });
 
   it("wraps around from the last entry to the first", () => {
-    expect(nextPackSlug(ORDER, "mono")).toBe("default");
+    expect(nextPackSlug(ORDER, "mono")).toBe("classic");
   });
 
   it("goes back to the previous entry in order", () => {
     expect(prevPackSlug(ORDER, "mono")).toBe("foundry");
-    expect(prevPackSlug(ORDER, "foundry")).toBe("default");
+    expect(prevPackSlug(ORDER, "foundry")).toBe("classic");
   });
 
   it("wraps around from the first entry to the last", () => {
-    expect(prevPackSlug(ORDER, "default")).toBe("mono");
+    expect(prevPackSlug(ORDER, "classic")).toBe("mono");
   });
 
   it("returns the same slug on a single-entry order (harmless no-op cycle)", () => {
-    const single = [entry("default")];
-    expect(nextPackSlug(single, "default")).toBe("default");
-    expect(prevPackSlug(single, "default")).toBe("default");
+    const single = [entry("classic")];
+    expect(nextPackSlug(single, "classic")).toBe("classic");
+    expect(prevPackSlug(single, "classic")).toBe("classic");
   });
 
   it("returns null on an empty order", () => {
-    expect(nextPackSlug([], "default")).toBeNull();
-    expect(prevPackSlug([], "default")).toBeNull();
-    expect(cyclePackSlug([], "default", 1)).toBeNull();
+    expect(nextPackSlug([], "classic")).toBeNull();
+    expect(prevPackSlug([], "classic")).toBeNull();
+    expect(cyclePackSlug([], "classic", 1)).toBeNull();
   });
 
   it("recovers onto the cycle when the active slug is not in the order", () => {
     // e.g. html[data-theme-pack] carries a slug outside the switcher order:
     // Next lands on the first entry, Prev on the last.
-    expect(nextPackSlug(ORDER, "rogue")).toBe("default");
+    expect(nextPackSlug(ORDER, "rogue")).toBe("classic");
     expect(prevPackSlug(ORDER, "rogue")).toBe("mono");
   });
 });
@@ -74,7 +74,7 @@ describe("resolveActiveEntry", () => {
 
   it("returns null when the active slug is not in the order", () => {
     expect(resolveActiveEntry(ORDER, "rogue")).toBeNull();
-    expect(resolveActiveEntry([], "default")).toBeNull();
+    expect(resolveActiveEntry([], "classic")).toBeNull();
   });
 });
 
@@ -131,7 +131,7 @@ describe("connectActivePackSync", () => {
   it("falls back to \"default\" when the attribute is absent", () => {
     const seen: string[] = [];
     connectActivePackSync((slug) => seen.push(slug));
-    expect(seen).toEqual(["default"]);
+    expect(seen).toEqual(["classic"]);
   });
 
   it("re-pushes the fresh DOM slug on every theme-pack-changed event (two surfaces stay in sync)", () => {
@@ -146,8 +146,8 @@ describe("connectActivePackSync", () => {
     fakeDocument.documentElement.setAttribute(THEME_PACK_ATTR, "mono");
     window.dispatchEvent(new Event(THEME_PACK_CHANGED_EVENT));
 
-    expect(seenByFlyout).toEqual(["default", "foundry", "mono"]);
-    expect(seenByDialog).toEqual(["default", "foundry", "mono"]);
+    expect(seenByFlyout).toEqual(["classic", "foundry", "mono"]);
+    expect(seenByDialog).toEqual(["classic", "foundry", "mono"]);
   });
 
   it("stops pushing after unsubscribe", () => {
@@ -160,7 +160,7 @@ describe("connectActivePackSync", () => {
     fakeDocument.documentElement.setAttribute(THEME_PACK_ATTR, "mono");
     window.dispatchEvent(new Event(THEME_PACK_CHANGED_EVENT));
 
-    expect(seen).toEqual(["default", "foundry"]);
+    expect(seen).toEqual(["classic", "foundry"]);
   });
 });
 

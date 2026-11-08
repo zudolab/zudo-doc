@@ -15,10 +15,11 @@
 // field at all, so a caller cannot accidentally write back a "refused"
 // result).
 //
-// `themePack: "default"` is written explicitly on `apply default` (not
-// field removal) — simpler to keep correct and trivially idempotent, and
-// the ADR explicitly leaves the removal-vs-set-to-"default" choice open
-// ("either is fine — pick one and test it").
+// `themePack: "<slug>"` is always written explicitly, never removed — even
+// for the configured default — which is simpler to keep correct and
+// trivially idempotent (the ADR leaves the removal-vs-set choice open:
+// "either is fine — pick one and test it"). `apply default` arrives here
+// already resolved to the alias target by `apply.ts`.
 
 import {
   ConfigSyntaxError,

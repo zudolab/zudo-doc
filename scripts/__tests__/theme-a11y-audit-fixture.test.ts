@@ -39,10 +39,10 @@ const GATED = Boolean(process.env.THEME_A11Y_FIXTURE_TEST);
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const SCRIPT_PATH = fileURLToPath(new URL("../theme-a11y-audit.ts", import.meta.url));
 
-const THEME_PACKS_INDEX = JSON.stringify({ schemaVersion: 1, packs: [{ slug: "default" }] });
+const THEME_PACKS_INDEX = JSON.stringify({ schemaVersion: 1, packs: [{ slug: "classic" }] });
 
 const HEAD = `<!doctype html>
-<html lang="en" data-theme-pack="default" data-theme="light">
+<html lang="en" data-theme-pack="classic" data-theme="light">
 <head><meta charset="utf-8"><title>fixture</title>
 <style>
   body { background:#ffffff; color:#111111; font: 16px/1.5 system-ui, sans-serif; margin:0; }
@@ -219,7 +219,7 @@ function runAudit(base: string, outDir: string): Promise<{ status: number | null
         "--url",
         base,
         "--packs",
-        "default",
+        "classic",
         "--modes",
         "light",
         "--pages",

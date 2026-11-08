@@ -97,7 +97,7 @@ export const DEFAULT_SETTINGS: Settings = {
   headerRightItems: [{ type: "component", component: "theme-toggle" }],
   packageOwnedRoutes: true,
   // Omitted on purpose: `resolveConfiguredThemePack` turns an omitted pack into
-  // "graphite", or into "default" (Classic) for custom/fixed color schemes.
+  // "graphite", or into "classic" for custom/fixed color schemes.
   themePack: undefined,
   themePackSwitcher: false,
   themePacks: undefined,

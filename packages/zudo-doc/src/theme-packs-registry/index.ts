@@ -20,7 +20,7 @@
 
 export {
   THEME_PACK_SLUG_RE,
-  DEFAULT_THEME_PACK_SLUG,
+  CLASSIC_THEME_PACK_SLUG,
   themePackMetaSchema,
   type ThemePackMeta,
   type ThemePackSwatches,
@@ -28,7 +28,9 @@ export {
 
 export {
   CONFIGURED_DEFAULT_THEME_PACK_SLUG,
+  DEFAULT_THEME_PACK_ALIAS,
   resolveConfiguredThemePack,
+  resolveThemePackAlias,
   type ConfiguredThemePackInput,
 } from "./configured-theme-pack.js";
 
