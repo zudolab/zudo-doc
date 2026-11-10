@@ -79,7 +79,7 @@ jobs:
       # Explicit ref ensures we always build from the tagged commit even when
       # triggered via workflow_dispatch (which defaults to the default branch).
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.release.tag_name || github.ref }}
 
