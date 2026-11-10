@@ -134,7 +134,7 @@
     "@types/pluralize": "^0.0.33",
     "chokidar": "^6.0.0",
     "culori": "^4.0.2",
-    "html-validate": "^10.17.0",
+    "html-validate": "^11.21.0",
     "lefthook": "2.2.1",
     "parse5": "^8.1.1",
     "picocolors": "^1.1.1",
