@@ -1,6 +1,6 @@
 # @takazudo/zudo-doc
 
-Current adoption checkpoint (2026-11-10): the unreleased workspace and generated scaffolds use the published ZFB 6.0.1 family; package peer floors are `^6.0.1`. ZFB 6 bundles natively with Rolldown, including TypeScript config and plugins; removed bundler selectors must stay unset. Generated Cloudflare projects pin Wrangler 4.158.0. ZDTP is 0.9.3 and Node 24 remains the minimum. The history-server peer floor stays `^9.0.0` under the minimum-supported-version contract in `RELEASE.md`. A subsequent `create-zudo-doc` release is needed to deliver the generated pins downstream; earlier version receipts below remain historical.
+Current adoption checkpoint (2026-11-10): the unreleased workspace and generated scaffolds use the published ZFB 6.0.1 family; package peer floors are `^6.0.1`. ZFB 6 bundles natively with Rolldown, including TypeScript config and plugins; removed bundler selectors must stay unset. Generated Cloudflare projects pin Wrangler 4.160.0. ZDTP is 0.9.3 and Node 24 remains the minimum. The history-server peer floor is `^10.0.0` under the minimum-supported-version contract in `RELEASE.md`. A subsequent `create-zudo-doc` release is needed to deliver the generated pins downstream; earlier version receipts below remain historical.
 
 Shared layout + content-rendering package consumed by both this repo's showcase
 (`workspace:*`) and every project scaffolded by `create-zudo-doc` (published npm).

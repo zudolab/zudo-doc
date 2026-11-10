@@ -6,9 +6,17 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [10.0.0] - 2026-11-10
+
 ### Breaking Changes
 
-- The Classic theme pack's slug is now `classic`. Choosing Classic writes `themePack: "classic"`, and `--theme-pack classic` (or `"themePack": "classic"` in a preset) selects it; `--theme-pack default` is rejected as an unknown pack.
+- The Classic theme pack's slug is now `classic`. Choosing Classic writes `themePack: "classic"`, and `--theme-pack classic` (or `"themePack": "classic"` in a preset) selects it. `--theme-pack default` is rejected as an unknown pack. (f3f3dd66)
+- A fresh scaffold pins `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^10.0.0`, and the ZFB family at `^6.0.1`. (9e586638)
+
+### Other Changes
+
+- Generated projects pin ZDTP 0.9.3. (e7bd75da)
+- Generated Cloudflare projects pin Wrangler 4.160.0. The workspace devDependency matches that pin, and `@cloudflare/workers-types` is 5.20261110.1 so Wrangler's peer range is met.
 
 ## [9.1.5] - 2026-11-08
 

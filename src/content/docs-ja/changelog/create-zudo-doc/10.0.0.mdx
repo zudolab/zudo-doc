@@ -1,0 +1,17 @@
+---
+title: 10.0.0
+description: 10.0.0 のリリースノート。
+sidebar_position: 1059
+---
+
+リリース日: 2026-11-10
+
+### 破壊的変更
+
+- Classic テーマパックのスラッグは `classic` になりました。Classic を選ぶと `themePack: "classic"` が書き込まれ、`--theme-pack classic`（プリセットでは `"themePack": "classic"`）で選択できます。`--theme-pack default` は未知のパックとして拒否されます。(f3f3dd66)
+- 新規スキャフォールドは `@takazudo/zudo-doc` と `@takazudo/zudo-doc-history-server` を `^10.0.0` に、ZFB ファミリを `^6.0.1` に固定します。(9e586638)
+
+### その他の変更
+
+- 生成プロジェクトは ZDTP 0.9.3 を固定します。(e7bd75da)
+- 生成する Cloudflare プロジェクトは Wrangler 4.160.0 を固定します。ワークスペースの devDependency も同じピンで、`@cloudflare/workers-types` は 5.20261110.1 です。Wrangler の peer 範囲を満たします。
