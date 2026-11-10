@@ -1436,6 +1436,14 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // "default" reproduces every accepted 9.1.5 reference hash, with no residual.
   // Normalized byte lengths are unchanged (57095, 68058, 79449) because both
   // slugs are seven bytes.
+  // 2026-11-10 re-baseline (ZFB 5.2.2 -> 6.0.1, #4717): isolated main
+  // ab9644bb and candidate cd621258 captures reproduce the accepted and new
+  // fingerprints. All three normalized pages differ only in native build
+  // identity (5dc2d91b39c32ee6 -> 83deded1b7c8303a; 1/2/4 attributes).
+  // Raw bytes additionally change only islands-7e38a4d7.js -> islands-6622a70d.js.
+  // Reversing those two identities makes each raw page byte-identical; no
+  // stylesheet, pack-map, protocol, prose or structural differences remain.
+  // Evidence and release blockers: docs/findings/zfb-6.0.1-a2-causal-review.md.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
