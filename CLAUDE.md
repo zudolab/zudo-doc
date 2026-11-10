@@ -1,6 +1,6 @@
 # zudo-doc
 
-Current adoption checkpoint (2026-11-06): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
+Current adoption checkpoint (2026-11-10): the unreleased workspace and generated scaffolds use the published ZFB 6.0.1 family; package peer floors are `^6.0.1`. ZFB 6 bundles natively with Rolldown, including TypeScript config and plugins; removed bundler selectors must stay unset. Generated Cloudflare projects pin Wrangler 4.158.0. ZDTP remains 0.9.1 and Node 24 remains the minimum. The history-server peer floor stays `^9.0.0` under the minimum-supported-version contract in `RELEASE.md`. A subsequent `create-zudo-doc` release is needed to deliver the generated pins downstream; earlier version receipts below remain historical.
 
 Minimal documentation framework built with zfb, MDX, zudo-wind, and zudo-react islands.
 
