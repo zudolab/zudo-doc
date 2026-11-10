@@ -733,7 +733,7 @@ function generatePackageJson(
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
     // @takazudo/zfb-<platform>); pinned to the exact stable 6.0.1 package
-    // family required by the zfb v5 pin.
+    // family required by the zfb v6 pin.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
