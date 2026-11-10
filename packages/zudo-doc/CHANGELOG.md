@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [10.0.2] - 2026-11-11
+
+### Other Changes
+
+- The optional `diff` peer now admits `^8.0.0 || ^9.0.0`. (501d41ab)
+
 ## [10.0.1] - 2026-11-11
 
 ### Bug Fixes
