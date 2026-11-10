@@ -1,0 +1,20 @@
+---
+title: 10.0.0
+description: 10.0.0 のリリースノート。
+sidebar_position: 1153
+---
+
+リリース日: 2026-11-10
+
+### 破壊的変更
+
+- `themePack: "default"` は Classic ではなく Graphite を選ぶようになりました。`default` はデフォルトの見た目である Graphite のエイリアスになり、独立したパックではなくなりました。Classic パックのスラッグは `classic` に移ります。Classic の見た目を保つには、`themePack: "default"` を `themePack: "classic"` に、明示的な `themePacks` リスト内の `"default"` を `"classic"` に変更してください。`zudo-doc theme apply default` は `themePack: "graphite"` を書き込むようになりました。(f3f3dd66)
+- `"default"` と `"graphite"` を両方含む `themePacks` リストは、重複としてビルドが失敗するようになりました。(f3f3dd66)
+- このリリースより前にスイッチャーで Classic を選んだ閲覧者の `localStorage["zudo-doc-theme-pack"]` には `default` が保存されています。このスラッグはもうパックを指さないため、閲覧者が選び直すまでページは設定されたパックを表示します。(f3f3dd66)
+- パッケージ API: `DEFAULT_THEME_PACK_SLUG` は `CLASSIC_THEME_PACK_SLUG`（`"classic"`）に置き換わり、`@takazudo/zudo-doc/theme-packs-registry` に `DEFAULT_THEME_PACK_ALIAS` と `resolveThemePackAlias()` が追加されました。同梱パックのディレクトリ `theme-packs/default/` は `theme-packs/classic/` になり、`default` という名前のパックディレクトリは検証で失敗します。(f3f3dd66)
+- ZFB 6.0.1 ファミリ（`^6.0.1`）が必須になりました。ZFB 6 は Rolldown でバンドルし、TypeScript の設定とプラグインを含みます。削除されたバンドラー選択子は未設定のままにしてください。(9e586638)
+- `@takazudo/zudo-doc-history-server` の peer 下限が `^9.0.0` から `^10.0.0` に上がりました。ドキュメント履歴を有効にするプロジェクトは history-server 10.x が必要です。
+
+### その他の変更
+
+- ZDTP 0.9.3 を採用しました。(e7bd75da)

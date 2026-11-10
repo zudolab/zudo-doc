@@ -1,0 +1,20 @@
+---
+title: 10.0.0
+description: Release notes for 10.0.0.
+sidebar_position: 1153
+---
+
+Released: 2026-11-10
+
+### Breaking Changes
+
+- `themePack: "default"` now selects Graphite instead of Classic: `default` is an alias for Graphite, the default look, and is no longer a pack of its own. The Classic pack moves to the slug `classic`. To keep the Classic look, change `themePack: "default"` to `themePack: "classic"`, and `"default"` to `"classic"` in an explicit `themePacks` list. `zudo-doc theme apply default` now writes `themePack: "graphite"`. (f3f3dd66)
+- A `themePacks` list that contains both `"default"` and `"graphite"` now fails the build as a duplicate. (f3f3dd66)
+- A reader who picked Classic in the switcher before this release has `default` stored in `localStorage["zudo-doc-theme-pack"]`; that slug no longer names a pack, so the page shows the configured pack until the reader picks again. (f3f3dd66)
+- Package API: `DEFAULT_THEME_PACK_SLUG` is replaced by `CLASSIC_THEME_PACK_SLUG` (`"classic"`), and `DEFAULT_THEME_PACK_ALIAS` plus `resolveThemePackAlias()` are added to `@takazudo/zudo-doc/theme-packs-registry`. The bundled pack directory `theme-packs/default/` is now `theme-packs/classic/`, and a pack directory named `default` fails validation. (f3f3dd66)
+- Require the ZFB 6.0.1 family (`^6.0.1`). ZFB 6 bundles with Rolldown, including TypeScript config and plugins, and removed bundler selectors must stay unset. (9e586638)
+- The `@takazudo/zudo-doc-history-server` peer floor moves from `^9.0.0` to `^10.0.0`. Projects that enable document history need history-server 10.x.
+
+### Other Changes
+
+- Adopt ZDTP 0.9.3. (e7bd75da)
