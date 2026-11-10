@@ -1,0 +1,11 @@
+---
+title: 10.0.1
+description: Release notes for 10.0.1.
+sidebar_position: 1154
+---
+
+Released: 2026-11-11
+
+### Bug Fixes
+
+- The theme CLI reads `themePack` next to interpolated template literals in `zfb.config.ts`. `${...}` spans stay opaque, so list and apply can still see a later `themePack`. An omitted `themePack` is reported as detected Graphite. A real config syntax error is printed instead of the generic unreadable fallback. Apply still refuses a value it cannot safely replace. (7e5c783b)

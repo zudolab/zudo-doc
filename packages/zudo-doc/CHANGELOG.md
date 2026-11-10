@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [10.0.1] - 2026-11-11
+
+### Bug Fixes
+
+- The theme CLI reads `themePack` next to interpolated template literals in `zfb.config.ts`. `${...}` spans stay opaque, so list and apply can still see a later `themePack`. An omitted `themePack` is reported as detected Graphite. A real config syntax error is printed instead of the generic unreadable fallback. Apply still refuses a value it cannot safely replace. (7e5c783b)
+
 ## [10.0.0] - 2026-11-10
 
 ### Breaking Changes

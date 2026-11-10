@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [10.0.1] - 2026-11-11
+
+### Bug Fixes
+
+- CLI help, the theme-pack prompt, and pack hints now say that `"default"` is an alias of Graphite and that Classic's slug is `"classic"`. (f2e9ef42)
+
 ## [10.0.0] - 2026-11-10
 
 ### Breaking Changes
