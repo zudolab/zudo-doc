@@ -11,6 +11,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Other Changes
 
 - The optional `diff` peer now admits `^8.0.0 || ^9.0.0`. (501d41ab)
+- Adopt ZDTP 0.9.4.
 
 ## [10.0.1] - 2026-11-11
 

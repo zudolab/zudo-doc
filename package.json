@@ -114,7 +114,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@takazudo/zdtp": "0.9.3",
+    "@takazudo/zdtp": "0.9.4",
     "@takazudo/zfb": "6.0.1",
     "@takazudo/zfb-adapter-cloudflare": "6.0.1",
     "@takazudo/zfb-md-wasm": "6.0.1",

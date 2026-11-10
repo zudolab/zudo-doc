@@ -16,6 +16,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 - Generated projects pin `typescript` at `^7.0.2`. (13e71d71)
 - `docHistory` scaffolds pin `diff` at `^8.0.4 || ^9.0.0`. (501d41ab)
+- Generated projects pin ZDTP 0.9.4.
 
 ## [10.0.1] - 2026-11-11
 

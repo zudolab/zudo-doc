@@ -23,8 +23,8 @@ importers:
         specifier: 1.32.2
         version: 1.32.2(zod@4.6.7)
       '@takazudo/zdtp':
-        specifier: 0.9.3
-        version: 0.9.3(@takazudo/zfb@6.0.1)
+        specifier: 0.9.4
+        version: 0.9.4(@takazudo/zfb@6.0.1)
       '@takazudo/zfb':
         specifier: 6.0.1
         version: 6.0.1
@@ -1150,6 +1150,16 @@ packages:
 
   '@takazudo/zdtp@0.9.3':
     resolution: {integrity: sha512-CPycv5WHXpy+hdgV7EeVPLkD8quYMpKY50llacmJuFlszz8Oc8NFpSdR57+WiDrq9XSWghdcBnokCFLLLZQOfA==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+    hasBin: true
+    peerDependencies:
+      '@takazudo/zfb': ^5.1.2 || ^6.0.0
+    peerDependenciesMeta:
+      '@takazudo/zfb':
+        optional: true
+
+  '@takazudo/zdtp@0.9.4':
+    resolution: {integrity: sha512-dLrGmE7tqaHlmI4wN21KSjU6Qh45UO6pb9rh8uBYM3xyMyOuW7M9jJECD95Fq3kDfHU0kY3G9n7MJONKQNILBg==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -3578,6 +3588,14 @@ snapshots:
       '@takazudo/mdx-formatter-win32-x64-msvc': 1.3.0
 
   '@takazudo/zdtp@0.9.3(@takazudo/zfb@6.0.1)':
+    dependencies:
+      '@tailwindcss/browser': 4.3.2
+      culori: 4.0.2
+      tailwind-merge: 3.6.0
+    optionalDependencies:
+      '@takazudo/zfb': 6.0.1
+
+  '@takazudo/zdtp@0.9.4(@takazudo/zfb@6.0.1)':
     dependencies:
       '@tailwindcss/browser': 4.3.2
       culori: 4.0.2
