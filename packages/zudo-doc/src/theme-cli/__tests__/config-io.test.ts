@@ -139,7 +139,7 @@ export default defineConfig(
     });
   });
 
-  it("falls back gracefully on unsupported syntax (template literal interpolation)", async () => {
+  it("reads an omitted themePack as Graphite when another field uses an interpolated template", async () => {
     await writeConfig(`import { defineConfig } from "zfb/config";
 import { zudoDoc } from "@takazudo/zudo-doc/config";
 
@@ -148,12 +148,52 @@ const name = "Docs";
 export default defineConfig(
   zudoDoc({
     siteName: \`Hello \${name}\`,
+    footer: {
+      links: [],
+      copyright: \`Copyright © \${new Date().getFullYear()} Example\`,
+    },
   }),
 );
 `);
     await expect(detectActiveThemePack(tempDir)).resolves.toEqual({
       slug: "graphite",
-      detected: false,
+      detected: true,
     });
+  });
+
+  it("reads themePack beside an interpolated copyright", async () => {
+    await writeConfig(`import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    themePack: "foundry",
+    footer: {
+      links: [],
+      copyright: \`Copyright © \${new Date().getFullYear()} Example\`,
+    },
+  }),
+);
+`);
+    await expect(detectActiveThemePack(tempDir)).resolves.toEqual({
+      slug: "foundry",
+      detected: true,
+    });
+  });
+
+  it("reports the scanner message when the config is genuinely unparseable", async () => {
+    await writeConfig(`import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "Docs
+  }),
+);
+`);
+    const result = await detectActiveThemePack(tempDir);
+    expect(result.slug).toBe("graphite");
+    expect(result.detected).toBe(false);
+    expect(result.syntaxError).toMatch(/unterminated string literal/);
   });
 });

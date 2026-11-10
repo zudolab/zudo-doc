@@ -62,6 +62,86 @@ export default defineConfig(
     expect(result.rows.find((r) => r.slug === "classic")?.active).toBe(false);
   });
 
+  it("reports Graphite as detected when themePack is omitted beside an interpolated copyright", async () => {
+    await fs.writeFile(
+      path.join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    footer: {
+      links: [],
+      copyright: \`Copyright © \${new Date().getFullYear()} Example\`,
+    },
+  }),
+);
+`,
+      "utf8",
+    );
+
+    const result = await listThemePacks({ cwd: projectDir, themePacksDir });
+    expect(result.activeSlug).toBe("graphite");
+    expect(result.activeDetected).toBe(true);
+    expect(result.syntaxError).toBeUndefined();
+    const output = formatThemeList(result);
+    expect(output).toContain("Active theme pack:");
+    expect(output).toContain("graphite");
+    expect(output).not.toContain("not found or readable");
+    expect(output).not.toContain("assumed default");
+  });
+
+  it("reports the configured pack when an interpolated copyright is also present", async () => {
+    await fs.writeFile(
+      path.join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    themePack: "sample",
+    footer: {
+      links: [],
+      copyright: \`Copyright © \${new Date().getFullYear()} Example\`,
+    },
+  }),
+);
+`,
+      "utf8",
+    );
+
+    const result = await listThemePacks({ cwd: projectDir, themePacksDir });
+    expect(result.activeSlug).toBe("sample");
+    expect(result.activeDetected).toBe(true);
+    expect(result.rows.find((r) => r.slug === "sample")?.active).toBe(true);
+    const output = formatThemeList(result);
+    expect(output).not.toContain("not found or readable");
+    expect(output).not.toContain("assumed default");
+  });
+
+  it("prints the ConfigSyntaxError message when parsing still fails", async () => {
+    await fs.writeFile(
+      path.join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "Docs
+  }),
+);
+`,
+      "utf8",
+    );
+
+    const result = await listThemePacks({ cwd: projectDir, themePacksDir });
+    expect(result.activeDetected).toBe(false);
+    expect(result.syntaxError).toMatch(/unterminated string literal/);
+    const output = formatThemeList(result);
+    expect(output).toContain(result.syntaxError);
+    expect(output).not.toContain("not found or readable");
+  });
+
   it("marks \"graphite\" active (with detected: false) when zfb.config.ts is missing", async () => {
     const result = await listThemePacks({ cwd: projectDir, themePacksDir });
     expect(result.activeSlug).toBe("graphite");
