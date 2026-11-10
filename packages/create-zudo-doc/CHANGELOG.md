@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [10.0.2] - 2026-11-11
+
+### Bug Fixes
+
+- Prompt handlers reject a missing `@clack/prompts` 1.x value before treating it as a string. (501d41ab)
+
+### Other Changes
+
+- Generated projects pin `typescript` at `^7.0.2`. (13e71d71)
+- `docHistory` scaffolds pin `diff` at `^8.0.4 || ^9.0.0`. (501d41ab)
+
 ## [10.0.1] - 2026-11-11
 
 ### Bug Fixes
