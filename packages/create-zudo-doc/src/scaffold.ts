@@ -1116,7 +1116,7 @@ function generatePackageJson(
     // function runs (see the co-enable block near the top of scaffold()).
     // assetViewer alone does not reach this import and must not carry it
     // (#4206 / #4209; it was an unconditional base dep before this fix).
-    deps.diff = "^8.0.3";
+    deps.diff = "^8.0.4 || ^9.0.0";
   }
 
   if (choices.features.includes("designTokenPanel")) {

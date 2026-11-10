@@ -113,10 +113,11 @@ export async function runPrompts(
       placeholder: "my-docs",
       defaultValue: "my-docs",
       validate(value) {
+        if (value == null) return "Project name is required";
         return validateProjectName(value) ?? undefined;
       },
     });
-    if (p.isCancel(result)) process.exit(0);
+    if (p.isCancel(result) || result == null) process.exit(0);
     projectName = result;
   }
 
@@ -321,12 +322,12 @@ export async function runPrompts(
       placeholder: "core,cli",
       defaultValue: "",
       validate(value) {
-        if (!value.trim()) return;
+        if (!value?.trim()) return;
         const parsed = parseChangelogPackages(value);
         return validateChangelogPackages(parsed) ?? undefined;
       },
     });
-    if (p.isCancel(result)) process.exit(0);
+    if (p.isCancel(result) || result == null) process.exit(0);
     changelogPackages = parseChangelogPackages(result);
   }
 

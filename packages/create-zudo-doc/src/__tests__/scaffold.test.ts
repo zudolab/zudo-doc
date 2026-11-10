@@ -2216,7 +2216,7 @@ describe("scaffold — generated package.json", () => {
     const withDocHistory = await fs.readJson(
       projectPath("test-diff-dochistory", "package.json"),
     );
-    expect(withDocHistory.dependencies["diff"]).toBe("^8.0.3");
+    expect(withDocHistory.dependencies["diff"]).toBe("^8.0.4 || ^9.0.0");
 
     await scaffold({
       ...baseChoices,
@@ -2226,7 +2226,7 @@ describe("scaffold — generated package.json", () => {
     const withBodyFootUtil = await fs.readJson(
       projectPath("test-diff-bodyfootutil", "package.json"),
     );
-    expect(withBodyFootUtil.dependencies["diff"]).toBe("^8.0.3");
+    expect(withBodyFootUtil.dependencies["diff"]).toBe("^8.0.4 || ^9.0.0");
 
     // assetViewer reaches @takazudo/zudo-doc-history-server (see the test
     // below) but not the Compare view's `import("diff")`, so it must not
