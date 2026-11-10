@@ -114,6 +114,11 @@ const name = "Docs";
 export default defineConfig(
   zudoDoc({
     siteName: \`Hello \${name}\`,
+    footer: {
+      links: [],
+      copyright: \`Copyright © \${new Date().getFullYear()} Example\`,
+      note: \`© \${label("}")}\`,
+    },
   }),
 );
 `;
@@ -301,12 +306,48 @@ describe("applyThemePackToConfigSource — refusal contract", () => {
     expect(result.reason).toMatch(/more than one argument/i);
   });
 
-  it("refuses cleanly (does not throw) on unsupported template literal interpolation", () => {
-    expect(() =>
-      applyThemePackToConfigSource(NONCANONICAL_TEMPLATE_INTERPOLATION, "foundry"),
-    ).not.toThrow();
+  it("rewrites themePack without corrupting an interpolated template literal", () => {
     const result = applyThemePackToConfigSource(NONCANONICAL_TEMPLATE_INTERPOLATION, "foundry");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.source).toContain('themePack: "foundry"');
+    expect(result.source).toContain("siteName: `Hello ${name}`");
+    expect(result.source).toContain("copyright: `Copyright © ${new Date().getFullYear()} Example`");
+    expect(result.source).toContain('label("}")');
+  });
+
+  it("refuses to rewrite an interpolated themePack value and leaves the source untouched", () => {
+    const source = `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+const name = "foundry";
+
+export default defineConfig(
+  zudoDoc({
+    themePack: \`pack-\${name}\`,
+    footer: {
+      copyright: \`Copyright © \${new Date().getFullYear()} Example\`,
+    },
+  }),
+);
+`;
+    const result = applyThemePackToConfigSource(source, "foundry");
     expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toMatch(/plain string literal/);
+    expect("source" in result).toBe(false);
+  });
+
+  it("refuses an unterminated template and reports the scanner message", () => {
+    const source = `import { zudoDoc } from "@takazudo/zudo-doc/config";
+export default zudoDoc({
+  siteName: \`Hello,
+});
+`;
+    const result = applyThemePackToConfigSource(source, "foundry");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toMatch(/unterminated template literal/);
   });
 
   it("a refusal result never carries a `source` field to accidentally write back", () => {

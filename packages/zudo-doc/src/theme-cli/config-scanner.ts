@@ -11,11 +11,14 @@
 //
 // It understands exactly enough syntax to safely locate a `zudoDoc({ ... })`
 // call's top-level properties: line/block comments, single/double-quoted
-// strings, and non-interpolated template literals are skipped as opaque
-// spans so stray `{`/`}`/`,` characters inside them are never mistaken for
-// structure. Anything it cannot confidently handle (unterminated tokens,
-// `${...}` interpolation) throws `ConfigSyntaxError` — callers turn that into
-// a clean refusal rather than a corrupted rewrite.
+// strings, and template literals (including `${...}` interpolations) are
+// skipped as opaque spans so stray `{`/`}`/`,` characters inside them are
+// never mistaken for structure. The scanner does not evaluate an
+// interpolation; it only balances the span so a later `themePack` property
+// can still be read or rewritten. Anything it cannot confidently handle
+// (unterminated tokens, an unclosed interpolation) throws
+// `ConfigSyntaxError` — callers turn that into a clean refusal rather than
+// a corrupted rewrite.
 
 /** Thrown when the scanner hits config-file syntax it cannot safely reason
  *  about. Callers MUST catch this and refuse cleanly (never proceed with a
@@ -68,15 +71,41 @@ export function skipStringLiteral(source: string, i: number): number {
 }
 
 /**
- * Skip a backtick template literal starting at `i`. Only NON-interpolated
- * template literals (no `${...}`) are supported — this is a deliberate
- * scope limit (see file header): a canonical generated config never emits
- * one in a value position, and safely re-balancing arbitrary `${ ... }`
- * expression code is out of scope for this scanner. Throws
- * `ConfigSyntaxError` on interpolation or an unterminated literal so the
- * caller refuses cleanly instead of guessing.
+ * Skip the `${...}` expression that starts at `openBrace` (the `{`).
+ * Strings, comments, nested templates, and nested braces inside the
+ * expression are opaque: the scanner only finds the matching `}`.
  */
-function skipSimpleTemplateLiteral(source: string, i: number): number {
+function skipTemplateInterpolation(source: string, openBrace: number): number {
+  let depth = 1;
+  let i = openBrace + 1;
+  while (i < source.length) {
+    const skip = trySkipToken(source, i);
+    if (skip !== null) {
+      i = skip;
+      continue;
+    }
+    const c = source[i];
+    if (c === "{") {
+      depth++;
+    } else if (c === "}") {
+      depth--;
+      if (depth === 0) return i + 1;
+    }
+    i++;
+  }
+  throw new ConfigSyntaxError(
+    "unterminated template literal interpolation (`${...}`) in zfb.config.ts",
+  );
+}
+
+/**
+ * Skip a backtick template literal starting at `i`, including interpolated
+ * spans. The interpolation is not evaluated — it is an opaque skipped span
+ * so a `themePack` property elsewhere in the same object can still be
+ * located. Throws `ConfigSyntaxError` when the literal or an interpolation
+ * is unterminated.
+ */
+function skipTemplateLiteral(source: string, i: number): number {
   let j = i + 1;
   while (j < source.length) {
     const c = source[j];
@@ -86,9 +115,8 @@ function skipSimpleTemplateLiteral(source: string, i: number): number {
     }
     if (c === "`") return j + 1;
     if (c === "$" && source[j + 1] === "{") {
-      throw new ConfigSyntaxError(
-        "template literal interpolation (`${...}`) in zfb.config.ts is not supported by the theme CLI's config parser",
-      );
+      j = skipTemplateInterpolation(source, j + 1);
+      continue;
     }
     j++;
   }
@@ -96,7 +124,7 @@ function skipSimpleTemplateLiteral(source: string, i: number): number {
 }
 
 /**
- * If `source[i]` starts a comment, string, or simple template literal,
+ * If `source[i]` starts a comment, string, or template literal,
  * returns the index just past it. Otherwise returns `null` — the caller
  * should treat `source[i]` as an ordinary character.
  */
@@ -106,7 +134,7 @@ function trySkipToken(source: string, i: number): number | null {
   if (c === "/" && c2 === "/") return skipLineComment(source, i);
   if (c === "/" && c2 === "*") return skipBlockComment(source, i);
   if (c === '"' || c === "'") return skipStringLiteral(source, i);
-  if (c === "`") return skipSimpleTemplateLiteral(source, i);
+  if (c === "`") return skipTemplateLiteral(source, i);
   return null;
 }
 

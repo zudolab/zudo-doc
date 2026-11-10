@@ -199,6 +199,79 @@ export default defineConfig(
     expect(rewritten).toContain('themePack: "classic",');
   });
 });
+const INTERPOLATED_COPYRIGHT =
+  "`Copyright © $" + "{new Date().getFullYear()} Example`";
+
+function configWithInterpolatedCopyright(themePack?: string): string {
+  const themeLine = themePack === undefined ? "" : `    themePack: "${themePack}",\n`;
+  return `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+${themeLine}    footer: {
+      links: [],
+      copyright: ${INTERPOLATED_COPYRIGHT},
+    },
+  }),
+);
+`;
+}
+
+describe("applyThemePack — interpolated template literals", () => {
+  it("inserts themePack when it is omitted and leaves the copyright interpolation intact", async () => {
+    const original = configWithInterpolatedCopyright();
+    await fs.writeFile(configPath, original, "utf8");
+
+    const result = await applyThemePack("sample", { cwd: projectDir, themePacksDir });
+    expect(result.ok).toBe(true);
+    expect(result.changed).toBe(true);
+
+    const rewritten = await fs.readFile(configPath, "utf8");
+    expect(rewritten).toContain('themePack: "sample"');
+    expect(rewritten).toContain(`copyright: ${INTERPOLATED_COPYRIGHT}`);
+    expect(rewritten).toContain("${new Date().getFullYear()}");
+  });
+
+  it("replaces an existing themePack and does not rewrite the interpolated copyright", async () => {
+    const original = configWithInterpolatedCopyright("classic");
+    await fs.writeFile(configPath, original, "utf8");
+
+    const result = await applyThemePack("sample", { cwd: projectDir, themePacksDir });
+    expect(result.ok).toBe(true);
+
+    const rewritten = await fs.readFile(configPath, "utf8");
+    expect(rewritten).toContain('themePack: "sample"');
+    expect(rewritten).not.toContain('themePack: "classic"');
+    expect(rewritten).toContain(`copyright: ${INTERPOLATED_COPYRIGHT}`);
+  });
+
+  it("refuses an interpolated themePack value without modifying the file", async () => {
+    const original = `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+const year = 2026;
+
+export default defineConfig(
+  zudoDoc({
+    themePack: \`pack-\${year}\`,
+    footer: {
+      links: [],
+      copyright: ${INTERPOLATED_COPYRIGHT},
+    },
+  }),
+);
+`;
+    await fs.writeFile(configPath, original, "utf8");
+
+    const result = await applyThemePack("sample", { cwd: projectDir, themePacksDir });
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/plain string literal/);
+    expect(await fs.readFile(configPath, "utf8")).toBe(original);
+    expect(await fs.pathExists(path.join(projectDir, ".zudo-doc.json"))).toBe(false);
+  });
+});
+
 describe("applyThemePack — apply default", () => {
   it("resolves the \"default\" alias and writes \"graphite\"", async () => {
     await fs.writeFile(

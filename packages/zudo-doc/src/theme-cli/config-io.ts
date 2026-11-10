@@ -6,7 +6,11 @@
 // always resolves to SOME answer — falling back to the documented effective
 // default (`"graphite"`) when the file is missing or not in the canonical
 // shape, and reporting that fallback via `detected: false` so callers can say
-// so. The config is scanned, never executed.
+// so. A real `ConfigSyntaxError` (unterminated token, unclosed interpolation)
+// still falls back, but keeps `syntaxError` set to the scanner message so
+// `theme list` can print that instead of the generic unreadable line.
+// Interpolated template literals are opaque spans and do not count as a
+// syntax failure. The config is scanned, never executed.
 
 import fs from "fs-extra";
 import path from "node:path";
@@ -38,6 +42,10 @@ export interface DetectActiveThemePackResult {
    *  this scanner can confidently read — `slug` is then the documented
    *  default, not a confirmed reading of the project's real config. */
   detected: boolean;
+  /** Set when the file exists but the scanner threw `ConfigSyntaxError`.
+   *  Callers should show this message instead of the generic unreadable
+   *  fallback. Absent when the file is simply missing or non-canonical. */
+  syntaxError?: string;
 }
 
 /**
@@ -122,7 +130,9 @@ export async function detectActiveThemePack(cwd: string): Promise<DetectActiveTh
     const slug = unquoteStringLiteralSpan(source, themePackMember.valueStart, themePackMember.valueEnd);
     return { slug: resolveThemePackAlias(slug), detected: true };
   } catch (err) {
-    if (err instanceof ConfigSyntaxError) return fallback;
+    if (err instanceof ConfigSyntaxError) {
+      return { ...fallback, syntaxError: err.message };
+    }
     throw err;
   }
 }

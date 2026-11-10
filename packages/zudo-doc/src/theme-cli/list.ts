@@ -29,6 +29,9 @@ export interface ThemeListResult {
   /** `false` when the active slug is a fallback (zfb.config.ts missing or
    *  not confidently parseable) rather than a confirmed reading. */
   activeDetected: boolean;
+  /** Scanner failure from `zfb.config.ts`, when parsing threw rather than
+   *  merely finding no readable `themePack` field. */
+  syntaxError?: string;
 }
 
 export interface ListThemePacksOptions extends LoadInstalledThemePackCatalogOptions {
@@ -42,7 +45,11 @@ export async function listThemePacks(
 ): Promise<ThemeListResult> {
   const cwd = options.cwd ?? process.cwd();
   const catalog = loadInstalledThemePackCatalog(options);
-  const { slug: activeSlug, detected: activeDetected } = await detectActiveThemePack(cwd);
+  const {
+    slug: activeSlug,
+    detected: activeDetected,
+    syntaxError,
+  } = await detectActiveThemePack(cwd);
 
   const rows: ThemeListRow[] = catalog.map((entry) => ({
     slug: entry.slug,
@@ -53,7 +60,7 @@ export async function listThemePacks(
     active: entry.slug === activeSlug,
   }));
 
-  return { rows, activeSlug, activeDetected };
+  return { rows, activeSlug, activeDetected, syntaxError };
 }
 
 function padEnd(text: string, width: number): string {
@@ -65,7 +72,7 @@ function padEnd(text: string, width: number): string {
  *  structured data without scraping ANSI-colored strings, and separately on
  *  this formatter's plain-text content. */
 export function formatThemeList(result: ThemeListResult): string {
-  const { rows, activeSlug, activeDetected } = result;
+  const { rows, activeSlug, activeDetected, syntaxError } = result;
 
   if (rows.length === 0) {
     return pc.yellow("No theme packs found in the installed @takazudo/zudo-doc package.");
@@ -97,6 +104,10 @@ export function formatThemeList(result: ThemeListResult): string {
   lines.push("");
   if (activeDetected) {
     lines.push(`Active theme pack: ${pc.bold(activeSlug)}`);
+  } else if (syntaxError) {
+    lines.push(
+      pc.dim(`Active theme pack: ${activeSlug} (assumed default — ${syntaxError})`),
+    );
   } else {
     lines.push(
       pc.dim(
