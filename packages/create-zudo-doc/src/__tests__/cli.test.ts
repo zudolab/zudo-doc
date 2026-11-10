@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   layerAdditionalLangs,
   parseArgs,
+  printHelp,
   validateArgs,
   type CliArgs,
 } from "../cli.js";
@@ -315,6 +316,24 @@ describe("validateArgs — project-name validation (F4 #2013)", () => {
 
   it("accepts a name exactly 214 characters long", () => {
     expect(validateArgs({ name: "a".repeat(214) })).toBeNull();
+  });
+});
+
+describe("printHelp — theme pack", () => {
+  it('describes "default" as an alias of Graphite and Classic as "classic"', () => {
+    const lines: string[] = [];
+    const spy = vi.spyOn(console, "log").mockImplementation((message?: unknown) => {
+      lines.push(String(message));
+    });
+    try {
+      printHelp();
+    } finally {
+      spy.mockRestore();
+    }
+    const text = lines.join("\n");
+    expect(text).toContain('"default" is an alias of Graphite');
+    expect(text).toContain('Classic is "classic"');
+    expect(text).not.toContain('"default" = Classic');
   });
 });
 

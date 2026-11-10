@@ -198,7 +198,7 @@ ${pc.bold("Options:")}
   --[no-]respect-system-preference
                                Respect OS color scheme preference
   --theme-pack <slug>          Theme pack (${themePackList})
-                               Default: graphite ("default" = Classic)
+                               Default: graphite ("default" is an alias of Graphite; Classic is "classic")
 ${featureHelp}
   --changelog-packages <a,b>  Per-package changelog pages (implies changelog)
   --mcp-deploy <target>       MCP deployment preset (cloudflare)

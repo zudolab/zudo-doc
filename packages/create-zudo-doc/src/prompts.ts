@@ -35,8 +35,9 @@ export interface UserChoices {
   darkScheme?: string;
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
-  // Theme pack slug (ADR #2818 Decision 7). "graphite" = the default look,
-  // "default" = Classic (the original look, no pack stylesheet).
+  // Theme pack slug (ADR #2818 Decision 7). "graphite" is the scaffold
+  // default, and "default" is an alias of Graphite. Classic's slug is
+  // "classic" (the original look, no pack stylesheet).
   themePack?: string;
   // Features
   features: string[];
@@ -226,7 +227,7 @@ export async function runPrompts(
     themePack = prefilled.themePack;
   } else {
     const result = await p.select({
-      message: "Theme pack:",
+      message: 'Theme pack ("default" is an alias of Graphite; Classic is "classic"):',
       options: THEME_PACKS.map((t) => ({
         value: t.slug,
         label: t.label,

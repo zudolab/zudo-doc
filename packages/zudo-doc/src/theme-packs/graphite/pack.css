@@ -14,7 +14,7 @@
      hover bg       inactive navigation hover fill
      active bg      current navigation fill (90% bg + 10% accent)
      state bgs      admonition fills (90% bg + 10% state colour)
-   Classic (the reserved "default" pack) shares one muted role for
+   Classic (slug "classic") shares one muted role for
    text, borders and comments; these packs keep muted at readable
    text contrast and give decorative rules their own quieter line.
 

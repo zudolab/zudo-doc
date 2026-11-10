@@ -248,8 +248,9 @@ async function main() {
       cwd: process.cwd(),
       env: {
         ...process.env,
-        // Wrangler version pin in zfb is ahead of our installed wrangler
-        // for the migration window; bypass the gate so the smoke runs.
+        // Adapter-mode `zfb preview` treats Wrangler 4.85.0 as a minimum and
+        // lets a newer version proceed. Skip the check here so this smoke
+        // does not depend on it.
         ZFB_SKIP_WRANGLER_VERSION_CHECK: "1",
         // wrangler's chokidar watcher calls inotify_init() per watched path,
         // which on WSL (fs.inotify.max_user_instances defaults to 128)

@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Other Changes
 
 - Generated projects pin ZDTP 0.9.3. (e7bd75da)
-- Generated Cloudflare projects pin Wrangler 4.160.0. The workspace devDependency matches that pin, and `@cloudflare/workers-types` is 5.20261110.1 so Wrangler's peer range is met.
+- MCP scaffolds pin Wrangler 4.160.0. That pin is not applied to every Cloudflare project. `@cloudflare/workers-types` 5.20261110.1 is the workspace devDependency, not a generated-project pin. Adapter-mode `zfb preview` treats Wrangler 4.85.0 as a minimum; a newer version logs that it is above the tested baseline and proceeds.
 
 ## [9.1.5] - 2026-11-08
 
