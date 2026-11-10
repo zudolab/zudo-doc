@@ -12,13 +12,13 @@
  * This file proves, against the INSTALLED packed package (not workspace
  * source):
  *
- * - the default generated project still typechecks with its own TS5
+ * - the default generated project still typechecks with its own TypeScript 7
  *   requirement (`pnpm check` → `zfb check` → the project's `tsc`) and builds;
  * - zfb's native resolver still maps a real `@/` import in server code AND in
  *   an island dependency without `baseUrl` (emitted HTML + island bundle), and
  *   a wrong alias target fails the build — so zfb really reads the mapping;
  * - an isolated `typescript@7.0.2` (pinned ONLY in this test's scratch
- *   compiler dir — the generator default stays `^5.9.0`) typechecks both the
+ *   compiler dir — the generator default is `^7.0.2`) typechecks both the
  *   generated config and a minimal direct-extends project;
  * - the base's top-level `files` ambient declarations (`zfb-config-shim.d.ts`,
  *   `virtual-modules.d.ts`) still apply to a fixture that does not override

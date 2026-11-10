@@ -3,17 +3,18 @@
  *
  * The footer is persisted (`data-zfb-transition-persist="footer-en"`) and the
  * activated footer link keeps focus across the SPA swap. zfb moves persisted
- * chrome with moveBefore(); current Chromium (reproduced on 151 and 153, not
- * on the 145 build pinned by @playwright/test 1.58.2) queues a native focus
- * reveal for the moved focused subtree until the next layout. The router's
- * settleLocation() scrollTo(0, 0) can skip that layout, so the reveal used to
+ * chrome with moveBefore(); Chromium queues a native focus
+ * reveal for the moved focused subtree until the next layout on the builds
+ * where this reproduced (151 and 153). @playwright/test 1.65.0 pins Chromium
+ * 158.0.8127.18. The 145 build bundled with 1.58.2 did not queue the reveal.
+ * The router's settleLocation() scrollTo(0, 0) can skip that layout, so the reveal used to
  * land afterwards and leave the viewport at the footer. The package-owned
  * persisted-focus-settle bootstrap flushes the reveal between the DOM move and
  * settleLocation().
  *
- * To prove the regression on a reproducing browser, point the pinned
- * Playwright at a newer Chromium via E2E_CHROMIUM_EXECUTABLE (see
- * e2e/CLAUDE.md). The browser version is attached to each test result.
+ * To compare another Chromium, point the pinned Playwright at it via
+ * E2E_CHROMIUM_EXECUTABLE (see e2e/CLAUDE.md). The browser version is
+ * attached to each test result.
  *
  * Instrumentation rule: nothing in the page may read layout (scrollY,
  * offsetHeight, getBoundingClientRect, screenshots) between the persisted DOM

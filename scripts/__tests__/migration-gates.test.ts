@@ -133,7 +133,7 @@ describe("#4470 A2 workflow selection", () => {
     expect(suite).toContain("ZUDO_A2_CAPTURE_DIR: ${{ runner.temp }}/zudo-a2-route-parity");
     const upload = workflow.match(/- name: Upload A2 fixture diagnostics[\s\S]*?(?=      - name:)/)?.[0];
     expect(upload).toContain("if: always() && steps.select-a2.outputs.run_parity == 'true'");
-    expect(upload).toContain("uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f");
+    expect(upload).toContain("uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9");
     const pathBlock = upload?.match(/          path: \|\n([\s\S]*?)(?=          if-no-files-found:)/)?.[1];
     if (pathBlock === undefined) throw new Error("A2 diagnostic upload must define its explicit file paths");
     const paths = pathBlock.trim().split("\n").map((path) => path.trim());

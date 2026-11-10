@@ -3,7 +3,7 @@
 // Usage: node scripts/zfb3-codemods/jsx-v3-mechanical.mjs [--dry-run] [paths...]
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 const dryRun = process.argv.includes("--dry-run");
 const requested = process.argv.slice(2).filter((arg) => arg !== "--dry-run");

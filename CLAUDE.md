@@ -16,7 +16,7 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 - **zudo-react** — zfb's owned JSX and signals runtime for server components and interactive islands. No Preact is installed: zdtp 0.9.0+ renders its panel with its own bundled zudo-react runtime. Do not add Preact or return Preact nodes to owned JSX.
 - **zfb semantic highlighting** — document fences use zfb's native build-time renderer; HtmlPreview lazily imports the public `@takazudo/zfb-md-wasm/highlight` subpath for browser-time HTML/CSS/JavaScript. Both emit `pre.hi-root` / `hi-*` classes and resolve through `--zd-syntax-*` design tokens. The public `./highlight` entry is explicitly allowed; do not add Shiki, theme-name config, inline token colors, or package-internal WASM paths.
 - **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; the package-owned `DesignTokenPanelBootstrap` island configures it from a mode-scoped builder and self-mounts it as a side effect
-- **TypeScript** — strict mode via `@takazudo/zudo-doc/tsconfig.base.json`, which the project `tsconfig.json` extends. The project file adds exactly one extra compiler flag of its own, `noUncheckedIndexedAccess`, plus `include`/`exclude`/`baseUrl`/`paths` (`exclude` drops `src/**/__tests__`). The base owns `jsxImportSource: "@takazudo/zfb/zudo-react"`; host aliases may remain, but React→Preact compatibility paths must be removed.
+- **TypeScript** — strict mode via `@takazudo/zudo-doc/tsconfig.base.json`, which the project `tsconfig.json` extends. The project file adds `noUncheckedIndexedAccess` and `types: ["node"]` (TypeScript 7 defaults `types` to `[]`), plus `include`/`exclude`/`paths` (`exclude` drops `src/**/__tests__`). Paths are relative to this file because TypeScript 7 rejects `baseUrl`. The base owns `jsxImportSource: "@takazudo/zfb/zudo-react"`; host aliases may remain, but React→Preact compatibility paths must be removed.
 
 ## Commands
 
@@ -29,7 +29,7 @@ MCP SDK 1.32.2; root/generated-MCP Wrangler 4.156.0. The three published package
 `latest`; their published ZFB requirement is 5.1.4. The history-server peer floor is `^8.0.0` (raised in the 8.0.0 major) — see the original 6.0.0 publication record
 `docs/findings/4430-zfb3-migration/release-6.0.0/README.md`. Upstream #4097 is closed. Owner
 disposition and platform limits: `docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md`.
-Use the pinned pnpm 10.30.3 (Corepack) for this workspace. Native Wind audit is
+Use the pinned pnpm 10.34.9 (Corepack) for this workspace. Native Wind audit is
 `pnpm exec zfb wind audit --project-root . --fail-on error`; manifest/emitted CSS
 and browser checks remain separate evidence.
 

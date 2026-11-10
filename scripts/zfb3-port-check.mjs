@@ -4,7 +4,7 @@ import { resolve, relative, join, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 const repo = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const pkg = resolve(repo, "packages/zudo-doc");

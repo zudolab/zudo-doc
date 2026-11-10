@@ -22,7 +22,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           python3 scripts/migration-anchor-census.py dist 2>&1 | tee "$RUNNER_TEMP/migration-parity/heading-anchor-census.json"
       - name: Baseline exact checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: 337b9f110793dccb4759bddd5273eab38cd9d2f0
           path: _parity-baseline
@@ -162,7 +162,7 @@ jobs:
           NODE
       - name: Upload evidence, including failures
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: migration-parity-${{ github.sha }}
           path: ${{ runner.temp }}/migration-parity/
@@ -185,7 +185,7 @@ jobs:
           printf 'CONSUMER_ROOT=%s/native-published-4097\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           printf 'EVIDENCE_ROOT=%s/native-published-4097-evidence\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
@@ -202,7 +202,7 @@ jobs:
           git rev-parse HEAD > "$EVIDENCE_ROOT/source-head.txt"
           node --version > "$EVIDENCE_ROOT/toolchain.txt"
           pnpm --version >> "$EVIDENCE_ROOT/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           node scripts/migration-4097.mjs prepare "$CONSUMER_ROOT"
           cp "$CONSUMER_ROOT/inputs.json" "$CONSUMER_ROOT/package.json" "$CONSUMER_ROOT/pnpm-lock.yaml" "$EVIDENCE_ROOT/"
       - name: Frozen isolated public registry install
@@ -233,7 +233,7 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/migration-4097.mjs" verify-report "$CONSUMER_ROOT" 2>&1 | tee "$EVIDENCE_ROOT/acceptance.log"
       - name: Upload explicit consumer evidence including failures
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: native-published-4097-${{ github.sha }}
           path: |
@@ -250,7 +250,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
@@ -267,7 +267,7 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/migration-slow-create/source-head.txt"
           node --version > "$RUNNER_TEMP/migration-slow-create/toolchain.txt"
           pnpm --version >> "$RUNNER_TEMP/migration-slow-create/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           sha256sum pnpm-lock.yaml package.json packages/create-zudo-doc/vitest.slow.config.ts > "$RUNNER_TEMP/migration-slow-create/inputs.sha256"
       - name: Frozen registry install
         run: |
@@ -281,7 +281,7 @@ jobs:
           pnpm --filter create-zudo-doc test:slow 2>&1 | tee "$RUNNER_TEMP/migration-slow-create/slow-suite.log"
       - name: Upload explicit slow-suite evidence including failures
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: migration-slow-create-${{ github.sha }}
           path: |
@@ -302,7 +302,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
@@ -319,7 +319,7 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/migration-slow-zudo-doc/source-head.txt"
           node --version > "$RUNNER_TEMP/migration-slow-zudo-doc/toolchain.txt"
           pnpm --version >> "$RUNNER_TEMP/migration-slow-zudo-doc/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           sha256sum pnpm-lock.yaml package.json packages/zudo-doc/vitest.slow.config.ts > "$RUNNER_TEMP/migration-slow-zudo-doc/inputs.sha256"
       - name: Frozen registry install
         run: |
@@ -339,7 +339,7 @@ jobs:
           pnpm --filter @takazudo/zudo-doc test:slow 2>&1 | tee "$RUNNER_TEMP/migration-slow-zudo-doc/slow-suite.log"
       - name: Upload explicit slow-suite evidence including failures
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: migration-slow-zudo-doc-${{ github.sha }}
           path: |
@@ -369,7 +369,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
@@ -377,7 +377,7 @@ jobs:
         with:
           dest: ~/setup-pnpm-${{ github.job }}
       - name: Checkout unchanged reviewed baseline
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: 8e70ab58222296bc1d2e241e18438bab5651d530
           path: _a2-baseline
@@ -396,7 +396,7 @@ jobs:
           git rev-parse HEAD:packages/zudo-doc > "$RUNNER_TEMP/migration-a2-baseline/package-tree.txt"
           node --version > "$RUNNER_TEMP/migration-a2-baseline/toolchain.txt"
           pnpm --version >> "$RUNNER_TEMP/migration-a2-baseline/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           sha256sum pnpm-lock.yaml scripts/parity-html-normalize.mjs packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts > "$RUNNER_TEMP/migration-a2-baseline/inputs.sha256"
           cp scripts/__tests__/fixtures/a2-route-reference.json "$RUNNER_TEMP/migration-a2-baseline/reference.json"
       - name: Baseline frozen install and workspace prerequisite
@@ -417,7 +417,7 @@ jobs:
           pnpm exec vitest run --config vitest.slow.config.ts --testNamePattern "A2 no-stub: injected routes render correct HTML" 2>&1 | tee "$RUNNER_TEMP/migration-a2-baseline/a2-suite.log"
       - name: Upload explicit baseline bytes even on failure
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: migration-a2-baseline-${{ github.sha }}
           path: |
@@ -451,21 +451,21 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
       - name: Download exact baseline artifact from this run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: migration-a2-baseline-${{ github.sha }}
           path: ${{ runner.temp }}/a2-baseline-input
       - name: Download exact current slow-suite artifact including failures
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: migration-slow-zudo-doc-${{ github.sha }}
           path: ${{ runner.temp }}/a2-current-input
@@ -477,7 +477,7 @@ jobs:
           python3 scripts/migration-4097-a2-compare.py "$RUNNER_TEMP/a2-baseline-input/a2" "$RUNNER_TEMP/a2-current-input/zudo-a2-route-parity" "$RUNNER_TEMP/a2-baseline-input/reference.json" "$RUNNER_TEMP/a2-comparison" "$CURRENT_SHA" 2>&1 | tee "$RUNNER_TEMP/a2-comparison.log"
       - name: Upload complete public bytes and differences including failures
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: migration-a2-comparison-${{ github.sha }}
           path: |

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { execFileSync, spawnSync } from "node:child_process";
 import { extname, relative, resolve } from "node:path";

@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { resolve, relative, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 const repo = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const extensions = /\.[cm]?[jt]sx?$/;

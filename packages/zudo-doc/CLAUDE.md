@@ -584,8 +584,9 @@ dependencies:
 }
 ```
 
-An existing TS5 host may keep its own `baseUrl` (this showcase does); only the
-shared base and the generated template must stay free of it. Regression proof
+An existing TS5 host may keep its own `baseUrl`. This showcase does not: the
+workspace compiler is TypeScript 7, which rejects `baseUrl`. The shared base
+and the generated template stay free of it too. Regression proof
 lives in `create-zudo-doc`'s `tsconfig-compat.slow.test.ts`.
 
 Do not override the base's top-level `files`: it owns the config and virtual

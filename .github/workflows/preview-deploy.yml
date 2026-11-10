@@ -83,7 +83,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -118,7 +118,7 @@ jobs:
         run: tar -cf "$RUNNER_TEMP/site-dist.tar" -C dist .
 
       - name: Upload site build output
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: site-dist
           path: ${{ runner.temp }}/site-dist.tar
@@ -136,7 +136,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js and pnpm
         uses: ./.github/actions/setup-node-pnpm
@@ -147,7 +147,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Download site build output (from build-site)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: site-dist
           path: ${{ runner.temp }}
@@ -169,7 +169,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -192,7 +192,7 @@ jobs:
         run: tar -cf "$RUNNER_TEMP/doc-history.tar" -C doc-history-out .
 
       - name: Upload doc history output
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: doc-history
           path: ${{ runner.temp }}/doc-history.tar
@@ -217,10 +217,10 @@ jobs:
       # upload time. Without checkout the runner has only the restored caches,
       # so the upload fails / uses wrong defaults. Mirrors main-deploy.yml.
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download site build output (from build-site)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: site-dist
           path: ${{ runner.temp }}
@@ -228,7 +228,7 @@ jobs:
         run: mkdir -p dist && tar -xf "$RUNNER_TEMP/site-dist.tar" -C dist
 
       - name: Download doc history output (from build-history)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         # Tolerant: doc history is an enhancement, not required to deploy. Mirrors
         # the original restore that omitted fail-on-cache-miss — the Prepare step
         # guards on the dir existing before merging.
@@ -417,7 +417,7 @@ jobs:
 
       - name: Set commit status
         if: always()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           DEPLOY_URL: ${{ steps.deploy.outputs.deploy_url }}
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
@@ -438,7 +438,7 @@ jobs:
 
       - name: Comment on associated PR
         if: success() && steps.deploy.outputs.deploy_url
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           DEPLOY_URL: ${{ steps.deploy.outputs.deploy_url }}
         with:

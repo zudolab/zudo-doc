@@ -16,10 +16,9 @@
     "jsx": "react-jsx",
     "jsxImportSource": "@takazudo/zfb/zudo-react",
     "strict": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "#doc-history-meta": [".zfb/doc-history-meta.json"]
+      "@/*": ["./src/*"],
+      "#doc-history-meta": ["./.zfb/doc-history-meta.json"]
     }
   }
 }

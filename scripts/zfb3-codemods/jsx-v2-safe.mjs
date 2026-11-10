@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 const dryRun = process.argv.includes("--dry-run");
 const requested = process.argv.slice(2).filter((arg) => arg !== "--dry-run");
