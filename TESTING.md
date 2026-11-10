@@ -107,14 +107,13 @@ acceptance; those platforms require separate evidence.
 
 `smoke-footer-navigation-scroll.spec.ts` guards the persisted-focus settle
 bootstrap (`packages/zudo-doc/src/transitions/persisted-focus-settle-bootstrap.ts`).
-The underlying Chromium focus-reveal behavior reproduces on 151 and 153 but not
-on the 145 build bundled with `@playwright/test` 1.58.2, so in CI the spec passes
-with or without the guard: it is lifecycle, persistence and focus coverage there,
-not live protection for the scroll regression. The package unit test pins the
-guard's layout read. To prove the regression, run the spec locally with
-`E2E_CHROMIUM_EXECUTABLE` pointing at a newer Chromium (see `e2e/CLAUDE.md`) and
-record the browser version it attaches. The protection gap closes when the pinned
-Playwright browser reaches a reproducing build.
+The underlying Chromium focus-reveal behavior reproduces on 151 and 153. It did
+not reproduce on the Chromium 145 build bundled with `@playwright/test` 1.58.2.
+The workspace pin is now `@playwright/test` 1.65.0, whose bundled Chromium is
+158.0.8127.18, and the CI images in `pr-checks.yml` and `exam.yml` match that
+release. The package unit test pins the guard's layout read. To compare another
+browser, run the spec locally with `E2E_CHROMIUM_EXECUTABLE` (see `e2e/CLAUDE.md`)
+and record the version the spec attaches.
 
 ### Deliberate visual-regression skip
 

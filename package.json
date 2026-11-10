@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
+  "packageManager": "pnpm@10.34.9+sha512.f49b5a8ea0fdedb44bb3c0c1d6575092a53c2950d95b7ad15df11f17974877a2de3a01c07e934e9b28ce716e51c09a94962c7306d09be2e1e4b18a8c8762fd32",
   "engines": {
     "node": ">=24"
   },
@@ -119,14 +119,14 @@
     "@takazudo/zfb-md-wasm": "6.0.1",
     "@takazudo/zfb-runtime": "6.0.1",
     "@takazudo/zudo-doc": "workspace:*",
-    "diff": "^8.0.3",
+    "diff": "^8.0.4",
     "katex": "^0.19.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "1.4.8",
+    "@cloudflare/vitest-plugin": "1.7.0",
     "@cloudflare/workers-types": "5.20261110.1",
-    "@playwright/test": "1.58.2",
+    "@playwright/test": "1.65.0",
     "@takazudo/mdx-formatter": "1.3.0",
     "@takazudo/zudo-design-token-lint": "^2.1.0",
     "@types/culori": "^4.0.1",
@@ -134,15 +134,15 @@
     "@types/pluralize": "^0.0.33",
     "chokidar": "^5.0.0",
     "culori": "^4.0.2",
-    "html-validate": "^10.15.0",
-    "lefthook": "^2.1.4",
-    "parse5": "^8.0.1",
+    "html-validate": "^10.17.0",
+    "lefthook": "2.2.1",
+    "parse5": "^8.1.1",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
-    "semver": "7.8.5",
+    "semver": "7.8.6",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vite": "^7.3.7",
+    "vite": "^7.3.8",
     "vitest": "^4.1.12",
     "wrangler": "4.160.0"
   }

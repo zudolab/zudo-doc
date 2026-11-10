@@ -29,7 +29,7 @@ MCP SDK 1.32.2; root/generated-MCP Wrangler 4.156.0. The three published package
 `latest`; their published ZFB requirement is 5.1.4. The history-server peer floor is `^8.0.0` (raised in the 8.0.0 major) — see the original 6.0.0 publication record
 `docs/findings/4430-zfb3-migration/release-6.0.0/README.md`. Upstream #4097 is closed. Owner
 disposition and platform limits: `docs/findings/4430-zfb3-migration/2026-10-11-post-merge-status.md`.
-Use the pinned pnpm 10.30.3 (Corepack) for this workspace. Native Wind audit is
+Use the pinned pnpm 10.34.9 (Corepack) for this workspace. Native Wind audit is
 `pnpm exec zfb wind audit --project-root . --fail-on error`; manifest/emitted CSS
 and browser checks remain separate evidence.
 

@@ -805,7 +805,7 @@
     "esbuild": "^0.28.2",
     "fs-extra": "^11.4.1",
     "minimist": "^1.2.8",
-    "parse5": "^8.0.1",
+    "parse5": "^8.1.1",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
     "smol-toml": "^1.9.1",
@@ -826,7 +826,7 @@
     "happy-dom": "^21.0.4",
     "katex": "^0.19.1",
     "tsup": "^9.0.0",
-    "typescript": "^5.0.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.12",
     "zod": "^4.6.7"
   }

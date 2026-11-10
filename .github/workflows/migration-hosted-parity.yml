@@ -202,7 +202,7 @@ jobs:
           git rev-parse HEAD > "$EVIDENCE_ROOT/source-head.txt"
           node --version > "$EVIDENCE_ROOT/toolchain.txt"
           pnpm --version >> "$EVIDENCE_ROOT/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           node scripts/migration-4097.mjs prepare "$CONSUMER_ROOT"
           cp "$CONSUMER_ROOT/inputs.json" "$CONSUMER_ROOT/package.json" "$CONSUMER_ROOT/pnpm-lock.yaml" "$EVIDENCE_ROOT/"
       - name: Frozen isolated public registry install
@@ -267,7 +267,7 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/migration-slow-create/source-head.txt"
           node --version > "$RUNNER_TEMP/migration-slow-create/toolchain.txt"
           pnpm --version >> "$RUNNER_TEMP/migration-slow-create/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           sha256sum pnpm-lock.yaml package.json packages/create-zudo-doc/vitest.slow.config.ts > "$RUNNER_TEMP/migration-slow-create/inputs.sha256"
       - name: Frozen registry install
         run: |
@@ -319,7 +319,7 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/migration-slow-zudo-doc/source-head.txt"
           node --version > "$RUNNER_TEMP/migration-slow-zudo-doc/toolchain.txt"
           pnpm --version >> "$RUNNER_TEMP/migration-slow-zudo-doc/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           sha256sum pnpm-lock.yaml package.json packages/zudo-doc/vitest.slow.config.ts > "$RUNNER_TEMP/migration-slow-zudo-doc/inputs.sha256"
       - name: Frozen registry install
         run: |
@@ -396,7 +396,7 @@ jobs:
           git rev-parse HEAD:packages/zudo-doc > "$RUNNER_TEMP/migration-a2-baseline/package-tree.txt"
           node --version > "$RUNNER_TEMP/migration-a2-baseline/toolchain.txt"
           pnpm --version >> "$RUNNER_TEMP/migration-a2-baseline/toolchain.txt"
-          test "$(pnpm --version)" = 10.30.3
+          test "$(pnpm --version)" = 10.34.9
           sha256sum pnpm-lock.yaml scripts/parity-html-normalize.mjs packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts > "$RUNNER_TEMP/migration-a2-baseline/inputs.sha256"
           cp scripts/__tests__/fixtures/a2-route-reference.json "$RUNNER_TEMP/migration-a2-baseline/reference.json"
       - name: Baseline frozen install and workspace prerequisite
