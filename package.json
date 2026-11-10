@@ -132,7 +132,7 @@
     "@types/culori": "^4.0.1",
     "@types/node": "^25.9.9",
     "@types/pluralize": "^0.0.33",
-    "chokidar": "^5.0.0",
+    "chokidar": "^6.0.0",
     "culori": "^4.0.2",
     "html-validate": "^10.17.0",
     "lefthook": "2.2.1",
