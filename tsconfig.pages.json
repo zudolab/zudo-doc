@@ -3,8 +3,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["src/*"],
-      "#doc-history-meta": [".zfb/doc-history-meta.json"],
+      "@/*": ["./src/*"],
+      "#doc-history-meta": ["./.zfb/doc-history-meta.json"],
       "zfb": ["./node_modules/@takazudo/zfb/dist/index.d.ts"],
       "zfb/content": ["./node_modules/@takazudo/zfb/dist/content.d.ts"],
       "zfb/runtime": ["./node_modules/@takazudo/zfb-runtime/dist/index.d.ts"],

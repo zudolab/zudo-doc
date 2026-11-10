@@ -9,19 +9,17 @@
   "include": ["src", "pages", "scripts", "zfb.config.ts"],
   "exclude": ["src/**/__tests__"],
   "compilerOptions": {
-    // Showcase-local TS5 choice: anchors the bare "src/*" and
-    // ".zfb/doc-history-meta.json" alias targets below. The shared base no
-    // longer sets baseUrl (TypeScript 7 rejects it with TS5102 — #4558); a
-    // project dropping it must make every target explicitly relative
-    // ("./src/*"), as the generated template does.
-    "baseUrl": ".",
+    // TypeScript 7 rejects baseUrl (TS5102). Alias targets are relative to
+    // this file, the same shape the generated template uses.
+    // `types` is explicit because TypeScript 7 defaults it to [].
+    "types": ["node"],
     // Stricter than the base — a deliberate project choice (see this file's
     // "TypeScript" note in the repo-root CLAUDE.md); not part of the shared
     // base since it is not universally desired by every generated project.
     "noUncheckedIndexedAccess": true,
     "paths": {
-      "@/*": ["src/*"],
-      "#doc-history-meta": [".zfb/doc-history-meta.json"]
+      "@/*": ["./src/*"],
+      "#doc-history-meta": ["./.zfb/doc-history-meta.json"]
     }
   }
 }

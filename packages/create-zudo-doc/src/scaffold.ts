@@ -1085,7 +1085,7 @@ function generatePackageJson(
   }
 
   const devDeps: Record<string, string> = {
-    typescript: "^5.9.0",
+    typescript: "^7.0.2",
     "@types/node": "^22.0.0",
     // @types/react is intentionally absent: the package tsconfig base selects
     // zfb's owned JSX runtime and declarations. Generated page stubs import

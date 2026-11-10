@@ -30,7 +30,7 @@
 // statement, or a differently-whitespaced `export interface` (codex review
 // findings on the first, substring-based version of this check).
 
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 /**
  * @param {string} source - the raw contents of zfb-config-shim.d.ts

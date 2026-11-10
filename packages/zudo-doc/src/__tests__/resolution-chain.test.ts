@@ -33,7 +33,7 @@
 // chain, as a whole, lets a real config file type-check.
 
 import { describe, it, expect } from "vitest";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";

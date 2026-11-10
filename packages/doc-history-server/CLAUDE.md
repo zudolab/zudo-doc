@@ -13,7 +13,7 @@ Standalone package for document git history with dual modes: REST API server for
 - `pnpm dev -- --port 4322 --content-dir <path> --locale <key>:<dir>` — start REST API server
 - `pnpm generate -- --content-dir <path> --locale <key>:<dir> --out-dir <path>` — batch generate JSONs
 - `pnpm typecheck` — TypeScript type checking
-- `pnpm build` — build via tsup (ESM + DTS)
+- `pnpm build` — tsup emits the ESM bundle; `tsc -p tsconfig.build.json` emits declarations. tsup's `--dts` path needs the TypeScript compiler API, which TypeScript 7 does not ship.
 
 ## Architecture
 

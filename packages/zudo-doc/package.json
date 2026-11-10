@@ -821,13 +821,14 @@
     "@takazudo/zudo-doc-history-server": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",
-    "@types/node": "^25.9.9",
+    "@types/node": "^26.6.6",
     "@types/pluralize": "^0.0.33",
     "diff8": "npm:diff@8.0.4",
     "happy-dom": "^21.0.4",
     "katex": "^0.19.1",
+    "@typescript/typescript6": "^6.0.2",
     "tsup": "^9.0.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.12",
     "zod": "^4.6.7"
   }
