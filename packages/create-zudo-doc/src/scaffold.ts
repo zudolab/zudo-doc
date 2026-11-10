@@ -1126,7 +1126,7 @@ function generatePackageJson(
     // zdtp 0.9.0 renders with its own bundled zudo-react runtime and depends on
     // no Preact at all (0.8.6-0.8.7 owned it as a dependency; through 0.8.5 it
     // was a peer), so a generated project never declares Preact.
-    deps["@takazudo/zdtp"] = "0.9.1";
+    deps["@takazudo/zdtp"] = "0.9.2";
   }
 
   if (
