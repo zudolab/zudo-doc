@@ -58,7 +58,7 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
     expect(byslug["foundry"]?.hasStylesheet).toBe(true);
   });
 
-  it("Classic keeps the reserved no-CSS default slug; the three soft packs ship CSS", () => {
+  it("Classic ships no stylesheet; the three soft packs ship CSS", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     const byslug = Object.fromEntries(registry.map((e) => [e.slug, e]));
     expect(byslug["classic"]?.meta.name).toBe("Classic");
@@ -78,8 +78,8 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
   it("resolveEnabledPacks accepts the real registry with default settings", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     const enabled = resolveEnabledPacks(registry, {});
-    // `resolveEnabledPacks` pins the configured default (graphite) first and
-    // the reserved `default` (Classic) second, then the rest alphabetically
+    // `resolveEnabledPacks` pins Graphite first (the omitted-themePack default),
+    // then Classic (`classic`), then the rest alphabetically
     // (distinct from `loadThemePackRegistry`'s pure alphabetical order above).
     expect(enabled.map((e) => e.slug)).toEqual([
       "graphite",

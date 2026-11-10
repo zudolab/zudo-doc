@@ -1095,8 +1095,11 @@ function generatePackageJson(
   };
 
   if (choices.features.includes("mcp")) {
-    // Match the root Wrangler dev pin. Wrangler is never installed or invoked
-    // by scaffolding itself; preview and deployment remain owner-controlled.
+    // MCP scaffold only — not a pin for every Cloudflare project. Matches the
+    // root workspace devDependency. Wrangler is never installed or invoked by
+    // scaffolding itself; preview and deployment remain owner-controlled.
+    // `@cloudflare/workers-types` stays a workspace devDependency and is not
+    // written here. Adapter-mode `zfb preview` treats 4.85.0 as a minimum.
     devDeps["wrangler"] = "4.160.0";
   }
 

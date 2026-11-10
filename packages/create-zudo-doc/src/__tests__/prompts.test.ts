@@ -15,6 +15,40 @@ vi.mock("@clack/prompts", () => ({
 
 import { runPrompts } from "../prompts.js";
 
+describe("runPrompts — theme pack", () => {
+  beforeEach(() => {
+    promptMocks.select.mockReset().mockResolvedValue("graphite");
+    promptMocks.multiselect.mockReset();
+    promptMocks.info.mockReset();
+  });
+
+  it('describes "default" as an alias of Graphite and Classic as "classic"', async () => {
+    const choices = await runPrompts({
+      projectName: "my-docs",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: {},
+      packageManager: "pnpm",
+      githubUrl: "",
+    });
+
+    expect(choices.themePack).toBe("graphite");
+    expect(promptMocks.select).toHaveBeenCalledTimes(1);
+    const prompt = promptMocks.select.mock.calls[0]?.[0] as {
+      message: string;
+      options: Array<{ value: string; label: string; hint: string }>;
+    };
+    expect(prompt.message).toContain('"default" is an alias of Graphite');
+    expect(prompt.message).toContain('Classic is "classic"');
+    expect(prompt.message).not.toContain('"default" = Classic');
+    const graphite = prompt.options.find((option) => option.value === "graphite");
+    const classic = prompt.options.find((option) => option.value === "classic");
+    expect(graphite?.hint).toContain('"default" is an alias of Graphite');
+    expect(classic?.hint).toContain('slug "classic"');
+  });
+});
+
 describe("runPrompts — agent export and MCP", () => {
   beforeEach(() => {
     promptMocks.select.mockReset().mockResolvedValue("cloudflare");

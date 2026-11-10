@@ -63,12 +63,12 @@ export const THEME_PACKS: ThemePackOption[] = [
   {
     slug: "graphite",
     label: "Graphite",
-    hint: "Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent (the default)",
+    hint: 'Soft neutral graphite — low-glare grey paper by day, deep graphite at night, one warm copper accent (the default; "default" is an alias of Graphite)',
   },
   {
     slug: "classic",
     label: "Classic",
-    hint: "The original zudo-doc look — no extra stylesheet loaded",
+    hint: 'The original zudo-doc look — no extra stylesheet loaded (slug "classic")',
   },
   {
     slug: "academia",
