@@ -9,6 +9,7 @@
 // are executed, not string-matched.
 
 import { afterEach, describe, expect, it } from "vitest";
+import { Window } from "happy-dom";
 import { renderIsland } from "../../__tests__/helpers/zudo-react.js";
 import { CURRENT_PATH_DATASET_KEY, CURRENT_PATH_SCRIPT_PRELUDE, readCurrentPath } from "../index.js";
 import { NAV_OVERFLOW_SCRIPT } from "../../header/nav-overflow-script.js";
@@ -16,6 +17,7 @@ import { LANGUAGE_SWITCHER_INIT_SCRIPT } from "../../i18n-version/language-switc
 import { VERSION_SWITCHER_REWIRE_SCRIPT } from "../../i18n-version/version-switcher.js";
 import { SidebarTree } from "../../sidebar-tree-island/index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
 
 function setLocation(pathname: string): void {
   (window as unknown as { happyDOM?: { setURL: (url: string) => void } }).happyDOM?.setURL(
@@ -76,18 +78,165 @@ describe("CURRENT_PATH_SCRIPT_PRELUDE", () => {
     );
   });
 
-  it("is spliced into the two still-live string-embedded client scripts", () => {
-    // NAV_OVERFLOW_SCRIPT is no longer a live per-module-eval splice — it is a
-    // frozen literal generated at package build time
-    // (scripts/gen-nav-overflow-script.mjs, zudolab/zudo-doc#3534). Its
-    // embedding is proven by the byte-equality drift guard in
-    // ../../header/__tests__/nav-overflow-script.test.ts instead; asserting
-    // containment here would still pass (the generator does splice the real
-    // prelude in) but would duplicate that guard rather than exercise a live
-    // embedding.
-    for (const script of [LANGUAGE_SWITCHER_INIT_SCRIPT, VERSION_SWITCHER_REWIRE_SCRIPT]) {
-      expect(script).toContain(CURRENT_PATH_SCRIPT_PRELUDE);
+});
+
+describe("frozen switcher scripts", () => {
+  // Each scenario gets its own window. Deleting a guard flag on a shared
+  // window leaves the previous document listeners in place, and the version
+  // script's rewire is idempotent, so a later assertion can pass with two
+  // listeners. That is not isolation.
+  const windows: Window[] = [];
+
+  function open(pathname: string): Window {
+    const win = new Window({ url: `http://localhost${pathname}` });
+    windows.push(win);
+    return win;
+  }
+
+  afterEach(async () => {
+    await Promise.all(windows.splice(0).map((win) => win.happyDOM.abort()));
+  });
+
+  function languageHtml(base: string, trailingSlash: boolean, locale: string): string {
+    return `<div data-language-switcher data-base="${base}" data-default-locale="en" data-trailing-slash="${trailingSlash}" data-current-locale="${locale}"><button type="button" data-language-toggle aria-expanded="false">Lang</button><ul data-language-menu class="hidden"><a lang="en" href="/stale">EN</a><a lang="ja" href="/stale">JA</a></ul></div>`;
+  }
+
+  function versionHtml(base: string, trailingSlash: boolean, locale: string): string {
+    return `<article data-doc-unavailable-versions=""></article><div data-version-rewire data-base="${base}" data-default-locale="en" data-trailing-slash="${trailingSlash}" data-current-locale="${locale}" data-unavailable-label="Not available"><a data-version-latest href="/stale">Latest</a><a data-version-slug="1-0" href="/stale">1.0</a></div>`;
+  }
+
+  function href(win: Window, selector: string): string | null {
+    return win.document.querySelector(selector)?.getAttribute("href") ?? null;
+  }
+
+  function active(win: Window, selector: string): string | null {
+    return win.document.querySelector(selector)?.getAttribute("aria-current") ?? null;
+  }
+
+  function clickToggle(win: Window): string | null {
+    const toggle = win.document.querySelector("[data-language-toggle]") as { click: () => void } | null;
+    toggle?.click();
+    return win.document.querySelector("[data-language-toggle]")?.getAttribute("aria-expanded") ?? null;
+  }
+
+  function countNavigationListeners(win: Window): { readonly count: number } {
+    const seen = { count: 0 };
+    const documentAdd = win.document.addEventListener.bind(win.document) as (
+      type: string,
+      listener: unknown,
+      options?: unknown,
+    ) => void;
+    win.document.addEventListener = ((type: string, listener: unknown, options?: unknown) => {
+      if (type === AFTER_NAVIGATE_EVENT) seen.count += 1;
+      documentAdd(type, listener, options);
+    }) as unknown as typeof win.document.addEventListener;
+    return seen;
+  }
+
+  it("prefers the dataset route over location and falls back when the dataset is missing or empty", () => {
+    const languageOverride = open("/ja/docs/from-location");
+    languageOverride.document.body.innerHTML = languageHtml("", false, "ja");
+    languageOverride.document.documentElement.dataset.zdCurrentPath = "/ja/docs/from-dataset";
+    languageOverride.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+    expect(href(languageOverride, 'a[lang="en"]')).toBe("/docs/from-dataset");
+    expect(href(languageOverride, 'a[lang="ja"]')).toBe("/ja/docs/from-dataset");
+
+    for (const dataset of ["missing", "empty"] as const) {
+      const win = open("/ja/docs/from-location");
+      win.document.body.innerHTML = languageHtml("", false, "ja");
+      if (dataset === "empty") win.document.documentElement.setAttribute("data-zd-current-path", "");
+      win.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+      expect(href(win, 'a[lang="en"]')).toBe("/docs/from-location");
+      expect(href(win, 'a[lang="ja"]')).toBe("/ja/docs/from-location");
     }
+
+    const versionOverride = open("/docs/from-location");
+    versionOverride.document.body.innerHTML = versionHtml("", false, "en");
+    versionOverride.document.documentElement.dataset.zdCurrentPath = "/v/1-0/docs/from-dataset";
+    versionOverride.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+    expect(href(versionOverride, "[data-version-latest]")).toBe("/docs/from-dataset");
+    expect(href(versionOverride, '[data-version-slug="1-0"]')).toBe("/v/1-0/docs/from-dataset");
+    expect(active(versionOverride, "[data-version-latest]")).toBeNull();
+    expect(active(versionOverride, '[data-version-slug="1-0"]')).toBe("page");
+
+    for (const dataset of ["missing", "empty"] as const) {
+      const win = open("/docs/from-location");
+      win.document.body.innerHTML = versionHtml("", false, "en");
+      if (dataset === "empty") win.document.documentElement.setAttribute("data-zd-current-path", "");
+      win.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+      expect(href(win, "[data-version-latest]")).toBe("/docs/from-location");
+      expect(href(win, '[data-version-slug="1-0"]')).toBe("/v/1-0/docs/from-location");
+      expect(active(win, "[data-version-latest]")).toBe("page");
+      expect(active(win, '[data-version-slug="1-0"]')).toBeNull();
+    }
+  });
+
+  it("rewires hrefs and active state after the canonical navigation event", () => {
+    const language = open("/ja/docs/first");
+    language.document.body.innerHTML = languageHtml("", false, "ja");
+    language.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+    language.happyDOM.setURL("http://localhost/ja/docs/second");
+    language.document.dispatchEvent(new language.Event(AFTER_NAVIGATE_EVENT));
+    expect(href(language, 'a[lang="en"]')).toBe("/docs/second");
+    expect(href(language, 'a[lang="ja"]')).toBe("/ja/docs/second");
+
+    const version = open("/docs/introduction");
+    version.document.body.innerHTML = versionHtml("", false, "en");
+    version.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+    expect(active(version, "[data-version-latest]")).toBe("page");
+    version.happyDOM.setURL("http://localhost/v/1-0/docs/guides");
+    version.document.dispatchEvent(new version.Event(AFTER_NAVIGATE_EVENT));
+    expect(href(version, "[data-version-latest]")).toBe("/docs/guides");
+    expect(href(version, '[data-version-slug="1-0"]')).toBe("/v/1-0/docs/guides");
+    expect(active(version, "[data-version-latest]")).toBeNull();
+    expect(active(version, '[data-version-slug="1-0"]')).toBe("page");
+  });
+
+  it("keeps root, nonempty-base, locale, and trailing-slash routes on the frozen scripts", () => {
+    const language = open("/manual/ja/docs/next/");
+    language.document.body.innerHTML = languageHtml("/manual", true, "ja");
+    language.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+    expect(href(language, 'a[lang="en"]')).toBe("/manual/docs/next/");
+    expect(href(language, 'a[lang="ja"]')).toBe("/manual/ja/docs/next/");
+
+    const version = open("/manual/ja/docs/next/");
+    version.document.body.innerHTML = versionHtml("/manual", true, "ja");
+    version.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+    expect(href(version, "[data-version-latest]")).toBe("/manual/ja/docs/next/");
+    expect(href(version, '[data-version-slug="1-0"]')).toBe("/manual/v/1-0/ja/docs/next/");
+    expect(active(version, "[data-version-latest]")).toBe("page");
+  });
+
+  it("does not register a second listener when initialization is repeated", () => {
+    const language = open("/ja/docs/first");
+    language.document.body.innerHTML = languageHtml("", false, "ja");
+    language.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+    language.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+    expect(clickToggle(language)).toBe("true");
+
+    const version = open("/docs/introduction");
+    const swapListeners = countNavigationListeners(version);
+    version.document.body.innerHTML = versionHtml("", false, "en");
+    version.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+    version.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+    expect(swapListeners.count).toBe(1);
+  });
+
+  it("still has the previous listener after the guard flag alone is cleared", () => {
+    const language = open("/ja/docs/first");
+    language.document.body.innerHTML = languageHtml("", false, "ja");
+    language.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+    language.eval("delete window.__zdLanguageSwitcherInit");
+    language.eval(LANGUAGE_SWITCHER_INIT_SCRIPT);
+    expect(clickToggle(language)).toBe("false");
+
+    const version = open("/docs/introduction");
+    const swapListeners = countNavigationListeners(version);
+    version.document.body.innerHTML = versionHtml("", false, "en");
+    version.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+    version.eval("delete window.__zdVersionSwitcherRewire");
+    version.eval(VERSION_SWITCHER_REWIRE_SCRIPT);
+    expect(swapListeners.count).toBe(2);
   });
 });
 

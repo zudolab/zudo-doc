@@ -8,16 +8,15 @@
 // self-correct via navigation (spike ledger adl-0005).
 //
 // Four surfaces read it — `sidebar-tree-island/index.tsx` imports directly;
-// `header/nav-overflow-script.ts`, `i18n-version/version-switcher.tsx`, and
-// `i18n-version/language-switcher.tsx` are string-embedded client scripts.
-// The header's embedding is frozen at package build time by
-// `scripts/gen-nav-overflow-script.mjs`, which reads CURRENT_PATH_SCRIPT_PRELUDE
-// as a value off this module's exports and splices it into the committed
-// `header/nav-overflow-generated-script.ts` literal (zudolab/zudo-doc#3534);
-// the other two surfaces still splice it in live, at their own module-eval
-// time. Nothing here may close over module scope, because `readCurrentPath`
-// is serialized with `Function.prototype.toString()` into those script
-// strings.
+// the header nav overflow script and both switcher scripts are committed
+// string literals. `scripts/gen-nav-overflow-script.mjs` and
+// `scripts/gen-switcher-scripts.mjs` read this module at package build time
+// and freeze the result into `header/nav-overflow-generated-script.ts` and
+// `i18n-version/switcher-generated-scripts.ts` (zudolab/zudo-doc#3534).
+// Nothing here may close over module scope, because `readCurrentPath` is
+// serialized with `Function.prototype.toString()` while those literals are
+// generated. The test runner's later serialization of this function is not
+// that contract.
 
 /**
  * The `dataset` property name of the current-route override — i.e. the
