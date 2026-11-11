@@ -6,7 +6,7 @@ import { defineConfig } from "vitest/config";
 // config also works when invoked as
 // `pnpm exec vitest run --config packages/zudo-doc/vitest.slow.config.ts`
 // from the repo root, not only via `pnpm --filter @takazudo/zudo-doc test:slow`.
-const pkgRoot = __dirname;
+const pkgRoot = import.meta.dirname;
 
 /**
  * Slow tier: `route-injection-build.slow.test.ts` runs ~11 real `zfb build`s

@@ -1,12 +1,12 @@
 import { defineConfig } from "vitest/config";
-import { zfb3SourceAliases } from "../../vitest.config";
+import { zfb3SourceAliases } from "../../vitest.config.ts";
 
 /** Package tests run against source exports with ZFB3_SOURCE_RESOLVE=1. */
 export default defineConfig({
   oxc: { jsx: { runtime: "automatic", importSource: "@takazudo/zfb/zudo-react" } },
   resolve: { alias: zfb3SourceAliases() },
   test: {
-    root: __dirname,
+    root: import.meta.dirname,
     include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
     exclude: ["**/node_modules/**", "**/*.slow.test.ts"],
     testTimeout: 30_000,

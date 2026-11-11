@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const repoRoot = __dirname;
+const repoRoot = import.meta.dirname;
 
 /** Resolve public package subpaths to their source counterparts during the red window. */
 export function zfb3SourceAliases() {
@@ -34,7 +34,7 @@ export function zfb3SourceAliases() {
 export default defineConfig({
   oxc: { jsx: { runtime: "automatic", importSource: "@takazudo/zfb/zudo-react" } },
   resolve: {
-    alias: [{ find: "@/", replacement: resolve(__dirname, "src") + "/" }, ...zfb3SourceAliases()],
+    alias: [{ find: "@/", replacement: resolve(import.meta.dirname, "src") + "/" }, ...zfb3SourceAliases()],
   },
   test: {
     exclude: ["**/node_modules/**", "**/*.slow.test.ts"],
