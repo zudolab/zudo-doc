@@ -42,12 +42,11 @@ resumes automatically.
 The CI publish workflow computes the dist-tag from the version string: any
 version containing `-` gets `--tag next`; a clean `X.Y.Z` gets `--tag latest`.
 
-**`next` is removed on stable graduation.** When a clean `X.Y.Z` publish
-graduates the prerelease line, each publish workflow runs an extra step that
-removes the `next` dist-tag (`npm dist-tag rm <pkg> next`). This prevents
-`npm install <pkg>@next` from silently resolving to a stale prerelease. The
-step is idempotent and non-fatal — if `next` does not exist (e.g. the first
-stable release ever), the step logs a notice and succeeds anyway.
+**Stale `next` is removed on stable graduation.** After a clean `X.Y.Z` publish, each
+workflow removes `next` only when it points at an *older* prerelease (e.g. `X.Y.Z-next.3`),
+never a newer preview, with race checks and a reported outcome — see "Publish workflows
+(OIDC trusted publishing)". The maintenance step never fails an otherwise complete
+publication.
 
 ---
 
@@ -69,40 +68,276 @@ build with no probe, no retry loop, and nothing to self-disable.
 
 ### Manual remediation (rare)
 
-If `latest` is ever stranded behind the newest version (e.g. the #1999 state
-before the first clean release), the standing fix is simply to **ship a clean
-version** — it routes to `latest` automatically through the normal publish path.
-As a stopgap when you cannot cut a release immediately, re-point `latest` directly:
-
-```sh
-npm dist-tag add create-zudo-doc@<ver> latest
-npm dist-tag add @takazudo/zudo-doc@<ver> latest
-npm dist-tag add @takazudo/zudo-doc-history-server@<ver> latest
-```
-
-Replace `<ver>` with the exact version string (no leading `v`), e.g. `0.2.0`. The
-helper `scripts/release-bootstrap-latest.mjs <ver>` runs all three with retries.
+If `latest` is ever stranded behind the newest version, the standing fix is simply to **ship
+a clean version**. To repair a channel for an already-published version, re-run that
+package's publish workflow on its tag:
+`gh workflow run <publish-workflow>.yml --ref <tag> -f dry_run=false`. The guard classifies
+the existing version and only finalizes it. Finalization sets the expected channel through
+OIDC and never moves it backward. No local npm login or token is involved; the former local
+helper `scripts/release-bootstrap-latest.mjs` is retired.
 
 ---
 
-## Dry-run auth smoke
+## Release procedure
 
-Each publish workflow supports a `workflow_dispatch` with `dry_run: true`. In this
-mode the workflow verifies that `NPM_TOKEN` authenticates against the registry via
-`npm whoami`, then stops without publishing anything.
+This section is the **one** release procedure. The Claude Code entry
+(`.claude/skills/l-make-release/SKILL.md`) and the Codex skill (`.codex/skills/l-make-release`,
+a symlink to the same file) only point here; when they disagree with this file, this file
+wins. The deterministic steps are `node scripts/release/release.mjs <subcommand>`; the
+publish workflows run `scripts/release/publish-step.mjs`. Both share `scripts/release/lib.mjs`.
 
-**Caveat:** the dry-run must target the *candidate* tag or ref — NOT `main` and NOT
-an already-published tag. The reason is ordering: the workflow runs a "version not
-already published" safeguard (Safeguard 3) *before* the dry-run/auth step
-(Safeguard 5). An already-published tag triggers a hard failure at Safeguard 3 and
-the auth smoke is never reached. Similarly, dispatching from `main` fails at
-Safeguard 1 (tag-shape check) before auth is tested.
+### Fresh-checkout setup
 
-Scaffold pin freshness (Safeguard 4) also runs before the auth step, unconditionally
-— see "Scaffold pin freshness gate" below.
+Nothing outside the repository is needed: no personal skill, no fixed local path, no
+logged-in npm shell, and no npm token anywhere.
 
-Correct dry-run target: a tag or branch pointing at the candidate commit whose
-version has been bumped in `package.json` but not yet published to npm.
+```sh
+git clone https://github.com/zudolab/zudo-doc.git && cd zudo-doc
+corepack enable            # pnpm version comes from package.json "packageManager"
+pnpm install --frozen-lockfile
+node scripts/release/release.mjs preflight
+```
+
+Tools: Node 24 (`.nvmrc`), Corepack/pnpm, `git`, `gh`, `unzip`. `preflight` prints a
+capability table and stops on a missing requirement:
+
+| Capability | Needed for | Typical source |
+|---|---|---|
+| GitHub read (runs, jobs, logs, artifacts, commits) | A2 + main-workflow evidence, `status` | any authenticated `gh` |
+| GitHub contents write | `tag`, `releases`, publishing a draft release | maintainer `gh auth login`, or the session's GitHub integration |
+| GitHub actions write | `workflow_dispatch` (initiation fallback, resume) | same identity as contents write |
+| npm registry read | registry state, provenance | public, unauthenticated |
+| npm write | **never needed locally** | only the publish workflows, through OIDC |
+
+A personal access token is not part of the default setup. If a session (for example a
+Codex Cloud environment) has no write-capable GitHub identity, run the read-only steps
+there and hand the write steps to the owner; adding a short-lived, repository-scoped token
+for that session is an explicit owner decision, never a default.
+
+Evidence files go in a directory **outside the linked package** (and preferably outside the
+checkout), e.g. `EVIDENCE=../release-evidence/<version>`. Attach the JSON records to the
+release PR or its tracking issue; the A2 diagnostics zip is preserved there too.
+
+### Choosing the version
+
+`scripts/release-create-zudo-doc.sh` derives or accepts the version:
+
+| Current version | Mode / arg | Result |
+|---|---|---|
+| `X.Y.Z` (stable) | _(no arg / auto)_ | `X.Y.(Z+1)` |
+| `X.Y.Z-next.N` | _(no arg / auto)_ | `X.Y.Z` (graduate) |
+| any | `major` / `minor` / `patch` | `(X+1).0.0` / `X.(Y+1).0` / `X.Y.(Z+1)` |
+| `X.Y.Z` (stable) | `next` | `X.(Y+1).0-next.1` |
+| `X.Y.Z-next.N` | `next` / `stable` | `X.Y.Z-next.(N+1)` / `X.Y.Z` |
+| any | `<semver>` | exactly that |
+
+Breaking changes take a major bump (minor during `0.x`, see "Release channels"); `feat:`
+takes a minor and everything else a patch. `DRY=1 ./scripts/release-create-zudo-doc.sh [arg]`
+computes without writing. Classify every user-facing change by package owner as described in
+"Package-specific release notes".
+
+### Steps
+
+1. **Preflight.** `node scripts/release/release.mjs preflight` on a clean `main`.
+2. **Prepare.** `./scripts/release-create-zudo-doc.sh [<version>|<mode>]` bumps all four
+   `package.json` files, rewrites the scaffold pins and scaffolds the six changelog entries.
+   Fill them ("Package-specific release notes"), run `pnpm gen:changelog`, then
+   `B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push` (the pin-published window, see "Scaffold pin
+   published gate"). On a major bump, raise the history-server peer floor first ("First-party
+   peer floor", rule 4).
+3. **Release PR.** Commit on `release/<version>` as `chore: bump create-zudo-doc to
+   v<version>`, push, and open a PR to `main`. A push to `main` runs no A2.
+4. **Freeze and verify the candidate.** When PR Checks is green, record the candidate head,
+   the base the run used, and the run ID/attempt, then:
+
+   ```sh
+   node scripts/release/release.mjs a2-evidence --pr <N> --run <run-id> --attempt <n> \
+     --candidate <head-sha> --base <base-sha> --out "$EVIDENCE"
+   ```
+
+   It verifies everything in "Release-candidate CI: A2 must execute" (A2 RUN + executed test
+   step, every required check, the diagnostics artifact ID/digest — downloaded and compared
+   to its digest — the checkout SHA from the job log and `manifest.json`, the tested merge's
+   parents and tree) and writes `a2-evidence.json`. Expect the first release run to fail A2
+   on the build identity; see "Rebaselining the release build identity".
+5. **Merge** under the normal policy. Do not push anything else to the release branch.
+6. **Bind the accepted integration.**
+
+   ```sh
+   node scripts/release/release.mjs integration --evidence "$EVIDENCE/a2-evidence.json" \
+     --integration <merge-commit-sha> --out "$EVIDENCE"
+   ```
+
+   It requires the PR's merge result to equal that SHA, the SHA to be on `main`, its tree to
+   equal the A2-tested tree, and every applicable push-to-main workflow at that exact SHA —
+   Production Deploy included — to have completed successfully (pending or missing blocks;
+   re-run the command once they finish). Never dispatch a deployment to manufacture this.
+7. **Tag.** `node scripts/release/release.mjs tag --version <version> --evidence "$EVIDENCE"`
+   creates the three annotated tags at the integration SHA. An existing tag at the same SHA
+   is kept; an existing tag elsewhere stops the release. Tags are never moved.
+8. **Draft releases.** `node scripts/release/release.mjs releases --version <version> --evidence "$EVIDENCE"`
+   creates one draft per tag with that package's own notes and title (prerelease flag for a
+   hyphenated version). An existing release is checked, never duplicated. Inspect the three
+   drafts; an unchanged package must show its no-change entry.
+9. **Publish.** `node scripts/release/release.mjs publish --version <version> --evidence "$EVIDENCE"`
+   handles one package at a time in publication order. For each package it:
+   - reads the registry state. *Unknown* stops the run (exit 2). It is never treated as
+     absent.
+   - stops if an existing version has no provenance from this integration SHA, this tag and
+     this package's workflow;
+   - otherwise attaches to an active run, or initiates one. If the draft is unpublished it
+     publishes it, which fires `release: published`. If no run appears in time, or the release
+     is already published, it dispatches the package's workflow on the tag;
+   - waits for that run. A failed run stops the order;
+   - re-reads the registry until the exact version, the provenance and the expected channel
+     (plus `next` maintenance for a stable version) are confirmed.
+
+   A version that already existed is recorded as verified but **not** a fresh publication;
+   `publication.json` records which run published what. Re-running `publish` resumes:
+   finished packages are skipped, an interrupted finalization is re-dispatched, and nothing
+   is republished. After a stable release it marks `v<version>` as GitHub's Latest release.
+10. **Read back.** `node scripts/release/release.mjs status --version <version>` prints
+    the tag, release, runs and registry state of each package. Report the three release
+    URLs, `publication.json` and the npm publisher identity.
+
+`--confirm` on the Claude/Codex entry adds one owner confirmation immediately before step 9.
+
+### Manual equivalents
+
+When a helper cannot run, perform the same checks by hand. Keep the same evidence, in the
+same order. The draft-release step by hand:
+
+```bash
+HISTORY_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/doc-history-server/<NEW_VERSION>.mdx)
+ZUDO_DOC_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/zudo-doc/<NEW_VERSION>.mdx)
+CREATE_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/create-zudo-doc/<NEW_VERSION>.mdx)
+
+# --prerelease for any version containing a hyphen (next/beta/rc); empty for stable.
+PRE=""; case "<NEW_VERSION>" in *-*) PRE="--prerelease";; esac
+
+gh release create "zudo-doc-history-server-<NEW_VERSION>" \
+  --title "@takazudo/zudo-doc-history-server <NEW_VERSION>" \
+  --notes "$HISTORY_NOTES" --draft $PRE --verify-tag
+gh release create "zudo-doc-v<NEW_VERSION>" \
+  --title "@takazudo/zudo-doc <NEW_VERSION>" \
+  --notes "$ZUDO_DOC_NOTES" --draft $PRE --verify-tag
+gh release create "v<NEW_VERSION>" \
+  --title "create-zudo-doc <NEW_VERSION>" \
+  --notes "$CREATE_NOTES" --draft $PRE --verify-tag
+```
+
+Initiate each package by publishing its draft (`gh release edit <tag> --draft=false`).
+Alternatively, dispatch its workflow on the tag:
+`gh workflow run <publish-workflow>.yml --ref <tag> -f dry_run=false`. Do one package at a
+time, in publication order, and confirm each in the registry before starting the next.
+
+### Running in Codex Cloud
+
+The procedure is the same in Codex Cloud. Because `preflight` reports what the
+environment provides, a Cloud session never silently swaps environments or capabilities.
+Each Cloud run of the release must be observed and recorded there. A local run does not
+establish Cloud acceptance, and the reverse also holds. The acceptance checklist lives on
+the tracking issue (zudolab/zudo-doc#4748).
+
+---
+
+## Publish workflows (OIDC trusted publishing)
+
+`publish-zudo-doc-history-server.yml`, `publish-zudo-doc.yml` and `publish-create-zudo-doc.yml`
+use no stored npm credential. They share one shape:
+
+- **Triggers.** `release: published` for the package's tag namespace; the other two
+  workflows skip NEUTRAL. `workflow_dispatch` on the **tag ref** is for explicit initiation
+  and resumption, and with `dry_run: true` it never writes. Both triggers run the same file,
+  so the OIDC workflow identity is always that file. There is no reusable-workflow
+  coordinator, because npm validates the *calling* workflow's filename. An event created
+  with a workflow's `GITHUB_TOKEN` never starts another workflow. So nothing here relies on
+  one: the orchestrator dispatches explicitly when no run appears.
+- **Permissions.** `permissions: {}` at workflow level. Only the publish job gets
+  `contents: read` and `id-token: write`. Runners are GitHub-hosted; trusted publishing
+  does not support self-hosted runners. Checkout does not persist credentials.
+- **Toolchain.** pnpm 10 has no OIDC code. `pnpm publish` packs the package, which rewrites
+  `workspace:` specifiers, then runs `npm publish <tarball>` with the npm on `PATH`. The
+  toolchain step therefore installs the reviewed npm CLI pinned in
+  `scripts/release/lib.mjs` (`NPM_CLI_PIN`). That npm is ≥ 11.5.1 for OIDC publish and
+  ≥ 11.21.0 for OIDC `npm dist-tag`. The step checks its integrity, refuses a pnpm
+  `npm-path` override, and prints the node, npm and pnpm versions. `create-zudo-doc` has
+  no workspace dependencies and publishes with that npm directly.
+- **Guard.** Checks run in this order:
+  - anchored tag namespace and semver;
+  - `package.json` version matches the tag;
+  - the checked-out commit is the tag commit, and is on `origin/main`;
+  - every existing sibling lockstep tag targets the same commit;
+  - the registry state, which sets the mode: *absent* → `publish`. *Present with provenance
+    from this commit, tag and workflow* → `resume`, which finalizes only and never
+    republishes. *Present from any other source* → fail. *Unknown* after bounded retries
+    → fail closed (exit 2).
+- **Pack check.** A nonmutating `pack` that asserts no `workspace:` specifier survives.
+- **Dry run** (`dry_run: true`). Runs the toolchain, guard, install, build, tests, the
+  scaffold-pin freshness safeguard (create-zudo-doc) and the pack check, then stops. It
+  says explicitly that write authorization is **not** verified: only a real publish
+  exercises the trusted publisher. In a dry run, a commit that is not yet on `main` is a
+  warning instead of a failure, so a pre-merge candidate tag can be exercised.
+- **Publish.** Refuses to run if any static npm credential is present, or if the OIDC
+  token endpoint is missing; there is no token fallback. On failure it keeps npm's
+  original error and prints the expected trusted-publisher fields. A publish is never
+  retried blindly: re-running the workflow lets the guard classify what happened.
+- **Finalize** (publish and resume). Polls, with bounds, until the exact version is
+  visible. It then requires provenance from this commit and workflow, and confirms the
+  channel (`latest` for `X.Y.Z`, `next` for a prerelease). A lagging channel is set
+  through OIDC `npm dist-tag add`. A channel held by a newer version is never moved
+  backward. A version still not visible is *unknown* (exit 2), not absent.
+- **`next` maintenance** (stable only, isolated with `continue-on-error`). It reads
+  dist-tags and removes `next` only when it points at a prerelease older than the
+  released version; a newer preview is kept. It re-reads immediately before removing
+  (the per-package concurrency group serializes this repository's runs) and again
+  afterwards. If a newer preview appeared, its pointer is left in place, or restored.
+  Outcomes are `absent`, `kept-newer-preview`, `removed`, `race-left-in-place`,
+  `race-restored`, `unknown`, `unverified` and `failed`. The outcome goes into the job
+  summary, and a warning is raised without failing the publication. Re-dispatch the
+  workflow on the tag to retry.
+
+---
+
+## npm trusted publishers and credential retirement (owner)
+
+Only the owner changes npm or GitHub security settings. Configure one GitHub Actions trusted
+publisher per package on npmjs.com (package → Settings → Trusted publishing). Every field is
+case-sensitive and exact. The npm scope `@takazudo` does not change the GitHub owner.
+
+| npm package | Organization or user | Repository | Workflow filename | Environment name | Allow npm dist-tag |
+|---|---|---|---|---|---|
+| `@takazudo/zudo-doc-history-server` | `zudolab` | `zudo-doc` | `publish-zudo-doc-history-server.yml` | _(empty)_ | enabled — channel repair and stale-`next` maintenance |
+| `@takazudo/zudo-doc` | `zudolab` | `zudo-doc` | `publish-zudo-doc.yml` | _(empty)_ | enabled — channel repair and stale-`next` maintenance |
+| `create-zudo-doc` | `zudolab` | `zudo-doc` | `publish-create-zudo-doc.yml` | _(empty)_ | enabled — channel repair and stale-`next` maintenance |
+
+Direct publishing (`npm publish`) is required for all three; staged publishing is not used.
+Each package's `repository.url` is `git+https://github.com/zudolab/zudo-doc.git`.
+The workflows use no GitHub Environment, so the Environment field stays empty. If one is
+added later, the field must match it exactly.
+
+Order of operations:
+
+1. **Configure the publishers right before a legitimate release.** npm expires a new
+   publisher that has not completed a successful publish within 2 days. Never cut a version
+   or write to the registry just to test.
+2. **Observe live OIDC operation** on that release for each package: its publish run has no
+   static credential, which the publish step enforces. The registry then shows the version
+   with provenance from the run, and the publisher identity in `status` is no longer the
+   personal account. Public reads and dry runs are not proof.
+3. **Remove `NPM_TOKEN` access**: the repository secret, any environment secret, and any
+   organization secret visible to the repository.
+4. **Inventory other consumers** of the npm write token by non-secret identifiers (token
+   name or ID, creation date, the repositories and workflows that reference it). Revoke it
+   only when nothing else depends on it; otherwise record the dependency and keep it
+   scoped.
+5. **Restrict traditional token publishing** per package: "Require two-factor
+   authentication and disallow tokens". Trusted publishers keep working.
+
+Progress and evidence are tracked in zudolab/zudo-doc#4748.
 
 ---
 
@@ -175,6 +410,27 @@ block tagging. Do not dispatch a deployment merely to manufacture this evidence.
 these gates pass, use the frozen SHA explicitly for each tag, never moving `main`, `HEAD`
 or the release branch head. Main advancing later does not change the verified tag target.
 
+### Rebaselining the release build identity
+
+Every lockstep release so far (6.0.2 through 10.0.3) failed the three strict A2 fingerprints
+on the release PR's first run: the version bump changes the native `data-zfb-build` identity
+embedded in the captured pages, and the hashes depend on the hosted build environment, so they
+cannot be pre-computed locally. Budget one extra CI round and rebaseline on the still-open PR:
+
+1. Download the failing run's `a2-route-parity-diagnostics` artifact, and the artifact from the
+   run that accepted the current `scripts/__tests__/fixtures/a2-route-reference.json` (its
+   `manifest.json` hashes must equal the reference).
+2. Byte-compare each `*.normalized.html` pair. Rebaseline only if lengths are equal, the sole
+   difference is the `data-zfb-build` value(s), and substituting the old value back into the
+   new capture reproduces the accepted bytes exactly. Any other residual is a real regression:
+   fix it, do not rebaseline.
+3. Update the three hashes in `a2-route-reference.json` and add a causal review under
+   `docs/findings/` recording both runs, artifact IDs, checkouts, old/new identities and
+   per-page occurrence counts (template: `docs/findings/4582-release-6.2.0-a2-causal-review.md`).
+   Commit as `test: rebaseline strict A2 identities for the <version> release`, push, and
+   collect the evidence from the fresh run. The failing run explains the rebaseline; only the
+   fresh run certifies it.
+
 ### Candidate changes and repair
 
 - **Before merge:** repair on the still-open release PR. If its candidate or base changes
@@ -212,13 +468,14 @@ the scaffold before the peer packages land on npm, `pnpm install` in the new pro
 fails with a 404 on the pinned `@takazudo/zudo-doc` version.
 
 All three packages are versioned and released in lockstep. Every tag below targets the
-same frozen, tree-verified main integration SHA from the preceding section. Recommended sequence:
+same frozen, tree-verified main integration SHA from the preceding section. The sequence
+(`release.mjs publish` enforces it, confirming each package in the registry before the next):
 
-1. Tag `zudo-doc-history-server-X.Y.Z` and publish the GitHub Draft Release for
-   `@takazudo/zudo-doc-history-server`. Wait for the CI publish to succeed.
-2. Tag `zudo-doc-vX.Y.Z` and publish the Draft Release for `@takazudo/zudo-doc`.
-   Wait for the CI publish to succeed.
-3. Tag `vX.Y.Z` and publish the Draft Release for `create-zudo-doc`.
+1. `@takazudo/zudo-doc-history-server` — tag `zudo-doc-history-server-X.Y.Z`,
+   workflow `publish-zudo-doc-history-server.yml`.
+2. `@takazudo/zudo-doc` — tag `zudo-doc-vX.Y.Z`, workflow `publish-zudo-doc.yml`.
+3. `create-zudo-doc` — tag `vX.Y.Z`, workflow `publish-create-zudo-doc.yml`, only after
+   1 and 2 are confirmed.
 
 Do not skip an unchanged package: its package-specific release note records that it has
 no user-facing package change, while the lockstep release and publish order remain the
@@ -238,6 +495,10 @@ body, and generates that package's committed `CHANGELOG.md`:
 | `@takazudo/zudo-doc` | `src/content/docs/changelog/zudo-doc/<version>.mdx` | `packages/zudo-doc/CHANGELOG.md` | `zudo-doc-v<version>` |
 | `create-zudo-doc` | `src/content/docs/changelog/create-zudo-doc/<version>.mdx` | `packages/create-zudo-doc/CHANGELOG.md` | `v<version>` |
 
+Japanese mirrors: `src/content/docs-ja/changelog/doc-history-server/<version>.mdx`,
+`src/content/docs-ja/changelog/zudo-doc/<version>.mdx` and
+`src/content/docs-ja/changelog/create-zudo-doc/<version>.mdx`.
+
 Classify notes by user-facing package ownership, not merely by commit prefix or touched
 directory. Duplicate a user-facing change into every affected package note when it spans
 packages. Omit repo/showcase documentation, tests, CI, and maintenance changes when they
@@ -252,6 +513,29 @@ explicit localized entry:
 - パッケージ固有の変更はありません。
 ```
 
+Entry shape (English; Japanese mirrors it with `リリース日:` and the headings `### 破壊的変更`,
+`### 機能`, `### バグ修正`, `### その他の変更`; omit an empty section):
+
+```mdx
+---
+title: <version>
+description: Release notes for <version>.
+sidebar_position: <value from the release script>
+---
+
+Released: <YYYY-MM-DD>
+
+### Breaking Changes
+
+- Description (commit-hash)
+
+### Features
+
+### Bug Fixes
+
+### Other Changes
+```
+
 After authoring all six entries, run `pnpm gen:changelog` and stage its outputs: the
 three package `CHANGELOG.md` files **and** `public/_redirects`, which the same command
 regenerates (see "Per-release derived artifacts" below). When creating GitHub releases,
@@ -260,6 +544,8 @@ each one to the tag in the table. Never reuse one shared `$NOTES` value across t
 Titles are `@takazudo/zudo-doc-history-server <version>`,
 `@takazudo/zudo-doc <version>`, and `create-zudo-doc <version>`. Versions containing a
 hyphen are prereleases and each `gh release create` command must include `--prerelease`.
+`release.mjs releases` applies exactly this mapping; the manual commands are under
+"Release procedure" → "Manual equivalents".
 
 ---
 
@@ -310,7 +596,7 @@ they ever disagree with what follows, this section wins and the other two are th
    release (`scripts/run-b4push.sh` step 19, `B4PUSH_SKIP_PIN_PUBLISHED`). The window
    closes when the 6a publishes (`zudo-doc-history-server`, `zudo-doc`) land on npm, and
    the publish order guarantees it closes before the only gate that compares the floor
-   against the registry — `publish-create-zudo-doc.yml` Safeguard 4/5 — runs. Outside a
+   against the registry — the scaffold pin freshness safeguard in `publish-create-zudo-doc.yml` — runs. Outside a
    major bump the floor never names an unpublished version. The raise is a hand edit in
    the release commit; the release script never touches it.
 5. The declaration is **mirrored as an approved baseline** in
@@ -332,7 +618,7 @@ release fully prepped at root `6.0.0`, floor `^6.0.0`, `approvedBaseline` `^6.0.
 workflows pass. The real constraint is a different gate: `check:scaffold-pin-freshness`'s
 first-party peer-range rule (#4065) is red while the floor names a version the registry's
 `latest` does not satisfy. It runs in the release script's pre-bump preflight — where the
-floor it sees is still the old one — and in `publish-create-zudo-doc.yml` Safeguard 4/5,
+floor it sees is still the old one — and in the scaffold pin freshness safeguard in `publish-create-zudo-doc.yml`,
 which by the mandated publish order runs after the 6a publishes have landed. Neither ever
 looks inside the window. The release script (`scripts/release-create-zudo-doc.sh`)
 deliberately does not touch the floor.
@@ -376,7 +662,7 @@ A clean linear release therefore needs no interleaving:
 
 ## Bumping the toolchain (`@takazudo/*` upstream pins)
 
-Bump the upstream deps (`/dev-bump-zudo-deps`, or by hand), then run:
+Bump the upstream deps by hand (or with a maintainer's optional dependency-bump tool), then run:
 
 ```sh
 pnpm check:pin-parity
@@ -394,20 +680,13 @@ went stale. Two things it knows that a generic dependency bumper does not:
   see "First-party peer floor (publish-lag)" above. Its lag advisory is the normal
   steady state, not a chore, however large the lag has grown.
 
-> **`/dev-bump-zudo-deps` will raise this floor if you let it.** The resolver reports
-> `packages/zudo-doc/package.json` `peerDependencies["@takazudo/zudo-doc-history-server"]`
-> as an ordinary `bump` row, and `--write` **applies it** — silently violating rule 2 of the
-> contract above. Either scope the resolver to the packages you actually mean to bump:
->
-> ```sh
-> node "$HOME/.claude/skills/dev-bump-zudo-deps/scripts/resolve-bumps.mjs" \
->   @takazudo/zfb @takazudo/zfb-runtime @takazudo/zfb-adapter-cloudflare \
->   @takazudo/zfb-md-wasm
-> ```
->
-> Name the **whole** zfb family when you scope it this way — a partial bump leaves the
-> workspace peer floors unsatisfiable (see "Bumping the toolchain" below).
->
+> **A generic dependency bumper will raise this floor if you let it.** Tools that bump every
+> `@takazudo/*` range (including the maintainer's optional `/dev-bump-zudo-deps` skill, which
+> is not part of this repository) report `packages/zudo-doc/package.json`
+> `peerDependencies["@takazudo/zudo-doc-history-server"]` as an ordinary bump and would apply
+> it — silently violating rule 2 of the contract above. Scope such a tool to the **whole** zfb
+> family (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`,
+> `@takazudo/zfb-md-wasm`) — a partial bump leaves the workspace peer floors unsatisfiable —
 > or revert that one hunk before installing.
 
 Resolve targets from the **`latest`** dist-tag, never `next` — the two have
@@ -443,13 +722,12 @@ documentation). The fix for a stale pin is always to bump the exact literal.
 
 **Where it runs:**
 
-- **`.github/workflows/publish-create-zudo-doc.yml`, Safeguard 4/5** — the real
-  enforcement point. `scripts/release-create-zudo-doc.sh` only *prepares* a
-  release (rewrites pins, bumps versions); publication happens later, when a
-  human publishes the GitHub Draft Release, and a pin can go stale in that gap.
-  This step runs unconditionally, immediately before `npm publish` (including on
-  a `dry_run`, so a dry run proves this safeguard too) and blocks the release if
-  it fails.
+- **`.github/workflows/publish-create-zudo-doc.yml`, "[Safeguard] Scaffold pin
+  freshness"** — the real enforcement point. `scripts/release-create-zudo-doc.sh` only
+  *prepares* a release (rewrites pins, bumps versions); publication happens later, and a
+  pin can go stale in that gap. This step runs before every new publish (including a
+  `dry_run`, so a dry run proves this safeguard too) and blocks the release if it fails.
+  A resume of an already-published version does not re-judge the pins it shipped.
 - **`scripts/release-create-zudo-doc.sh`** — the same check runs as an early
   preflight in the real (non-`DRY=1`) path, before any file is bumped. This is
   early feedback only, not the enforcement point: a release author learns about
@@ -503,7 +781,7 @@ fail-closed `lookup-error` finding.
 At a major bump the history-server range is raised to the in-flight major in the release
 commit (see "First-party peer floor (publish-lag)", rule 4) and is therefore
 `peer-range-excludes-latest` until `@takazudo/zudo-doc-history-server@<new major>` is on
-`latest`. Safeguard 4/5 runs after that publish by the mandated order, so it passes; if it
+`latest`. The publish-time freshness safeguard runs after that publish by the mandated order, so it passes; if it
 fails with this finding on a major, the 6a publishes have not landed yet — publish them
 and re-run, do not touch the range.
 
@@ -593,63 +871,34 @@ then re-run `pnpm check:scaffold-pin-published`.
 
 ---
 
-## Tag namespaces and Draft Release model
+## Tag namespaces and release initiation
 
 Each package has its own tag namespace and its own publish workflow. Publishing a
-GitHub Draft Release fires exactly one workflow — the one whose Safeguard 1 tag
-pattern matches the tag:
+GitHub Release starts all three workflows; only the one whose namespace matches runs
+(the guard re-checks it with an anchored pattern) and the other two skip NEUTRAL:
 
-| Package | Tag namespace | Example tag |
-|---|---|---|
-| `create-zudo-doc` | `v*` | `v0.2.0-next.1` |
-| `@takazudo/zudo-doc` | `zudo-doc-v*` | `zudo-doc-v0.2.0-next.1` |
-| `@takazudo/zudo-doc-history-server` | `zudo-doc-history-server-*` | `zudo-doc-history-server-0.2.0-next.1` |
+| Package | Tag namespace | Example tag | Workflow |
+|---|---|---|---|
+| `create-zudo-doc` | `v*` | `v0.2.0-next.1` | `publish-create-zudo-doc.yml` |
+| `@takazudo/zudo-doc` | `zudo-doc-v*` | `zudo-doc-v0.2.0-next.1` | `publish-zudo-doc.yml` |
+| `@takazudo/zudo-doc-history-server` | `zudo-doc-history-server-*` | `zudo-doc-history-server-0.2.0-next.1` | `publish-zudo-doc-history-server.yml` |
 
 The `zudo-doc-v` prefix keeps `@takazudo/zudo-doc` tags distinct from the bare `v*`
-namespace so a single tag dispatch always fires exactly one workflow. The anchored
-regex in each workflow's Safeguard 1 rejects tags that match a sibling namespace.
+namespace so a single tag always runs exactly one publish job.
 
-Create one GitHub Draft Release per package. The draft is the human gate: reviewing
-the draft and clicking "Publish release" is the irreversible action that triggers CI
-to call `npm publish`. An unpublished draft fires no workflow.
-
----
-
-## `release-bootstrap-latest.mjs` — one-time remediation helper
-
-`scripts/release-bootstrap-latest.mjs <version>` re-points the `latest` dist-tag
-of all three packages to a given already-published version, with retries. It does
-**not** publish anything — it only moves dist-tags.
-
-Under Scheme B this is **not part of the normal release flow** (a clean release
-moves `latest` on its own). Keep it for one-time remediation of a stranded
-`latest` — most relevantly, to unstick the current `latest = 0.1.0`
-(zudolab/zudo-doc#1999) if the fix is needed before the first clean `0.2.0` ships:
-
-```sh
-node scripts/release-bootstrap-latest.mjs 0.2.0-next.9
-```
-
-It is idempotent: re-running with the same version is a no-op. The **preferred**
-fix, though, is simply to ship a clean version (e.g. `0.2.0`), which supersedes the
-stranded tag through the normal publish path.
+Create exactly one GitHub Release per tag, as a draft. Reviewing the draft and publishing
+it is the human gate and the normal initiation; an unpublished draft fires no workflow.
+Release events created by a workflow's `GITHUB_TOKEN` start no workflow, and a release that
+is already published never fires again — in both cases initiate (or resume) explicitly with
+`workflow_dispatch` on the tag. Never create a second release for a tag to re-trigger.
 
 ---
 
-## One-time manual cleanup: remove stale `next` dist-tag (#2121)
+## Retired: local npm credential maintenance
 
-As of the first stable `0.2.x` graduation, the `next` dist-tag on all three
-packages is frozen at `0.2.0-next.9` — a stale prerelease from before Scheme B
-was adopted. The publish workflows now automatically remove `next` on each future
-stable graduation (see the dist-tag table note above), but the **currently-stale
-tag must be cleared once by a maintainer**:
-
-```sh
-npm dist-tag rm @takazudo/zudo-doc next
-npm dist-tag rm @takazudo/zudo-doc-history-server next
-npm dist-tag rm create-zudo-doc next
-```
-
-Run these from any machine with an npm Automation token (`npm login` or
-`NPM_TOKEN` set). Each command is idempotent — safe to re-run if the tag has
-already been removed.
+Earlier runbooks re-pointed `latest` with `scripts/release-bootstrap-latest.mjs` and cleared a
+stale `next` (#2121) with `npm dist-tag rm` from a shell holding an npm Automation token.
+Both routes are retired with the token (#4745). Channel repair and stale-`next` removal now
+happen only inside the publish workflows through OIDC; to run them for an existing version,
+dispatch the package's workflow on its tag (see "How `latest` stays current" → "Manual
+remediation"). Nothing in this repository needs `npm login` or an npm token.
