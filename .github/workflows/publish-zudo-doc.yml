@@ -1,53 +1,33 @@
-# Publish @takazudo/zudo-doc to npm.
+# Publish @takazudo/zudo-doc to npm with npm trusted publishing (OIDC).
 #
-# Trigger (two paths):
-#   1. release: published — fires when a human publishes a GitHub Draft Release
-#      whose tag matches the zudo-doc-v prefix. Publishing the draft is the
-#      irreversible human gate; CI does the actual `npm publish` only after
-#      all safeguards pass.
-#   2. workflow_dispatch with dry_run: true — proves the token and safeguards
-#      pass without touching npm. Use this before the first real release to
-#      verify NPM_TOKEN is wired correctly.
+# No stored npm credential is used anywhere in this workflow (#4745). npm
+# authorizes the write by exchanging this job's GitHub OIDC token, which it
+# accepts only for the trusted publisher configured on npmjs.com:
+#   GitHub Actions · organization zudolab · repository zudo-doc ·
+#   workflow publish-zudo-doc.yml · environment (empty)
+# The npm scope (@takazudo) does not change the GitHub owner. The publish step
+# refuses to run if a static token is present, so a successful run is evidence
+# of OIDC operation.
 #
-# Tag prefix choice — `zudo-doc-vX.Y.Z` (e.g. zudo-doc-v0.1.0, zudo-doc-v0.2.0-next.1):
-#   The `zudo-doc-v` prefix avoids collision with create-zudo-doc's bare `v*`
-#   tags (publish-create-zudo-doc.yml) and with the sibling
-#   `zudo-doc-history-server-` tag namespace (publish-zudo-doc-history-server.yml).
-#   Safeguard 1 below uses an anchored regex (not a bash glob) so future
-#   sibling packages under `@takazudo/zudo-doc-*` cannot accidentally trigger
-#   this workflow.
+# Triggers:
+#   1. release: published — publishing the GitHub Release for a zudo-doc-vX.Y.Z
+#      tag. The other two publish workflows also start and skip NEUTRAL.
+#   2. workflow_dispatch on the TAG ref (`gh workflow run publish-zudo-doc.yml --ref zudo-doc-v1.2.3`)
+#      — explicit initiation when no release event started a run (an event created
+#      with a workflow's GITHUB_TOKEN never starts another workflow), and resumption
+#      of an interrupted publication or finalization. dry_run: true never writes.
+#   Both paths run THIS file, so the OIDC workflow identity is always
+#   publish-zudo-doc.yml; there is deliberately no reusable-workflow coordinator, whose
+#   caller would become the identity npm checks.
 #
-# Workflow_dispatch caveat:
-#   The job-level `if:` requires the ref/tag to start with `zudo-doc-v`.
-#   Dispatching from `main` (or any non-matching ref) makes this job skip
-#   NEUTRAL — it does not run, rather than failing red. For a dry-run auth
-#   smoke, dispatch with a candidate `zudo-doc-v` prefixed tag as the ref —
-#   NOT an already-published tag, since Safeguard 3 ("version not already
-#   published") runs before the dry-run auth check and would abort first.
-#   Safeguard 1's anchored regex remains as defense-in-depth for a
-#   matching-prefix-but-invalid-semver ref.
+# Resumable: the guard classifies the registry state as absent (publish),
+# present-from-this-source (resume finalization only; never republish) or
+# unknown (fail closed). See RELEASE.md, "Publish workflows".
 #
-# NPM_TOKEN must be an Automation token (type: "Automation" in npmjs.com).
-# Automation tokens bypass npm's 2FA for `npm publish`, which is required
-# for CI-driven publishing. Classic Publish tokens with 2FA enabled would
-# fail at the publish step with an OTP error.
-#
-# OIDC provenance:
-#   id-token: write is required so npm can request an OIDC identity token
-#   and attach provenance metadata to the published package. The repo must
-#   be public (zudolab/zudo-doc is public) for provenance to be recorded
-#   in the npm transparency log.
-#
-# Build step IS required:
-#   zudo-doc ships compiled dist/*.js + dist/*.d.ts (see
-#   packages/zudo-doc/package.json `exports` and `files: ["dist", "README.md"]`).
-#   The compile pipeline is tsup with bundle:false — see
-#   packages/zudo-doc/tsup.config.ts for the rationale (zfb's island scanner
-#   reads "use client" directives, which esbuild strips during true bundling;
-#   per-file output preserves them, plus cross-entry component identity).
-#   The package's `prepare` hook (tsup) auto-runs on `pnpm install`, but we
-#   keep an explicit build step below for clarity and to survive any future
-#   prepare-hook removal — see Wave 8 Blocker 2 resolution (#1724).
+# Toolchain: pnpm 10 has no OIDC code — `pnpm publish` packs (rewriting
+# `workspace:` specifiers) and runs `npm publish <tarball>` with the npm on PATH,
+# so the toolchain step installs the reviewed, integrity-checked npm pinned in
+# scripts/release/lib.mjs (NPM_CLI_PIN) and prints every tool version.
 
 name: Publish zudo-doc
 
@@ -57,19 +37,16 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run — verify auth and safeguards only; skip npm publish'
+        description: 'Dry run — run guards, build, tests and a pack check; never writes to npm and does NOT verify write authorization'
         type: boolean
         required: false
         default: false
 
-# Least-privilege: read for checkout, id-token for OIDC provenance.
-permissions:
-  contents: read
-  id-token: write
+# Nothing at workflow level; the publish job grants only what it needs.
+permissions: {}
 
-# Prevent concurrent publish runs for THIS package only. Distinct from
-# publish-create-zudo-doc and publish-zudo-doc-history-server so the three
-# release workflows can run in parallel.
+# Serializes every publish/resume/cleanup of THIS package (race protection for
+# dist-tag maintenance); the three packages still run independently.
 concurrency:
   group: publish-zudo-doc
   cancel-in-progress: false
@@ -77,190 +54,105 @@ concurrency:
 jobs:
   publish:
     name: Publish to npm
+    # Trusted publishing supports GitHub-hosted runners only.
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # Only run when the triggering tag starts with "zudo-doc-v" (@takazudo/zudo-doc namespace).
-    # bare v* (create-zudo-doc) and zudo-doc-history-server-* do not start with "zudo-doc-v",
-    # so those releases skip this job NEUTRAL instead of failing RED.
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    # Releases for the other two namespaces skip this job NEUTRAL. The guard
+    # re-checks the namespace with an anchored pattern.
     if: ${{ startsWith(github.event.release.tag_name || github.ref_name, 'zudo-doc-v') }}
 
     steps:
-      # ── Checkout at the exact release tag ──────────────────────────────────
-      # Explicit ref ensures we always build from the tagged commit even when
-      # triggered via workflow_dispatch (which defaults to the default branch).
+      # Full history: the guard proves the tag commit is on origin/main.
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.release.tag_name || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
 
-      # ── Safeguard 1/4: Tag must match "zudo-doc-vX.Y.Z" exactly ────────────
-      # Anchored regex (not bash glob) rejects any ref that does not use this
-      # specific tag shape. This protects against future sibling packages
-      # under `@takazudo/zudo-doc-*` whose tag prefixes could collide with a
-      # bash glob (e.g. publish-zudo-doc-history-server uses
-      # `zudo-doc-history-server-*`). The regex pins the version core so a
-      # stray tag like `zudo-doc-vintage-1.0.0` is rejected.
-      - name: '[Safeguard 1/4] Reject non-zudo-doc-v* release tags'
-        shell: bash
-        env:
-          TAG: ${{ github.event.release.tag_name || github.ref_name }}
-        run: |
-          echo "Release tag: $TAG"
-          if [[ ! "$TAG" =~ ^zudo-doc-v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
-            echo "::error::Release tag '$TAG' does not match zudo-doc-vX.Y.Z[-prerelease]."
-            echo "::error::Only zudo-doc-v-prefixed semver tags (e.g. zudo-doc-v0.1.0, zudo-doc-v0.2.0-next.1) trigger this workflow."
-            echo "::error::For workflow_dispatch dry runs, choose a zudo-doc-v-prefixed tag/ref."
-            exit 1
-          fi
-          # Strip the leading "zudo-doc-v" for use in later steps.
-          VERSION="${TAG#zudo-doc-v}"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "TAG=$TAG" >> "$GITHUB_ENV"
-
-      # ── Setup toolchain ────────────────────────────────────────────────────
-      # registry-url is required for setup-node to write the .npmrc that
-      # wires NODE_AUTH_TOKEN → npm auth. Without it, `npm publish` ignores
-      # the env var and falls back to unauthenticated (or interactive 2FA).
       - name: Setup Node.js and pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-publish-zudo-doc
-          registry-url: https://registry.npmjs.org
 
-      # ── Safeguard 2/4: package.json version must match the tag ─────────────
-      # Prevents a publish where the tag was pushed without a matching version
-      # bump (or vice-versa). Uses the VERSION env set by Safeguard 1.
-      - name: '[Safeguard 2/4] Assert package.json version matches tag'
+      - name: Install pinned npm CLI and print tool versions
+        run: node scripts/release/publish-step.mjs toolchain
+
+      # Tag namespace/semver, package.json version, checkout == tag commit,
+      # commit on origin/main, sibling lockstep tags on the same commit, and the
+      # registry state (absent / present-from-this-source / unknown → fail).
+      - name: '[Safeguard] Release guard'
+        id: guard
         shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
+          DRY_RUN: ${{ inputs.dry_run == true }}
         run: |
-          PKG_VERSION=$(node -p "require('./packages/zudo-doc/package.json').version")
-          echo "Tag version:     $VERSION"
-          echo "package.json:    $PKG_VERSION"
-          if [[ "$PKG_VERSION" != "$VERSION" ]]; then
-            echo "::error::packages/zudo-doc/package.json .version is '$PKG_VERSION' but tag is 'zudo-doc-v$VERSION'."
-            echo "::error::Bump the version with scripts/release-create-zudo-doc.sh before tagging."
-            exit 1
-          fi
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          args=(guard --package zudo-doc --tag "$TAG")
+          if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
+          node scripts/release/publish-step.mjs "${args[@]}"
 
-      # ── Safeguard 3/4: Version must not already be published ───────────────
-      # npm publish is irreversible (unpublish is locked after 72 h for
-      # packages with dependents). Guard against accidental double-publish.
-      # We check stdout: `npm view` prints the version string if it exists
-      # and exits 0; it prints nothing and exits non-zero if absent.
-      # We treat non-empty stdout as "already published".
-      - name: '[Safeguard 3/4] Assert version not yet published to npm'
-        shell: bash
-        run: |
-          EXISTING=$(npm view "@takazudo/zudo-doc@$VERSION" version 2>/dev/null || true)
-          if [[ -n "$EXISTING" ]]; then
-            echo "::error::@takazudo/zudo-doc@$VERSION is already published on npm (found: $EXISTING)."
-            echo "::error::npm publish is irreversible — aborting to prevent a duplicate-version error."
-            exit 1
-          fi
-          echo "OK: @takazudo/zudo-doc@$VERSION does not yet exist on npm."
-
-      # ── Install dependencies ───────────────────────────────────────────────
-      # pnpm install auto-runs the package's `prepare` script (tsup), which
-      # produces packages/zudo-doc/dist/. We keep an explicit build step
-      # below for defensive clarity in case the prepare hook is ever removed.
-      # Doc-history-server's prepare script also runs here, populating its
-      # dist/ so the workspace's @takazudo/zudo-doc → @takazudo/zudo-doc-history-server
-      # peer link resolves cleanly.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ── Build (explicit, defensive) ───────────────────────────────────────
       - name: Build zudo-doc
         run: pnpm --filter @takazudo/zudo-doc build
 
-      # ── Run tests ─────────────────────────────────────────────────────────
       - name: Test zudo-doc
         run: pnpm --filter @takazudo/zudo-doc test
 
-      # ── Compute dist-tag ───────────────────────────────────────────────────
-      # ANY semver prerelease (a hyphen after the X.Y.Z core — e.g. -next.1,
-      # -beta.2, -rc.1, -alpha.1) publishes under --tag next so it never
-      # becomes the default "latest" install. Only a clean X.Y.Z release gets
-      # --tag latest.
-      - name: Compute npm dist-tag
-        shell: bash
-        run: |
-          if [[ "$VERSION" == *-* ]]; then
-            DIST_TAG=next
-          else
-            DIST_TAG=latest
-          fi
-          echo "DIST_TAG=$DIST_TAG" >> "$GITHUB_ENV"
-          echo "Dist tag: $DIST_TAG (version: $VERSION)"
+      # Nonmutating: proves the artifact packs and `workspace:` is rewritten.
+      - name: Pack check
+        run: node scripts/release/publish-step.mjs pack-check --package zudo-doc
 
-      # ── Safeguard 4/4: Dry-run path ────────────────────────────────────────
-      # When dry_run is true (workflow_dispatch only), prove the secret
-      # authenticates and print what would be published — then stop.
-      # NOTE: `npm publish --dry-run` does NOT prove auth; it skips network
-      # calls entirely and never contacts the registry. Running `npm whoami`
-      # with NODE_AUTH_TOKEN is the only way to confirm the token is valid
-      # before the real publish.
-      - name: '[Safeguard 4/4] Dry-run: verify auth then stop (skip real publish)'
+      - name: Dry-run report
         if: ${{ inputs.dry_run == true }}
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          MODE: ${{ steps.guard.outputs.mode }}
         run: |
-          echo "=== DRY RUN MODE — npm publish will NOT be executed ==="
-          echo ""
-          echo "Verifying NPM_TOKEN authenticates against registry.npmjs.org..."
-          npm whoami
-          echo ""
-          echo "Would publish:"
-          echo "  Package : @takazudo/zudo-doc"
-          echo "  Version : $VERSION"
-          echo "  Dist-tag: $DIST_TAG"
-          echo "  Flags   : --access public --provenance --no-git-checks --tag $DIST_TAG"
-          echo ""
-          echo "Dry run complete. Remove dry_run input or set it to false to publish for real."
+          {
+            echo "### DRY RUN — nothing was written to npm"
+            echo ""
+            echo "Would $MODE @takazudo/zudo-doc@$VERSION with dist-tag $DIST_TAG."
+            echo ""
+            echo "Guards, build, tests and the pack check ran. Write authorization (the OIDC"
+            echo "trusted publisher) is NOT verified by a dry run; only a real publish proves it."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
-      # ── Real publish ───────────────────────────────────────────────────────
-      # Only runs when dry_run is false (or the workflow was triggered by
-      # a release event, which has no dry_run input).
-      #
-      # Uses `pnpm publish` (not `npm publish`) so workspace: protocol in
-      # peerDependencies (@takazudo/zudo-doc-history-server: workspace:^) is
-      # rewritten to the actual version range at publish time. `npm publish`
-      # would ship the literal workspace: string and break consumers.
-      # `--no-git-checks` is required because GitHub Actions checks out a
-      # detached HEAD; pnpm would otherwise refuse to publish from a
-      # non-branch ref.
-      - name: Publish to npm
+      - name: Publish to npm (OIDC)
+        if: ${{ inputs.dry_run != true && steps.guard.outputs.mode == 'publish' }}
+        run: node scripts/release/publish-step.mjs publish --package zudo-doc --tag "$TAG"
+
+      # Runs for a fresh publish and for a resume: exact version, provenance from
+      # this commit and workflow, and the expected channel (set via OIDC if it
+      # lags; never moved backward).
+      - name: Finalize and verify registry state
         if: ${{ inputs.dry_run != true }}
-        shell: bash
         env:
-          # NPM_TOKEN must be an Automation token (bypasses 2FA for CI).
-          # Set it at: github.com/zudolab/zudo-doc → Settings → Secrets → Actions.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          echo "Publishing @takazudo/zudo-doc@$VERSION with --tag $DIST_TAG..."
-          pnpm --filter @takazudo/zudo-doc publish \
-            --access public \
-            --provenance \
-            --no-git-checks \
-            --tag "$DIST_TAG"
-          echo "Published: https://www.npmjs.com/package/@takazudo/zudo-doc/v/$VERSION"
+          MODE: ${{ steps.guard.outputs.mode }}
+        run: node scripts/release/publish-step.mjs finalize --package zudo-doc --tag "$TAG" --mode "$MODE"
 
-      # ── Remove stale `next` dist-tag on stable graduation ─────────────────
-      # When a clean X.Y.Z version graduates the prerelease line, the `next`
-      # dist-tag is left dangling at the old prerelease. Remove it so
-      # `npm install @takazudo/zudo-doc@next` returns a clear "tag not found"
-      # rather than silently resolving to a stale build.
-      # Only runs for clean versions (no `-`); prerelease publishes still set
-      # `next` normally via the Compute dist-tag step above.
-      # Non-fatal: tolerates "tag does not exist" so a re-run or a first-ever
-      # stable publish (where `next` was never set) does not fail the workflow.
-      - name: Remove stale npm next dist-tag (stable graduation only)
+      # Stable graduation only. Isolated: its outcome is reported (summary and
+      # step status) without failing an otherwise complete publication.
+      - name: Stale next dist-tag maintenance
+        id: cleanup
         if: ${{ inputs.dry_run != true && !contains(env.VERSION, '-') }}
+        continue-on-error: true
+        run: node scripts/release/publish-step.mjs cleanup-next --package zudo-doc --tag "$TAG"
+
+      - name: Report maintenance outcome
+        if: ${{ always() && steps.cleanup.outcome != '' && steps.cleanup.outcome != 'skipped' }}
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          STEP_OUTCOME: ${{ steps.cleanup.outcome }}
+          RESULT: ${{ steps.cleanup.outputs.outcome }}
         run: |
-          echo "Stable version $VERSION — removing stale 'next' dist-tag if present..."
-          npm dist-tag rm @takazudo/zudo-doc next || true
-          echo "Done (tag may not have existed — that is fine)."
+          echo "next maintenance: step=$STEP_OUTCOME result=${RESULT:-none}" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [[ "$STEP_OUTCOME" != "success" ]]; then
+            echo "::warning::next dist-tag maintenance did not complete (${RESULT:-error}); re-dispatch this workflow on $TAG to retry."
+          fi
