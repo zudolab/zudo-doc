@@ -31,6 +31,7 @@ import {
   lookupVersion,
   parseReleaseTag,
   readDistTags,
+  readPackument,
   readProvenance,
   tagFor,
 } from "./lib.mjs";
@@ -122,9 +123,25 @@ export function assertTokenless(d) {
   for (const k of Object.keys(d.env)) {
     if (/^npm_config_\/\/.*:_auth(token)?$/i.test(k) && d.env[k]) present.push(k);
   }
-  const cfg = d.exec("npm", ["config", "get", "//registry.npmjs.org/:_authToken"]);
-  const cfgValue = cfg.stdout.trim();
-  if (cfg.status === 0 && cfgValue && cfgValue !== "undefined" && cfgValue !== "null") present.push("npm config //registry.npmjs.org/:_authToken");
+  // npm >= 9 refuses to print protected `:_` keys, so read the npmrc files themselves.
+  const npmrcs = new Set([join(d.cwd, ".npmrc")]);
+  for (const key of ["userconfig", "globalconfig"]) {
+    const r = d.exec("npm", ["config", "get", key]);
+    if (r.status !== 0 || !r.stdout.trim()) throw new ReleaseError(`Cannot resolve npm ${key} to check it for static credentials`);
+    npmrcs.add(r.stdout.trim());
+  }
+  if (d.env.NPM_CONFIG_USERCONFIG) npmrcs.add(d.env.NPM_CONFIG_USERCONFIG);
+  for (const file of npmrcs) {
+    let text = "";
+    try {
+      text = d.readFile(file);
+    } catch {
+      continue;
+    }
+    if (/^\s*(?:\/\/[^\s=]*:)?_(?:authToken|auth|password)\s*=\s*\S/m.test(text)) {
+      present.push(`credential in ${file}`);
+    }
+  }
   if (present.length) {
     throw new ReleaseError(`Static npm credential present (${present.join(", ")}). Trusted publishing must run without stored tokens; remove it from the workflow/environment.`);
   }
@@ -222,9 +239,12 @@ export async function cmdGuard(d, o) {
     mode = "publish";
     d.log(`OK: ${pkg.name}@${version} is absent on the registry → publish`);
   } else {
-    const prov = await readProvenance(pkg.name, version, registryOpts(d));
-    const verdict = evaluateExistingVersion({ pkg, version, provenance: prov, expectedSha: head, expectedTag: tag });
-    if (verdict.verdict === "unknown") throw Object.assign(new ReleaseError(`Provenance of existing ${pkg.name}@${version} is UNKNOWN: ${verdict.reasons.join("; ")}`), { exitCode: 2 });
+    const polled = await poll(d, async () => {
+      const p = await readProvenance(pkg.name, version, registryOpts(d));
+      return { done: p.state === "ok", value: p };
+    });
+    const verdict = evaluateExistingVersion({ pkg, version, provenance: polled?.value, expectedSha: head, expectedTag: tag });
+    if (verdict.verdict === "unknown" || verdict.verdict === "unproven") throw Object.assign(new ReleaseError(`Provenance of existing ${pkg.name}@${version} is UNKNOWN: ${verdict.reasons.join("; ")}`), { exitCode: 2 });
     if (verdict.verdict === "mismatch") {
       throw new ReleaseError(`${pkg.name}@${version} already exists from a different source; never republish: ${verdict.reasons.join("; ")}`);
     }
@@ -316,7 +336,7 @@ export async function cmdFinalize(d, o) {
   });
   const verdict = evaluateExistingVersion({ pkg, version, provenance: prov?.value, expectedSha: head, expectedTag: tag });
   if (verdict.verdict !== "matches") {
-    throw Object.assign(new ReleaseError(`Provenance of ${pkg.name}@${version} does not prove this source: ${verdict.reasons.join("; ")}`), { exitCode: verdict.verdict === "unknown" ? 2 : 1 });
+    throw Object.assign(new ReleaseError(`Provenance of ${pkg.name}@${version} does not prove this source: ${verdict.reasons.join("; ")}`), { exitCode: verdict.verdict === "mismatch" ? 1 : 2 });
   }
 
   const tags = await readDistTags(pkg.name, registryOpts(d));
@@ -389,8 +409,9 @@ export async function cmdCleanupNext(d, o) {
 
   // A preview published between the re-read and the removal would have lost its
   // pointer. Restore it rather than silently dropping a legitimate newer preview.
-  const pk = await lookupVersion(pkg.name, version, registryOpts(d));
-  const times = /** @type {Record<string,string>} */ (pk.packument?.time ?? {});
+  const pk = await readPackument(pkg.name, registryOpts(d));
+  if (pk.state !== "ok") return report("unverified", `removed stale next=${decision.next}, but could not read publish times to rule out a concurrent preview: ${pk.errors.join("; ")}`, 2);
+  const times = /** @type {Record<string,string>} */ (pk.body?.time ?? {});
   const newer = Object.entries(times)
     .filter(([v, t]) => v.includes("-") && Date.parse(t) >= startedAt - 60_000)
     .map(([v]) => v)

@@ -182,6 +182,7 @@ export async function cmdPreflight(d) {
 
 /** @param {Deps} d @param {Record<string,string>} o */
 export async function cmdA2Evidence(d, o) {
+  const prNumber = Number(req(o, "pr"));
   const runId = req(o, "run");
   const attempt = Number(req(o, "attempt"));
   const candidate = req(o, "candidate");
@@ -227,7 +228,7 @@ export async function cmdA2Evidence(d, o) {
   if (!requiredChecks.length) throw new ReleaseError("Could not read .required-checks-manifest at the candidate");
 
   const result = verifyA2Evidence({
-    prNumber: o.pr ? Number(o.pr) : undefined,
+    prNumber,
     candidate,
     base,
     attempt,
@@ -268,7 +269,9 @@ export async function cmdIntegration(d, o) {
   const cmp = await ghJson(d, `repos/${REPO}/compare/${integration}...main`);
   if (!cmp) throw unknown("compare against main failed");
   const onMain = cmp.status === "identical" || cmp.status === "ahead";
-  const pr = a2.prNumber ? await ghJson(d, `repos/${REPO}/pulls/${a2.prNumber}`) : null;
+  if (!a2.prNumber) throw new ReleaseError("A2 evidence has no PR number; re-run a2-evidence with --pr");
+  const pr = await ghJson(d, `repos/${REPO}/pulls/${a2.prNumber}`);
+  if (!pr) throw unknown(`PR #${a2.prNumber} not readable`);
 
   const files = (await ghJson(d, `repos/${REPO}/contents/.github/workflows?ref=${integration}`)) ?? [];
   const workflows = [];
@@ -286,7 +289,7 @@ export async function cmdIntegration(d, o) {
     integration,
     integrationTree: info.tree,
     integrationParents: info.parents,
-    prMergeCommit: pr ? (pr.merged ? pr.merge_commit_sha : `(PR #${a2.prNumber} not merged)`) : undefined,
+    prMergeCommit: pr.merged ? pr.merge_commit_sha : `(PR #${a2.prNumber} not merged)`,
     onMain,
     a2,
     workflows,
@@ -363,6 +366,7 @@ export async function cmdReleases(d, o) {
   const version = req(o, "version");
   const rec = loadIntegration(d, o);
   const pre = version.includes("-");
+  must(d, "git", ["fetch", "--no-tags", "origin", rec.integration]);
   for (const pkg of PACKAGES) {
     const tag = tagFor(pkg, version);
     if (remoteTag(d, tag) !== rec.integration) throw new ReleaseError(`Tag ${tag} is missing or not at ${rec.integration}; run \`tag\` first`);
@@ -376,8 +380,8 @@ export async function cmdReleases(d, o) {
       d.log(`${tag}: release exists (${existing.isDraft ? "draft" : "published"}) — kept`);
       continue;
     }
-    const notesFile = join(d.cwd, "src/content/docs/changelog", pkg.slug, `${version}.mdx`);
-    const notes = extractNotes(d.readFile(notesFile));
+    // Notes come from the bound integration commit, not the working tree.
+    const notes = extractNotes(must(d, "git", ["show", `${rec.integration}:src/content/docs/changelog/${pkg.slug}/${version}.mdx`]));
     const args = ["release", "create", tag, "--repo", REPO, "--verify-tag", "--draft", "--title", title, "--notes-file", "-"];
     if (pre) args.push("--prerelease");
     const r = d.exec("gh", args, { input: notes });
@@ -427,16 +431,29 @@ async function waitRun(d, runId, timeoutMs) {
   }
 }
 
-/** @param {Deps} d @param {(typeof PACKAGES)[number]} pkg @param {string} tag @param {string} sha @param {number} since @param {number} timeoutMs */
-async function waitForNewRun(d, pkg, tag, sha, since, timeoutMs) {
+/**
+ * Wait for a run that did not exist before initiation. Identified by run ID, not
+ * by comparing GitHub timestamps with the local clock (which may be skewed).
+ * @param {Deps} d @param {(typeof PACKAGES)[number]} pkg @param {string} tag @param {string} sha @param {Set<number>} known @param {number} timeoutMs
+ */
+async function waitForNewRun(d, pkg, tag, sha, known, timeoutMs) {
   const end = d.now() + timeoutMs;
   for (;;) {
-    const runs = await workflowRuns(d, pkg, tag, sha);
-    const fresh = runs.filter((/** @type {any} */ r) => Date.parse(r.created_at) >= since - 5_000);
-    if (fresh.length) return fresh.sort((/** @type {any} */ a, /** @type {any} */ b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+    const fresh = (await workflowRuns(d, pkg, tag, sha)).filter((/** @type {any} */ r) => !known.has(r.id));
+    if (fresh.length) return fresh.sort((/** @type {any} */ a, /** @type {any} */ b) => b.id - a.id)[0];
     if (d.now() >= end) return null;
     await d.sleep(d.pollMs ?? 15_000);
   }
+}
+
+/** Poll the registry after a successful run: absence right after success is propagation, not a reason to publish again. */
+async function awaitVisible(/** @type {Deps} */ d, /** @type {(typeof PACKAGES)[number]} */ pkg, /** @type {string} */ version, /** @type {string} */ sha, attempts = 20) {
+  let s = await npmState(d, pkg, version, sha);
+  for (let i = 1; i < attempts && (s.state !== "present" || s.verdict?.verdict === "unproven"); i++) {
+    await d.sleep(d.pollMs ?? 15_000);
+    s = await npmState(d, pkg, version, sha);
+  }
+  return s;
 }
 
 /** @param {Deps} d @param {Record<string,string>} o */
@@ -455,17 +472,22 @@ export async function cmdPublish(d, o) {
     const tag = tagFor(pkg, version);
     if (remoteTag(d, tag) !== sha) throw new ReleaseError(`Tag ${tag} is missing or not at ${sha}; publication order stops here`);
     const entry = (evidence.packages[pkg.key] ??= { tag, runs: [] });
+    let afterSuccessfulRun = false;
     for (let cycle = 1; ; cycle++) {
-      const s = await npmState(d, pkg, version, sha);
+      const s = afterSuccessfulRun ? await awaitVisible(d, pkg, version, sha) : await npmState(d, pkg, version, sha);
       if (s.state === "unknown") {
         save();
         throw unknown(`${pkg.name}@${version}: registry state UNKNOWN (${s.errors.join("; ")}); not treated as absent`);
       }
       if (s.state === "present") {
-        if (s.verdict?.verdict === "unknown") throw unknown(`${pkg.name}@${version}: provenance UNKNOWN`);
+        if (s.verdict?.verdict === "unknown" || s.verdict?.verdict === "unproven") {
+          save();
+          throw unknown(`${pkg.name}@${version}: provenance ${s.verdict.verdict.toUpperCase()} (${s.verdict.reasons.join("; ")}); never republished — re-run later`);
+        }
         if (s.verdict?.verdict === "mismatch") throw new ReleaseError(`${pkg.name}@${version} exists but not from ${sha}: ${s.verdict.reasons.join("; ")}`);
         if (s.tagsState !== "ok") throw unknown(`${pkg.name}: dist-tags UNKNOWN`);
-        const finalized = s.channel?.action === "ok" && s.next?.action !== "remove";
+        const channelOk = s.channel?.action === "ok";
+        const finalized = channelOk && s.next?.action !== "remove";
         const byRun = entry.runs.find((/** @type {any} */ r) => s.provenance?.invocationId?.endsWith(`/runs/${r.id}/attempts/${r.attempt}`));
         Object.assign(entry, {
           npm: { version, channel: s.channel, next: s.next, provenance: s.provenance, publisher: s.publisher },
@@ -473,12 +495,20 @@ export async function cmdPublish(d, o) {
           publishedBy: s.provenance?.invocationId,
         });
         if (s.channel?.action === "conflict") throw new ReleaseError(`${pkg.name}: channel ${distTagFor(version)} holds newer ${s.channel.current}`);
-        if (finalized || cycle > 2) {
+        // A wrong channel is a publication failure; only stale-next maintenance may stay pending.
+        if (!channelOk && cycle > 2) {
+          save();
+          throw new ReleaseError(`${pkg.name}: channel ${distTagFor(version)} still reads ${s.channel?.current ?? "(unset)"} after ${cycle - 1} finalization run(s); publication order stops here`);
+        }
+        if (finalized || (channelOk && cycle > 2)) {
           entry.state = finalized ? "complete" : "complete-maintenance-pending";
           save();
           d.log(`${pkg.name}@${version}: ${entry.state}; ${byRun ? `published by run ${byRun.id}` : "pre-existing version verified (not a fresh publication by this invocation)"}`);
           break;
         }
+      } else if (afterSuccessfulRun) {
+        save();
+        throw unknown(`${pkg.name}@${version} is not visible after a successful publish run — UNKNOWN, not absent; re-run \`publish\` later (it will not publish again blindly)`);
       } else if (cycle > 2) {
         save();
         throw new ReleaseError(`${pkg.name}@${version} still absent after ${cycle - 1} publication attempt(s); see ${entry.runs.map((/** @type {any} */ r) => r.url).join(", ")}`);
@@ -489,20 +519,20 @@ export async function cmdPublish(d, o) {
       let run = runs.find((/** @type {any} */ r) => r.status !== "completed");
       let initiation = "existing-run";
       if (!run) {
-        const since = d.now();
+        const known = new Set(runs.map((/** @type {any} */ r) => r.id));
         const rel = viewRelease(d, tag);
         if (!rel) throw new ReleaseError(`No GitHub Release for ${tag}; run \`releases\` first`);
         if (rel.isDraft) {
           must(d, "gh", ["release", "edit", tag, "--repo", REPO, "--draft=false", ...(version.includes("-") ? ["--prerelease"] : [])]);
           initiation = "release-published";
-          run = await waitForNewRun(d, pkg, tag, sha, since, initiateTimeout);
+          run = await waitForNewRun(d, pkg, tag, sha, known, initiateTimeout);
         }
         if (!run) {
           // A release event may not start workflows (e.g. created with a
           // workflow GITHUB_TOKEN), and a published release never re-fires.
           must(d, "gh", ["workflow", "run", pkg.workflow, "--repo", REPO, "--ref", tag, "-f", "dry_run=false"]);
           initiation = initiation === "release-published" ? "release-published+dispatch" : "dispatch";
-          run = await waitForNewRun(d, pkg, tag, sha, since, initiateTimeout);
+          run = await waitForNewRun(d, pkg, tag, sha, known, initiateTimeout);
           if (!run) throw unknown(`${pkg.workflow}: no run observed for ${tag} after dispatch; check Actions, then resume`);
         }
       }
@@ -513,6 +543,7 @@ export async function cmdPublish(d, o) {
       if (done.conclusion !== "success") {
         throw new ReleaseError(`${pkg.workflow} run ${done.id} concluded ${done.conclusion} (${done.html_url}). Inspect it; \`publish\` resumes from the registry state.`);
       }
+      afterSuccessfulRun = true;
     }
   }
 

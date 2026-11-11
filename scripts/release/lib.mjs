@@ -204,21 +204,26 @@ export async function registryGet(path, opts = {}) {
 }
 
 /**
+ * Presence of one exact version, from the per-version document (small, and the
+ * same answer `npm publish` conflicts against). A 404 is "absent at this read";
+ * callers that just watched a publish succeed must keep polling instead of
+ * acting on it (registry reads are edge-cached).
  * @param {string} name @param {string} version @param {Parameters<typeof registryGet>[1]} [opts]
- * @returns {Promise<{state: "present"|"absent"|"unknown", manifest?: any, packument?: any, errors: string[]}>}
+ * @returns {Promise<{state: "present"|"absent"|"unknown", manifest?: any, errors: string[]}>}
  */
 export async function lookupVersion(name, version, opts) {
-  const res = await registryGet(`/${encodePackageName(name)}`, opts);
+  const res = await registryGet(`/${encodePackageName(name)}/${encodeURIComponent(version)}`, opts);
   if (res.state === "unknown") return { state: "unknown", errors: res.errors };
   if (res.state === "absent") return { state: "absent", errors: res.errors };
-  const body = res.body;
-  if (!body || typeof body !== "object" || typeof body.versions !== "object") {
-    return { state: "unknown", errors: [...res.errors, "packument has no versions map"] };
+  if (res.body?.version !== version) {
+    return { state: "unknown", errors: [...res.errors, `version document reports ${res.body?.version}`] };
   }
-  const manifest = body.versions[version];
-  return manifest
-    ? { state: "present", manifest, packument: body, errors: res.errors }
-    : { state: "absent", packument: body, errors: res.errors };
+  return { state: "present", manifest: res.body, errors: res.errors };
+}
+
+/** Full packument (only for publish times during `next` maintenance). */
+export async function readPackument(/** @type {string} */ name, /** @type {Parameters<typeof registryGet>[1]} */ opts) {
+  return registryGet(`/${encodePackageName(name)}`, opts);
 }
 
 /** Dist-tags from the uncached dist-tag endpoint. */
@@ -275,7 +280,10 @@ export function evaluateExistingVersion({ pkg, provenance, expectedSha, expected
     return { verdict: /** @type {const} */ ("unknown"), reasons: ["provenance lookup did not return a usable answer", ...provenance.errors] };
   }
   if (provenance.state === "absent") {
-    return { verdict: /** @type {const} */ ("mismatch"), reasons: ["no provenance attestation: cannot prove the existing version came from this source"] };
+    // Attestations can lag a fresh publish, and a pre-provenance version can never
+    // prove its source. Either way: do not republish, do not finalize — stop as
+    // uncertain and let a later re-run (or the owner) decide.
+    return { verdict: /** @type {const} */ ("unproven"), reasons: ["no provenance attestation visible: cannot (yet) prove the existing version came from this source"] };
   }
   const reasons = [];
   if (provenance.sourceCommit !== expectedSha) reasons.push(`provenance commit ${provenance.sourceCommit} != expected ${expectedSha}`);
@@ -494,14 +502,45 @@ export function mainPushApplicability(yamlText) {
     push.push(l.replace(/#.*$/, ""));
   }
   const text = push.join("\n");
-  const hasBranches = /^\s+branches:/m.test(text);
-  const hasIgnore = /^\s+branches-ignore:/m.test(text);
-  const hasTagsOnly = /^\s+tags:/m.test(text) && !hasBranches;
-  if (hasTagsOnly) return "no";
-  const branchesMain = /^\s+branches:\s*\[[^\]]*\bmain\b/m.test(text) || /branches:\s*\n(?:\s+-\s*.*\n)*?\s+-\s*['"]?main['"]?\s*$/m.test(text);
-  if (hasBranches && !branchesMain) return "no";
-  if (hasIgnore && /\bmain\b/.test(text.split(/branches-ignore:/)[1] ?? "")) return "no";
+  const branches = filterList(push, "branches");
+  const ignored = filterList(push, "branches-ignore");
+  const tagsOnly = filterList(push, "tags") !== null && branches === null && ignored === null;
+  if (tagsOnly) return "no";
+  if (branches !== null && !branches.some((p) => globMatches(p, "main"))) return "no";
+  if (ignored !== null && ignored.some((p) => globMatches(p, "main"))) return "no";
   return /^\s+paths(-ignore)?:/m.test(text) ? "conditional" : "always";
+}
+
+/**
+ * Entries of a `key:` filter under a trigger (inline `[a, b]` or a dash list);
+ * null when the key is absent.
+ * @param {string[]} lines @param {string} key
+ */
+function filterList(lines, key) {
+  const idx = lines.findIndex((l) => new RegExp(`^\\s+${key}:`).test(l));
+  if (idx < 0) return null;
+  const line = lines[idx] ?? "";
+  const indent = (/^(\s*)/.exec(line)?.[1] ?? "").length;
+  const unquote = (/** @type {string} */ v) => v.trim().replace(/^['"]|['"]$/g, "");
+  const inline = /:\s*\[(.*)\]\s*$/.exec(line);
+  if (inline) return (inline[1] ?? "").split(",").map(unquote).filter(Boolean);
+  const out = [];
+  for (const l of lines.slice(idx + 1)) {
+    if (!l.trim()) continue;
+    const ind = (/^(\s*)/.exec(l)?.[1] ?? "").length;
+    const m = /^\s*-\s*(.+)$/.exec(l);
+    if (ind <= indent && !m) break;
+    if (!m) break;
+    out.push(unquote(m[1] ?? ""));
+  }
+  return out;
+}
+
+/** GitHub branch-filter glob (`*` excludes `/`, `**` matches anything). */
+function globMatches(/** @type {string} */ pattern, /** @type {string} */ branch) {
+  if (pattern.startsWith("!")) return false;
+  const re = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\?/g, ".").replace(/\u0000/g, ".*");
+  return new RegExp(`^${re}$`).test(branch);
 }
 
 /**

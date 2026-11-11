@@ -77,6 +77,18 @@ function fakeRegistry(pkgs) {
       const pkg = PACKAGES.find((x) => x.name === m[1]);
       return jsonResponse(200, provenanceBody(pkg, m[2], v.sha, v));
     }
+    const versionDoc = Object.keys(pkgs).find((n) => path.startsWith(`/${n}/`));
+    if (versionDoc) {
+      const p = pkgs[versionDoc];
+      if (p.unknown) return jsonResponse(503, {});
+      const v = path.slice(versionDoc.length + 2);
+      const entry = p.versions[v];
+      if (!entry || (p.staleReads ?? 0) > 0) {
+        if (p.staleReads) p.staleReads--;
+        return jsonResponse(404, "version not found");
+      }
+      return jsonResponse(200, { name: versionDoc, version: v, _npmUser: { name: entry.publisher ?? "GitHub Actions" } });
+    }
     const p = find(path.slice(1));
     if (p?.unknown) return jsonResponse(503, {});
     if (!p) return jsonResponse(404, {});
@@ -209,7 +221,7 @@ describe("channel and stale-next decisions", () => {
     expect(evaluateExistingVersion({ ...base, provenance: prov }).verdict).toBe("matches");
     expect(evaluateExistingVersion({ ...base, provenance: { ...prov, sourceCommit: OTHER } }).verdict).toBe("mismatch");
     expect(evaluateExistingVersion({ ...base, provenance: { ...prov, workflowPath: ".github/workflows/coordinator.yml" } }).verdict).toBe("mismatch");
-    expect(evaluateExistingVersion({ ...base, provenance: { state: "absent", errors: [] } }).verdict).toBe("mismatch");
+    expect(evaluateExistingVersion({ ...base, provenance: { state: "absent", errors: [] } }).verdict).toBe("unproven");
     expect(evaluateExistingVersion({ ...base, provenance: { state: "unknown", errors: ["503"] } }).verdict).toBe("unknown");
   });
 
@@ -292,6 +304,15 @@ describe("A2 release evidence", () => {
   });
 });
 
+describe("a2-evidence CLI", () => {
+  it("requires the PR number so the integration can be bound to its merge result", async () => {
+    const logs = [];
+    const code = await releaseMain(["a2-evidence", "--run", "1", "--attempt", "1", "--candidate", CAND, "--base", BASE, "--out", "x"], { log: (l) => logs.push(l), exec: () => { throw new Error("no external calls expected"); } });
+    expect(code).toBe(1);
+    expect(logs.join()).toMatch(/Missing --pr/);
+  });
+});
+
 describe("accepted integration binding", () => {
   const a2 = { a2: { testedTree: TREE } };
   const wf = [{ path: ".github/workflows/main-deploy.yml", applicability: "always" }, { path: ".github/workflows/pr-checks.yml", applicability: "no" }];
@@ -311,6 +332,13 @@ describe("accepted integration binding", () => {
     expect(v({ runs: [{ ...run, conclusion: "failure" }] })).toMatch(/failure/);
     expect(v({ runs: [{ ...run, head_sha: OTHER }] })).toMatch(/no push run/);
     expect(v({ prMergeCommit: OTHER })).toMatch(/PR merge result/);
+  });
+
+  it("honours branch globs and branches-ignore scope", () => {
+    expect(mainPushApplicability("on:\n  push:\n    branches: ['**']\n")).toBe("always");
+    expect(mainPushApplicability("on:\n  push:\n    branches-ignore: [gh-pages]\n    paths: ['src/main/**']\n")).toBe("conditional");
+    expect(mainPushApplicability("on:\n  push:\n    branches-ignore:\n      - main\n")).toBe("no");
+    expect(mainPushApplicability("on:\n  push:\n    tags: ['v*']\n")).toBe("no");
   });
 
   it("classifies the repository's real workflows", () => {
@@ -364,6 +392,10 @@ describe("publish-step guard", () => {
     expect(resume.logs.join()).toMatch(/NOT a fresh publication/);
     const foreign = fakeRegistry({ "@takazudo/zudo-doc": { versions: { "10.0.4": { sha: OTHER } }, tags: {} } });
     expect(await stepMain(["guard", "--package", "zudo-doc", "--tag", "zudo-doc-v10.0.4"], stepDeps({ registry: foreign, files }).deps)).toBe(1);
+    const unindexed = fakeRegistry({ "@takazudo/zudo-doc": { versions: { "10.0.4": { sha: SHA, noProvenance: true } }, tags: {} } });
+    const u = stepDeps({ registry: unindexed, files });
+    expect(await stepMain(["guard", "--package", "zudo-doc", "--tag", "zudo-doc-v10.0.4"], u.deps)).toBe(2);
+    expect(writesIn(u.execCalls)).toEqual([]);
   });
 });
 
@@ -374,6 +406,21 @@ describe("publish-step publish is tokenless", () => {
     const { deps, execCalls, logs } = stepDeps({ registry, env: { NODE_AUTH_TOKEN: "secret" } });
     expect(await stepMain(["publish", "--package", "zudo-doc", "--tag", "zudo-doc-v10.0.4"], deps)).toBe(1);
     expect(logs.join()).toMatch(/Static npm credential present \(NODE_AUTH_TOKEN\)/);
+    expect(writesIn(execCalls)).toEqual([]);
+  });
+
+  it("refuses a token stored in an npmrc file (npm will not print protected keys)", async () => {
+    const { deps, execCalls, logs } = stepDeps({
+      registry,
+      files: { "/repo/.npmrc": "auto-install-peers=true\n//registry.npmjs.org/:_authToken=npm_secret\n" },
+      exec: (c, a) => (a[0] === "config" && a[1] === "get" ? ok(`/home/${a[2]}`) : undefined),
+    });
+    deps.readFile = (p) => {
+      if (p === "/repo/.npmrc") return "auto-install-peers=true\n//registry.npmjs.org/:_authToken=npm_secret\n";
+      throw new Error("ENOENT");
+    };
+    expect(await stepMain(["publish", "--package", "zudo-doc", "--tag", "zudo-doc-v10.0.4"], deps)).toBe(1);
+    expect(logs.join()).toMatch(/credential in \/repo\/.npmrc/);
     expect(writesIn(execCalls)).toEqual([]);
   });
 
@@ -619,6 +666,37 @@ describe("release orchestrator publication", () => {
     const w = world({ npm: Object.fromEntries(PACKAGES.map((p) => [p.name, { versions: {}, tags: {} }])), releases: drafts(), tags: allTags, releaseEventsTrigger: false });
     expect(await releaseMain(["publish", "--version", "10.0.4", "--evidence", w.dir], w.deps)).toBe(0);
     expect(w.actions.filter((a) => a.startsWith("gh workflow run"))).toHaveLength(3);
+  });
+
+  it("polls through a stale 'absent' read after a successful run instead of publishing again", async () => {
+    const npm = Object.fromEntries(PACKAGES.map((p) => [p.name, { versions: {}, tags: {} }]));
+    const w = world({ npm, releases: drafts(), tags: allTags });
+    const originalExec = w.deps.exec;
+    let armed = true;
+    w.deps.exec = (cmd, args) => {
+      const r = originalExec(cmd, args);
+      if (armed && cmd === "gh" && args[0] === "api" && /actions\/runs\/\d+$/.test(args[1])) {
+        armed = false;
+        npm[HISTORY.name].staleReads = 3;
+      }
+      return r;
+    };
+    expect(await releaseMain(["publish", "--version", "10.0.4", "--evidence", w.dir], w.deps)).toBe(0);
+    expect(w.actions.filter((a) => a.includes("zudo-doc-history-server"))).toHaveLength(1);
+  });
+
+  it("fails rather than marking complete when the channel never reaches the version", async () => {
+    const npm = { [HISTORY.name]: { versions: { "10.0.4": { sha: SHA, run: 1 } }, tags: { latest: "10.0.3" } } };
+    const w = world({ npm, releases: { ...drafts(), "zudo-doc-history-server-10.0.4": { draft: false, name: "x" } }, tags: allTags });
+    const originalExec = w.deps.exec;
+    w.deps.exec = (cmd, args) => {
+      const r = originalExec(cmd, args);
+      npm[HISTORY.name].tags.latest = "10.0.3";
+      return r;
+    };
+    expect(await releaseMain(["publish", "--version", "10.0.4", "--evidence", w.dir], w.deps)).toBe(1);
+    expect(w.logs.join()).toMatch(/channel latest still reads 10.0.3/);
+    expect(w.actions.some((a) => a.includes("zudo-doc-v10.0.4"))).toBe(false);
   });
 
   it("stops on registry uncertainty without initiating anything", async () => {
