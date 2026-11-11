@@ -601,7 +601,7 @@ describe("checkFirstPartyPeerFreshness — declared range vs registry channel", 
   });
 
   it("an in-flight major floor is excluded until the lockstep publish lands, then admitted (#4279)", async () => {
-    // The boundary of RELEASE.md rule 4's window. Safeguard 4/5 runs after the
+    // The boundary of RELEASE.md rule 4's window. The publish-time freshness safeguard runs after the
     // 6a publishes, so the second half is what a real major-bump publish sees.
     // The first half is what a 6b-before-6a publish sees, and that failure is
     // the gate enforcing the publish order.

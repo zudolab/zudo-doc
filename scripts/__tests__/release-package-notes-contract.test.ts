@@ -18,7 +18,10 @@ const sources = {
   runbook: readFileSync(resolve(ROOT, "RELEASE.md"), "utf-8"),
 };
 
-const skills = [sources.makeRelease, sources.versionBump];
+// RELEASE.md owns the procedure; l-make-release (shared by Claude and Codex)
+// delegates to it, and zudo-doc-version-bump ships downstream with its own copy.
+const procedures = [sources.runbook, sources.versionBump];
+const skills = procedures;
 const releaseScript = readFileSync(
   resolve(ROOT, "scripts/release-create-zudo-doc.sh"),
   "utf-8",
@@ -49,8 +52,14 @@ const packages = [
 ] as const;
 
 describe("monorepo package release-note guidance", () => {
+  it("keeps the release entry point delegating to the canonical runbook", () => {
+    expect(sources.makeRelease).toContain('RELEASE.md` → "Release procedure"');
+    expect(sources.makeRelease).toContain('"Package-specific release notes"');
+    expect(sources.makeRelease).toContain("node scripts/release/release.mjs releases");
+  });
+
   it("pins package ownership, cross-package duplication, and repo-only omission", () => {
-    for (const text of Object.values(sources)) {
+    for (const text of procedures) {
       for (const entry of packages) {
         expect(text).toContain(entry.slug);
       }
@@ -72,7 +81,7 @@ describe("monorepo package release-note guidance", () => {
   });
 
   it("pins the localized unchanged-package text", () => {
-    for (const text of Object.values(sources)) {
+    for (const text of procedures) {
       expect(text).toContain("- No package-specific changes.");
       expect(text).toContain("- パッケージ固有の変更はありません。");
     }

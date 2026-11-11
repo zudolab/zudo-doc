@@ -86,7 +86,7 @@
 // real network. The CLI wrapper at the bottom of this file supplies the
 // real npm registry fetch (bounded by DEFAULT_TIMEOUT_MS).
 //
-// Wired in by #3457: Safeguard 4/5 of .github/workflows/publish-create-zudo-doc.yml
+// Wired in by #3457: the "[Safeguard] Scaffold pin freshness" step of .github/workflows/publish-create-zudo-doc.yml
 // (immediately before `npm publish`, run even on a dry run), plus an early-feedback
 // preflight in scripts/release-create-zudo-doc.sh and the `check:scaffold-pin-freshness`
 // package script. Deliberately NOT a PR gate — it hits the live registry, so an
