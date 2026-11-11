@@ -12,8 +12,10 @@
  * This file proves, against the INSTALLED packed package (not workspace
  * source):
  *
- * - the default generated project still typechecks with its own TypeScript 7
- *   requirement (`pnpm check` → `zfb check` → the project's `tsc`) and builds;
+ * - the default generated project still typechecks and builds with the
+ *   TypeScript package it actually installs (`pnpm check` → `zfb check` →
+ *   the project's `tsc`). The slow test compares that project's `tsc -v`
+ *   with its installed package metadata, not a hardcoded compiler major;
  * - zfb's native resolver still maps a real `@/` import in server code AND in
  *   an island dependency without `baseUrl` (emitted HTML + island bundle), and
  *   a wrong alias target fails the build — so zfb really reads the mapping;
@@ -154,7 +156,7 @@ beforeAll(async () => {
   directExtendsDir = path.join(projectDir, "direct-extends");
   await writeDirectExtendsFixture(directExtendsDir);
 
-  // TS5 default control: the project's own compiler requirement, untouched.
+  // Default-compiler control: the generated project's own installed compiler, untouched.
   runOrThrow("pnpm check", projectDir);
   runOrThrow("pnpm build", projectDir, { SKIP_DOC_HISTORY: "1" });
 
@@ -191,11 +193,18 @@ describe("installed shared tsconfig base", () => {
   });
 });
 
-describe("default TS5 generated project", () => {
-  it("typechecks with its own TypeScript 5 requirement", () => {
+describe("default generated project", () => {
+  it("runs the TypeScript version installed in the generated project", async () => {
     const version = run("pnpm", ["exec", "tsc", "-v"], projectDir);
-    expect(version.output).toMatch(/Version 5\./);
-    // `pnpm check` already passed in beforeAll; this pins which compiler ran.
+    expect(version.status, version.output).toBe(0);
+    // Identity comes from the package this project installed. The declared
+    // dependency range stays in the fast scaffold contract, not here.
+    const installed = (await fs.readJson(
+      path.join(projectDir, "node_modules/typescript/package.json"),
+    )) as { version?: string };
+    expect(typeof installed.version).toBe("string");
+    expect(installed.version).not.toBe("");
+    expect(version.output).toContain(`Version ${installed.version}`);
   });
 
   it("resolves a server-side `@/` import in the emitted page", async () => {
