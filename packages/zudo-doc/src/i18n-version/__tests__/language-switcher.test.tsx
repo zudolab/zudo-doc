@@ -10,10 +10,7 @@ import {
 import type { LocaleLink } from "../types.js";
 import { makeUrlHelpers } from "../../url-helpers/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
-import {
-  CURRENT_PATH_DATASET_KEY,
-  CURRENT_PATH_SCRIPT_PRELUDE,
-} from "../../current-path/index.js";
+import { CURRENT_PATH_DATASET_KEY } from "../../current-path/index.js";
 
 // Minimal VNode → HTML serializer (mirrors the helper used in
 // breadcrumb.test.tsx — kept inline so the test runs without a render
@@ -300,11 +297,10 @@ describe("LANGUAGE_SWITCHER_INIT_SCRIPT", () => {
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("data-language-switcher");
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("switchLocaleHref");
-    // Explicit current-route override read order (zudolab/zudo-doc#3398):
-    // dataset attribute first, location.pathname as the fallback default. The
-    // reader is spliced in from current-path/index.ts (#3408); the executing
-    // proof lives in current-path/__tests__/current-path-surfaces.test.tsx.
-    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain(CURRENT_PATH_SCRIPT_PRELUDE);
+    // The committed script reads the dataset override before location.pathname.
+    // Comparing it to CURRENT_PATH_SCRIPT_PRELUDE would require the test
+    // runner's function source to match the esbuild literal. Execution of the
+    // frozen script is in current-path/__tests__/current-path-surfaces.test.tsx.
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("location.pathname");
     // idempotency guard (single document-level listener per page lifetime)
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("__zdLanguageSwitcherInit");

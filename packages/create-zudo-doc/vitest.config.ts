@@ -6,9 +6,11 @@ const sourceAliases = zfb3SourceAliases();
 export default defineConfig({
   ...(sourceAliases.length > 0
     ? {
-        esbuild: {
-          jsx: "automatic" as const,
-          jsxImportSource: "@takazudo/zfb/zudo-react",
+        oxc: {
+          jsx: {
+            runtime: "automatic",
+            importSource: "@takazudo/zfb/zudo-react",
+          },
         },
         resolve: { alias: sourceAliases },
       }

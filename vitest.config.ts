@@ -32,7 +32,7 @@ export function zfb3SourceAliases() {
 }
 
 export default defineConfig({
-  esbuild: { jsx: "automatic", jsxImportSource: "@takazudo/zfb/zudo-react" },
+  oxc: { jsx: { runtime: "automatic", importSource: "@takazudo/zfb/zudo-react" } },
   resolve: {
     alias: [{ find: "@/", replacement: resolve(__dirname, "src") + "/" }, ...zfb3SourceAliases()],
   },

@@ -144,8 +144,8 @@
     "@typescript/typescript6": "^6.0.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vite": "^7.3.8",
-    "vitest": "^4.1.12",
+    "vite": "8.3.7",
+    "vitest": "5.1.0",
     "wrangler": "4.160.0"
   }
 }
