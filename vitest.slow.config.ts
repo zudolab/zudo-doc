@@ -1,12 +1,12 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
-import { zfb3SourceAliases } from "./vitest.config";
+import { zfb3SourceAliases } from "./vitest.config.ts";
 
 /** PR-gated subprocess suite. */
 export default defineConfig({
   oxc: { jsx: { runtime: "automatic", importSource: "@takazudo/zfb/zudo-react" } },
   resolve: {
-    alias: [{ find: "@/", replacement: resolve(__dirname, "src") + "/" }, ...zfb3SourceAliases()],
+    alias: [{ find: "@/", replacement: resolve(import.meta.dirname, "src") + "/" }, ...zfb3SourceAliases()],
   },
   test: {
     name: "slow-unit",
