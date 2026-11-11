@@ -1444,16 +1444,6 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // Reversing those two identities makes each raw page byte-identical; no
   // stylesheet, pack-map, protocol, prose or structural differences remain.
   // Evidence and release blockers: docs/findings/zfb-6.0.1-a2-causal-review.md.
-  // 2026-11-11 re-baseline (#4736, packed sidebar compiler probe):
-  // the linked-package edit is this slow test only. The probe file is no
-  // longer passed to tsc as a bare argument (TypeScript 7 TS5112); a
-  // dedicated sidebar-probe tsconfig is selected with --noEmit -p, and a
-  // failed compile throws the decoded stdout/stderr. Both public
-  // initialPathMode values are written into the probe source. That source
-  // is part of zfb's native package identity, so data-zfb-build changes on
-  // every A2 page even though these routes do not render the probe.
-  // Strict normalization is unchanged. Causal review:
-  // docs/findings/4736-packed-sidebar-probe-a2.md.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
