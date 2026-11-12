@@ -48,7 +48,7 @@ export function createAssetIndexPageView<S extends Settings = Settings>(ctx: Chr
     const labels = resolveAssetIndexPageLabels(t, locale);
     const title = labels.crumb;
     return (
-      <DocLayoutWithDefaults title={composeMetaTitle(title)} head={<HeadWithDefaults title={title} description={labels.indexDescription} canonical={ctx.absoluteUrl(indexUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={[{ label: "", href: homeUrl }, { label: title }]} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={indexUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />} enableClientRouter={settings.dynamicPageTransition}>
+      <DocLayoutWithDefaults title={composeMetaTitle(title)} head={<HeadWithDefaults title={title} description={labels.indexDescription} canonical={ctx.absoluteUrl(indexUrl)} locale={locale} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={[{ label: "", href: homeUrl }, { label: title }]} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={indexUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />} enableClientRouter={settings.dynamicPageTransition}>
         <AssetIndexPageBody entries={entries} labels={labels} base={settings.base} routePrefix={routePrefix} dir={dir} locale={localeSegment} />
       </DocLayoutWithDefaults>
     );

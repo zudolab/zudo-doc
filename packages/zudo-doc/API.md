@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (179 total)
+## 1. Subpath Exports (183 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -244,6 +244,7 @@ its own sidebar-tree data prep and does not receive this prop.
 | `./versions-page` | Versions listing page component |
 | `./tag-pages` | Tag index/detail page components |
 | `./home-page` | `createHomePageView(ctx)` — home-page (site index) view factory; see below |
+| `./home-hero` | `HomeHero(props)` — standalone home hero component; see below |
 | `./category-nav` | Category navigation component |
 | `./category-tree-nav` | Category tree navigation component |
 | `./site-tree-nav` | Site tree navigation component; its `SiteTreeNavDeps.categoryIgnore` and `initiallyCollapsedCategorySlugs` fields are optional (omitted means nothing is hidden or collapsed) |
@@ -583,6 +584,7 @@ Each entry in `settings.locales` configures a non-default locale:
 | `label` | `string` | Display label in the language switcher |
 | `dir` | `string` | Content directory for this locale |
 | `description?` | `string` | Optional home page hero description. When omitted, falls back to `settings.siteDescription`; `""` intentionally leaves the description blank. |
+| `ogImage?` | `string \| false` | `og:image` / `twitter:image` path for every page of this locale (root-absolute, base-prefixed). Overrides `metaTags.ogImage`; `false` disables the image. A page's `og_image` frontmatter wins. Validated by `assertValidLocaleOgImages`. |
 
 `settings.locales` contains only non-default locales. The default locale always uses `settings.siteDescription` and has no locale-specific override.
 
@@ -810,3 +812,35 @@ images are emitted `loading="lazy"` with `data-zd-home-image="light"|"dark"` and
 shows the one matching `html[data-theme]`. `assertValidHomeImage` (run by both
 `zudoDoc()` and `zudoDocPreset()`) throws a `TypeError` naming the field.
 Absent `image` leaves the hero output unchanged.
+
+`HomeConfig.imageLayout?: "logo" | "large" | "banner" | "backdrop"` (default
+`"logo"`, ignored without `image`) places the picture: the 320px logo box, a
+560px side box, a full-width banner above a centred title, or a cropped
+backdrop behind a centred copy panel (`.zd-home-backdrop*` in `features.css`;
+the backdrop picture is decorative, `alt=""`). The hero root carries
+`data-zd-home-hero-layout` for every layout except `"logo"`.
+
+### `HomeHero` (`./home-hero`)
+
+`HomeHero({ siteName, description?, logo?, image?, imageLayout?, base?, links?, logoHref? })`
+is the home identity block as a standalone server component, needing no
+`ChromeContext`; `createHomePageView` renders it. `links` are rendered
+`/`-separated; `logoHref` overrides the default base-prefixing of `logo`. The
+module also exports `homeAssetHref`, `assertValidHomeImage`,
+`isRootAbsoluteSitePath` and the `HomeImageConfig`/`HomeImageLayout` types.
+Hosts need the package CSS (for example `./compiled.css`).
+
+### Social images and section covers
+
+Two optional frontmatter fields, both root-absolute site paths validated with
+`isRootAbsoluteSitePath`:
+
+- `og_image` sets the page's `og:image` / `twitter:image`. Resolution order in
+  `HeadWithDefaults` (which now takes `locale?` and `ogImage?` props): page
+  `og_image`, then `locales[locale].ogImage` (`false` disables), then
+  `metaTags.ogImage`.
+- `cover` on a top-level section is carried as `DocNavNode.cover` /
+  `SidebarNode.cover`. The home page turns it into a base-prefixed
+  `SidebarNavNode.coverHref`, and `SiteTreeNav` renders it as a lazy, decorative
+  1200×630 `<img class="zd-site-nav-cover">` at the top of that card. Neither
+  field crosses the sidebar island boundary (`toSidebarClientData`).

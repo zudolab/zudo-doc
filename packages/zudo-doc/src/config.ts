@@ -109,6 +109,7 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertValidHeaderBrand,
   assertValidHomeImage,
+  assertValidLocaleOgImages,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -867,6 +868,7 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // A malformed `home.image` would otherwise render a broken or off-origin
   // hero picture. Also enforced inside `zudoDocPreset()`.
   assertValidHomeImage(settings);
+  assertValidLocaleOgImages(settings);
 
   // `designTokenPanel: true` + `bundleZdtp: false` mounts the package panel on
   // top of a stubbed `zdtp-loader` — a guaranteed runtime throw (#4261). Also

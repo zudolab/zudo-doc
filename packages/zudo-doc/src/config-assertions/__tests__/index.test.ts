@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertValidLocaleOgImages,
   assertValidHomeImage,
   isRootAbsoluteSitePath,
   assertAgentDocsConsistent,
@@ -224,6 +225,15 @@ describe("assertValidHomeImage", () => {
     ).toThrow(/unknown key "dark"/);
   });
 
+  it("validates home.imageLayout", () => {
+    for (const imageLayout of ["logo", "large", "banner", "backdrop"]) {
+      expect(() => assertValidHomeImage({ home: { imageLayout } })).not.toThrow();
+    }
+    expect(() => assertValidHomeImage({ home: { imageLayout: "hero" } })).toThrow(
+      /Invalid home\.imageLayout "hero"/,
+    );
+  });
+
   it("rejects a non-string alt", () => {
     expect(() => assertValidHomeImage({ home: { image: { src: "/a.png", alt: 1 } } })).toThrow(
       /home\.image\.alt/,
@@ -248,5 +258,20 @@ describe("isRootAbsoluteSitePath", () => {
     expect(isRootAbsoluteSitePath("/a b.png")).toBe(true);
     expect(isRootAbsoluteSitePath("//a")).toBe(false);
     expect(isRootAbsoluteSitePath("a")).toBe(false);
+  });
+});
+
+describe("assertValidLocaleOgImages", () => {
+  it("accepts absent, false and root-absolute values", () => {
+    expect(() => assertValidLocaleOgImages({})).not.toThrow();
+    expect(() =>
+      assertValidLocaleOgImages({ locales: { ja: { ogImage: false }, fr: { ogImage: "/img/fr.png" }, de: {} } }),
+    ).not.toThrow();
+  });
+
+  it.each([["https://example.com/a.png"], [""], [true], ["img/a.png"]])("rejects %j", (ogImage) => {
+    expect(() => assertValidLocaleOgImages({ locales: { ja: { ogImage } } })).toThrow(
+      /Invalid locales\.ja\.ogImage/,
+    );
   });
 });

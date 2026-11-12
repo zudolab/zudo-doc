@@ -23,7 +23,7 @@ export default function NotFoundPage(): Child {
   return (
     <DocLayoutWithDefaults
       title={composeMetaTitle(title)}
-      head={<HeadWithDefaults title={title} />}
+      head={<HeadWithDefaults title={title} locale={locale} />}
       lang={locale}
       // SSR `data-theme-pack` html attribute (ADR theme-packs.md D3, #2822).
       dataThemePack={resolveThemePackSsrSlug(themePackRegistry, settings)}

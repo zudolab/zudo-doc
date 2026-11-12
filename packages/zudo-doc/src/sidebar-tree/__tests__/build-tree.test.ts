@@ -282,6 +282,15 @@ describe("buildSidebarTree", () => {
     expect(log.children.map((c) => c.id)).toEqual(["log/b", "log/a"]);
   });
 
+  it("copies a cover path from frontmatter onto the node", () => {
+    const tree = buildSidebarTree(
+      [entry("guides/index", { cover: "/img/guides.png" }), entry("guides/a")],
+      "en",
+    );
+    expect(tree[0]!.cover).toBe("/img/guides.png");
+    expect(tree[0]!.children[0]).not.toHaveProperty("cover");
+  });
+
   it("uses the default href builder when none is supplied", () => {
     const tree = buildSidebarTree([entry("intro", { title: "Intro" })], "en");
     expect(tree[0]!.href).toBe("/en/docs/intro/");

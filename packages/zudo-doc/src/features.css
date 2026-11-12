@@ -1470,3 +1470,40 @@ html[data-theme="dark"] [data-zd-home-image="light"],
 html:not([data-theme="dark"]) [data-zd-home-image="dark"] {
   display: none;
 }
+
+/* home.imageLayout: "backdrop" — the picture fills the hero behind a readable
+ * copy panel. aspect-ratio grows with the panel when the copy is taller than
+ * 1200:630 (narrow screens), so text is never clipped; no overflow clipping is
+ * set because that would disable the aspect-ratio growth. */
+.zd-home-backdrop {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1200 / 630;
+  padding: var(--spacing-vsp-md) var(--spacing-hsp-lg);
+}
+
+.zd-home-backdrop-image {
+  position: absolute;
+  inset: 0;
+}
+
+.zd-home-backdrop-panel {
+  position: relative;
+  max-width: 40rem;
+  padding: var(--spacing-vsp-sm) var(--spacing-hsp-xl);
+  background: color-mix(in oklch, var(--zd-bg) 92%, transparent);
+}
+
+/* Home-grid category card cover (`cover` frontmatter on a top-level category
+ * index). Bleeds over the card's left/top padding so it sits flush with the
+ * border; the 1200:630 box is reserved before the picture loads. */
+.zd-site-nav-cover {
+  display: block;
+  width: calc(100% + var(--spacing-hsp-sm));
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  margin: calc(-1 * var(--spacing-vsp-2xs)) 0 var(--spacing-vsp-2xs) calc(-1 * var(--spacing-hsp-sm));
+}

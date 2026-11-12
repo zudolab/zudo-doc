@@ -49,6 +49,7 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertValidHeaderBrand,
   assertValidHomeImage,
+  assertValidLocaleOgImages,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -450,6 +451,7 @@ export function zudoDocPreset({
   // Same rationale: a direct `zudoDocPreset()` caller must reject a malformed
   // `home.image` exactly like `zudoDoc()` does.
   assertValidHomeImage(settings);
+  assertValidLocaleOgImages(settings);
 
   // Same rationale again: `designTokenPanel: true` + `bundleZdtp: false` mounts
   // the package panel over a stubbed `zdtp-loader` and can only throw at

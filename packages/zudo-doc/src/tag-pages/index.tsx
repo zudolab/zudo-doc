@@ -68,7 +68,7 @@ export interface TagPagesSettings {
 
 /** Host-supplied component bindings injected into the tag-pages factory. */
 export interface TagPagesComponents {
-  HeadWithDefaults: (props: { title: string }) => JSX.Element;
+  HeadWithDefaults: (props: { title: string; locale?: string }) => JSX.Element;
   HeaderWithDefaults: (props: { lang: string; currentPath?: string }) => JSX.Element;
   FooterWithDefaults: (props: { lang: string }) => JSX.Element;
   BodyEndIslands: (props: { basePath: string }) => JSX.Element;
@@ -246,7 +246,7 @@ export function createTagPages<S extends Settings = Settings>(
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(pageTitle)}
-        head={<HeadWithDefaults title={pageTitle} />}
+        head={<HeadWithDefaults title={pageTitle} locale={locale} />}
         // Keep `lang` absent on the default-locale page, matching its original
         // output and avoiding an own undefined prop on the description.
         {...(isDefault ? {} : { lang: locale })}
@@ -309,7 +309,7 @@ export function createTagPages<S extends Settings = Settings>(
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(pageTitle)}
-        head={<HeadWithDefaults title={pageTitle} />}
+        head={<HeadWithDefaults title={pageTitle} locale={locale} />}
         // Keep `lang` absent on the default-locale page, as above.
         {...(isDefault ? {} : { lang: locale })}
         {...(dataThemePack !== undefined ? { dataThemePack } : {})}

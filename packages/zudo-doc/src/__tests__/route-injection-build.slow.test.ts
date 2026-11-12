@@ -1450,6 +1450,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // bauhaus/beacon/eink pack cache-busters (1.0.1 -> 1.0.2); the helper's
   // residual diff is empty. Raw bytes additionally change only the styles
   // and islands entry hashes. Evidence: docs/findings/4758-a2-rebaseline/.
+  // 2026-11-12 re-baseline (home image layouts, HomeHero, og:image overrides,
+  // section covers; #4751-#4754): main bbb22f93 and candidate captures differ
+  // only in native build identity (eb8122cb68fcc5b3 -> new value; 1/2/4
+  // attributes); the helper's residual diff is empty. Raw bytes additionally
+  // change only the styles and islands entry hashes (new features.css rules,
+  // SiteTreeNav cover markup). Evidence: docs/findings/4772-a2-rebaseline/.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);

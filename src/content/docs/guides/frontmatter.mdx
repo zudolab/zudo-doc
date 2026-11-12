@@ -40,6 +40,8 @@ title: Quick Start
 | `description` | string | No | -- | Subtitle shown below the title |
 | `sidebar_position` | number | No | `999` | Sort order within the sidebar category |
 | `sidebar_label` | string | No | Value of `title` | Override label shown in sidebar |
+| `og_image` | string | No | Locale or site `ogImage` | Root-absolute path of this page's `og:image` / `twitter:image` |
+| `cover` | string | No | -- | Root-absolute path of a cover image for a top-level section's card on the home page |
 | `sidebar_initial_expansion` | `"collapsed"` or `"expanded"` | No | Inherited, then legacy behavior | Initial sidebar disclosure; category indexes pass the setting to descendants |
 | `category` | string | No | Directory name | Reserved for future use |
 | `category_no_page` | boolean | No | `false` | Makes the category a non-linked header (no route, sitemap entry, or search entry) |
@@ -125,6 +127,37 @@ Overrides the label displayed in the sidebar navigation. Use this when you want 
 ---
 title: Configuring Color Schemes and Themes
 sidebar_label: Color Schemes
+---
+```
+
+### `og_image`
+
+- **Type:** `string`
+- **Required:** No
+- **Default:** The locale's `ogImage`, then `metaTags.ogImage`
+
+Sets this page's social preview image (`og:image` and `twitter:image`). Use a root-absolute path; the site `base` is prefixed for you. It wins over the [`locales.<code>.ogImage`](./configuration.mdx#content-and-i18n-locales) and `metaTags.ogImage` settings.
+
+```mdx
+---
+title: Release Notes
+og_image: /img/og/release-notes.png
+---
+```
+
+### `cover`
+
+- **Type:** `string`
+- **Required:** No
+- **Default:** --
+
+Adds a cover image to a top-level section's card in the home page site index. Set it on the section's `index.mdx`; it has no effect deeper in the tree. Use a root-absolute path to a 1200×630 image; the site `base` is prefixed for you, and the image is cropped to that ratio. The image is decorative, so it has no alt text.
+
+```mdx
+---
+title: Guides
+sidebar_position: 1
+cover: /img/covers/guides.png
 ---
 ```
 

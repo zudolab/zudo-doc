@@ -216,6 +216,20 @@ describe("site-schema pure surface", () => {
     expect(findNode(tree, "getting-started/install")?.hasPage).toBe(true);
   });
 
+  it("carries cover onto section nodes and the root index node", () => {
+    const coverTree = buildNavTree(
+      [
+        entry("index", { title: "Home", cover: "/img/root.png" }),
+        entry("guides/index", { title: "Guides", cover: "/img/guides.png" }),
+      ],
+      "en",
+      undefined,
+      docsUrlFor(""),
+    );
+    expect(findNode(coverTree, "")?.cover).toBe("/img/root.png");
+    expect(findNode(coverTree, "guides")?.cover).toBe("/img/guides.png");
+  });
+
   it("carries note-tray fields through the DocNavNode allowlist", () => {
     const noteTree = buildNavTree(
       [
