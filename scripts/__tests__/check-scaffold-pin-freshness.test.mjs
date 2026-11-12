@@ -601,10 +601,10 @@ describe("checkFirstPartyPeerFreshness — declared range vs registry channel", 
   });
 
   it("an in-flight major floor is excluded until the lockstep publish lands, then admitted (#4279)", async () => {
-    // The boundary of RELEASE.md rule 4's window. The publish-time freshness safeguard runs after the
-    // 6a publishes, so the second half is what a real major-bump publish sees.
-    // The first half is what a 6b-before-6a publish sees, and that failure is
-    // the gate enforcing the publish order.
+    // The boundary of RELEASE.md rule 4's window. The publish-time freshness safeguard runs after
+    // step 9 (Publish) has landed history-server and zudo-doc, so the second half is what a real
+    // major-bump publish sees. The first half is what a create-zudo-doc publish run out of order
+    // would see, and that failure is the gate enforcing the publish order.
     const peerRanges = [
       {
         pkg: "@takazudo/zudo-doc-history-server",
