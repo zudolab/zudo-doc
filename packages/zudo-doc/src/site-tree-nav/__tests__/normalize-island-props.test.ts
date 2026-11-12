@@ -120,6 +120,30 @@ describe("normalizeSiteTreeNavProps", () => {
     expect(() => normalizeSiteTreeNavProps({ ...base, initiallyCollapsedCategorySlugs: [3] as unknown as string[] })).toThrow(/initiallyCollapsedCategorySlugs/);
   });
 
+  it("threads the described variant, count labels and id prefix through the allowlist", () => {
+    const base = {
+      tree: [],
+      categoryOrder: [],
+      locale: "ja",
+      dateFormats: { full: "locale", monthDay: "locale", year: "locale", yearMonth: "locale", numericMonthDay: "locale" },
+    } as const;
+    const plain = normalizeSiteTreeNavProps({ ...base, tree: [], categoryOrder: [] });
+    expect(Object.keys(plain)).toEqual(["tree", "categoryOrder", "locale", "dateFormats"]);
+    const described = normalizeSiteTreeNavProps({
+      ...base,
+      tree: [],
+      categoryOrder: [],
+      variant: "described",
+      countLabels: { one: "{count} 件", other: "{count} 件" },
+      idPrefix: "home",
+    });
+    expect(described.variant).toBe("described");
+    expect(described.countLabels).toEqual({ one: "{count} 件", other: "{count} 件" });
+    expect(described.idPrefix).toBe("home");
+    expect(() => normalizeSiteTreeNavProps({ ...base, tree: [], categoryOrder: [], variant: "wide" as never })).toThrow(/variant/);
+    expect(() => normalizeSiteTreeNavProps({ ...base, tree: [], categoryOrder: [], countLabels: { one: 1 } as never })).toThrow(/countLabels/);
+  });
+
   it("rejects cyclic nav data before it reaches Island props", () => {
     const cycle: SidebarNavNode = {
       slug: "guide",

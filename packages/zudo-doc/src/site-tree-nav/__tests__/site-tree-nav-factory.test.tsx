@@ -234,3 +234,32 @@ describe("createSiteTreeNavWrapper — version threading (#3218)", () => {
     warnSpy.mockRestore();
   });
 });
+
+describe("createSiteTreeNavWrapper — described variant (additive)", () => {
+  it("omits variant/countLabels for the standard call and threads them for described", () => {
+    const t = (key: string, locale: string) => `${locale}:${key}`;
+    const SiteTreeNavWrapper = createSiteTreeNavWrapper(makeDeps({ t }));
+    const standard = siteTreeNavProps(SiteTreeNavWrapper({ lang: "ja" }));
+    expect("variant" in standard).toBe(false);
+    expect("countLabels" in standard).toBe(false);
+    const described = siteTreeNavProps(SiteTreeNavWrapper({ lang: "ja", variant: "described", idPrefix: "x" }));
+    expect(described.variant).toBe("described");
+    expect(described.idPrefix).toBe("x");
+    expect(described.countLabels).toEqual({
+      one: "ja:siteTreeNav.documentCount.one",
+      other: "ja:siteTreeNav.documentCount.other",
+    });
+  });
+
+  it("keeps hand-constructed deps without a translator compiling and English-defaulted", () => {
+    const SiteTreeNavWrapper = createSiteTreeNavWrapper(makeDeps());
+    const described = siteTreeNavProps(SiteTreeNavWrapper({ variant: "described" }));
+    expect(described.variant).toBe("described");
+    expect("countLabels" in described).toBe(false);
+  });
+
+  it("rejects an unknown variant instead of silently falling back", () => {
+    const SiteTreeNavWrapper = createSiteTreeNavWrapper(makeDeps());
+    expect(() => SiteTreeNavWrapper({ variant: "wide" as never })).toThrow(/variant/);
+  });
+});

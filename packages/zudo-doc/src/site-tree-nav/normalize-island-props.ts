@@ -3,6 +3,9 @@ import type { SidebarNavNode } from "../sidebar/types.js";
 
 export interface SiteTreeNavIslandProps {
   tree: SidebarNavNode[];
+  variant?: "default" | "described";
+  countLabels?: { one: string; other: string };
+  idPrefix?: string;
   categoryOrder: string[];
   categoryIgnore?: string[];
   initiallyCollapsedCategorySlugs?: string[];
@@ -41,6 +44,21 @@ export function normalizeSiteTreeNavProps(
   }
   if (input.ariaLabel !== undefined) {
     normalized.ariaLabel = requireString(input.ariaLabel, "ariaLabel");
+  }
+  if (input.variant !== undefined) {
+    if (input.variant !== "default" && input.variant !== "described") {
+      throw new TypeError("[zudo-doc] SiteTreeNav island variant is invalid.");
+    }
+    normalized.variant = input.variant;
+  }
+  if (input.countLabels !== undefined) {
+    normalized.countLabels = {
+      one: requireString(input.countLabels.one, "countLabels.one"),
+      other: requireString(input.countLabels.other, "countLabels.other"),
+    };
+  }
+  if (input.idPrefix !== undefined) {
+    normalized.idPrefix = requireString(input.idPrefix, "idPrefix");
   }
 
   return normalized;

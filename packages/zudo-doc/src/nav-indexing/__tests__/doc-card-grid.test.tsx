@@ -57,4 +57,22 @@ describe("DocCardGrid", () => {
     const root = renderNav(DocCardGrid({ items: [{ href: "/a/", title: "A", description: "desc" }] }));
     expect(hasClass(root, "text-accent")).toBe(false);
   });
+
+  it("keeps the one-to-two column default when layout is omitted", () => {
+    const root = renderNav(DocCardGrid({ items: [{ href: "/a/", title: "A" }] }));
+    const nav = root.querySelector("nav")!;
+    expect(nav.className).toBe("grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2");
+    expect(nav.hasAttribute("data-layout")).toBe(false);
+    expect(nav.getAttribute("style")).toBeNull();
+  });
+
+  it("uses the available-width layout capped at three columns for layout=auto", () => {
+    const root = renderNav(DocCardGrid({ items: [{ href: "/a/", title: "A" }], layout: "auto", class: "extra" }));
+    const nav = root.querySelector("nav")!;
+    expect(nav.getAttribute("data-layout")).toBe("auto");
+    expect(nav.className).toBe("grid gap-x-hsp-lg gap-y-vsp-md extra");
+    expect(nav.getAttribute("style")).toContain(
+      "repeat(auto-fit, minmax(min(100%, max(18rem, calc((100% - 2 * var(--spacing-hsp-lg)) / 3))), 1fr))",
+    );
+  });
 });
