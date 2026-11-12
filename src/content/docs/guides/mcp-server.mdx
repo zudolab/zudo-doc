@@ -53,7 +53,7 @@ The Worker also serves two read-only JSON documents that describe the endpoint, 
 | `<base>/mcp/server-card` | [MCP Server Card](https://github.com/modelcontextprotocol/experimental-ext-server-card) (SEP-2127), `application/mcp-server-card+json` | `mcp: true`, at any `base` |
 | `/.well-known/ai-catalog.json` | [AI Catalog](https://github.com/Agent-Card/ai-catalog) with one entry that points at the Server Card, `application/ai-catalog+json` | `mcp: true` and `base` is `/` |
 
-The Server Card gives the endpoint URL, the protocol versions the endpoint accepts and the server version that `initialize` reports. Its `name` is the public host name in reverse-DNS order followed by the base, for example `com.example.docs/docs` for `https://docs.example.com/` or `com.example.docs/manual` for `/manual`. Like the citation URLs, both documents use the `siteUrl` origin and fall back to the request origin when `siteUrl` is empty.
+The Server Card gives the endpoint URL, the protocol versions the endpoint accepts and the server version that `initialize` reports. Its `name` is the public host name in reverse-DNS order followed by the base, for example `com.example.docs/docs` for `https://docs.example.com/` or `com.example.docs/manual` for `/manual`. Like the citation URLs, both documents use the `siteUrl` origin and fall back to the request origin when `siteUrl` is empty or not an absolute URL.
 
 Both documents answer GET and HEAD with `Access-Control-Allow-Origin: *`, `Cache-Control: public, max-age=3600` and a strong `ETag`; a matching `If-None-Match` returns 304. OPTIONS returns the CORS preflight and other methods return 405. As with `/mcp`, the showcase's preview entry may return an asset 404 for GET or HEAD.
 

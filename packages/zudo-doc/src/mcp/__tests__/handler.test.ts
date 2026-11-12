@@ -126,6 +126,19 @@ describe("MCP handler", () => {
       expect((await response.json()).result.protocolVersion, protocolVersion).toBe(protocolVersion);
     }
   });
+  it("cites the siteUrl origin, or the request origin when siteUrl is not a URL", async () => {
+    const { files } = fixture();
+    const read = async (path: string) => files.has(path) ? new Response(files.get(path)) : new Response(null, { status: 404 });
+    const fetchItem = { jsonrpc: "2.0", id: 6, method: "tools/call", params: { name: "fetch", arguments: { id } } };
+    for (const [siteUrl, url] of [
+      ["https://docs.example.org/", "https://docs.example.org/manual/docs/guide"],
+      ["docs.example.org", "https://docs.example/manual/docs/guide"],
+    ] as const) {
+      const response = await createMcpHandler({ base: "/manual", siteUrl, read })(post(fetchItem));
+      expect(response.status, siteUrl).toBe(200);
+      expect((await response.json()).result.structuredContent.url, siteUrl).toBe(url);
+    }
+  });
   it("enforces methods, origin, body and corpus failures", async () => {
     const { files, manifest, handler } = fixture();
     expect((await handler(new Request(endpoint, { method: "GET" }))).status).toBe(405);

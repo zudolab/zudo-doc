@@ -16,6 +16,7 @@ function cap(name: string) {
 }
 
 const mcpUrl = "https://example.com/mcp";
+const serverCardUrl = `${mcpUrl}/server-card`;
 const previewExecutionContext = {
   waitUntil: (_promise: Promise<unknown>) => undefined,
   passThroughOnException: () => undefined,
@@ -108,23 +109,27 @@ describe("custom Worker entry", () => {
         url: expect.stringMatching(/^https:\/\/zudo-doc\.takazudomodular\.com\//),
       });
       expect((fetched.structuredContent as { text: string }).text.length).toBeGreaterThan(0);
+
+      // Checked after the round trips above: closing the client while its post-initialize
+      // SSE GET is in flight leaves an unhandled AbortError in the Workers pool.
+      const card = (await (await exports.default.fetch(new Request(serverCardUrl))).json()) as {
+        version: string;
+        remotes: Array<{ supportedProtocolVersions: string[] }>;
+      };
+      expect(client.getServerVersion()).toEqual({ name: "zudo-doc", version: card.version });
+      expect(card.remotes[0]!.supportedProtocolVersions).toContain(transport.protocolVersion);
     } finally {
       await client.close();
     }
   });
 
   it("serves the MCP Server Card and AI Catalog for the live endpoint", async () => {
-    const cardUrl = "https://example.com/mcp/server-card";
-    const card = await exports.default.fetch(new Request(cardUrl));
+    const card = await exports.default.fetch(new Request(serverCardUrl));
     expect(card.status).toBe(200);
     expect(card.headers.get("content-type")).toBe("application/mcp-server-card+json");
     expect(card.headers.get("access-control-allow-origin")).toBe("*");
     expect(card.headers.get("cache-control")).toBe("public, max-age=3600");
-    const cardBody = (await card.json()) as {
-      version: string;
-      remotes: Array<{ url: string; supportedProtocolVersions: string[] }>;
-    };
-    expect(cardBody).toMatchObject({
+    expect(await card.json()).toMatchObject({
       $schema: "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
       name: "com.takazudomodular.zudo-doc/docs",
       title: "zudo-doc",
@@ -154,33 +159,18 @@ describe("custom Worker entry", () => {
     const elsewhere = await exports.default.fetch(new Request("https://example.com/ja/ai-catalog.json"));
     expect(elsewhere.status).toBe(404);
 
-    const client = new Client({ name: "worker-card", version: "1.0.0" });
-    const transport = new StreamableHTTPClientTransport(new URL(mcpUrl), {
-      fetch: (input, init) =>
-        exports.default.fetch(
-          new Request(input, init) as Parameters<typeof exports.default.fetch>[0],
-        ),
-    });
-    try {
-      await client.connect(transport);
-      expect(client.getServerVersion()).toEqual({ name: "zudo-doc", version: cardBody.version });
-      expect(cardBody.remotes[0]!.supportedProtocolVersions).toContain(transport.protocolVersion);
-    } finally {
-      await client.close();
-    }
-
     const etag = card.headers.get("etag");
     expect(etag).toMatch(/^"[0-9a-f]{32}"$/);
     const revalidated = await exports.default.fetch(
-      new Request(cardUrl, { headers: { "if-none-match": etag! } }),
+      new Request(serverCardUrl, { headers: { "if-none-match": etag! } }),
     );
     expect(revalidated.status).toBe(304);
-    const head = await exports.default.fetch(new Request(cardUrl, { method: "HEAD" }));
+    const head = await exports.default.fetch(new Request(serverCardUrl, { method: "HEAD" }));
     expect(head.status).toBe(200);
     expect(head.headers.get("etag")).toBe(etag);
-    expect((await exports.default.fetch(new Request(cardUrl, { method: "OPTIONS" }))).status).toBe(204);
+    expect((await exports.default.fetch(new Request(serverCardUrl, { method: "OPTIONS" }))).status).toBe(204);
     expect(
-      (await exports.default.fetch(new Request(cardUrl, { method: "POST", body: "{}" }))).status,
+      (await exports.default.fetch(new Request(serverCardUrl, { method: "POST", body: "{}" }))).status,
     ).toBe(405);
   });
 

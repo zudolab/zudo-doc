@@ -77,6 +77,7 @@
 // sibling `doc-history.ts` for the standalone-module rationale.
 
 import { prepareHomeIntros, type HomeIntroSettings } from "../home-intro/prepare.js";
+import { MCP_ENDPOINT_PATH, MCP_SERVER_CARD_PATH } from "../mcp/constants.js";
 import { createRequire } from "node:module";
 import { existsSync, statSync, readFileSync, cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
@@ -282,8 +283,8 @@ function deriveRoutes(
   const aiAssistant = settings.aiAssistant === true;
   if (settings.mcp === true) {
     const base = `/${String(settings.base ?? "").split("/").filter(Boolean).join("/")}`.replace(/\/$/, "");
-    routes.push({ pattern: `${base}/mcp`, entrypoint: "@takazudo/zudo-doc/routes/mcp", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
-    routes.push({ pattern: `${base}/mcp/server-card`, entrypoint: "@takazudo/zudo-doc/routes/mcp-server-card", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
+    routes.push({ pattern: `${base}${MCP_ENDPOINT_PATH}`, entrypoint: "@takazudo/zudo-doc/routes/mcp", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
+    routes.push({ pattern: `${base}${MCP_SERVER_CARD_PATH}`, entrypoint: "@takazudo/zudo-doc/routes/mcp-server-card", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
     // RFC 8615 well-known URIs live at the origin root, which only a root-base deployment owns.
     // The first segment is a parameter because zfb enumerates pages under a dot-directory but
     // leaves them out of the bundle, which silently drops a literal `/.well-known/…` pattern.

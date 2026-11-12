@@ -209,7 +209,7 @@ mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.
 pnpm create zudo-doc my-docs --content-signals search=yes,ai-input=yes,ai-train=no --yes
 ```
 
-未知の名前、`yes` と `no` 以外の値、同じ名前の重複、プリセットの未知のキー、真偽値でないプリセットの値は、ファイルを書き込む前にエラーになります。このオプションには対話式のプロンプトはありません。
+未知の名前、`yes` と `no` 以外の値、同じ名前の重複、空の項目、プリセットの未知のキー、真偽値でないプリセットの値は、ファイルを書き込む前にエラーになります。リストに空白を含める場合は引用符で囲んでください（`--content-signals "search=yes, ai-train=no"`）。囲まないと、シェルがカンマの後で引数を分割します。このオプションには対話式のプロンプトはありません。
 
 ### 一般
 

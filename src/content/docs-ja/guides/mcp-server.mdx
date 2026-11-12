@@ -53,7 +53,7 @@ Workerは、エンドポイントを説明する読み取り専用のJSONドキ�
 | `<base>/mcp/server-card` | [MCP Server Card](https://github.com/modelcontextprotocol/experimental-ext-server-card)（SEP-2127）、`application/mcp-server-card+json` | `mcp: true`。`base`は問わない |
 | `/.well-known/ai-catalog.json` | Server Cardを指すエントリーを1件持つ[AI Catalog](https://github.com/Agent-Card/ai-catalog)、`application/ai-catalog+json` | `mcp: true`かつ`base`が`/` |
 
-Server Cardには、エンドポイントのURL、エンドポイントが受け付けるプロトコルバージョン、`initialize`が返すサーバーバージョンが入ります。`name`は公開ホスト名を逆DNS順にし、`base`を続けたものです。たとえば`https://docs.example.com/`なら`com.example.docs/docs`、`/manual`なら`com.example.docs/manual`です。引用URLと同じく、どちらのドキュメントも`siteUrl`のオリジンを使い、`siteUrl`が空ならリクエストのオリジンを使います。
+Server Cardには、エンドポイントのURL、エンドポイントが受け付けるプロトコルバージョン、`initialize`が返すサーバーバージョンが入ります。`name`は公開ホスト名を逆DNS順にし、`base`を続けたものです。たとえば`https://docs.example.com/`なら`com.example.docs/docs`、`/manual`なら`com.example.docs/manual`です。引用URLと同じく、どちらのドキュメントも`siteUrl`のオリジンを使い、`siteUrl`が空か絶対URLでなければリクエストのオリジンを使います。
 
 どちらのドキュメントも、GETとHEADには`Access-Control-Allow-Origin: *`、`Cache-Control: public, max-age=3600`、強い`ETag`を付けて応答します。一致する`If-None-Match`には304を返します。OPTIONSはCORSプリフライトに応答し、それ以外のメソッドは405になります。`/mcp`と同様に、ショーケースのプレビューではGET/HEADが静的アセットの404になる場合があります。
 

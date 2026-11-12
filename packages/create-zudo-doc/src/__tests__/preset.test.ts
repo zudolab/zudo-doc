@@ -508,8 +508,8 @@ describe("parseContentSignals", () => {
       signals: { search: true, aiInput: true, aiTrain: false },
       error: null,
     });
-    expect(parseContentSignals(" ai-train = NO , ")).toEqual({
-      signals: { aiTrain: false },
+    expect(parseContentSignals(" search = yes,  ai-train = NO ")).toEqual({
+      signals: { search: true, aiTrain: false },
       error: null,
     });
   });
@@ -518,7 +518,9 @@ describe("parseContentSignals", () => {
     ["an unknown signal", "train-ai=no", /Invalid --content-signals entry "train-ai=no"/],
     ["a non yes/no value", "search=true", /Invalid --content-signals entry "search=true"/],
     ["a duplicate", "search=yes,search=no", /lists "search" more than once/],
-    ["an empty list", " , ", /needs at least one entry/],
+    ["an empty list", "  ", /needs at least one entry/],
+    ["a trailing comma", "search=yes,", /"search=yes," has an empty entry/],
+    ["an empty entry", "search=yes,,ai-train=no", /has an empty entry/],
   ])("rejects %s", (_label, text, pattern) => {
     const result = parseContentSignals(text);
     expect(result.signals).toBeNull();

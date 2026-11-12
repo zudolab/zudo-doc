@@ -2,6 +2,10 @@
 export const MCP_SERVER_NAME = "zudo-doc";
 export const MCP_SERVER_VERSION = "1.0.0";
 
+/** Streamable HTTP endpoint under the site base; SEP-2127 reserves `<endpoint>/server-card` for a hosted card. */
+export const MCP_ENDPOINT_PATH = "/mcp";
+export const MCP_SERVER_CARD_PATH = `${MCP_ENDPOINT_PATH}/server-card`;
+
 // SEP-2127 Server Card v1 (modelcontextprotocol/experimental-ext-server-card schema.ts).
 export const MCP_SERVER_CARD_SCHEMA = "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json";
 export const MCP_SERVER_CARD_MEDIA_TYPE = "application/mcp-server-card+json";

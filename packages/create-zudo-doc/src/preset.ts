@@ -109,10 +109,19 @@ export function validateContentSignals(value: unknown): string | null {
 export function parseContentSignals(
   text: string,
 ): { signals: PresetContentSignalsConfig; error: null } | { signals: null; error: string } {
+  if (text.trim() === "") {
+    return { signals: null, error: `--content-signals needs at least one entry, e.g. search=yes,ai-input=yes,ai-train=no` };
+  }
   const signals: PresetContentSignalsConfig = {};
   for (const entry of text.split(",")) {
     const trimmed = entry.trim();
-    if (trimmed === "") continue;
+    // An unquoted "search=yes, ai-train=no" reaches here as "search=yes,": the shell split off the rest.
+    if (trimmed === "") {
+      return {
+        signals: null,
+        error: `--content-signals "${text}" has an empty entry. Separate entries with commas and quote a list that contains spaces, e.g. "search=yes, ai-train=no"`,
+      };
+    }
     const match = /^([a-z-]+)\s*=\s*(yes|no)$/i.exec(trimmed);
     const field = match
       ? CONTENT_SIGNAL_FIELDS.find(([, name]) => name === match[1]!.toLowerCase())
@@ -127,9 +136,6 @@ export function parseContentSignals(
       return { signals: null, error: `--content-signals lists "${field[1]}" more than once` };
     }
     signals[field[0]] = match[2]!.toLowerCase() === "yes";
-  }
-  if (Object.keys(signals).length === 0) {
-    return { signals: null, error: `--content-signals needs at least one entry, e.g. search=yes,ai-input=yes,ai-train=no` };
   }
   return { signals, error: null };
 }

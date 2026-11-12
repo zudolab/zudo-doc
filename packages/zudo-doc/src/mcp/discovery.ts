@@ -2,7 +2,9 @@ import { SUPPORTED_PROTOCOL_VERSIONS } from "@modelcontextprotocol/sdk/types.js"
 
 import {
   AI_CATALOG_SPEC_VERSION,
+  MCP_ENDPOINT_PATH,
   MCP_SERVER_CARD_MEDIA_TYPE,
+  MCP_SERVER_CARD_PATH,
   MCP_SERVER_CARD_SCHEMA,
   MCP_SERVER_VERSION,
 } from "./constants.js";
@@ -51,7 +53,7 @@ export function mcpBasePath(base: string): string {
   return segments.length > 0 ? `/${segments.join("/")}` : "";
 }
 
-/** Same rule as the MCP handler's citation URLs: the configured `siteUrl` origin wins over the request origin. */
+/** The origin the MCP handler cites and the discovery documents advertise: the `siteUrl` origin, else the request origin. */
 export function mcpPublicOrigin(siteUrl: string | undefined, requestUrl: string): string {
   if (siteUrl) {
     try {
@@ -69,12 +71,11 @@ function siteUrl(options: Pick<McpDiscoveryOptions, "base" | "origin">, path: st
 }
 
 export function mcpEndpointUrl(options: Pick<McpDiscoveryOptions, "base" | "origin">): string {
-  return siteUrl(options, "/mcp");
+  return siteUrl(options, MCP_ENDPOINT_PATH);
 }
 
-/** `<streamable-http-url>/server-card` is the location SEP-2127 reserves for a hosted card. */
 export function mcpServerCardUrl(options: Pick<McpDiscoveryOptions, "base" | "origin">): string {
-  return `${mcpEndpointUrl(options)}/server-card`;
+  return siteUrl(options, MCP_SERVER_CARD_PATH);
 }
 
 function clip(text: string, max: number): string {

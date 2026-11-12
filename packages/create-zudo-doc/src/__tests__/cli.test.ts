@@ -263,6 +263,11 @@ describe("--content-signals", () => {
     );
   });
 
+  it("rejects an unquoted list the shell split after a comma", () => {
+    const args = parseArgs(["my-docs", "--content-signals", "search=yes,", "ai-train=no"]);
+    expect(validateArgs(args)).toMatch(/"search=yes," has an empty entry/);
+  });
+
   it("is listed in the help text", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     try {

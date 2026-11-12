@@ -209,7 +209,7 @@ The names are `search`, `ai-input` and `ai-train`, each `=yes` or `=no`. A signa
 pnpm create zudo-doc my-docs --content-signals search=yes,ai-input=yes,ai-train=no --yes
 ```
 
-An unknown name, a value other than `yes` or `no`, a repeated name, an unknown preset key or a non-boolean preset value is rejected before any files are written. There is no interactive prompt for this option.
+An unknown name, a value other than `yes` or `no`, a repeated name, an empty entry, an unknown preset key or a non-boolean preset value is rejected before any files are written. Quote the list if it contains spaces (`--content-signals "search=yes, ai-train=no"`): unquoted, the shell splits it after the comma. There is no interactive prompt for this option.
 
 ### General
 
