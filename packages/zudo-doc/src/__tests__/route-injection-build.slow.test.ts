@@ -1456,6 +1456,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // attributes); the helper's residual diff is empty. Raw bytes additionally
   // change only the styles and islands entry hashes (new features.css rules,
   // SiteTreeNav cover markup). Evidence: docs/findings/4772-a2-rebaseline/.
+  // 2026-11-12 re-baseline (homepage navigation composition; #4771): main
+  // 2b67af76 and candidate captures differ only in native build identity
+  // (c190c79e033ac678 -> new value; 1/2/4 attributes); the helper's residual
+  // diff is empty. Raw bytes additionally change only the styles and islands
+  // entry hashes (SiteTreeNav geometry rules, described variant island).
+  // Evidence: docs/findings/4771-a2-rebaseline/.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
