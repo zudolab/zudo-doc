@@ -151,6 +151,7 @@ describe("custom Worker entry", () => {
       },
       entries: [{
         identifier: "urn:air:zudo-doc.takazudomodular.com:mcp:docs",
+        displayName: "zudo-doc",
         type: "application/mcp-server-card+json",
         url: "https://zudo-doc.takazudomodular.com/mcp/server-card",
       }],

@@ -36,7 +36,7 @@ export interface McpServerCard {
 export interface AiCatalog {
   specVersion: string;
   host: { displayName: string; identifier: string; documentationUrl: string };
-  entries: Array<{ identifier: string; type: string; url: string }>;
+  entries: Array<{ identifier: string; displayName: string; type: string; url: string }>;
 }
 
 export interface McpDiscoveryOptions {
@@ -53,11 +53,13 @@ export function mcpBasePath(base: string): string {
   return segments.length > 0 ? `/${segments.join("/")}` : "";
 }
 
-/** The origin the MCP handler cites and the discovery documents advertise: the `siteUrl` origin, else the request origin. */
+/** The origin the MCP handler cites and the discovery documents advertise: an http(s) `siteUrl` origin, else the request origin. */
 export function mcpPublicOrigin(siteUrl: string | undefined, requestUrl: string): string {
   if (siteUrl) {
     try {
-      return new URL(siteUrl).origin;
+      const url = new URL(siteUrl);
+      // A scheme-less `host:port` parses with `host:` as its scheme and the opaque origin "null".
+      if (url.protocol === "http:" || url.protocol === "https:") return url.origin;
     } catch {
       // An invalid siteUrl cannot name a public origin; serve the request origin.
     }
@@ -83,6 +85,12 @@ function clip(text: string, max: number): string {
   return chars.length <= max ? text : `${chars.slice(0, max - 1).join("")}…`;
 }
 
+/** Server Card `title`: the site name within the schema's length limit, absent when blank. */
+function cardTitle(siteName: string): string | undefined {
+  const name = siteName.trim();
+  return name ? clip(name, TITLE_MAX) : undefined;
+}
+
 function serverName(base: string): string {
   const name = base.split("/").filter(Boolean).join("-")
     .replace(/[^a-zA-Z0-9._-]+/g, "-")
@@ -104,6 +112,7 @@ function cardName(hostname: string, base: string): string {
 export function buildMcpServerCard(options: McpDiscoveryOptions): McpServerCard {
   const { hostname } = new URL(options.origin);
   const siteName = options.siteName.trim();
+  const title = cardTitle(siteName);
   const describedSite = `Read-only search and fetch for the ${siteName} documentation.`;
   return {
     $schema: MCP_SERVER_CARD_SCHEMA,
@@ -112,7 +121,7 @@ export function buildMcpServerCard(options: McpDiscoveryOptions): McpServerCard 
     description: siteName && Array.from(describedSite).length <= DESCRIPTION_MAX
       ? describedSite
       : "Read-only search and fetch for this documentation site.",
-    ...(siteName ? { title: clip(siteName, TITLE_MAX) } : {}),
+    ...(title === undefined ? {} : { title }),
     websiteUrl: siteUrl(options, "/"),
     remotes: [{
       type: "streamable-http",
@@ -122,11 +131,7 @@ export function buildMcpServerCard(options: McpDiscoveryOptions): McpServerCard 
   };
 }
 
-/**
- * Domain-level catalog for a root deployment. Entries omit `displayName`,
- * `description` and `version`: the AI Catalog spec says to leave them to the
- * referenced Server Card so the two cannot drift.
- */
+/** Root-deployment catalog. ARD §4.2 requires an entry `displayName`; the AI Catalog spec leaves `description` and `version` to the card. */
 export function buildAiCatalog(options: McpDiscoveryOptions): AiCatalog {
   const { hostname } = new URL(options.origin);
   return {
@@ -138,6 +143,7 @@ export function buildAiCatalog(options: McpDiscoveryOptions): AiCatalog {
     },
     entries: [{
       identifier: `urn:air:${hostname}:mcp:${serverName(options.base)}`,
+      displayName: cardTitle(options.siteName) ?? hostname,
       type: MCP_SERVER_CARD_MEDIA_TYPE,
       url: mcpServerCardUrl(options),
     }],
