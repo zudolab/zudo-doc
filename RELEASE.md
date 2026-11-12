@@ -221,6 +221,11 @@ computes without writing. Classify every user-facing change by package owner as 
 
 `--confirm` on the Claude/Codex entry adds one owner confirmation immediately before step 9.
 
+Steps 7–9 above write from the session's own shell (`git push` of tags, `gh release`,
+`gh workflow run`). A session that must not push tags itself — a Claude Code or Codex Cloud
+session — runs steps 1–6 and then uses the **Actions release path** below for 7–9. Step 10
+is the same either way.
+
 ### Manual equivalents
 
 When a helper cannot run, perform the same checks by hand. Keep the same evidence, in the
@@ -253,13 +258,95 @@ Alternatively, dispatch its workflow on the tag:
 `gh workflow run <publish-workflow>.yml --ref <tag> -f dry_run=false`. Do one package at a
 time, in publication order, and confirm each in the registry before starting the next.
 
-### Running in Codex Cloud
+### Running in Codex Cloud or Claude Code Cloud
 
-The procedure is the same in Codex Cloud. Because `preflight` reports what the
-environment provides, a Cloud session never silently swaps environments or capabilities.
-Each Cloud run of the release must be observed and recorded there. A local run does not
-establish Cloud acceptance, and the reverse also holds. The acceptance checklist lives on
-the tracking issue (zudolab/zudo-doc#4748).
+Steps 1–6 and 10 are the same in a Cloud session. For steps 7–9 the Cloud session is the
+**coordinator**: it never pushes a tag, creates a release or dispatches a publish workflow
+from its own shell; it dispatches the Actions release path below. Because `preflight`
+reports what the environment provides, a Cloud session never silently swaps environments
+or capabilities. Each Cloud run of the release must be observed and recorded there. A local
+run does not establish Cloud acceptance, and the reverse also holds. The acceptance
+checklist lives on the tracking issue (zudolab/zudo-doc#4748).
+
+### Actions release path
+
+`.github/workflows/release-actions.yml` ("Release (Actions path)", zudolab/zudo-doc#4762)
+performs steps 7–9 inside GitHub Actions with the job's `GITHUB_TOKEN`. It replaces only
+*who* writes the tags, drafts and dispatches. The evidence gates, publication order, the
+three publish workflows and their OIDC identities are unchanged.
+
+**Inputs** (all required except `stage`). Dispatch it on `main` only; any other ref stops at
+admission.
+
+| Input | Value |
+|---|---|
+| `version` | the fixed release version |
+| `integration_sha` | the accepted main integration from step 6 (full SHA, never `main`/`HEAD`) |
+| `pr_number`, `a2_run_id`, `a2_run_attempt` | the release PR and the PR Checks run/attempt from step 4 |
+| `candidate_sha`, `base_sha` | the frozen candidate head and the base that run used |
+| `a2_artifact_id`, `a2_artifact_digest` | the `a2-route-parity-diagnostics` artifact ID and `sha256:` digest from that run/attempt |
+| `stage` | `admit` (evidence only, default), `tag` (+ tags and draft releases), `publish` (+ ordered publication and release finalization) |
+
+`node scripts/release/release.mjs actions-inputs --version <version> --evidence "$EVIDENCE"`
+prints these values from the verified local records of steps 4 and 6, plus the matching
+`gh workflow run release-actions.yml --ref main -f …` command. It is read-only and only
+saves retyping: the workflow trusts none of the values.
+
+**Jobs, one permission set each:**
+
+| Job | Permissions | What it does |
+|---|---|---|
+| `admit` | `contents`, `actions`, `pull-requests`: read | `release.mjs admit` re-runs `a2-evidence` and `integration` in the job: it re-fetches the run/attempt, the A2 job and its log, downloads the artifact and compares its bytes to the digest, re-reads `manifest.json` `sourceHead`, the tested merge's parents and tree, the PR merge result, and every exact-SHA push-to-main workflow run including Production Deploy. Every declared input must equal the re-derived value (`compareAdmission`). It also checks the `package.json` versions at the integration, the three tags (absent, or already at the integration) and the registry. It writes `admission.json` and never writes to GitHub or npm. |
+| `tags` | `contents: write` | `release.mjs tag --via api` creates the three annotated tags at the integration through the REST API (tag object, then `refs/tags/…`). |
+| `draft-releases` | `contents: write` | `release.mjs releases`: one draft per tag with that package's notes, checked rather than duplicated. |
+| `publish` | `actions: write`, `contents: read` | `release.mjs publish --initiation dispatch`: in publication order, explicit `workflow_dispatch` of each `publish-*.yml` on its tag, wait, and registry readback before the next package. It never edits a release. |
+| `finalize` | `contents: write`, `actions: read` | `release.mjs finalize-releases` publishes the three drafts only after each package is verified on npm (exact version, provenance from the integration/tag/workflow, expected channel), marks `v<version>` Latest for a stable version, then `status` reads everything back. |
+
+**Rules that keep the path safe:**
+
+- *Evidence is re-derived, never trusted.* "`main` is green" or a pasted JSON record is not
+  evidence. Any difference in candidate, base, run, attempt, artifact ID or digest,
+  integration, tree or main-workflow result blocks admission. A frozen candidate or a
+  release that is being resumed is never moved to another SHA: if the source must change,
+  go back to step 4 (fresh A2 on a corrected candidate) and step 6 (new integration
+  approval).
+- *Events are explicit.* Tags and releases created with `GITHUB_TOKEN` start no workflow, and
+  nothing waits for them to. Publishing a draft with `GITHUB_TOKEN` (the `finalize` job)
+  therefore starts no publish run either; if a person publishes a draft by hand instead,
+  that run's guard sees the existing version and only resumes finalization.
+- *Resume, never move or republish.* The workflow's concurrency group serializes release
+  runs without cancelling one in progress. Tags are re-read immediately before each write:
+  a tag at the integration is kept, a tag elsewhere refuses the whole run before any write,
+  and a tag created concurrently at the same SHA is kept. A partial tag set, a failed
+  dispatch or an interrupted wait is resumed by dispatching the workflow again with the
+  same inputs (a full re-admission). Publish runs are identified by exact workflow file,
+  tag and SHA and a run ID that did not exist before the dispatch; an active run is attached
+  to, not duplicated. A dispatch whose answer is ambiguous is first re-observed, never
+  re-sent blindly. Registry uncertainty is *unknown* (exit 2), never "absent", and an
+  existing version is never republished.
+- *A refused write is reported, not routed around.* If the tag API answers 401/403, the job
+  prints the actual error, the rulesets observable to the token, and where the job's
+  effective `GITHUB_TOKEN` permissions are shown. It does not assert a cause. Do not
+  fall back to a local tag push, a personal access token, a ruleset bypass or an npm
+  setting change; hand the finding to the owner. A refused dispatch is reported the same
+  way.
+
+**Who starts it.** In order of preference:
+
+1. The coordinating session dispatches it: `gh workflow run release-actions.yml --repo
+   zudolab/zudo-doc --ref main -f …`, or a GitHub MCP workflow-dispatch tool when the
+   session has one. An unauthenticated `gh` alone does not show that dispatch is
+   impossible; try the MCP tool before concluding.
+2. If the session has no dispatch capability, a person with Actions write access opens
+   **Actions → Release (Actions path) → Run workflow**, selects `main`, and enters the
+   inputs printed by `actions-inputs`.
+
+Run `stage: admit` first, then `stage: tag` and inspect the three drafts, then
+`stage: publish`. `stage: publish` alone also works; it runs every earlier job again,
+idempotently. The run's artifacts `release-evidence-admission` (admission, A2 and
+integration records, diagnostics zip) and `release-evidence-publication`
+(`publication.json`) are the evidence to attach to the release PR or tracking issue. Mocked
+tests and dry runs of this path are not evidence of a real tag, dispatch or publication.
 
 ---
 
@@ -270,7 +357,7 @@ use no stored npm credential. They share one shape:
 
 - **Triggers.** `release: published` for the package's tag namespace; the other two
   workflows skip NEUTRAL. `workflow_dispatch` on the **tag ref** is for explicit initiation
-  and resumption, and with `dry_run: true` it never writes. Both triggers run the same file,
+  (including by the Actions release path) and resumption, and with `dry_run: true` it never writes. Both triggers run the same file,
   so the OIDC workflow identity is always that file. There is no reusable-workflow
   coordinator, because npm validates the *calling* workflow's filename. An event created
   with a workflow's `GITHUB_TOKEN` never starts another workflow. So nothing here relies on
@@ -912,7 +999,9 @@ Create exactly one GitHub Release per tag, as a draft. Reviewing the draft and p
 it is the human gate and the normal initiation; an unpublished draft fires no workflow.
 Release events created by a workflow's `GITHUB_TOKEN` start no workflow, and a release that
 is already published never fires again — in both cases initiate (or resume) explicitly with
-`workflow_dispatch` on the tag. Never create a second release for a tag to re-trigger.
+`workflow_dispatch` on the tag. Never create a second release for a tag to re-trigger. The
+Actions release path always initiates this way and publishes the drafts only after npm
+readback (see "Actions release path").
 
 ---
 

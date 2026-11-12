@@ -5,7 +5,8 @@ description: >-
   @takazudo/zudo-doc, create-zudo-doc) by following RELEASE.md's release procedure with
   the repository helpers in scripts/release/: prepare, release PR with executed A2,
   accepted-integration binding, tags, draft releases, ordered OIDC publication and
-  readback. Shared by Claude Code and Codex (local or Cloud). Autonomous by default;
+  readback; Cloud sessions run tags/drafts/publication through the Actions release
+  path (release-actions.yml). Shared by Claude Code and Codex (local or Cloud). Autonomous by default;
   --confirm gates publication. Use when the user says 'make release', 'l-make-release',
   'release create-zudo-doc', or asks to publish a new version.
 user-invocable: true
@@ -54,13 +55,39 @@ answer, otherwise stop with the drafts in place. No other prompts.
 | 9 Publish | `node scripts/release/release.mjs publish --version V --evidence DIR` |
 | 10 Read back | `node scripts/release/release.mjs status --version V` |
 
+## Cloud sessions (Claude Code Cloud, Codex Cloud): coordinate, do not push tags
+
+Do steps 1–6 in the session, then run steps 7–9 through the **Actions release path**
+(RELEASE.md, "Actions release path"); never run `tag`, `releases` or `publish` from a Cloud
+shell, and never push a tag from it.
+
+1. `node scripts/release/release.mjs actions-inputs --version V --evidence DIR` prints the
+   inputs for `.github/workflows/release-actions.yml` from the verified step-4/6 records.
+2. Dispatch it on `main`, first with `stage=admit`, then `stage=tag` (inspect the three
+   drafts), then `stage=publish`: `gh workflow run release-actions.yml --repo zudolab/zudo-doc --ref main -f …`,
+   or the GitHub MCP workflow-dispatch tool if the session has one. `gh` being
+   unauthenticated is not proof that dispatch is impossible — try the MCP tool before
+   concluding.
+3. If neither can dispatch, hand it to a person: Actions → "Release (Actions path)" → Run
+   workflow on `main`, with the printed inputs. Report it as handed off, not done.
+4. Watch the run (`status`, the run's job summaries and its `release-evidence-*`
+   artifacts). To resume after any failure, dispatch again with the **same** inputs.
+   Never change the version, integration SHA or evidence identifiers to get past a
+   failure: a source change goes back to fresh A2 (step 4) and integration approval
+   (step 6).
+5. If the tag API or a dispatch is refused (401/403), report the job's actual error and
+   the permissions/rulesets it printed, without asserting a cause. Do not retry through
+   another route (local tag push, PAT, ruleset bypass, npm settings); hand it to the owner.
+
 ## Rules that are easy to get wrong
 
 - A green A2 job with a skipped test step is a blocker, not a pass. Expect the first
   release run to need the build-identity rebaseline (RELEASE.md, "Rebaselining the release
   build identity").
 - Bind all three tags to the accepted main integration SHA from `integration.json`, never
-  `main`, `HEAD` or the release branch. Never move an existing tag.
+  `main`, `HEAD` or the release branch. Never move an existing tag. "main HEAD is green"
+  is never a substitute for the exact A2 run/attempt, artifact digest, tested tree and
+  exact-SHA main workflow evidence.
 - Never dispatch Production Deploy (or any deployment) to manufacture evidence.
 - Exit code 2 from a helper means **unknown** (registry/GitHub uncertainty): wait and re-run
   the same command; never treat it as "absent" and never republish.
@@ -73,6 +100,6 @@ answer, otherwise stop with the drafts in place. No other prompts.
 ## Report
 
 Headings state the verdict. Include: version, release PR, A2 run/attempt/artifact, the
-integration SHA, the three tags and release URLs, each package's publish run, registry
+integration SHA, the release-actions.yml run(s) and who dispatched them (when used), the three tags and release URLs, each package's publish run, registry
 state and npm publisher identity from `publication.json`, the Production Deploy run for
 the integration, and anything blocked or handed to the owner.

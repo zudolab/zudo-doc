@@ -9,10 +9,17 @@
 //   preflight
 //   a2-evidence  --pr N --run ID --attempt N --candidate SHA --base SHA --out DIR
 //   integration  --evidence DIR/a2-evidence.json --integration SHA --out DIR
-//   tag          --version V --evidence DIR
+//   tag          --version V --evidence DIR [--via git|api]
 //   releases     --version V --evidence DIR
-//   publish      --version V --evidence DIR [--initiate-timeout S] [--run-timeout S]
+//   publish      --version V --evidence DIR [--initiation release|dispatch] [--initiate-timeout S] [--run-timeout S]
 //   status       --version V [--integration SHA]
+//
+// Actions release path (RELEASE.md, "Actions release path"; run by
+// .github/workflows/release-actions.yml, never by a Cloud shell):
+//   admit              --version V --integration SHA --pr N --run ID --attempt N --candidate SHA
+//                      --base SHA --artifact-id ID --artifact-digest sha256:HEX --out DIR
+//   finalize-releases  --version V --evidence DIR
+//   actions-inputs     --version V --evidence DIR   (read-only; prints the dispatch inputs)
 //
 // Exit codes: 0 ok, 1 blocked/failed, 2 unknown (retry later; never treated as absent).
 
@@ -25,6 +32,7 @@ import { pathToFileURL } from "node:url";
 import {
   A2_ARTIFACT_NAME,
   A2_JOB_NAME,
+  ACTIONS_RELEASE_WORKFLOW,
   NPM_CLI_PIN,
   PACKAGES,
   REPO,
@@ -33,8 +41,12 @@ import {
   decideStaleNext,
   distTagFor,
   evaluateExistingVersion,
+  compareAdmission,
+  decideTag,
   extractNotes,
+  isFullSha,
   lookupVersion,
+  matchingPublishRuns,
   mainPushApplicability,
   parseSemver,
   readDistTags,
@@ -42,6 +54,7 @@ import {
   registryGet,
   releaseTitle,
   tagFor,
+  validateAdmissionInputs,
   verifyA2Evidence,
   verifyIntegration,
 } from "./lib.mjs";
@@ -113,7 +126,11 @@ function req(o, k) {
 
 const unknown = (/** @type {string} */ msg) => Object.assign(new ReleaseError(msg), { exitCode: 2 });
 
-/** GET via gh with bounded retries; a 404 is returned as null, anything else unresolved is "unknown". */
+/**
+ * GET via gh with bounded retries. A 404 is returned as null; a definite 401/403
+ * (not a rate limit) is a denial; a rate limit, transport or 5xx failure that
+ * does not clear is "unknown" (exit 2), never a denial and never "absent".
+ */
 async function ghJson(/** @type {Deps} */ d, /** @type {string} */ path, attempts = 3) {
   let last = "";
   for (let i = 1; i <= attempts; i++) {
@@ -121,7 +138,8 @@ async function ghJson(/** @type {Deps} */ d, /** @type {string} */ path, attempt
     if (r.status === 0) return JSON.parse(r.stdout);
     last = r.stderr.trim();
     if (/HTTP 404|Not Found/.test(last)) return null;
-    if (/HTTP 40[13]/.test(last)) throw new ReleaseError(`gh api ${path}: ${last}`);
+    const c = classifyGhFailure(last);
+    if (c.state === "denied" || c.state === "missing") throw new ReleaseError(`gh api ${path}: ${last}`);
     if (i < attempts) await d.sleep(2000 * i);
   }
   throw unknown(`gh api ${path} did not answer after ${attempts} attempts: ${last}`);
@@ -423,6 +441,20 @@ function loadIntegration(d, o) {
   return rec;
 }
 
+/**
+ * The admission record written by `admit` in the same Actions run. Its version
+ * and integration must equal what the later job was asked to act on.
+ * @param {Deps} d @param {Record<string,string>} o @param {string} version @param {string} sha
+ */
+function loadAdmission(d, o, version, sha) {
+  const file = join(resolve(d.cwd, req(o, "evidence")), "admission.json");
+  const adm = readJson(d, file);
+  if (!adm.ok) throw new ReleaseError(`${file} is not admitted; no tag, release or dispatch is allowed`);
+  if (adm.version !== version) throw new ReleaseError(`admission is for ${adm.version}, not ${version}`);
+  if (adm.integration !== sha) throw new ReleaseError(`admission is for ${adm.integration}, not ${sha}`);
+  return adm;
+}
+
 // ── tags (never moved) ───────────────────────────────────────────────────────
 
 /** @param {Deps} d @param {string} tag @returns {string|null} peeled commit of a remote tag */
@@ -434,29 +466,114 @@ function remoteTag(d, tag) {
   return peeled ? (peeled[0] ?? null) : null;
 }
 
-/** @param {Deps} d @param {Record<string,string>} o */
-export async function cmdTag(d, o) {
-  const version = req(o, "version");
-  if (!parseSemver(version)) throw new ReleaseError(`Invalid version ${version}`);
-  const rec = loadIntegration(d, o);
-  const sha = rec.integration;
+/** Every package.json at the integration commit carries exactly this version. @param {Deps} d @param {string} sha @param {string} version */
+function assertVersionsAt(d, sha, version) {
   must(d, "git", ["fetch", "--no-tags", "origin", sha]);
   for (const pkg of PACKAGES) {
     const v = JSON.parse(must(d, "git", ["show", `${sha}:${pkg.dir}/package.json`])).version;
     if (v !== version) throw new ReleaseError(`${pkg.dir}/package.json at ${sha} is ${v}, not ${version}`);
   }
+}
+
+/**
+ * Re-read, immediately before a write, that the bound integration is still on
+ * main's accepted history and still has the A2-tested tree. A recorded file is
+ * not enough on its own: main could have been force-reset in between.
+ * @param {Deps} d @param {any} rec
+ */
+async function recheckIntegration(d, rec) {
+  const info = await commitInfo(d, rec.integration);
+  if (!info) throw new ReleaseError(`Integration ${rec.integration} is no longer visible on GitHub`);
+  if (info.tree !== rec.a2TestedTree) throw new ReleaseError(`Integration tree ${info.tree} != A2-tested tree ${rec.a2TestedTree}`);
+  const cmp = await ghJson(d, `repos/${REPO}/compare/${rec.integration}...main`);
+  if (!cmp) throw unknown("compare against main failed");
+  if (cmp.status !== "identical" && cmp.status !== "ahead") throw new ReleaseError(`Integration ${rec.integration} is no longer on main (compare: ${cmp.status})`);
+}
+
+/**
+ * Create one annotated tag through the REST API (the Actions path: the job's
+ * GITHUB_TOKEN with `contents: write`). A 403/401 is reported verbatim with the
+ * rulesets that are observable to this token; it is never routed around.
+ * @param {Deps} d @param {string} tag @param {string} sha @param {string} message
+ * @returns {Promise<"created"|"raced-same">}
+ */
+async function createTagViaApi(d, tag, sha, message) {
+  const post = (/** @type {string} */ path, /** @type {object} */ body) => d.exec("gh", ["api", "-X", "POST", path, "--input", "-"], { input: JSON.stringify(body) });
+  const obj = post(`repos/${REPO}/git/tags`, { tag, message, object: sha, type: "commit" });
+  if (obj.status !== 0) await failTagWrite(d, tag, "create the annotated tag object", obj.stderr);
+  const tagObject = JSON.parse(obj.stdout).sha;
+  // An orphan tag object (ref creation failing after this point) is unreferenced and harmless.
+  const ref = post(`repos/${REPO}/git/refs`, { ref: `refs/tags/${tag}`, sha: tagObject });
+  if (ref.status !== 0) {
+    if (/HTTP 422/.test(ref.stderr) && /already exists/i.test(ref.stderr)) {
+      const now = remoteTag(d, tag);
+      const decision = decideTag({ tag, existing: now, integration: sha });
+      if (decision.action === "keep") return "raced-same";
+      throw new ReleaseError(decision.action === "refuse" ? decision.reason : `${tag}: ref reported as existing but is not readable`);
+    }
+    await failTagWrite(d, tag, `create refs/tags/${tag}`, ref.stderr);
+  }
+  return "created";
+}
+
+/** @param {Deps} d @param {string} tag @param {string} what @param {string} stderr @returns {Promise<never>} */
+async function failTagWrite(d, tag, what, stderr) {
+  const c = classifyGhFailure(stderr);
+  const msg = redact(stderr.trim().split("\n").slice(0, 6).join(" | "));
+  if (c.state === "denied" || c.state === "missing") {
+    d.log(`::error::GitHub refused to ${what} for ${tag} (${c.why}). Actual error: ${msg}`);
+    const rs = await ghProbe(d, `repos/${REPO}/rulesets?includes_parents=true`);
+    if (rs.state === "observed" && Array.isArray(rs.body)) {
+      const list = rs.body.map((/** @type {any} */ r) => `${r.name} (target=${r.target}, enforcement=${r.enforcement})`).join("; ") || "none visible";
+      d.log(`Observable rulesets for this token: ${list}`);
+    } else {
+      d.log(`Rulesets are not observable with this token (${rs.state}: ${rs.why}).`);
+    }
+    d.log("The job's effective GITHUB_TOKEN permissions are listed under 'Set up job' → 'GITHUB_TOKEN Permissions' in this job's log.");
+    d.log("Cause is NOT asserted. Do not retry through another route (local tag push, PAT, protection bypass); hand the finding to the owner.");
+    throw new ReleaseError(`Tag write refused for ${tag}: ${msg}`);
+  }
+  throw unknown(`Could not ${what} for ${tag} (${c.why}): ${msg}. Re-run: existing tags at the same SHA are kept, so the run resumes.`);
+}
+
+/** @param {Deps} d @param {Record<string,string>} o */
+export async function cmdTag(d, o) {
+  const version = req(o, "version");
+  if (!parseSemver(version)) throw new ReleaseError(`Invalid version ${version}`);
+  const via = o.via ?? "git";
+  if (via !== "git" && via !== "api") throw new ReleaseError(`--via must be git or api, not ${via}`);
+  const rec = loadIntegration(d, o);
+  const sha = rec.integration;
+  if (via === "api") loadAdmission(d, o, version, sha);
+  assertVersionsAt(d, sha, version);
+  // Decide all three first: a tag elsewhere refuses the whole release before any write.
+  for (const pkg of PACKAGES) {
+    const decision = decideTag({ tag: tagFor(pkg, version), existing: remoteTag(d, tagFor(pkg, version)), integration: sha });
+    if (decision.action === "refuse") throw new ReleaseError(decision.reason);
+  }
   for (const pkg of PACKAGES) {
     const tag = tagFor(pkg, version);
-    const existing = remoteTag(d, tag);
-    if (existing) {
-      if (existing !== sha) throw new ReleaseError(`Tag ${tag} already targets ${existing}, not ${sha}. Tags are never moved; stop and investigate.`);
-      d.log(`${tag}: already at ${sha} (kept)`);
+    // Re-read right before each write; a concurrent run may have created it meanwhile.
+    await recheckIntegration(d, rec);
+    const decision = decideTag({ tag, existing: remoteTag(d, tag), integration: sha });
+    if (decision.action === "refuse") throw new ReleaseError(decision.reason);
+    if (decision.action === "keep") {
+      d.log(`${tag}: already at ${sha} (kept; resuming)`);
       continue;
     }
-    const local = d.exec("git", ["rev-parse", "--verify", "--quiet", `refs/tags/${tag}^{commit}`]);
-    if (local.status === 0 && local.stdout.trim() !== sha) throw new ReleaseError(`Local tag ${tag} targets ${local.stdout.trim()}; delete or fix it locally first`);
-    if (local.status !== 0) must(d, "git", ["tag", "-a", tag, sha, "-m", `chore: release ${pkg.name} ${version}`]);
-    must(d, "git", ["push", "origin", `refs/tags/${tag}`]);
+    const message = `chore: release ${pkg.name} ${version}`;
+    if (via === "api") {
+      const how = await createTagViaApi(d, tag, sha, message);
+      if (how === "raced-same") {
+        d.log(`${tag}: created concurrently at ${sha} (kept)`);
+        continue;
+      }
+    } else {
+      const local = d.exec("git", ["rev-parse", "--verify", "--quiet", `refs/tags/${tag}^{commit}`]);
+      if (local.status === 0 && local.stdout.trim() !== sha) throw new ReleaseError(`Local tag ${tag} targets ${local.stdout.trim()}; delete or fix it locally first`);
+      if (local.status !== 0) must(d, "git", ["tag", "-a", tag, sha, "-m", message]);
+      must(d, "git", ["push", "origin", `refs/tags/${tag}`]);
+    }
     const pushed = remoteTag(d, tag);
     if (pushed !== sha) throw unknown(`Tag ${tag} readback is ${pushed}, expected ${sha}`);
     d.log(`${tag}: created at ${sha}`);
@@ -530,7 +647,7 @@ export async function npmState(d, pkg, version, sha) {
 /** @param {Deps} d @param {(typeof PACKAGES)[number]} pkg @param {string} tag @param {string} sha */
 async function workflowRuns(d, pkg, tag, sha) {
   const data = await ghJson(d, `repos/${REPO}/actions/workflows/${pkg.workflow}/runs?head_sha=${sha}&per_page=50`);
-  return (data?.workflow_runs ?? []).filter((/** @type {any} */ r) => r.head_branch === tag && r.conclusion !== "skipped");
+  return matchingPublishRuns(pkg, tag, sha, data?.workflow_runs ?? []);
 }
 
 /** @param {Deps} d @param {number} runId @param {number} timeoutMs */
@@ -569,6 +686,43 @@ async function awaitVisible(/** @type {Deps} */ d, /** @type {(typeof PACKAGES)[
   return s;
 }
 
+/**
+ * Explicit `workflow_dispatch` of one publish workflow on its tag, correlated to
+ * the run it started by exact workflow/tag/SHA and a run ID that did not exist
+ * before. A failed or ambiguous dispatch is re-observed before anything else:
+ * the request may have been accepted, so it is never re-sent blindly.
+ * @param {Deps} d @param {(typeof PACKAGES)[number]} pkg @param {string} tag @param {string} sha @param {Set<number>} known @param {number} timeoutMs
+ */
+async function dispatchPublish(d, pkg, tag, sha, known, timeoutMs) {
+  const r = d.exec("gh", ["workflow", "run", pkg.workflow, "--repo", REPO, "--ref", tag, "-f", "dry_run=false"]);
+  if (r.status !== 0) {
+    const c = classifyGhFailure(r.stderr ?? "");
+    const msg = redact((r.stderr || r.stdout).trim().split("\n").slice(0, 4).join(" | "));
+    if (c.state === "denied" || c.state === "missing") {
+      throw new ReleaseError(`workflow_dispatch of ${pkg.workflow} on ${tag} was refused (${c.why}): ${msg}. Not retried through another route; a person with Actions write access can run it from the Actions UI (RELEASE.md, "Actions release path").`);
+    }
+    const code = Number(/HTTP (\d{3})/.exec(r.stderr ?? "")?.[1] ?? 0);
+    if (code >= 400 && code < 500 && code !== 408 && code !== 429 && !/rate limit/i.test(r.stderr ?? "")) {
+      throw new ReleaseError(`workflow_dispatch of ${pkg.workflow} on ${tag} was rejected (HTTP ${code}): ${msg}. A definite rejection is not re-sent; fix the cause, then dispatch the release workflow again.`);
+    }
+    d.log(`${pkg.workflow}: dispatch answer was not a success (${c.why}): ${msg} — checking whether a run started anyway`);
+  }
+  const run = await waitForNewRun(d, pkg, tag, sha, known, timeoutMs);
+  if (!run) throw unknown(`${pkg.workflow}: no run observed for ${tag}@${sha} after dispatch; UNKNOWN whether it was accepted. Check Actions, then resume (an active or finished run for this exact tag/SHA is attached to, not duplicated).`);
+  return run;
+}
+
+/** Mark the create-zudo-doc release as GitHub's Latest after a stable release. @param {Deps} d @param {string} version */
+function markLatest(d, version) {
+  if (version.includes("-")) return;
+  const list = JSON.parse(must(d, "gh", ["release", "list", "--repo", REPO, "--limit", "10", "--json", "tagName,isLatest"]));
+  const createTag = tagFor(PACKAGES[2] ?? PACKAGES[0], version);
+  if (!list.find((/** @type {any} */ r) => r.tagName === createTag)?.isLatest) {
+    must(d, "gh", ["release", "edit", createTag, "--repo", REPO, "--latest"]);
+    d.log(`${createTag}: marked as GitHub's Latest release`);
+  }
+}
+
 /** @param {Deps} d @param {Record<string,string>} o */
 export async function cmdPublish(d, o) {
   const version = req(o, "version");
@@ -576,6 +730,9 @@ export async function cmdPublish(d, o) {
   const sha = rec.integration;
   const initiateTimeout = Number(o["initiate-timeout"] ?? 180) * 1000;
   const runTimeout = Number(o["run-timeout"] ?? 2700) * 1000;
+  const initiationMode = o.initiation ?? "release";
+  if (initiationMode !== "release" && initiationMode !== "dispatch") throw new ReleaseError(`--initiation must be release or dispatch, not ${initiationMode}`);
+  if (initiationMode === "dispatch") loadAdmission(d, o, version, sha);
   const outFile = join(resolve(d.cwd, req(o, "evidence")), "publication.json");
   /** @type {Record<string, any>} */
   const evidence = d.exists(outFile) ? JSON.parse(d.readFile(outFile)) : { version, integration: sha, packages: {} };
@@ -633,9 +790,11 @@ export async function cmdPublish(d, o) {
       let initiation = "existing-run";
       if (!run) {
         const known = new Set(runs.map((/** @type {any} */ r) => r.id));
-        const rel = viewRelease(d, tag);
-        if (!rel) throw new ReleaseError(`No GitHub Release for ${tag}; run \`releases\` first`);
-        if (rel.isDraft) {
+        // The Actions path's dispatch job has no contents write, so drafts are
+        // invisible to it; `releases` and `finalize-releases` own them there.
+        const rel = initiationMode === "release" ? viewRelease(d, tag) : null;
+        if (initiationMode === "release" && !rel) throw new ReleaseError(`No GitHub Release for ${tag}; run \`releases\` first`);
+        if (rel?.isDraft) {
           must(d, "gh", ["release", "edit", tag, "--repo", REPO, "--draft=false", ...(version.includes("-") ? ["--prerelease"] : [])]);
           initiation = "release-published";
           run = await waitForNewRun(d, pkg, tag, sha, known, initiateTimeout);
@@ -643,10 +802,10 @@ export async function cmdPublish(d, o) {
         if (!run) {
           // A release event may not start workflows (e.g. created with a
           // workflow GITHUB_TOKEN), and a published release never re-fires.
-          must(d, "gh", ["workflow", "run", pkg.workflow, "--repo", REPO, "--ref", tag, "-f", "dry_run=false"]);
+          // The Actions path dispatches directly and leaves the draft for
+          // `finalize-releases`.
+          run = await dispatchPublish(d, pkg, tag, sha, known, initiateTimeout);
           initiation = initiation === "release-published" ? "release-published+dispatch" : "dispatch";
-          run = await waitForNewRun(d, pkg, tag, sha, known, initiateTimeout);
-          if (!run) throw unknown(`${pkg.workflow}: no run observed for ${tag} after dispatch; check Actions, then resume`);
         }
       }
       d.log(`${pkg.name}: watching ${pkg.workflow} run ${run.id} (${initiation}) ${run.html_url}`);
@@ -660,17 +819,182 @@ export async function cmdPublish(d, o) {
     }
   }
 
-  if (!version.includes("-")) {
-    const list = JSON.parse(must(d, "gh", ["release", "list", "--repo", REPO, "--limit", "10", "--json", "tagName,isLatest"]));
-    const createTag = tagFor(PACKAGES[2] ?? PACKAGES[0], version);
-    if (!list.find((/** @type {any} */ r) => r.tagName === createTag)?.isLatest) {
-      must(d, "gh", ["release", "edit", createTag, "--repo", REPO, "--latest"]);
-      d.log(`${createTag}: marked as GitHub's Latest release`);
-    }
-  }
+  if (initiationMode === "release") markLatest(d, version);
   evidence.completedAt = new Date(d.now()).toISOString();
   save();
   d.log(`All three packages verified on npm at ${version} → ${outFile}`);
+  return 0;
+}
+
+// ── Actions release path ─────────────────────────────────────────────────────
+//
+// Run by .github/workflows/release-actions.yml. `admit` is read-only and
+// re-derives every piece of evidence in the job; later jobs act only on its
+// record from the same run and re-check state right before each write.
+
+/** @param {Deps} d @param {Record<string,string>} o */
+export async function cmdAdmit(d, o) {
+  const out = resolve(d.cwd, req(o, "out"));
+  const declared = Object.fromEntries(["version", "integration", "pr", "run", "attempt", "candidate", "base", "artifact-id", "artifact-digest"].map((k) => [k, o[k] ?? ""]));
+  const file = join(out, "admission.json");
+  /** @type {Record<string, any>} */
+  const record = { ok: false, version: declared.version, integration: declared.integration, declared, errors: [], recordedAt: new Date(d.now()).toISOString() };
+  const finish = (/** @type {number} */ code) => {
+    record.ok = code === 0 && record.errors.length === 0;
+    d.writeFile(file, `${JSON.stringify(record, null, 2)}\n`);
+    report(d, "Admission", record.ok, record.errors, file);
+    return record.ok ? 0 : code || 1;
+  };
+
+  const inputErrors = validateAdmissionInputs(declared);
+  if (inputErrors.length) {
+    record.errors.push(...inputErrors);
+    return finish(1);
+  }
+
+  try {
+    return await admitChecks(d, declared, record, out, finish);
+  } catch (e) {
+    const err = /** @type {Error & {exitCode?: number}} */ (e);
+    record.errors.push(redact(err.message));
+    return finish(err.exitCode ?? 1);
+  }
+}
+
+/**
+ * @param {Deps} d @param {Record<string,string>} declared @param {Record<string, any>} record
+ * @param {string} out @param {(code: number) => number} finish
+ */
+async function admitChecks(d, declared, record, out, finish) {
+  // 1. Re-derive the A2 evidence and the integration binding from GitHub.
+  const a2Code = await cmdA2Evidence(d, { pr: declared.pr, run: declared.run, attempt: declared.attempt, candidate: declared.candidate, base: declared.base, out });
+  const a2 = readJson(d, join(out, "a2-evidence.json"));
+  if (a2Code !== 0 || !a2.ok) {
+    record.errors.push("A2 evidence did not verify (see a2-evidence.json): A2 must have RUN and EXECUTED on this exact candidate/run/attempt");
+    return finish(a2Code || 1);
+  }
+  const intCode = await cmdIntegration(d, { evidence: join(out, "a2-evidence.json"), integration: declared.integration, out });
+  const integration = readJson(d, join(out, "integration.json"));
+  if (intCode !== 0 || !integration.ok) {
+    record.errors.push("integration binding did not verify (see integration.json): exact-SHA main workflows must have completed successfully");
+    return finish(intCode || 1);
+  }
+
+  // 2. The declared values must be exactly what was re-derived.
+  const cmp = compareAdmission({ declared, a2, integration });
+  record.errors.push(...cmp.errors);
+  record.observed = {
+    pr: a2.prNumber,
+    run: a2.run,
+    candidate: a2.candidate,
+    candidateTree: a2.candidateTree,
+    base: a2.base,
+    artifact: a2.a2?.artifact,
+    downloadSha256: a2.artifactDownload?.sha256,
+    a2Source: a2.a2?.sourceHead,
+    testedTree: a2.a2?.testedTree,
+    integrationTree: integration.integrationTree,
+    mainWorkflows: integration.mainWorkflows,
+  };
+  if (record.errors.length) return finish(1);
+
+  // 3. Version, tags and registry: resume only what already belongs to this integration.
+  assertVersionsAt(d, declared.integration, declared.version);
+  record.tags = {};
+  record.registry = {};
+  for (const pkg of PACKAGES) {
+    const tag = tagFor(pkg, declared.version);
+    const decision = decideTag({ tag, existing: remoteTag(d, tag), integration: declared.integration });
+    record.tags[tag] = decision.action === "keep" ? "present-same-sha (resume)" : decision.action === "create" ? "absent" : "conflict";
+    if (decision.action === "refuse") record.errors.push(decision.reason);
+  }
+  for (const pkg of PACKAGES) {
+    const s = await npmState(d, pkg, declared.version, declared.integration);
+    if (s.state === "unknown") {
+      record.registry[pkg.key] = "unknown";
+      record.errors.push(`${pkg.name}@${declared.version}: registry state UNKNOWN (${s.errors.join("; ")}); not treated as absent — re-run admission later`);
+      return finish(2);
+    }
+    if (s.state === "present") {
+      const v = s.verdict?.verdict;
+      record.registry[pkg.key] = `present (${v})`;
+      if (v === "unknown" || v === "unproven") {
+        record.errors.push(`${pkg.name}@${declared.version} exists but its provenance is ${String(v).toUpperCase()}; never republished — re-run admission later`);
+        return finish(2);
+      }
+      if (v === "mismatch") record.errors.push(`${pkg.name}@${declared.version} already exists from another source: ${s.verdict?.reasons.join("; ")}`);
+    } else {
+      record.registry[pkg.key] = "absent";
+    }
+  }
+  return finish(record.errors.length ? 1 : 0);
+}
+
+/**
+ * Publish the three draft releases (and mark Latest for a stable version) only
+ * after every package is verified on npm. With GITHUB_TOKEN this fires no
+ * `release: published` run; if a person publishes a draft instead, that run's
+ * guard classifies the existing version and only resumes finalization.
+ * @param {Deps} d @param {Record<string,string>} o
+ */
+export async function cmdFinalizeReleases(d, o) {
+  const version = req(o, "version");
+  const rec = loadIntegration(d, o);
+  const sha = rec.integration;
+  loadAdmission(d, o, version, sha);
+  const pub = readJson(d, join(resolve(d.cwd, req(o, "evidence")), "publication.json"));
+  if (pub.version !== version || pub.integration !== sha || !pub.completedAt) throw new ReleaseError("publication.json is not a completed publication of this version and integration");
+  for (const pkg of PACKAGES) {
+    const tag = tagFor(pkg, version);
+    if (remoteTag(d, tag) !== sha) throw new ReleaseError(`Tag ${tag} is missing or not at ${sha}`);
+    const s = await npmState(d, pkg, version, sha);
+    if (s.state === "unknown" || s.verdict?.verdict === "unknown" || s.verdict?.verdict === "unproven") throw unknown(`${pkg.name}@${version}: registry state not confirmed; releases stay draft`);
+    if (s.state !== "present" || s.verdict?.verdict !== "matches" || s.channel?.action !== "ok") {
+      throw new ReleaseError(`${pkg.name}@${version} is not verified on npm from ${sha} (state ${s.state}, provenance ${s.verdict?.verdict}, channel ${s.channel?.action}); releases stay draft`);
+    }
+  }
+  for (const pkg of PACKAGES) {
+    const tag = tagFor(pkg, version);
+    const rel = viewRelease(d, tag);
+    if (!rel) throw new ReleaseError(`No GitHub Release for ${tag}`);
+    if (!rel.isDraft) {
+      d.log(`${tag}: release already published (kept)`);
+      continue;
+    }
+    must(d, "gh", ["release", "edit", tag, "--repo", REPO, "--draft=false", ...(version.includes("-") ? ["--prerelease"] : ["--latest=false"])]);
+    d.log(`${tag}: release published`);
+  }
+  markLatest(d, version);
+  return 0;
+}
+
+/**
+ * Read-only: print the release-actions.yml inputs from local evidence records,
+ * for `gh workflow run`, a GitHub MCP dispatch tool, or the Actions UI. The
+ * workflow re-derives and re-checks every value; this only saves retyping.
+ * @param {Deps} d @param {Record<string,string>} o
+ */
+export function cmdActionsInputs(d, o) {
+  const version = req(o, "version");
+  const dir = resolve(d.cwd, req(o, "evidence"));
+  const a2 = readJson(d, join(dir, "a2-evidence.json"));
+  const integration = readJson(d, join(dir, "integration.json"));
+  if (!a2.ok || !integration.ok) throw new ReleaseError("a2-evidence.json and integration.json must both be verified before dispatching the Actions path");
+  if (!isFullSha(integration.integration)) throw new ReleaseError("integration.json has no full integration SHA");
+  const inputs = {
+    version,
+    integration_sha: integration.integration,
+    pr_number: String(a2.prNumber),
+    a2_run_id: String(a2.run?.id),
+    a2_run_attempt: String(a2.run?.attempt),
+    candidate_sha: a2.candidate,
+    base_sha: a2.base,
+    a2_artifact_id: String(a2.a2?.artifact?.id),
+    a2_artifact_digest: a2.a2?.artifact?.digest,
+    stage: o.stage ?? "admit",
+  };
+  d.log(JSON.stringify(inputs, null, 2));
+  d.log(["", `gh workflow run ${ACTIONS_RELEASE_WORKFLOW} --repo ${REPO} --ref main \\`, ...Object.entries(inputs).map(([k, v], i, a) => `  -f ${k}=${v}${i < a.length - 1 ? " \\" : ""}`)].join("\n"));
   return 0;
 }
 
@@ -718,8 +1042,14 @@ export async function main(argv, d) {
         return await cmdPublish(d, opts);
       case "status":
         return await cmdStatus(d, opts);
+      case "admit":
+        return await cmdAdmit(d, opts);
+      case "finalize-releases":
+        return await cmdFinalizeReleases(d, opts);
+      case "actions-inputs":
+        return cmdActionsInputs(d, opts);
       default:
-        d.log("Usage: node scripts/release/release.mjs <preflight|a2-evidence|integration|tag|releases|publish|status> ... (see RELEASE.md)");
+        d.log("Usage: node scripts/release/release.mjs <preflight|a2-evidence|integration|tag|releases|publish|status|admit|finalize-releases|actions-inputs> ... (see RELEASE.md)");
         return 1;
     }
   } catch (e) {
