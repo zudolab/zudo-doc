@@ -47,6 +47,7 @@ Default: `{ wide: false, introMarkdown: "", sitemapHeading: "" }`
 | `sitemapHeading` | `string` | Plain-text heading above the existing documentation tree. Blank uses the translated default. |
 | `image` | `HomeImageConfig` | Optional full-colour picture shown in the hero in place of the logo. See [Full-colour home image](#home-page-home-full-colour-home-image). Omitted by default. |
 | `imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | Placement of `image` in the hero. Defaults to `"logo"`. Ignored without `image`. |
+| `sections` | `HomeSection[]` | Optional navigation recipe that replaces the sitemap block with section headings, the site tree and selected document cards. See [Composed navigation sections](#home-page-home-composed-navigation-sections). Omitted by default. |
 
 Use `siteDescription` for the short tagline and existing metadata uses; `locales.<code>.description` overrides the tagline. Use `introMarkdown` for longer prose. It does not replace metadata or the tagline. Keep [homeExtras / extras](../reference/host-chrome-bindings.mdx) for inline navigation additions in the slash-separated links row; they are not a prose slot.
 
@@ -138,6 +139,51 @@ Learn the **essentials**, then explore the reference.
   }),
 );
 ```
+
+#### Composed navigation sections
+
+`home.sections` replaces the sitemap block (its heading, separator and tree) with a short, ordered list of navigation sections. The hero, introduction, footer, tags and the secondary category row keep their usual places. Omit `sections` to keep the classic sitemap block, which is what a fresh project gets.
+
+Two section types exist:
+
+| Type | Fields | Renders |
+|---|---|---|
+| `site-tree` | `heading?`, `description?`, `variant?: "default" \| "described"`, `locales?` | The canonical category → document tree. `"described"` adds category and document descriptions and each category's document count. |
+| `doc-cards` | `heading?`, `description?`, `docs: string[]`, `locales?` | Cards for existing documents, listed by canonical slug in the given order. |
+
+The recipe must contain exactly one `site-tree` section and at most one `doc-cards` section. Their order in the array is the order on the page, so cards can come before or after the tree:
+
+```ts
+// Cards first, then the tree
+home: {
+  sections: [
+    {
+      type: "doc-cards",
+      heading: "Start here",
+      docs: ["getting-started/introduction", "guides/configuration"],
+      locales: { ja: { heading: "まずはここから" } },
+    },
+    { type: "site-tree", variant: "described" },
+  ],
+},
+```
+
+```ts
+// Tree first, then the cards
+home: {
+  sections: [
+    { type: "site-tree" },
+    { type: "doc-cards", docs: ["getting-started/introduction", "guides/configuration"] },
+  ],
+},
+```
+
+- `docs` entries are canonical document slugs: the path after `/docs/` without leading or trailing slashes (or the page's frontmatter `slug`). Titles, descriptions and links come from the documents themselves, for the current locale. Repeated slugs keep their first position. A slug that matches no published page, or a category without a page, is left out with a build warning; if no card remains, the whole cards section, heading included, is omitted.
+- `heading` and `description` are plain text. `locales.<code>.heading` and `locales.<code>.description` override them for one locale. A blank or omitted heading uses the translated default: the [sitemap heading](#home-page-home-locale-precedence-and-no-description-example) chain for the tree, and “Start here” / “まずはここから” for the cards.
+- The page decides widths: the cards section and a single-category tree are centred at up to 80rem; a tree with several categories uses the full content band. A lone described category splits into a summary column and a tree column when it has at least 48.75rem of room.
+- The recipe is validated when the config loads. Unknown section types, unknown keys, a second tree or a second cards section, and non-canonical slugs fail with a `home.sections` error. It is a navigation setting, not a page builder: it accepts no HTML, components, CSS or layout values.
+
+To use the same components inside an ordinary page, see [DocCardNav](../components/doc-card-nav.mdx) and the [`variant` prop of SiteTreeNav](../components/site-tree-nav.mdx#described-variant). `introMarkdown` stays restricted Markdown and cannot host them.
 
 #### Locale precedence and no-description example
 

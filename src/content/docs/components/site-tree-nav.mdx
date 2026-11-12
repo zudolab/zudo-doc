@@ -65,7 +65,7 @@ The component uses signals for expand/collapse interactivity, so it hydrates on 
 
 ## Props
 
-Props below apply to the raw `SiteTreeNav` island (`@takazudo/zudo-doc/site-tree-nav-island`). The MDX tag takes no data props — it resolves `tree`/`categoryOrder` itself for the current locale, and only forwards an optional `ariaLabel`.
+Props below apply to the raw `SiteTreeNav` island (`@takazudo/zudo-doc/site-tree-nav-island`). The MDX tag takes no data props — it resolves `tree`/`categoryOrder` itself for the current locale, and only forwards the optional `ariaLabel`, `variant` and `idPrefix`.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
@@ -74,13 +74,29 @@ Props below apply to the raw `SiteTreeNav` island (`@takazudo/zudo-doc/site-tree
 | `categoryIgnore` | `string[]` | — | Category slugs to hide from the tree (the package home page and the MDX tag pass `siteTreeNavIgnore` here) |
 | `initiallyCollapsedCategorySlugs` | `string[]` | `[]` | Exact full category slugs at any depth that should start collapsed |
 | `ariaLabel` | `string` | `"Site index"` | Accessibility label for the nav element |
+| `variant` | `"default" \| "described"` | `"default"` | `"described"` adds descriptions and per-category document counts (see [Described variant](#described-variant)) |
+| `countLabels` | `{ one: string; other: string }` | English | Described-variant count templates with a `{count}` placeholder; the MDX tag and home page pass the translated labels |
+| `idPrefix` | `string` | `"zd-site-tree"` | Prefix for the disclosure target ids; give each tree on a page its own value |
+
+## Described variant
+
+`variant="described"` keeps the same tree and interactions and adds the descriptions the documents already have, plus each category's document count. A category or document without a description shows no empty space. Cards use a grid with columns of about 22rem.
+
+```mdx
+<SiteTreeNav variant="described" idPrefix="described" />
+```
+
+When the tree has a single category and its box is at least 48.75rem wide, the category summary moves into its own column (up to 20rem) beside the document tree; narrower boxes stack the summary above the tree. The switch follows the width of the component, not of the window, so the same tree stacks inside a narrow column on a wide screen. The [home page `sections` setting](../guides/configuration.mdx#home-page-home-composed-navigation-sections) uses this variant.
+
+<SiteTreeNav variant="described" idPrefix="described-demo" />
 
 ## Features
 
 - **Responsive grid layout** — uses `repeat(auto-fill, minmax(min(18rem, 100%), 1fr))` to adapt from single-column on mobile to multi-column on wider screens
 - **Expandable categories** — each category card is collapsible, open by default
 - **Initial collapse** — a selected category starts closed in server HTML and remains interactive after hydration; other categories stay open
-- **Hierarchical tree** — nested pages are indented with connector lines showing the tree structure
+- **Hierarchical tree** — nested pages are indented with dashed connector lines. Every rail sits on the centre of the 1.75rem marker/toggle slot, so a category's chevron icon lines up with the rail of its tree, a nested rail starts at the bottom centre of its parent's boxed toggle, branches meet the first text line of multi-line rows, and the last rail stops at its branch. A stacked category keeps a short lead-in above its first branch; the split single-category layout starts the rail at the first branch
+- **Separate link and toggle** — a category with a page links to it and has its own boxed disclosure button; a category without a page toggles from its label. Each toggle names its target with `aria-controls`, and collapsed children leave the keyboard and accessibility order
 - **Category links** — top-level categories display an arrow icon and link to their index page
 - **Leaf pages** — individual doc pages are rendered as clickable links
 

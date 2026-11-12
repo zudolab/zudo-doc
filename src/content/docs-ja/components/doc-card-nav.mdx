@@ -1,0 +1,71 @@
+---
+title: DocCardNav
+description: 選んだ文書を指定した順に並べる、サーバー描画のカードグリッドと、構成したセクションに見出しを付ける WideSectionHeading。
+sidebar_position: 7.5
+---
+
+## 概要
+
+`DocCardNav` は、明示的に並べた文書スラッグの一覧からカードグリッドを描画します。「まずはここから」のように、いくつかの選んだページへ読者を案内したいときに使います（あるカテゴリの子ページをすべて並べる場合は [`CategoryNav`](./category-nav.mdx) を使います）。
+
+各スラッグは、サイドバーと同じロケール・バージョン・ベースパスに対応したナビゲーションデータで解決されます。タイトルと説明はリンク先ページのフロントマターから取得するため、内容を重複して書く必要はありません。
+
+<Info>
+
+`DocCardNav` と `WideSectionHeading` は MDX のドキュメントページでグローバルに使え、インポートは不要です。現在のロケールとバージョンは自動で渡されます。
+
+</Info>
+
+## 実例
+
+<DocCardNav docs={["getting-started/introduction", "getting-started/installation", "guides/configuration"]} />
+
+## 使い方
+
+```mdx
+<WideSectionHeading>Start here</WideSectionHeading>
+
+<DocCardNav
+  docs={[
+    "getting-started/introduction",
+    "getting-started/installation",
+    "guides/configuration",
+  ]}
+/>
+```
+
+`DocCardNav` はすべてサーバー側で描画され、クライアント側の JavaScript は使いません。
+
+## プロパティ
+
+| プロパティ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `docs` | `string[]` | — | 表示順に並べた正規の文書スラッグ（例: `"guides/configuration"`。先頭のスラッシュ、ロケール接頭辞、拡張子は付けない） |
+| `ariaLabel` | `string` | `"Selected documents"` | カードナビゲーションのアクセシブルな名前 |
+| `layout` | `"auto" \| "default"` | `"auto"` | `"auto"` は利用できる幅に合わせて最大 3 列で並べ、`"default"` は `DocCardGrid` 従来の 1〜2 列レイアウトを使う |
+
+## 解決のルール
+
+- カードは `docs` の順に並びます。同じスラッグが複数回あるときは、最初の位置だけに表示されます。
+- 独自の URL を持つ公開ページに解決できないスラッグは、リンクになりません。存在しないページ、下書き、不正なスラッグ、インデックスページのないカテゴリは省かれ、ビルド時にスラッグと理由を示す `[zudo-doc]` の警告が出ます。
+- 解決できるスラッグが 1 つもないときは、何も描画されません。
+
+## WideSectionHeading
+
+`WideSectionHeading` は、本文の見出しと同じタイポグラフィとグラデーションの上罫線を持つ、意味的な `h2` です。外側の余白を持たないため、間隔は周囲のレイアウトが決めます。`id` を含め、通常の見出しの属性を受け付けます。
+
+```mdx
+<WideSectionHeading id="start-here">Start here</WideSectionHeading>
+```
+
+## カードのレイアウト
+
+内部で使う `DocCardGrid` コンポーネント（`@takazudo/zudo-doc/nav-indexing`）に、`DocCardNav` が使う `layout="auto"` を任意で指定できるようになりました。指定しない場合、`DocCardGrid` は従来どおり 1〜2 列のレイアウトです。
+
+## ホームページでの利用
+
+ホームページの紹介文 Markdown では、これらのコンポーネントは使えません。ホームページに選んだ文書を表示するには、[ナビゲーションセクションの構成](../guides/configuration.mdx#ホームページ-home-ナビゲーションセクションの構成)で説明している `home.sections` を使います。同じ見出しとカードが描画されます。
+
+## パッケージ API
+
+ページモジュールでは、`@takazudo/zudo-doc/doc-card-nav` の `createDocCardNavWrapper` で同じコンポーネントを作れます。このサブパスは `resolveDocCards`（項目と診断結果を返す純粋な解決関数）、`reportDocCardDiagnostics`、`isCanonicalDocSlug` も公開しています。
