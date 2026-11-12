@@ -114,12 +114,54 @@ The generated line still matters when the base is served at the root: it is corr
 
 Not serving the route is the safer of the two options. A well-known URL is read as an assertion, not as a placeholder: an empty `<urlset>` tells a crawler that this site has no indexable URLs, which is a stronger and more damaging claim than the "this site publishes no sitemap" that a 404 conveys. It is the same reasoning that drops the `Sitemap:` line under `noindex`, described in *Keeping crawlers out instead* below — and because `robots.txt` already omits that line whenever `sitemap` is off, dropping the route makes the two artifacts agree instead of contradicting each other.
 
+## Content signals
+
+[Content Signals](https://contentsignals.org) tell crawlers how you allow the content to be used once they have it. Each of the three signals is `yes` or `no`:
+
+| Signal | Use it covers |
+|---|---|
+| `search` | Building a search index and showing search results (not AI-generated search summaries) |
+| `ai-input` | Giving the content to AI models as input, such as retrieval, grounding, and agents |
+| `ai-train` | Training or fine-tuning AI models |
+
+Set `contentSignals` to declare them. `true` publishes `yes`, `false` publishes `no`, and a key you leave out expresses no preference:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    contentSignals: { search: true, aiInput: true, aiTrain: false },
+  }),
+);
+```
+
+The generated `robots.txt` then carries the signals in its `User-agent: *` group:
+
+```
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+```
+
+The default, `false`, publishes no `Content-Signal` line. The line stays when [`noindex`](./avoid-robots-indexing.mdx) replaces `Allow: /` with `Disallow: /`, because a usage preference still applies to content obtained some other way. New projects can set the signals from the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx#content-signals) or the `create-zudo-doc --content-signals` flag.
+
+### The same value as a response header
+
+Content Signals are defined for `robots.txt`. Cloudflare's Markdown for Agents also adds a `Content-Signal` header to the Markdown it converts, and its default value allows `ai-train`. It keeps the header from your origin instead, so a Cloudflare site that declares different signals can send the same value with every static asset response. Workers Static Assets reads that from `_headers` in the assets directory, which you can keep in `public/_headers`:
+
+```text title="public/_headers"
+/*
+  Content-Signal: search=yes, ai-input=yes, ai-train=no
+```
+
+`renderContentSignal(settings.contentSignals)` from `@takazudo/zudo-doc/robots` returns the value that `robots.txt` publishes, so a test can keep the two equal.
+
 ## Verifying the output
 
 After a build, spot-check the results:
 
 - Open a page's `View Source` and confirm the `og:*`, `twitter:*`, and `<link rel="canonical">` tags are present with absolute URLs.
 - Fetch `/sitemap.xml` and confirm it lists your pages with absolute `<loc>` values.
+- Fetch `/robots.txt` and confirm the `Content-Signal` line, if you set `contentSignals`.
 - Paste a page URL into a social platform's card debugger (X, LinkedIn, Facebook) to preview the rendered share card before you announce the link.
 
 ## Keeping crawlers out instead
@@ -128,6 +170,6 @@ If your goal is the opposite — a staging site or an internal portal that shoul
 
 ## See also
 
-- [Configuration — `metaTags`](./configuration.mdx#identity-and-urls-metatags), [`sitemap`](./configuration.mdx#identity-and-urls-sitemap), and [`siteUrl`](./configuration.mdx#identity-and-urls-siteurl) — the full field reference.
+- [Configuration — `metaTags`](./configuration.mdx#identity-and-urls-metatags), [`sitemap`](./configuration.mdx#identity-and-urls-sitemap), [`siteUrl`](./configuration.mdx#identity-and-urls-siteurl), and [`contentSignals`](./configuration.mdx#identity-and-urls-contentsignals) — the full field reference.
 - [Frontmatter](./frontmatter.mdx) — where each page's `description` (and thus its search snippet) comes from.
 - [Avoid Robots Indexing](./avoid-robots-indexing.mdx) — block indexing entirely for private or staging sites.

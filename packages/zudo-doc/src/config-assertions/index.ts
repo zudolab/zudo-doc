@@ -9,6 +9,7 @@
 
 import type { FaviconConfig } from "../settings.js";
 import { CONTROL_CHARS } from "../asset-path/index.js";
+import { CONTENT_SIGNAL_KEYS } from "../robots.js";
 import { isCanonicalDocSlug } from "../doc-card-nav/slug.js";
 
 /** Structural subset of Settings used by the agent-export/MCP config guard. */
@@ -225,6 +226,39 @@ export function assertValidHomeImage(settings: HomeImageSubject): void {
     if (n !== undefined && (typeof n !== "number" || !Number.isInteger(n) || n <= 0)) {
       throw new TypeError(
         `Invalid home.image.${field} ${describeValue(n)}: must be a positive integer (pixels).`,
+      );
+    }
+  }
+}
+
+/** Structural subset of `Settings` that `assertValidContentSignals` reads. */
+export interface ContentSignalsSubject {
+  contentSignals?: unknown;
+}
+
+/**
+ * Reject a malformed `contentSignals` at config resolution: it must be
+ * `false`, absent, or an object whose only keys are `search`, `aiInput` and
+ * `aiTrain`, each `true`, `false` or omitted. A typo would otherwise drop the
+ * signal from robots.txt without any diagnostic.
+ */
+export function assertValidContentSignals(settings: ContentSignalsSubject): void {
+  const value = settings.contentSignals;
+  if (value === undefined || value === false) return;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError(
+      `Invalid contentSignals ${describeValue(value)}: pass false, or an object such as { search: true, aiInput: true, aiTrain: false }.`,
+    );
+  }
+  for (const [key, signal] of Object.entries(value)) {
+    if (!(CONTENT_SIGNAL_KEYS as readonly string[]).includes(key)) {
+      throw new TypeError(
+        `Invalid contentSignals: unknown key "${key}". Allowed keys: ${CONTENT_SIGNAL_KEYS.join(", ")}.`,
+      );
+    }
+    if (signal !== undefined && typeof signal !== "boolean") {
+      throw new TypeError(
+        `Invalid contentSignals.${key} ${describeValue(signal)}: must be true, false or omitted.`,
       );
     }
   }

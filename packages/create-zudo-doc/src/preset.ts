@@ -65,6 +65,81 @@ export interface PresetMetaTagsConfig {
   twitterCreator?: string;
 }
 
+/**
+ * Content Signals (https://contentsignals.org) for the generated robots.txt.
+ * Mirrors `ContentSignalsConfig` in `@takazudo/zudo-doc`: `true` is `yes`,
+ * `false` is `no`, and an omitted key expresses no preference.
+ */
+export interface PresetContentSignalsConfig {
+  search?: boolean;
+  aiInput?: boolean;
+  aiTrain?: boolean;
+}
+
+/** Config key and robots.txt name of each Content Signal, in policy order. */
+export const CONTENT_SIGNAL_FIELDS = [
+  ["search", "search"],
+  ["aiInput", "ai-input"],
+  ["aiTrain", "ai-train"],
+] as const satisfies ReadonlyArray<readonly [keyof PresetContentSignalsConfig, string]>;
+
+/**
+ * Validates a `contentSignals` value. Shared by `validatePreset()` and
+ * `createZudoDoc()` so the two entry points accept the same shape.
+ */
+export function validateContentSignals(value: unknown): string | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return `"contentSignals" must be an object such as { "search": true, "aiInput": true, "aiTrain": false }`;
+  }
+  for (const [key, signal] of Object.entries(value)) {
+    if (!CONTENT_SIGNAL_FIELDS.some(([field]) => field === key)) {
+      return `Unknown "contentSignals" key "${key}". Allowed keys: ${CONTENT_SIGNAL_FIELDS.map(([field]) => field).join(", ")}`;
+    }
+    if (signal !== undefined && typeof signal !== "boolean") {
+      return `"contentSignals.${key}" must be a boolean`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse the CLI form of `--content-signals`, which uses the robots.txt
+ * syntax: `search=yes,ai-input=yes,ai-train=no` (spaces allowed).
+ */
+export function parseContentSignals(
+  text: string,
+): { signals: PresetContentSignalsConfig; error: null } | { signals: null; error: string } {
+  if (text.trim() === "") {
+    return { signals: null, error: `--content-signals needs at least one entry, e.g. search=yes,ai-input=yes,ai-train=no` };
+  }
+  const signals: PresetContentSignalsConfig = {};
+  for (const entry of text.split(",")) {
+    const trimmed = entry.trim();
+    // An unquoted "search=yes, ai-train=no" reaches here as "search=yes,": the shell split off the rest.
+    if (trimmed === "") {
+      return {
+        signals: null,
+        error: `--content-signals "${text}" has an empty entry. Separate entries with commas and quote a list that contains spaces, e.g. "search=yes, ai-train=no"`,
+      };
+    }
+    const match = /^([a-z-]+)\s*=\s*(yes|no)$/i.exec(trimmed);
+    const field = match
+      ? CONTENT_SIGNAL_FIELDS.find(([, name]) => name === match[1]!.toLowerCase())
+      : undefined;
+    if (!match || !field) {
+      return {
+        signals: null,
+        error: `Invalid --content-signals entry "${trimmed}". Use search, ai-input or ai-train with =yes or =no, e.g. search=yes,ai-input=yes,ai-train=no`,
+      };
+    }
+    if (signals[field[0]] !== undefined) {
+      return { signals: null, error: `--content-signals lists "${field[1]}" more than once` };
+    }
+    signals[field[0]] = match[2]!.toLowerCase() === "yes";
+  }
+  return { signals, error: null };
+}
+
 const CHANGELOG_PACKAGE_SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
 
 /** The first and only MCP deployment preset supported by the initializer. */
@@ -288,6 +363,8 @@ export interface PresetJson {
   packageManager?: "pnpm" | "npm" | "yarn" | "bun";
   headerRightItems?: PresetHeaderRightItem[];
   metaTags?: PresetMetaTagsConfig;
+  /** Content Signals for robots.txt; omitted publishes none. */
+  contentSignals?: PresetContentSignalsConfig;
 }
 
 export function loadPreset(pathOrStdin: string): PartialChoices {
@@ -402,6 +479,10 @@ export function validatePreset(json: unknown): string | null {
     const err = validateMetaTags(p.metaTags);
     if (err) return err;
   }
+  if (p.contentSignals !== undefined) {
+    const err = validateContentSignals(p.contentSignals);
+    if (err) return err;
+  }
   // Cross-field validation
   if (p.colorSchemeMode === "single" && (p.lightScheme || p.darkScheme)) {
     return `lightScheme/darkScheme are only valid with colorSchemeMode "light-dark"`;
@@ -449,6 +530,9 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   }
   if (json.metaTags !== undefined) {
     choices.metaTags = json.metaTags;
+  }
+  if (json.contentSignals !== undefined) {
+    choices.contentSignals = json.contentSignals;
   }
 
   const agentMcp = normalizeAgentMcpChoices({

@@ -25,6 +25,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { loadLlmsAssetEntries } from "./assets.js";
 import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
 import { loadDocEntries, withLlmsBase } from "./load.js";
+import { MCP_ENDPOINT_PATH, MCP_SERVER_CARD_PATH } from "../../../mcp/constants.js";
 import type {
   LlmsTxtLocaleConfig,
   LlmsTxtSiteMeta,
@@ -106,7 +107,10 @@ export function createLlmsTxtDevMiddleware(
   const generationOptions = {
     agentExport: options.agentExport === true,
     ...(options.mcp === true
-      ? { mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl) }
+      ? {
+          mcpEndpointUrl: withLlmsBase(MCP_ENDPOINT_PATH, base, siteUrl),
+          mcpServerCardUrl: withLlmsBase(MCP_SERVER_CARD_PATH, base, siteUrl),
+        }
       : {}),
   };
 

@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   mermaid: true,
   transclude: false,
   noindex: false,
+  contentSignals: false,
   editUrl: false,
   githubUrl: false,
   siteUrl: "",

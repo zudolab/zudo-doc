@@ -529,6 +529,29 @@ describe("createHomePageView — meta description (#4200)", () => {
   });
 });
 
+describe("createHomePageView — canonical URL", () => {
+  const absoluteUrl = (path: string) => `https://docs.example${path}`;
+  const withBase = (path: string) => `/manual${path.endsWith("/") ? path : `${path}/`}`;
+
+  it("passes each locale home's sitemap URL and locale to the shared head", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { base: "/manual/", locales: { ja: { label: "Japanese", dir: "src/content/docs-ja" } } },
+      overrides: { absoluteUrl, withBase },
+    });
+    const HomePageView = createHomePageView(ctx);
+    render(<HomePageView {...makeProps()} />);
+    expect(latestHead()).toMatchObject({ canonical: "https://docs.example/manual/", locale: "en" });
+    render(<HomePageView {...makeProps({ locale: "ja" })} />);
+    expect(latestHead()).toMatchObject({ canonical: "https://docs.example/manual/ja/", locale: "ja" });
+  });
+
+  it("passes no canonical without a siteUrl", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext({}));
+    render(<HomePageView {...makeProps()} />);
+    expect(latestHead().canonical).toBeUndefined();
+  });
+});
+
 describe("createHomePageView — SiteTreeNav island", () => {
   it("uses the narrow content band when wide is omitted", () => {
     const HomePageView = createHomePageView(makeFakeChromeContext());

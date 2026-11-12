@@ -1,0 +1,30 @@
+# Workers Static Assets response headers:
+# https://developers.cloudflare.com/workers/static-assets/headers/
+# They apply only to static asset responses (including the asset binding's
+# 404 page). Worker routes such as /mcp, /mcp/server-card and
+# /.well-known/ai-catalog.json set their own headers.
+
+# RFC 8288 discovery links: the domain's AI Catalog (which lists the MCP Server
+# Card) and the locale's llms.txt index.
+/
+  Link: </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json", </llms.txt>; rel="describedby"; type="text/plain"
+
+/ja/
+  Link: </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json", </ja/llms.txt>; rel="describedby"; type="text/plain"
+
+# The text exports are UTF-8. Without a charset parameter, text/* falls back to
+# US-ASCII (RFC 2046) and common clients decode Japanese text as ISO-8859-1;
+# RFC 7763 makes the parameter mandatory for text/markdown. A missing path
+# here gets the Worker's plain-text 404 instead of the HTML 404 page.
+/*.txt
+  Content-Type: text/plain; charset=utf-8
+
+/agent/v1/pages/*.md
+  Content-Type: text/markdown; charset=utf-8
+
+# Content Signals (https://contentsignals.org), the same value robots.txt
+# publishes from settings.contentSignals (a unit test keeps the two equal).
+# Cloudflare Markdown for Agents keeps an origin Content-Signal header instead
+# of adding its default, which allows ai-train.
+/*
+  Content-Signal: search=yes, ai-input=yes, ai-train=no

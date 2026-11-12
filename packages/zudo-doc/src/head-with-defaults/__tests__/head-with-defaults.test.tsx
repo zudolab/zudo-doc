@@ -504,6 +504,35 @@ describe("HeadWithDefaults — settings.favicon", () => {
   });
 });
 
+describe("HeadWithDefaults — agent discovery links", () => {
+  const manualBase = (path: string) => (path === "/" ? "/manual/" : `/manual${path}`);
+  const llmsLink = (href: string) => `<link rel="alternate" href="${href}" type="text/plain">`;
+  const catalogLink = '<link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json">';
+
+  it("points a configured non-default locale at its own llms.txt", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { base: "/manual/", agentExport: true, llmsTxt: true, locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } } },
+      overrides: { withBase: manualBase },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    expect(render(<HeadWithDefaults title="Test" locale="ja" />)).toContain(llmsLink("/manual/ja/llms.txt"));
+    for (const locale of ["en", undefined, "fr"]) {
+      expect(render(<HeadWithDefaults title="Test" locale={locale} />), String(locale)).toContain(llmsLink("/manual/llms.txt"));
+    }
+  });
+
+  it("links the AI Catalog only when MCP is on at a root base", () => {
+    const head = (settings: Record<string, unknown>, withBase?: (path: string) => string) => {
+      const ctx = makeFakeChromeContext({ settings: { agentExport: true, ...settings }, overrides: withBase ? { withBase } : {} });
+      const HeadWithDefaults = createHeadWithDefaults(ctx);
+      return render(<HeadWithDefaults title="Test" />);
+    };
+    expect(head({ mcp: true })).toContain(catalogLink);
+    expect(head({ mcp: false })).not.toContain('rel="ai-catalog"');
+    expect(head({ base: "/manual/", mcp: true }, manualBase)).not.toContain('rel="ai-catalog"');
+  });
+});
+
 describe("HeadWithDefaults — og:image resolution", () => {
   function render4(settings: Record<string, unknown>, props: Record<string, unknown> = {}) {
     const ctx = makeFakeChromeContext({

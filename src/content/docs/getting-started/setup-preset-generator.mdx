@@ -50,6 +50,10 @@ The "Meta tags" section configures the `metaTags` field — which meta tags are 
 
 `og:title` is always emitted and is not listed here — it is a DocHead contract that cannot be disabled via this setting.
 
+## Content signals
+
+The "Content signals" section sets the `contentSignals` field, which publishes a `Content-Signal` line in `robots.txt`. Each of **Search**, **AI input** and **AI training** can be left as **Not declared** (no preference, the default), or set to **yes** or **no**. The preset JSON gets a `contentSignals` object and the CLI command a `--content-signals` flag only when at least one signal is declared. See [Content signals](../guides/seo.mdx#content-signals) for what each signal covers.
+
 ## Additional features
 
 The Features section also includes:

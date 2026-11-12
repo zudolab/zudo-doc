@@ -3,6 +3,7 @@ import type { LocalePlan } from "./locale-plan.js";
 import { DEFAULT_THEME_PACK_CHOICE, effectiveOmittedThemePack } from "./constants.js";
 import { resolveLocalePlan } from "./locale-plan.js";
 import { capitalize, getLangLabel } from "./utils.js";
+import { CONTENT_SIGNAL_FIELDS } from "./preset.js";
 
 /**
  * Programmatically generate the ONE `zfb.config.ts` a scaffolded project
@@ -52,6 +53,7 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   defaultLocale: "en",
   locales: {},
   noindex: false,
+  contentSignals: false,
   githubUrl: false,
   metaTags: {
     description: true,
@@ -222,6 +224,16 @@ function buildDesiredConfig(
   // ── Misc site fields ──────────────────────────────────────────────────
   desired.minifyHtml = choices.minifyHtml ?? true;
   desired.noindex = choices.features.includes("noindex");
+  // Key order follows the robots.txt output (search, ai-input, ai-train); a
+  // value with no declared signal stays at the default and is not emitted.
+  const contentSignals = Object.fromEntries(
+    CONTENT_SIGNAL_FIELDS.flatMap(([key]) => {
+      const signal = choices.contentSignals?.[key];
+      return typeof signal === "boolean" ? [[key, signal]] : [];
+    }),
+  );
+  desired.contentSignals =
+    Object.keys(contentSignals).length > 0 ? contentSignals : false;
   const rawGithubUrl =
     typeof choices.githubUrl === "string" ? choices.githubUrl.trim() : "";
   desired.githubUrl = rawGithubUrl ? rawGithubUrl : false;
@@ -427,6 +439,7 @@ const FIELD_ORDER = [
   "defaultLocale",
   "locales",
   "noindex",
+  "contentSignals",
   "githubUrl",
   "metaTags",
   "docTags",

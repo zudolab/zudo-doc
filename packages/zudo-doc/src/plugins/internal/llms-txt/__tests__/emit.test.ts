@@ -138,8 +138,8 @@ describe("emitLlmsTxt asset integration", () => {
     expect(jaIndex).toContain(
       `- [はじめに](/site/agent/v1/pages/${jaPage}.md): ようこそ。`,
     );
-    expect(index).toContain("## MCP\n\n- [Read-only MCP endpoint](/site/mcp)");
-    expect(jaIndex).toContain("## MCP\n\n- [Read-only MCP endpoint](/site/mcp)");
+    expect(index).toContain("## MCP\n\n- [Read-only MCP endpoint](/site/mcp)\n- [MCP Server Card](/site/mcp/server-card)");
+    expect(jaIndex).toContain("## MCP\n\n- [Read-only MCP endpoint](/site/mcp)\n- [MCP Server Card](/site/mcp/server-card)");
     expect(full).toContain("> Source: /site/docs/intro");
     expect(full).not.toContain("agent/v1/pages/");
   });
@@ -186,7 +186,7 @@ describe("emitLlmsTxt asset integration", () => {
       `https://example.com/site/agent/v1/pages/${agentPageKey("en", "intro")}.md`,
     );
     expect(index).toContain(
-      "- [Read-only MCP endpoint](https://example.com/site/mcp)",
+      "- [Read-only MCP endpoint](https://example.com/site/mcp)\n- [MCP Server Card](https://example.com/site/mcp/server-card)",
     );
     expect(full).toContain("> Source: https://example.com/site/docs/intro");
   });

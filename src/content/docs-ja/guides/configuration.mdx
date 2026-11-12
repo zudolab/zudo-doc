@@ -447,6 +447,14 @@ MDX 内のインラインマークダウンリンク（例 `[text](/docs/some-pa
 
 [検索エンジンのインデックス回避](./avoid-robots-indexing.mdx)を参照してください。
 
+### contentSignals
+
+[Content Signals](https://contentsignals.org) を、`robots.txt` の `User-agent: *` グループに `Content-Signal` 行として出力します。`true` は `yes`、`false` は `no` として出力され、省略したキーはそのシグナルについて意向を示しません。`false` のときは行を出力しません。
+
+型: `{ search?: boolean; aiInput?: boolean; aiTrain?: boolean } | false` · デフォルト: `false`
+
+[コンテンツシグナル](./seo.mdx#コンテンツシグナル)を参照してください。
+
 ### head
 
 サイト全体のカスタム `<head>` 追加要素（preconnect / preload / stylesheets / meta / alternateLinks）。追加を出力しないなら省略。

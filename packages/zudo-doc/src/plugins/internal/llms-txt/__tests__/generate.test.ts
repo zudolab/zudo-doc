@@ -90,6 +90,16 @@ describe("llms asset generators", () => {
     expect(mcpIndex).toContain(
       "## MCP\n\n- [Read-only MCP endpoint](/manual/mcp)",
     );
+    expect(mcpIndex).not.toContain("Server Card");
+
+    const cardIndex = generateLlmsTxt([entry], meta, [], {
+      agentExport: true,
+      mcpEndpointUrl: "/manual/mcp",
+      mcpServerCardUrl: "/manual/mcp/server-card",
+    });
+    expect(cardIndex).toContain(
+      "## MCP\n\n- [Read-only MCP endpoint](/manual/mcp)\n- [MCP Server Card](/manual/mcp/server-card)",
+    );
 
     // Full output continues to cite the human-facing HTML page URL.
     expect(generateLlmsFullTxt([entry], meta)).toContain(

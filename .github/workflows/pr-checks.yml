@@ -52,8 +52,9 @@
 # keeps storage bounded; artifacts are the purpose-built mechanism for intra-run handoff).
 #
 # Workers Static Assets deploy artifact contract: the archived `dist/` tree must
-# retain `dist/_redirects` alongside the generated pages, so PR previews exercise
-# the same explicit legacy-route redirects as production and branch previews.
+# retain `dist/_redirects` and `dist/_headers` alongside the generated pages, so
+# PR previews exercise the same explicit legacy-route redirects and static asset
+# response headers as production and branch previews.
 #
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 

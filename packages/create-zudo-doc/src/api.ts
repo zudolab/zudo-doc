@@ -1,6 +1,7 @@
 import { retiredFeatureError, SINGLE_SCHEMES, THEME_PACKS } from "./constants.js";
 import type {
   McpDeployTarget,
+  PresetContentSignalsConfig,
   PresetHeaderRightItem,
   PresetMetaTagsConfig,
 } from "./preset.js";
@@ -8,6 +9,7 @@ import {
   normalizeAgentMcpChoices,
   parseChangelogPackages,
   validateChangelogPackages,
+  validateContentSignals,
   validateHeaderRightItems,
   validateMetaTags,
 } from "./preset.js";
@@ -61,6 +63,9 @@ export interface CreateOptions {
   /** Meta tags config, validated against the v1 preset shape
    *  (see `validateMetaTags`). When omitted, keeps the package defaults. */
   metaTags?: PresetMetaTagsConfig;
+  /** Content Signals for robots.txt, e.g. `{ search: true, aiInput: true, aiTrain: false }`
+   *  (see `validateContentSignals`). When omitted, no Content-Signal line is published. */
+  contentSignals?: PresetContentSignalsConfig;
   /** Install dependencies after scaffolding (default: false) */
   install?: boolean;
   /**
@@ -110,6 +115,10 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
   }
   if (rest.metaTags !== undefined) {
     const err = validateMetaTags(rest.metaTags);
+    if (err) throw new Error(err);
+  }
+  if (rest.contentSignals !== undefined) {
+    const err = validateContentSignals(rest.contentSignals);
     if (err) throw new Error(err);
   }
   const agentMcp = normalizeAgentMcpChoices({

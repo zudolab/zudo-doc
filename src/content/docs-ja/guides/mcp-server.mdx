@@ -44,6 +44,44 @@ ChatGPTなどのリモートMCPクライアントには、デプロイ済みのH
 
 人が読むページの`url`は引用に利用できます。長いページには複数の項目IDがあります。関係する各部分を取得するか、ページ全体のMarkdownを開いてください。ツールは構造化データと同内容のJSONテキストを返し、読み取り専用、冪等、非破壊であると宣言します。AIへの質問、書き込み、履歴、公開用のツールはありません。検索対象はエージェント向けコーパスの全文で、ブラウザー検索の既定の3,000文字を超える部分や日本語も含みます。
 
+## 検出用ドキュメント
+
+Workerは、エンドポイントを説明する読み取り専用のJSONドキュメントを2つ配信します。クライアントはサイト自体からエンドポイントを見つけられます。
+
+| URL | ドキュメント | 公開される条件 |
+| --- | --- | --- |
+| `<base>/mcp/server-card` | [MCP Server Card](https://github.com/modelcontextprotocol/experimental-ext-server-card)（SEP-2127）、`application/mcp-server-card+json` | `mcp: true`。`base`は問わない |
+| `/.well-known/ai-catalog.json` | Server Cardを指すエントリーを1件持つ[AI Catalog](https://github.com/Agent-Card/ai-catalog)、`application/ai-catalog+json` | `mcp: true`かつ`base`が`/` |
+
+Server Cardには、エンドポイントのURL、エンドポイントが受け付けるプロトコルバージョン、`initialize`が返すサーバーバージョンが入ります。`name`は公開ホスト名を逆DNS順にし、`base`を続けたものです。たとえば`https://docs.example.com/`なら`com.example.docs/docs`、`/manual`なら`com.example.docs/manual`です。引用URLと同じく、どちらのドキュメントも`siteUrl`のオリジンを使い、`siteUrl`が空か絶対URLでなければリクエストのオリジンを使います。
+
+どちらのドキュメントも、GETとHEADには`Access-Control-Allow-Origin: *`、`Cache-Control: public, max-age=3600`、強い`ETag`を付けて応答します。一致する`If-None-Match`には304を返します。OPTIONSはCORSプリフライトに応答し、それ以外のメソッドは405になります。`/mcp`と同様に、ショーケースのプレビューではGET/HEADが静的アセットの404になる場合があります。
+
+well-known URIはオリジンのルートに属します（RFC 8615）。そのため、サブディレクトリの`base`で公開するサイトはServer Cardだけを配信します。オリジンに独自のAI Catalogがあれば、そこへカードのURLを追加してください。`base`がルートの場合、すべてのページの`<head>`がカタログへリンクします。
+
+```html
+<link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json">
+```
+
+`llmsTxt`が有効なら、`llms.txt`のMCPセクションでエンドポイントの次にServer Cardを案内します。
+
+### Cloudflareでの静的アセット用ヘッダー（任意）
+
+Workers Static Assetsは、プリレンダー済みのページとテキストファイルをWorkerより先に配信するため、パッケージからそれらのレスポンスヘッダーは追加できません。アセットディレクトリのルートにある`_headers`ファイル（`dist/_headers`）なら追加できます。このサイトでは`public/_headers`に置いてビルド時にそこへコピーし、カタログと`llms.txt`をHTTPの`Link`ヘッダーで示し、テキストのエクスポートがUTF-8であることを宣言しています。
+
+```text
+/
+  Link: </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json", </llms.txt>; rel="describedby"; type="text/plain"
+
+/*.txt
+  Content-Type: text/plain; charset=utf-8
+
+/agent/v1/pages/*.md
+  Content-Type: text/markdown; charset=utf-8
+```
+
+ルールのパスは公開URLのパスと照合されるため、`base`を含めてください。各ロケールのホームページには、そのロケールの`llms.txt`を指すルールを追加してください。`charset`がないと、日本語のテキストをISO-8859-1として解釈するHTTPクライアントがあります。これらのルールは静的アセットの404ページにも適用されるため、存在しない`.txt`や`.md`のパスはHTMLの404ページではなくWorkerのプレーンテキストの404を返します。`_headers`のルールは、`/mcp`や2つの検出用ドキュメントのようにWorkerが生成するレスポンスには適用されません。
+
 ## 既存プロジェクトへの追加・削除
 
 ### プロジェクトを置き換えずにMCPを追加する

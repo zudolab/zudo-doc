@@ -490,6 +490,32 @@ describe("zudoDoc() headerBrand (#4631)", () => {
   });
 });
 
+describe("zudoDoc() contentSignals", () => {
+  type Overrides = Parameters<typeof zudoDoc>[0];
+
+  it("defaults to false, which publishes no Content-Signal line", () => {
+    expect(DEFAULT_SETTINGS.contentSignals).toBe(false);
+  });
+
+  it("accepts false and objects of booleans", () => {
+    expect(() => zudoDoc({ contentSignals: false })).not.toThrow();
+    expect(() => zudoDoc({ contentSignals: {} })).not.toThrow();
+    expect(() => zudoDoc({ contentSignals: { search: true, aiInput: true, aiTrain: false } })).not.toThrow();
+  });
+
+  it.each([
+    ["true", true, /contentSignals/],
+    ["a string", "search=yes", /contentSignals/],
+    ["an array", [], /contentSignals/],
+    ["a robots.txt key", { "ai-train": false }, /unknown key "ai-train"/],
+    ["a yes/no string value", { aiTrain: "no" }, /contentSignals\.aiTrain/],
+  ])("rejects %s with a TypeError naming the field", (_label, value, pattern) => {
+    const overrides = { contentSignals: value } as unknown as Overrides;
+    expect(() => zudoDoc(overrides)).toThrow(TypeError);
+    expect(() => zudoDoc(overrides)).toThrow(pattern);
+  });
+});
+
 describe("agent documentation config", () => {
   it("defaults both opt-in settings off and carries them into resolved settings", () => {
     expect(DEFAULT_SETTINGS.agentExport).toBe(false);

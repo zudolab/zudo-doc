@@ -38,6 +38,7 @@ import { z } from "zod";
 import type { DirectiveSpec, ZfbConfig } from "@takazudo/zfb/config";
 import type { ColorScheme } from "./color-scheme-utils.js";
 import type {
+  ContentSignalsConfig,
   AssetViewerIndexingConfig,
   TagVocabularyEntry,
   FaviconConfig,
@@ -49,6 +50,7 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertValidHeaderBrand,
   assertValidHomeImage,
+  assertValidContentSignals,
   assertValidLocaleOgImages,
   assertValidHomeSections,
   assertZdtpBundlingConsistent,
@@ -148,6 +150,9 @@ export interface PresetSettings {
   headerBrand?: false | HeaderBrandConfig;
   /** GitHub repository URL used by asset backlink metadata. */
   githubUrl?: string | false;
+  /** robots.txt Content Signals. Carried only for `assertValidContentSignals`;
+   *  the robots route renders it from the full `Settings`. */
+  contentSignals?: ContentSignalsConfig | false;
   siteUrl: string;
   trailingSlash: boolean;
   minifyHtml?: boolean;
@@ -454,6 +459,9 @@ export function zudoDocPreset({
   assertValidHomeImage(settings);
   assertValidLocaleOgImages(settings);
   assertValidHomeSections(settings);
+
+  // A malformed `contentSignals` would otherwise drop the robots.txt signal silently.
+  assertValidContentSignals(settings);
 
   // Same rationale again: `designTokenPanel: true` + `bundleZdtp: false` mounts
   // the package panel over a stubbed `zdtp-loader` and can only throw at

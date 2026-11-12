@@ -181,6 +181,7 @@ export interface DocPageShellDeps {
     description?: string;
     canonical?: string;
     alternateLinks?: ReadonlyArray<{ rel: string; href: string; type?: string; title?: string }>;
+    lang?: string;
   }) => JSX.Element;
   SidebarWithDefaults: (props: {
     currentSlug?: string;

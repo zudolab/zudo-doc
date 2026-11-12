@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
 import { loadLlmsAssetEntries } from "./assets.js";
 import { loadDocEntries, withLlmsBase } from "./load.js";
+import { MCP_ENDPOINT_PATH, MCP_SERVER_CARD_PATH } from "../../../mcp/constants.js";
 import type { LlmsTxtEmitOptions, LlmsTxtEmitResult } from "./types.js";
 
 function assetsForLocale(
@@ -55,7 +56,10 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
   const generationOptions = {
     agentExport: agentExport === true,
     ...(mcp === true
-      ? { mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl) }
+      ? {
+          mcpEndpointUrl: withLlmsBase(MCP_ENDPOINT_PATH, base, siteUrl),
+          mcpServerCardUrl: withLlmsBase(MCP_SERVER_CARD_PATH, base, siteUrl),
+        }
       : {}),
   };
 

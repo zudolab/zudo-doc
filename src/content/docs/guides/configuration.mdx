@@ -447,6 +447,14 @@ Default: `false`
 
 See [Avoid Robots Indexing](./avoid-robots-indexing.mdx).
 
+### contentSignals
+
+[Content Signals](https://contentsignals.org) published in `robots.txt` as a `Content-Signal` line in the `User-agent: *` group. `true` publishes `yes`, `false` publishes `no`, and an omitted key expresses no preference. `false` publishes no line.
+
+Type: `{ search?: boolean; aiInput?: boolean; aiTrain?: boolean } | false` · Default: `false`
+
+See [Content signals](./seo.mdx#content-signals).
+
 ### head
 
 Site-wide custom `<head>` extras (preconnect / preload / stylesheets / meta / alternateLinks). Omit to emit nothing extra.

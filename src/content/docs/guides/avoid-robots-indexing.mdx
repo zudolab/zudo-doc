@@ -25,7 +25,7 @@ Setting `noindex: true` in `zfb.config.ts` triggers two complementary behaviors 
    Disallow: /
    ```
 
-   This tells crawlers not to crawl any path under the site at all. When `noindex` is enabled, the `Sitemap:` line is intentionally omitted from `robots.txt` — advertising a sitemap while simultaneously disallowing all crawling is contradictory.
+   This tells crawlers not to crawl any path under the site at all. When `noindex` is enabled, the `Sitemap:` line is intentionally omitted from `robots.txt` — advertising a sitemap while simultaneously disallowing all crawling is contradictory. If you set [`contentSignals`](./seo.mdx#content-signals), its `Content-Signal:` line stays in the group, before `Disallow: /`.
 
 ## Enabling the setting
 

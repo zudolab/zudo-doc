@@ -30,6 +30,33 @@ describe("createZudoDoc — agent export and MCP choices", () => {
   });
 });
 
+describe("createZudoDoc — contentSignals", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const options = {
+    projectName: "api-content-signals",
+    colorSchemeMode: "single" as const,
+    singleScheme: "Default Dark",
+    features: [],
+    packageManager: "pnpm" as const,
+  };
+
+  it("passes valid signals into scaffolding", async () => {
+    const contentSignals = { search: true, aiInput: true, aiTrain: false };
+    await createZudoDoc({ ...options, contentSignals });
+    expect(scaffold).toHaveBeenCalledWith(expect.objectContaining({ contentSignals }));
+  });
+
+  it("rejects an invalid shape before scaffolding", async () => {
+    await expect(
+      createZudoDoc({ ...options, contentSignals: { aiTrain: "no" } as never }),
+    ).rejects.toThrow(/"contentSignals.aiTrain" must be a boolean/);
+    expect(scaffold).not.toHaveBeenCalled();
+  });
+});
+
 describe("createZudoDoc — retired Tauri features", () => {
   beforeEach(() => {
     vi.clearAllMocks();

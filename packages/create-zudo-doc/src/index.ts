@@ -7,7 +7,11 @@ import {
   validateArgs,
 } from "./cli.js";
 import { FEATURES, DEFAULT_THEME_PACK_CHOICE } from "./constants.js";
-import { loadPreset, normalizeAgentMcpChoices } from "./preset.js";
+import {
+  loadPreset,
+  normalizeAgentMcpChoices,
+  parseContentSignals,
+} from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
 import { scaffold } from "./scaffold.js";
 import {
@@ -98,6 +102,11 @@ async function main() {
   }
   if (args.mcpDeploy !== undefined) {
     prefilled.mcpDeploy = args.mcpDeploy as "cloudflare";
+  }
+  if (args.contentSignals !== undefined) {
+    // validateArgs() already rejected an unparseable value.
+    prefilled.contentSignals =
+      parseContentSignals(args.contentSignals).signals ?? undefined;
   }
 
   // Build feature overrides from explicit flags — driven by FEATURES constant

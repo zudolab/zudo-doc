@@ -157,7 +157,7 @@ describe("llms dev middleware asset parity", () => {
       `https://example.com/site/agent/v1/pages/${agentPageKey("ja", "intro")}.md`,
     );
     expect(defaultIndex).toContain(
-      "- [Read-only MCP endpoint](https://example.com/site/mcp)",
+      "- [Read-only MCP endpoint](https://example.com/site/mcp)\n- [MCP Server Card](https://example.com/site/mcp/server-card)",
     );
   });
 });

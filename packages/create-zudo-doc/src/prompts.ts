@@ -12,6 +12,7 @@ import {
   validateChangelogPackages,
   type McpDeployTarget,
   type PresetHeaderRightItem,
+  type PresetContentSignalsConfig,
   type PresetMetaTagsConfig,
 } from "./preset.js";
 import { validateProjectName } from "./utils.js";
@@ -69,6 +70,9 @@ export interface UserChoices {
   // Meta tags config. Preset-only — no interactive prompt.
   // When omitted, zfb-config-gen.ts keeps the package defaults.
   metaTags?: PresetMetaTagsConfig;
+  // robots.txt Content Signals. Preset, API and --content-signals only — no
+  // interactive prompt. When omitted, no Content-Signal line is published.
+  contentSignals?: PresetContentSignalsConfig;
 }
 
 export interface PartialChoices {
@@ -98,6 +102,7 @@ export interface PartialChoices {
   headerRightItems?: PresetHeaderRightItem[];
   // Meta tags config. Preset-only — no interactive prompt.
   metaTags?: PresetMetaTagsConfig;
+  contentSignals?: PresetContentSignalsConfig;
 }
 
 export async function runPrompts(
@@ -402,5 +407,6 @@ export async function runPrompts(
     packageManager,
     headerRightItems: prefilled.headerRightItems,
     metaTags: prefilled.metaTags,
+    contentSignals: prefilled.contentSignals,
   };
 }

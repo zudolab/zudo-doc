@@ -100,6 +100,26 @@ describe("MCP route injection", () => {
     await routesPlugin.setup!(ctx as never);
     expect(injectedRoutes.some(route => route.pattern.endsWith("/mcp"))).toBe(false);
   });
+  it("injects the Server Card beside the endpoint and the AI Catalog only at a root base", async () => {
+    const root = makeCtx(makeProjectRoot(), { base: "/", mcp: true }, { packageOwnedRoutes: false });
+    await routesPlugin.setup!(root.ctx as never);
+    // zfb leaves pages under a dot-directory out of the bundle, so the catalog uses a parameter segment.
+    for (const [pattern, entrypoint] of [["/mcp", /mcp(\.tsx)?$/], ["/mcp/server-card", /mcp-server-card(\.tsx)?$/], ["/[wellKnown]/ai-catalog.json", /ai-catalog(\.tsx)?$/]] as const) {
+      expect(root.injectedRoutes).toContainEqual({ pattern, entrypoint: expect.stringMatching(entrypoint), opts: { prerender: false } });
+    }
+    expect(root.injectedRoutes.some(route => route.pattern.split("/").some(segment => segment.startsWith(".")))).toBe(false);
+    const subpath = makeCtx(makeProjectRoot(), { base: "/manual/", mcp: true }, { packageOwnedRoutes: false });
+    await routesPlugin.setup!(subpath.ctx as never);
+    expect(subpath.injectedRoutes).toContainEqual(expect.objectContaining({ pattern: "/manual/mcp/server-card", opts: { prerender: false } }));
+    expect(subpath.injectedRoutes.some(route => route.pattern.includes("ai-catalog"))).toBe(false);
+  });
+  it("injects no discovery routes when MCP is disabled", async () => {
+    for (const base of ["/", "/manual/"]) {
+      const { ctx, injectedRoutes } = makeCtx(makeProjectRoot(), { base, mcp: false }, { packageOwnedRoutes: false });
+      await routesPlugin.setup!(ctx as never);
+      expect(injectedRoutes.some(route => /\/mcp(\/|$)|ai-catalog/.test(route.pattern)), base).toBe(false);
+    }
+  });
 });
 
 describe("routes plugin — virtual:zudo-doc-chrome-bindings docHistoryMeta default (#4708)", () => {

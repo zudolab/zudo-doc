@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (183 total)
+## 1. Subpath Exports (186 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -350,6 +350,9 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./routes/docs-tags-index` | Docs tags index route |
 | `./routes/docs-tags-tag` | Docs tags tag detail route |
 | `./routes/api-ai-chat` | AI chat API route |
+| `./routes/mcp` | Read-only MCP endpoint at `<base>/mcp` (enabled by `mcp`) |
+| `./routes/mcp-server-card` | MCP Server Card at `<base>/mcp/server-card` (enabled by `mcp`) |
+| `./routes/ai-catalog` | AI Catalog at `/.well-known/ai-catalog.json` (enabled by `mcp` at a root `base`) |
 | `./routes/locale-index` | Locale index route |
 | `./routes/locale-docs-slug` | Locale docs slug route |
 | `./routes/locale-docs-versions` | Locale docs versions route |
@@ -394,7 +397,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./smart-break` | Smart line break utilities |
 | `./use-modal-dialog` | `modalDialog(scope, options)` setup helper plus `ModalDialogOptions` and `ModalDialogResult` types |
 | `./island-types` | Shared island prop types |
-| `./robots` | Robots.txt generation utilities |
+| `./robots` | Robots.txt generation utilities (`renderRobots`, `renderContentSignal`, `CONTENT_SIGNAL_KEYS`) |
 | `./tags-audit` | Tag audit utilities |
 | `./tag-helpers` | Tag helper functions |
 | `./github-helpers` | GitHub autolink helpers |
@@ -402,6 +405,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./frontmatter-preview-data` | Frontmatter preview data extraction |
 | `./frontmatter` | Frontmatter splitter (`matter()`) over the `yaml` package |
 | `./extract-headings` | Heading extraction utilities |
+| `./mcp` | `createMcpHandler()` for the read-only MCP endpoint, the discovery builders `buildMcpServerCard()` / `buildAiCatalog()`, `respondWithDiscoveryDocument()`, the discovery URL helpers and media-type constants. Requires the optional `@modelcontextprotocol/sdk` peer |
 
 ### Package Defaults (epic #2651, S4 #2654)
 
@@ -526,6 +530,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `mermaid` | `boolean` | Enable Mermaid diagram rendering |
 | `transclude` | `boolean` | Enable `:::include` transclusion of other Markdown/MDX files; defaults to `false` |
 | `noindex` | `boolean` | Set `noindex` on all pages |
+| `contentSignals?` | `ContentSignalsConfig \| false` | [Content Signals](https://contentsignals.org) published as a `Content-Signal:` line in the `robots.txt` `User-agent: *` group, kept when `noindex` is set. `ContentSignalsConfig` is `{ search?, aiInput?, aiTrain? }`; each boolean renders as `search`, `ai-input` or `ai-train` `=yes`/`=no`, and an omitted key declares nothing. `false` (the default) or `{}` publishes no line. A non-object, an unknown key or a non-boolean value throws a `TypeError` at config resolution. |
 | `editUrl` | `string \| false` | Base URL for "Edit this page" links |
 | `githubUrl` | `string \| false` | GitHub repo URL for the GitHub link |
 | `siteUrl` | `string` | Canonical site URL (for sitemap, OG) |

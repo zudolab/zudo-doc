@@ -53,6 +53,7 @@ export const settings = {
   mermaid: true,
   transclude: false,
   noindex: true as boolean,
+  contentSignals: false as const,
   editUrl: "https://github.com/example/repo/edit/main" as string | false,
   githubUrl: "https://github.com/example/repo" as string | false,
   siteUrl: "" as string,

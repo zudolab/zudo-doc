@@ -44,6 +44,44 @@ For ChatGPT or another remote MCP client, add a custom MCP integration with your
 
 The human `url` is suitable for citations. Long pages have multiple item IDs; fetch each relevant part or open the complete per-page Markdown file. Tools return structured data and equivalent JSON text, and advertise read-only, idempotent, non-destructive behavior. No ask-AI, write, history, or publishing tool is exposed. Search uses the complete agent corpus, including text beyond the browser search index's default 3,000-character page excerpt and Japanese text.
 
+## Discovery documents
+
+The Worker also serves two read-only JSON documents that describe the endpoint, so a client can find it from the site itself:
+
+| URL | Document | Published when |
+| --- | --- | --- |
+| `<base>/mcp/server-card` | [MCP Server Card](https://github.com/modelcontextprotocol/experimental-ext-server-card) (SEP-2127), `application/mcp-server-card+json` | `mcp: true`, at any `base` |
+| `/.well-known/ai-catalog.json` | [AI Catalog](https://github.com/Agent-Card/ai-catalog) with one entry that points at the Server Card, `application/ai-catalog+json` | `mcp: true` and `base` is `/` |
+
+The Server Card gives the endpoint URL, the protocol versions the endpoint accepts and the server version that `initialize` reports. Its `name` is the public host name in reverse-DNS order followed by the base, for example `com.example.docs/docs` for `https://docs.example.com/` or `com.example.docs/manual` for `/manual`. Like the citation URLs, both documents use the `siteUrl` origin and fall back to the request origin when `siteUrl` is empty or not an absolute URL.
+
+Both documents answer GET and HEAD with `Access-Control-Allow-Origin: *`, `Cache-Control: public, max-age=3600` and a strong `ETag`; a matching `If-None-Match` returns 304. OPTIONS returns the CORS preflight and other methods return 405. As with `/mcp`, the showcase's preview entry may return an asset 404 for GET or HEAD.
+
+Well-known URIs belong to the origin root (RFC 8615). A site under a subdirectory `base` therefore publishes only the Server Card; if your origin has its own AI Catalog, add the card's URL there. At a root `base`, every page's `<head>` links the catalog:
+
+```html
+<link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json">
+```
+
+With `llmsTxt` enabled, the MCP section of `llms.txt` lists the Server Card after the endpoint.
+
+### Optional static asset headers on Cloudflare
+
+Workers Static Assets serves prerendered pages and text files before the Worker runs, so the package cannot add response headers to them. A `_headers` file at the root of the assets directory (`dist/_headers`) can. This site keeps it in `public/_headers`, which the build copies there, and uses it to put the catalog and `llms.txt` in an HTTP `Link` header and to declare UTF-8 for the text exports:
+
+```text
+/
+  Link: </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json", </llms.txt>; rel="describedby"; type="text/plain"
+
+/*.txt
+  Content-Type: text/plain; charset=utf-8
+
+/agent/v1/pages/*.md
+  Content-Type: text/markdown; charset=utf-8
+```
+
+Rule paths match the public URL path, so include your `base` in them, and add a rule for each locale home page that points at that locale's `llms.txt`. Without a `charset`, some HTTP clients decode Japanese text as ISO-8859-1. The rules also apply to the asset 404 page, so a missing `.txt` or `.md` path returns the Worker's plain-text 404 instead of the HTML 404 page. Rules in `_headers` never apply to responses the Worker generates, such as `/mcp` and the two discovery documents.
+
 ## Existing-project recipe
 
 ### Add MCP without replacing your project

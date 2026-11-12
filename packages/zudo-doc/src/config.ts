@@ -80,6 +80,7 @@ import type { ColorScheme } from "./color-scheme-utils.js";
 import type {
   Settings,
   ColorModeConfig,
+  ContentSignalsConfig,
   LocaleConfig,
   MetaTagsConfig,
   SiteHeadConfig,
@@ -113,6 +114,7 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertValidHeaderBrand,
   assertValidHomeImage,
+  assertValidContentSignals,
   assertValidLocaleOgImages,
   assertValidHomeSections,
   assertZdtpBundlingConsistent,
@@ -361,6 +363,14 @@ export interface ZudoDocConfig {
    * @default false
    */
   noindex?: boolean;
+  /**
+   * Content Signals (https://contentsignals.org) published in `robots.txt` as
+   * `Content-Signal: search=…, ai-input=…, ai-train=…`. `true` is `yes`,
+   * `false` is `no`, an omitted key expresses no preference, and `false`
+   * publishes no line.
+   * @default false
+   */
+  contentSignals?: ContentSignalsConfig | false;
   /**
    * "Edit this page" link base, or `false` to omit.
    * @default false
@@ -877,6 +887,9 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   assertValidHomeImage(settings);
   assertValidLocaleOgImages(settings);
   assertValidHomeSections(settings);
+
+  // A malformed `contentSignals` would otherwise drop the robots.txt signal silently.
+  assertValidContentSignals(settings);
 
   // `designTokenPanel: true` + `bundleZdtp: false` mounts the package panel on
   // top of a stubbed `zdtp-loader` — a guaranteed runtime throw (#4261). Also
