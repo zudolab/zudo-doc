@@ -1460,3 +1460,13 @@ site-search [data-search-results] > :is([data-search-placeholder], p) {
     border: 1px solid CanvasText;
   }
 }
+
+/* ======== Home hero image (home.image) ======== */
+/* With `darkSrc`, the hero emits a light and a dark picture; show the one that
+ * matches the colour mode. `data-theme` is set on <html> by the colour-mode
+ * bootstrap before first paint, so no script runs for this choice. Without a
+ * `data-theme` (colorMode: false, or scripting off) the light picture shows. */
+html[data-theme="dark"] [data-zd-home-image="light"],
+html:not([data-theme="dark"]) [data-zd-home-image="dark"] {
+  display: none;
+}

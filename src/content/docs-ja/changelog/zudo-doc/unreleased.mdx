@@ -3,3 +3,7 @@ title: Unreleased
 description: 次のリリースに向けた変更。
 sidebar_position: 1157
 ---
+
+### Features
+
+- 新しい省略可能な設定 `home.image`（`{ src, alt?, width?, height?, darkSrc? }`）で、単色のロゴマスクの代わりに、ロゴと同じボックスへフルカラー画像をホームのヒーローに表示できるようになりました。`darkSrc` はカラーモードに応じた CSS によってダークモードで表示され、追加のスクリプトは不要です。パスはルート絶対のサイトパスである必要があり、外部 URL や不正な値は設定解決の時点で `TypeError` になります。`home.image` を設定しない場合の出力は変わりません。(#4750)

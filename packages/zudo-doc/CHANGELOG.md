@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Features
+
+- New optional `home.image` setting (`{ src, alt?, width?, height?, darkSrc? }`) shows a full-colour picture in the home hero, in the box the logo uses, instead of the one-colour logo mask. `darkSrc` is shown in dark mode by CSS keyed on the colour mode, with no extra script. Paths must be root-absolute site paths; external URLs and malformed values throw a `TypeError` at config resolution. Output without `home.image` is unchanged. (#4750)
+
 ## [10.0.3] - 2026-11-11
 
 - No package-specific changes.

@@ -327,6 +327,81 @@ describe("createHomePageView — hero markup", () => {
     expect(html).not.toContain("aspect-[1200/630] bg-fg");
   });
 
+  it("renders a full-colour <img> in the logo box when home.image is set, and no logo", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        logo: "/img/logo.svg",
+        home: { image: { src: "/img/hero.png", width: 1200, height: 630 } },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toMatch(
+      /<div class="w-\[320px\] max-w-full aspect-\[1200\/630\] shrink-0" data-zd-home-image-box="true"><img src="\/img\/hero.png" alt="" width="1200" height="630" decoding="async" class="block w-full h-full object-contain"\/?><\/div>/,
+    );
+    // The image is never masked, and the logo is not drawn in the hero.
+    expect(html).not.toContain("bg-fg");
+    expect(html).not.toContain("url(&quot;/img/logo.svg&quot;)");
+    expect(html).not.toContain("data-auto-logo=");
+    expect(html).not.toContain("data-zd-home-image=");
+  });
+
+  it("uses the given alt text and omits width/height when not given", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { home: { image: { src: "/img/hero.png", alt: "Hero art" } } },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toContain('<img src="/img/hero.png" alt="Hero art" decoding="async"');
+    expect(html).not.toMatch(/<img[^>]*\bwidth=/);
+  });
+
+  it("prefixes home.image paths with base", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { base: "/pj/site/", home: { image: { src: "/img/hero.png" } } },
+      overrides: { withBase: (p: string) => `/pj/site${p}` },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toContain('src="/pj/site/img/hero.png"');
+  });
+
+  it("emits a light and a dark picture, tagged for the colour-mode CSS, when darkSrc is set", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        home: { image: { src: "/img/hero-light.png", darkSrc: "/img/hero-dark.png" } },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toMatch(/<img src="\/img\/hero-light.png"[^>]*data-zd-home-image="light"/);
+    expect(html).toMatch(/<img src="\/img\/hero-dark.png"[^>]*data-zd-home-image="dark"/);
+    expect(html.match(/<img /g)).toHaveLength(2);
+  });
+
+  it("leaves the hero unchanged when home is set without image", () => {
+    const withHome = render(
+      <>{(() => {
+        const View = createHomePageView(
+          makeFakeChromeContext({ settings: { home: { wide: false } } }),
+        );
+        return <View {...makeProps()} />;
+      })()}</>,
+    );
+    const without = render(
+      <>{(() => {
+        const View = createHomePageView(makeFakeChromeContext({}));
+        return <View {...makeProps()} />;
+      })()}</>,
+    );
+    expect(withHome).toBe(without);
+    expect(without).not.toContain("data-zd-home-image");
+  });
+
   it("renders the overview link from settings.headerNav[0] when present", () => {
     const ctx = makeFakeChromeContext({
       settings: { headerNav: [{ path: "/docs/getting-started", label: "Docs" }] },

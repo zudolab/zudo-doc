@@ -48,6 +48,7 @@ import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
   assertValidHeaderBrand,
+  assertValidHomeImage,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -445,6 +446,10 @@ export function zudoDocPreset({
   // Same rationale: a direct `zudoDocPreset()` caller must reject a malformed
   // `headerBrand` exactly like `zudoDoc()` does.
   assertValidHeaderBrand(settings);
+
+  // Same rationale: a direct `zudoDocPreset()` caller must reject a malformed
+  // `home.image` exactly like `zudoDoc()` does.
+  assertValidHomeImage(settings);
 
   // Same rationale again: `designTokenPanel: true` + `bundleZdtp: false` mounts
   // the package panel over a stubbed `zdtp-loader` and can only throw at

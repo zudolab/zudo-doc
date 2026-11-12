@@ -43,7 +43,7 @@ import { CategoryLinkIcon } from "../tree-nav-shared/index.js";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import type { DocNavNode } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
-import type { Settings } from "../settings.js";
+import type { HomeImageConfig, Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands, deriveDateFormats } from "../chrome/derive.js";
@@ -116,6 +116,57 @@ function cssUrl(url: string): string {
 function logoMaskStyle(url: string) {
   const mask = `${cssUrl(url)} center/contain no-repeat`;
   return { "-webkit-mask": mask, mask };
+}
+
+const HOME_HERO_BOX_CLASS = "w-[320px] max-w-full aspect-[1200/630] shrink-0";
+
+/**
+ * Full-colour hero picture (`home.image`). The box is the logo's box, so the
+ * hero never shifts while the picture loads; `object-fit: contain` keeps any
+ * ratio undistorted. With `darkSrc`, both pictures are emitted and the
+ * `[data-zd-home-image]` rules in `features.css` show the one matching
+ * `html[data-theme]`, which the colour-mode bootstrap sets before first paint.
+ */
+function HomeHeroImage({
+  image,
+  withBase,
+}: {
+  image: HomeImageConfig;
+  withBase: (path: string) => string;
+}) {
+  const alt = image.alt ?? "";
+  const size =
+    image.width !== undefined && image.height !== undefined
+      ? { width: image.width, height: image.height }
+      : {};
+  const imgClass = "block w-full h-full object-contain";
+  if (image.darkSrc === undefined) {
+    return (
+      <div class={HOME_HERO_BOX_CLASS} data-zd-home-image-box>
+        <img src={withBase(image.src)} alt={alt} {...size} decoding="async" class={imgClass} />
+      </div>
+    );
+  }
+  return (
+    <div class={HOME_HERO_BOX_CLASS} data-zd-home-image-box>
+      <img
+        src={withBase(image.src)}
+        alt={alt}
+        {...size}
+        decoding="async"
+        class={imgClass}
+        data-zd-home-image="light"
+      />
+      <img
+        src={withBase(image.darkSrc)}
+        alt={alt}
+        {...size}
+        decoding="async"
+        class={imgClass}
+        data-zd-home-image="dark"
+      />
+    </div>
+  );
 }
 
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */
@@ -253,6 +304,9 @@ export function createHomePageView<S extends Settings = Settings>(
     // logo block. `"auto"` is what makes a fresh scaffold's hero render
     // something without shipping any `/img/logo.svg`.
     const logoSetting = settings.logo ?? "auto";
+    // `home.image` (validated at config resolution) replaces the logo in the
+    // hero box only; `logo` keeps its meaning everywhere else.
+    const homeImage = settings.home?.image;
     const resolvedExtras = extras ?? homeExtras?.({ locale });
     const intro = homeIntros?.[locale] ?? null;
     const hasIntro = Boolean(intro?.nodes.length);
@@ -325,7 +379,9 @@ export function createHomePageView<S extends Settings = Settings>(
       >
         <div data-zd-home-hero class="mb-vsp-xl">
           <div class="zd-home-inner flex flex-col items-center justify-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
-            {logoSetting === "auto" ? (
+            {homeImage ? (
+              <HomeHeroImage image={homeImage} withBase={withBase} />
+            ) : logoSetting === "auto" ? (
               <AutoLogo
                 seed={settings.siteName}
                 class="w-[320px] max-w-full aspect-[1200/630] text-fg shrink-0"

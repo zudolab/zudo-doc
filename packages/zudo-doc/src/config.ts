@@ -108,6 +108,7 @@ import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
   assertValidHeaderBrand,
+  assertValidHomeImage,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -869,6 +870,10 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // an empty path in every header. Also enforced inside `zudoDocPreset()`
   // itself since the preset is separately callable as documented public API.
   assertValidHeaderBrand(settings);
+
+  // A malformed `home.image` would otherwise render a broken or off-origin
+  // hero picture. Also enforced inside `zudoDocPreset()`.
+  assertValidHomeImage(settings);
 
   // `designTokenPanel: true` + `bundleZdtp: false` mounts the package panel on
   // top of a stubbed `zdtp-loader` — a guaranteed runtime throw (#4261). Also

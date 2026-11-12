@@ -3,3 +3,7 @@ title: Unreleased
 description: Changes planned for the next release.
 sidebar_position: 1157
 ---
+
+### Features
+
+- New optional `home.image` setting (`{ src, alt?, width?, height?, darkSrc? }`) shows a full-colour picture in the home hero, in the box the logo uses, instead of the one-colour logo mask. `darkSrc` is shown in dark mode by CSS keyed on the colour mode, with no extra script. Paths must be root-absolute site paths; external URLs and malformed values throw a `TypeError` at config resolution. Output without `home.image` is unchanged. (#4750)
