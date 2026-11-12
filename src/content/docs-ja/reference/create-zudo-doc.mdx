@@ -143,8 +143,6 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]mcp` | 読み取り専用のMCP `search`と`fetch`ツールを追加 | オフ |
 | `--mcp-deploy cloudflare` | MCP用のCloudflare Workersデプロイ設定。MCPが必要 | — |
 | `--[no-]skill-symlinker` | ドキュメントスキルをClaude CodeまたはCodexへシンボリックリンク | オフ |
-| `--[no-]tauri` | Tauri デスクトップアプリ（Mode 1）— ページ内検索付き macOS オフラインリーダー | オフ |
-| `--[no-]tauri-dev` | Tauri 開発ラッパー（Mode 2）— 任意プロジェクト向けの設定可能なデスクトップ開発ラッパー | オフ |
 | `--[no-]footer-nav-group` | フッターのナビゲーションリンク | オフ |
 | `--[no-]image-enlarge` | マークダウン画像のクリック拡大表示 | オン |
 | `--[no-]asset-viewer` | public/assets 配下のファイル向けの閲覧ページ | オン |
@@ -155,6 +153,10 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]doc-tags` | タグ別・タグ一覧の閲覧ルート（docs/tags/...） | オフ |
 | `--[no-]footer-taglist` | フッターのグループ化されたタグ一覧（tagGovernance が必要） | オフ |
 | `--[no-]noindex` | ロボットによるインデックスを回避 — noindex メタ + robots.txt | オフ |
+
+:::note[廃止されたデスクトップアプリ機能]
+`tauri` と `tauriDev` フィーチャーは廃止されました（[廃止された Tauri デスクトップモード](../guides/tauri-modes.mdx)を参照）。`--tauri` と `--tauri-dev`（`--tauri=true` などの有効化する値を含む）は、ファイルを書き込む前にエラーで失敗します。`tauri` や `tauriDev` を含む JSON プリセットやプログラマティック API の `features` 配列も同様です。無効化する形式 `--no-tauri`、`--no-tauri-dev`、`--tauri=false`、`--tauri-dev=false` は引き続き受け付けられ、何もしません。そのため、以前にエクスポートしたコマンドもそのまま動作します。新しい出力にこれらが含まれることはありません。
+:::
 
 ### プリセット
 

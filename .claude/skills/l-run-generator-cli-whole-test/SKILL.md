@@ -87,7 +87,7 @@ For each failing pattern:
 - Determine which phase failed: scaffold, build, dev, or feature check
 - Common failure categories:
   - **Build error: missing module** — dependency not in generated `package.json` → fix `scaffold.ts` `generatePackageJson()`
-  - **Build error: import not found** — diagnose: a `postProcess` hook's string patch no longer matches the file it targets (see `docHistory`/`designTokenPanel`/`tagGovernance`/`tauri`/`tauriDev` in `src/features/*.ts`), or a genuine feature file is missing from `templates/features/<name>/files/`
+  - **Build error: import not found** — diagnose: a `postProcess` hook's string patch no longer matches the file it targets (see `docHistory`/`designTokenPanel`/`tagGovernance` in `src/features/*.ts`), or a genuine feature file is missing from `templates/features/<name>/files/`
   - **Build error: field/type error in `zfb.config.ts`** — a `ZudoDocConfig` field is missing/wrong → fix `zfb-config-gen.ts`'s `DEFAULT_MIRROR`/`buildDesiredConfig()`/`FIELD_ORDER`, and check the census (`packages/zudo-doc/src/config.ts`'s `ZudoDocConfig`/`DEFAULT_SETTINGS`) is in sync
   - **Build error: component/plugin not wired** — the feature's settings field exists but `packages/zudo-doc/src/preset.ts`'s `zudoDocPreset()` doesn't read it yet (package-side, not generator-side)
   - **Dev server crash** — runtime error in generated code → read the generated file and trace the issue to the source

@@ -45,7 +45,6 @@ const ALL_ON = {
   mermaid: true,
   dynamicPageTransition: true,
   designTokenPanel: true,
-  findInPage: true,
   themePackSwitcher: true,
 } satisfies BodyEndIslandsSettings;
 const ALL_OFF = {
@@ -54,7 +53,6 @@ const ALL_OFF = {
   mermaid: false,
   dynamicPageTransition: false,
   designTokenPanel: false,
-  findInPage: false,
   themePackSwitcher: false,
 } satisfies BodyEndIslandsSettings;
 
@@ -425,44 +423,15 @@ describe("deriveBodyEndIslands — designTokenPanelConfigModule skips the packag
 });
 
 // ---------------------------------------------------------------------------
-// FindInPageInit island gate (zudolab/zudo-doc#2689). Unlike
-// DesignTokenPanelBootstrap, `FindInPageInit` is a plain static top-level
-// import (no `deps` injection — see the module header note in `../index.tsx`),
-// so this only needs to gate on `settings.findInPage`. It renders nothing on
-// either side (self-gates on `window.__TAURI_INTERNALS__`), so — mirroring
-// DesignTokenPanelBootstrap — it is the plain (non-skip-ssr) `Island` form:
-// `data-zfb-island="FindInPageInit"`.
+// Retired FindInPageInit island (#4758). The Tauri-only find-in-page feature
+// was removed; browser Cmd/Ctrl+F belongs to the browser again, so no
+// combination of settings may emit the old island marker.
 // ---------------------------------------------------------------------------
 
-describe("BodyEndIslands — FindInPageInit island gate (#2689)", () => {
-  const MARKER = 'data-zfb-island="FindInPageInit"';
-
-  it("findInPage ON: emits the (non-skip-ssr) island marker", () => {
-    const html = renderIslands({ ...ALL_OFF, findInPage: true });
-    expect(html).toContain(MARKER);
-    // Not the skip-ssr variant — the component has no SSR fallback to skip.
-    expect(html).not.toContain('data-zfb-island-skip-ssr="FindInPageInit"');
-  });
-
-  it("findInPage OFF: emits no marker", () => {
-    const html = renderIslands({ ...ALL_OFF, findInPage: false });
-    expect(html).not.toContain(MARKER);
-  });
-
-  it("gates independently of the other island flags (findInPage ON + imageEnlarge ON)", () => {
-    const html = renderIslands({ ...ALL_OFF, imageEnlarge: true, findInPage: true });
-    expect(html).toContain(MARKER);
-    expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
-  });
-
-  it("all package-island flags ON (ALL_ON) includes the FindInPageInit marker", () => {
+describe("BodyEndIslands — retired FindInPageInit island (#4758)", () => {
+  it("all package-island flags ON emits no FindInPageInit marker", () => {
     const html = renderIslands(ALL_ON);
-    expect(html).toContain(MARKER);
-  });
-
-  it("all package-island flags OFF (ALL_OFF) emits no FindInPageInit marker", () => {
-    const html = renderIslands(ALL_OFF);
-    expect(html).not.toContain(MARKER);
+    expect(html).not.toContain("FindInPageInit");
   });
 });
 

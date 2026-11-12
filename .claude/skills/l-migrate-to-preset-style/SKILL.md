@@ -236,6 +236,14 @@ Delete any now-redundant escape-hatch imports the old config wired manually
 project overrides any of them (see `packages/zudo-doc/src/config.ts`'s
 `ZudoDocConfig` for the full field list and each field's `@default`).
 
+**Retired Tauri / find-in-page pieces (#4758).** Drop a `findInPage` field
+from the merged config and any direct `@takazudo/zudo-doc/find-in-page`
+import — both are removed from the package. `src-tauri/`, `src-tauri-dev/`,
+and `dev:tauri*` / `build:tauri*` scripts are user-owned app files: list them
+under `NEEDS_CONFIRMATION` and delete only after the human confirms. Never
+touch installed apps or per-user app data. The user guide is
+`src/content/docs/guides/tauri-modes.mdx`.
+
 ### 4b. Deeper cleanup (optional) — inline as diff-from-defaults literals
 
 A fresh `create-zudo-doc` scaffold emits ONLY the fields that differ from
@@ -494,7 +502,7 @@ user to handle it manually.
 | `.template-drift-allowlist` | Files excluded from the automated drift check (still need manual review) |
 | `packages/create-zudo-doc/src/__tests__/scaffold.test.ts` | `NEVER_RESURRECTED` — the authoritative, CI-enforced list of deleted-from-template legacy paths (Step 1b) |
 | `packages/create-zudo-doc/templates/base/` | Pristine base template (5 files) |
-| `packages/create-zudo-doc/templates/features/*/files/` | Pristine feature-specific templates (only `i18n`, `tagGovernance`, `tauri`, `tauriDev` have any) |
+| `packages/create-zudo-doc/templates/features/*/files/` | Pristine feature-specific templates (only `i18n` has one; `claudeSkills`/`claudeSkillsWriting` directories are copied from `scaffold.ts`) |
 | `packages/zudo-doc/src/config.ts` | `ZudoDocConfig` / `zudoDoc()` — the single-entry config API and field census (Step 4) |
 | `packages/zudo-doc/CLAUDE.md` | "Shipped ambient type shims + tsconfig base" section — the tsconfig extends-form contract and its two traps (Step 5) |
 | `packages/zudo-doc/docs/adr/route-injection-seam.md` | "Host-callables channel — chromeBindingsModule" ADR (Step 4c) |

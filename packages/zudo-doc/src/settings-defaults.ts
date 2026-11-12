@@ -74,7 +74,6 @@ export const DEFAULT_SETTINGS: Settings = {
   sidebarToggle: false,
   tocToggle: false,
   imageEnlarge: false,
-  findInPage: false,
   dynamicPageTransition: false,
   frontmatterPreview: false,
   docHistory: false,

@@ -579,6 +579,79 @@ export const deletionMatrix: readonly DeletionMatrixRow[] = [
       ],
     },
   },
+  {
+    issue: 4758,
+    category: "file",
+    removed: "Tauri desktop apps, icon generator, and Tauri-only find-in-page module",
+    proof: {
+      kind: "paths-absent",
+      paths: [
+        "src-tauri",
+        "src-tauri-dev",
+        "scripts/gen-tauri-icon.mjs",
+        "packages/zudo-doc/src/find-in-page",
+        "packages/create-zudo-doc/src/features/tauri.ts",
+        "packages/create-zudo-doc/src/features/tauri-dev.ts",
+        "packages/create-zudo-doc/templates/features/tauri",
+        "packages/create-zudo-doc/templates/features/tauriDev",
+      ],
+    },
+  },
+  {
+    issue: 4758,
+    category: "export/subpath",
+    removed: "./find-in-page export",
+    proof: {
+      kind: "package-exports-absent",
+      packageJson: "packages/zudo-doc/package.json",
+      subpaths: ["./find-in-page"],
+    },
+  },
+  {
+    issue: 4758,
+    category: "config value",
+    removed: "findInPage setting and FindInPageInit island mount",
+    proof: {
+      kind: "text-absent",
+      paths: [
+        "packages/zudo-doc/src",
+        "packages/create-zudo-doc/src",
+        "packages/create-zudo-doc/templates",
+        "src/config",
+        "src/lib",
+        "e2e/fixtures",
+        "zfb.config.ts",
+      ],
+      terms: ["findInPage", "FindInPageInit"],
+      excludePathPatterns: [
+        ...negativeTestExclusions,
+        "^packages/zudo-doc/src/doc-body-end-islands/__tests__/body-end-islands\\.test\\.tsx$",
+        // Real-filesystem proof that retired Tauri inputs emit no findInPage.
+        "^packages/create-zudo-doc/src/__tests__/retired-tauri\\.test\\.ts$",
+      ],
+    },
+  },
+  {
+    issue: 4758,
+    category: "selector",
+    removed: "find-in-page highlight selectors",
+    proof: {
+      kind: "text-absent",
+      paths: ["packages/zudo-doc/src/theme.css", "packages/zudo-doc/src/theme-packs", "src/styles/global.css"],
+      terms: [".find-match"],
+      ignoreComments: true,
+    },
+  },
+  {
+    issue: 4758,
+    category: "generated string",
+    removed: "native app package scripts",
+    proof: {
+      kind: "text-absent",
+      paths: ["package.json", "packages/create-zudo-doc/src/scaffold.ts"],
+      terms: ["cargo tauri", "dev:tauri", "build:tauri"],
+    },
+  },
 ] as const;
 
 export type SurvivorClassification = {

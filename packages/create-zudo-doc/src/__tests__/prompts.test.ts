@@ -101,3 +101,31 @@ describe("runPrompts — agent export and MCP", () => {
     expect(promptMocks.select).not.toHaveBeenCalled();
   });
 });
+
+describe("runPrompts — retired Tauri features", () => {
+  beforeEach(() => {
+    promptMocks.select.mockReset().mockResolvedValue("graphite");
+    promptMocks.multiselect.mockReset().mockResolvedValue([]);
+    promptMocks.info.mockReset();
+  });
+
+  it("does not offer either Tauri choice in the features multiselect", async () => {
+    await runPrompts({
+      projectName: "my-docs",
+      defaultLang: "en",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      themePack: "classic",
+      packageManager: "pnpm",
+      githubUrl: "",
+    });
+    const prompt = promptMocks.multiselect.mock.calls[0]?.[0] as {
+      options: Array<{ value: string; label: string }>;
+    };
+    expect(prompt.options.length).toBeGreaterThan(0);
+    for (const option of prompt.options) {
+      expect(option.value).not.toMatch(/tauri/i);
+      expect(option.label).not.toMatch(/tauri/i);
+    }
+  });
+});

@@ -1444,6 +1444,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // Reversing those two identities makes each raw page byte-identical; no
   // stylesheet, pack-map, protocol, prose or structural differences remain.
   // Evidence and release blockers: docs/findings/zfb-6.0.1-a2-causal-review.md.
+  // 2026-11-12 re-baseline (Tauri / find-in-page retirement, #4758): main
+  // 4bba02eb and candidate captures differ only in native build identity
+  // (5524bd9db4476f35 -> eb8122cb68fcc5b3; 1/2/4 attributes) and the
+  // bauhaus/beacon/eink pack cache-busters (1.0.1 -> 1.0.2); the helper's
+  // residual diff is empty. Raw bytes additionally change only the styles
+  // and islands entry hashes. Evidence: docs/findings/4758-a2-rebaseline/.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
@@ -2368,67 +2374,27 @@ describe("DTP host-owned: designTokenPanel false + bundleZdtp true keeps the rea
 });
 
 // ---------------------------------------------------------------------------
-// Case FIP — FindInPageInit package-default island (zudolab/zudo-doc#2689).
-// Mirrors the DH (DocHistory) / DTP island-registration proof: unlike
-// DesignTokenPanelBootstrap, `FindInPageInit` is a plain static top-level
-// import (no `deps` injection — see the module header note in
-// `../doc-body-end-islands/index.tsx`), so this only needs to gate on
-// `settings.findInPage`.
-//
-//   1. findInPage: true → the injected doc route emits the
-//      `data-zfb-island="FindInPageInit"` marker (non-skip-ssr — the
-//      component renders nothing on either side, self-gating on
-//      `window.__TAURI_INTERNALS__`) AND the emitted islands client bundle
-//      registers the real component (marker <-> registry match =>
-//      hydration — an SSR marker alone doesn't prove client hydration).
-//   2. findInPage: false (the fixture default) → no island marker reaches
-//      the SSR HTML.
+// Case FIP-RETIRED — the Tauri-only FindInPageInit island was removed (#4758).
+// A default build must neither emit the old island marker nor ship the
+// component in the islands client bundle (proves no stale compiled module is
+// still reachable from the package-owned body-end slot).
 // ---------------------------------------------------------------------------
 
-/** Flip `findInPage` ON in a fixture's settings.ts (it ships OFF). */
-function enableFindInPage(dir: string): void {
-  const settingsPath = join(dir, "src/config/settings.ts");
-  const src = readFileSync(settingsPath, "utf-8").replace(
-    /findInPage:\s*false/,
-    "findInPage: true",
-  );
-  writeFileSync(settingsPath, src);
-}
-
-describe("FIP find-in-page: injected doc route registers the FindInPageInit island (packageOwnedRoutes + findInPage)", () => {
+describe("FIP retired: injected doc route carries no FindInPageInit island", () => {
   let fixtureDir: string;
 
-  it("setup: fixture builds with findInPage enabled + empty pages/", { timeout: 180_000 }, () => {
+  it("setup: fixture builds with empty pages/", { timeout: 180_000 }, () => {
     fixtureDir = setupFixture({ emptyPages: true });
-    enableFindInPage(fixtureDir);
-    runZfbBuild(fixtureDir);
-  });
-
-  it("marker: injected /docs/getting-started/ HTML carries the FindInPageInit island marker (non-skip-ssr)", () => {
-    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expectHtmlAttr(html, "data-zfb-island", "FindInPageInit");
-  });
-
-  it("bundle: the emitted islands client bundle registers FindInPageInit (marker <-> registry match => hydration)", () => {
-    // Marker present (above) + FindInPageInit in the client bundle = the
-    // marker has a matching registry entry, which is exactly what zfb's
-    // hydration requires (same structural proof as Case DH/DTP).
-    expect(readIslandsBundles(fixtureDir)).toContain("FindInPageInit");
-  });
-});
-
-describe("FIP off: findInPage false (fixture default) emits no island marker on the page", () => {
-  let fixtureDir: string;
-
-  it("setup: fixture builds with findInPage left at its default (false) + empty pages/", { timeout: 180_000 }, () => {
-    fixtureDir = setupFixture({ emptyPages: true });
-    // findInPage already ships `false` in the fixture — no mutation needed.
     runZfbBuild(fixtureDir);
   });
 
   it("no marker: injected /docs/getting-started/ HTML carries no FindInPageInit marker", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", "FindInPageInit"));
+  });
+
+  it("bundle: the emitted islands client bundle does not register FindInPageInit", () => {
+    expect(readIslandsBundles(fixtureDir)).not.toContain("FindInPageInit");
   });
 });
 

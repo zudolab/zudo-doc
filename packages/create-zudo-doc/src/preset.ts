@@ -1,5 +1,11 @@
 import fs from "fs";
-import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
+import {
+  FEATURES,
+  retiredFeatureError,
+  SINGLE_SCHEMES,
+  SUPPORTED_LANGS,
+  THEME_PACKS,
+} from "./constants.js";
 import type { PartialChoices } from "./prompts.js";
 import { validateProjectName } from "./utils.js";
 import { resolveLocalePlan } from "./locale-plan.js";
@@ -322,6 +328,8 @@ export function validatePreset(json: unknown): string | null {
   if (p.features !== undefined && !Array.isArray(p.features)) {
     return `"features" must be an array in preset`;
   }
+  const retiredError = retiredFeatureError(p.features);
+  if (retiredError) return retiredError;
   const agentMcp = normalizeAgentMcpChoices({
     agentExport: p.features?.includes("agentExport") ? true : undefined,
     mcp: p.features?.includes("mcp") ?? false,
@@ -407,6 +415,8 @@ export function validatePreset(json: unknown): string | null {
 const KNOWN_FEATURES = new Set(FEATURES.map((f) => f.value));
 
 export function presetToChoices(json: PresetJson): PartialChoices {
+  const retiredError = retiredFeatureError(json.features);
+  if (retiredError) throw new Error(retiredError);
   const choices: PartialChoices = {};
 
   if (json.projectName) choices.projectName = json.projectName;

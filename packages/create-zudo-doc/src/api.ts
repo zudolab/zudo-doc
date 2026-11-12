@@ -1,4 +1,4 @@
-import { SINGLE_SCHEMES, THEME_PACKS } from "./constants.js";
+import { retiredFeatureError, SINGLE_SCHEMES, THEME_PACKS } from "./constants.js";
 import type {
   McpDeployTarget,
   PresetHeaderRightItem,
@@ -75,6 +75,8 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
   const { install = false, git = false, ...rest } = options;
   const nameError = validateProjectName(rest.projectName);
   if (nameError) throw new Error(`Invalid projectName: ${nameError}`);
+  const retiredError = retiredFeatureError(rest.features);
+  if (retiredError) throw new Error(retiredError);
   // Validate scheme names like the CLI (cli.ts) and preset (preset.ts) paths do.
   // Only `Default Light`/`Default Dark` exist post-catalog-drop (#2619); an
   // unvalidated name here would be written verbatim into settings.ts and throw

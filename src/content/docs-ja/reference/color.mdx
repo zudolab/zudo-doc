@@ -164,7 +164,7 @@ type RampRef =
 | `codeFg` | `{ base: 0 }` | インラインコードテキスト |
 | `success` | `{ state: "success" }` | 成功状態、確認 |
 | `danger` | モードごとのリテラル | エラー、破壊的操作 |
-| `warning` | `{ state: "warning" }` | 警告メッセージ、Admonition、find-in-pageハイライト |
+| `warning` | `{ state: "warning" }` | 警告メッセージ、Admonition |
 | `info` | `{ state: "info" }` | 情報ハイライト |
 | `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | `@takazudo/zudo-doc/color-schemes-defaults`を参照 | Mermaid ダイアグラムの色 |
 | `chatUserBg` / `chatUserText` | `{ accent: 1 }` / `{ base: 4 }` | AI チャットのユーザーバブル |
@@ -333,7 +333,7 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 ハイライトの役割は意図的に専用セマンティックトークンに分離されています。無関係なハイライトUI間でひとつのトークンを使い回すのはアンチパターンです。
 
 - `matched-keyword-bg` / `matched-keyword-fg`は検索パネルの`<mark>`要素に使われます。別の役割の`color-mix()`ではなく専用トークンのため、[Design Token Panel](./design-token-panel.mdx)のスウォッチがハイライト色の唯一のソースになります。パネルで見えている色＝実際のハイライト色です。
-- `warning`はAdmonition（`:::warning`）、find-in-page（`.find-match`、`.find-match-active`）など、意味的に _警告_ にあたるUIで使います。**新しいUIクロム向けのハイライトに`warning`を使い回してはいけません**。
+- `warning`はAdmonition（`:::warning`）など、意味的に _警告_ にあたるUIで使います。**新しいUIクロム向けのハイライトに`warning`を使い回してはいけません**。
 
 新しいハイライトの役割が出てきたとき（新種の`<mark>`、新しいピル、新しいコールアウト）は、既存の役割過多なトークンに載せるのではなく、専用のセマンティックトークンを追加してください。プロダクトに現れるハイライト色はどれも、パネルのスウォッチに1対1で対応するべきです。
 

@@ -25,11 +25,9 @@ import { validatePreset } from "../preset.js";
 // Wave 6 (#2660) — see that issue's completion comment for the deleted-file
 // set and the documented deviations (tagGovernance's tag config module, and
 // the then-unconditional @takazudo/zdtp dep — feature-gated since #4018, see
-// the designTokenPanel dependency cases below). The tauri feature's find-in-page island
-// used to be a documented "ships unwired" file-copy deviation; #2690 retired
-// it — find-in-page is now package-owned and emitted via `findInPage: true`
-// (see the "tauri no longer ships find-in-page template files" describe
-// block below). The old suite asserted a 64-file project shape (settings.ts,
+// the designTokenPanel dependency cases below). The Tauri features and their
+// src-tauri/** shells were retired entirely (see the "retired Tauri features"
+// describe block below). The old suite asserted a 64-file project shape (settings.ts,
 // pages/lib/*, src/components/*, per-page anchor injections) that no longer
 // exists.
 
@@ -191,8 +189,6 @@ const ALL_FEATURES = [
   "agentExport",
   "mcp",
   "skillSymlinker",
-  "tauri",
-  "tauriDev",
   "footerNavGroup",
   "imageEnlarge",
   "assetViewer",
@@ -430,10 +426,10 @@ describe("scaffold — i18n locale doc stub threads isFallback + per-locale cont
 
 describe("scaffold — absence assertions (deleted legacy files never resurrected)", () => {
   // Enumerated from the #2653 locked spec + the #2660 completion comment's
-  // delete list. Exercised against a barebone AND an every-feature-except-
-  // tauri/tagGovernance scaffold (those two have a documented, narrow
-  // exception covered in their own describe blocks below) so no feature
-  // combination silently resurrects a deleted path family.
+  // delete list. Exercised against a barebone AND an every-feature scaffold
+  // (tagGovernance's narrow src/config/ exception is covered in its own
+  // describe block below) so no feature combination silently resurrects a
+  // deleted path family.
   const NEVER_RESURRECTED = [
     // pages/lib/* — the ~15 chrome/data/route-context host stubs, now
     // entirely package-owned.
@@ -459,11 +455,7 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "pages/docs/tags/[tag].tsx",
     "pages/v/[version]/docs/[[...slug]].tsx",
     "pages/api/ai-chat.tsx",
-    // src/components/* (tauri's find-bar.tsx/find-in-page-init.tsx used to be
-    // a documented exception here — #2690 deleted those template files
-    // entirely, so tauri no longer writes anything under src/components/
-    // either; see the dedicated tauri describe block below for the absence
-    // assertion).
+    // src/components/*
     "src/components/ai-chat-modal.tsx",
     "src/components/content/code-group.tsx",
     "src/components/content/content-admonition.tsx",
@@ -474,8 +466,9 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/components/preset-generator.tsx",
     "src/components/sidebar-toggle.tsx",
     "src/components/sidebar-tree.tsx",
-    // src/utils/* (tauri's find-in-page.ts used to be a documented exception
-    // here — #2690 deleted it too; see the dedicated tauri describe block).
+    "src/components/find-bar.tsx",
+    "src/components/find-in-page-init.tsx",
+    // src/utils/*
     "src/utils/base.ts",
     "src/utils/docs.ts",
     "src/utils/git-info.ts",
@@ -485,6 +478,7 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/utils/slug.ts",
     "src/utils/smart-break.tsx",
     "src/utils/tags.ts",
+    "src/utils/find-in-page.ts",
     "src/lib/design-token-panel-bootstrap.ts",
     // src/types/*
     "src/types/docs-entry.ts",
@@ -512,6 +506,9 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "scripts/tags-audit.ts",
     "scripts/tags-suggest.ts",
     "src/content.config.ts",
+    // Retired Tauri desktop shells.
+    "src-tauri",
+    "src-tauri-dev",
   ];
 
   let barebone: string;
@@ -522,16 +519,14 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
     process.chdir(dir);
     await scaffold({ ...baseChoices, projectName: "abs-barebone" });
-    // Every feature EXCEPT tauri/tauriDev — those have their own narrow
-    // file-copy exceptions and are asserted separately so a regression in
-    // the general absence rule isn't masked by them. tagGovernance is KEPT
-    // here (footerTaglist declares a hard dependency on it) — its own
-    // narrow src/config/ exception is also asserted separately, and none of
-    // the paths below overlap with the two files it legitimately writes.
+    // tagGovernance is KEPT here (footerTaglist declares a hard dependency on
+    // it) — its own narrow src/config/ exception is asserted separately, and
+    // none of the paths below overlap with the two files it legitimately
+    // writes.
     await scaffold({
       ...baseChoices,
       projectName: "abs-allon",
-      features: ALL_FEATURES.filter((f) => !["tauri", "tauriDev"].includes(f)),
+      features: ALL_FEATURES,
       mcpDeploy: "cloudflare",
     });
     process.chdir(cwdBefore);
@@ -548,7 +543,7 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
   });
 
   it.each(NEVER_RESURRECTED)(
-    "no feature combination (minus the documented exceptions) emits %s",
+    "no feature combination emits %s",
     async (rel) => {
       expect(await fs.pathExists(path.join(allOn, rel))).toBe(false);
     },
@@ -589,54 +584,27 @@ describe("scaffold — .zudo-doc.json is never seeded (lazy-create, locked decis
   });
 });
 
-describe("scaffold — tauri no longer ships find-in-page template files (package-owned, #2690)", () => {
-  // #2689 moved the FindInPageInit island (Cmd/Ctrl+F find bar) into
-  // @takazudo/zudo-doc as a package-owned, settings-gated island. #2690
-  // retired the old "ships unwired" deviation: the generator no longer
-  // copies src/components/find-bar.tsx, src/components/find-in-page-init.tsx,
-  // or src/utils/find-in-page.ts — it emits `findInPage: true` in
-  // zfb.config.ts instead (see the zfb.config.ts content-shape describe
-  // block below), and `zudoDocPreset()` mounts the island from there. tauri
-  // now copies ONLY the Rust shell (src-tauri/**), which still has no
-  // package equivalent.
-  it("copies src-tauri/** only when tauri is selected — no find-in-page files", async () => {
-    await scaffold({ ...baseChoices, projectName: "test-tauri", features: ["tauri"] });
-    const project = projectPath("test-tauri");
-    for (const rel of [
-      "src-tauri/.gitignore",
-      "src-tauri/Cargo.toml",
-      "src-tauri/build.rs",
-      "src-tauri/capabilities/default.json",
-      "src-tauri/icons/icon.png",
-      "src-tauri/src/main.rs",
-      "src-tauri/tauri.conf.json",
-    ]) {
-      expect(await fs.pathExists(path.join(project, rel)), rel).toBe(true);
-    }
-    for (const rel of [
-      "src/components/find-bar.tsx",
-      "src/components/find-in-page-init.tsx",
-      "src/utils/find-in-page.ts",
-    ]) {
-      expect(await fs.pathExists(path.join(project, rel)), rel).toBe(false);
-    }
-  });
+describe("scaffold — retired Tauri features are rejected before any write", () => {
+  it.each(["tauri", "tauriDev"])(
+    "rejects %s without creating a nonexistent destination",
+    async (feature) => {
+      await expect(
+        scaffold({ ...baseChoices, projectName: "test-retired", features: [feature] }),
+      ).rejects.toThrow(/Tauri desktop app support was retired/);
+      expect(await fs.pathExists(projectPath("test-retired"))).toBe(false);
+    },
+  );
 
-  it("does NOT create a src/components or src/utils directory at all when only tauri is selected", async () => {
-    await scaffold({ ...baseChoices, projectName: "test-tauri-2", features: ["tauri"] });
-    const project = projectPath("test-tauri-2");
-    expect(await fs.pathExists(path.join(project, "src/components"))).toBe(false);
-    expect(await fs.pathExists(path.join(project, "src/utils"))).toBe(false);
-  });
-
-  it("tauriDev ships src-tauri-dev/** only (no src/components or src/utils files)", async () => {
-    await scaffold({ ...baseChoices, projectName: "test-tauri-dev", features: ["tauriDev"] });
-    const project = projectPath("test-tauri-dev");
-    expect(await fs.pathExists(path.join(project, "src-tauri-dev/Cargo.toml"))).toBe(
-      true,
-    );
-    expect(await fs.pathExists(path.join(project, "src/components"))).toBe(false);
-    expect(await fs.pathExists(path.join(project, "src/utils"))).toBe(false);
+  it("leaves an existing empty destination empty", async () => {
+    await fs.ensureDir(projectPath("test-retired-empty"));
+    await expect(
+      scaffold({
+        ...baseChoices,
+        projectName: "test-retired-empty",
+        features: ["search", "tauriDev"],
+      }),
+    ).rejects.toThrow(/Tauri desktop app support was retired/);
+    expect(await fs.readdir(projectPath("test-retired-empty"))).toEqual([]);
   });
 });
 
@@ -1244,7 +1212,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 50-file set", async () => {
+  it("all-on scaffold emits exactly the expected 34-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -1275,22 +1243,6 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "scripts/stage-cloudflare-base.mjs",
       "scripts/check-links.js",
       "scripts/setup-doc-skill.sh",
-      "src-tauri-dev/.gitignore",
-      "src-tauri-dev/Cargo.toml",
-      "src-tauri-dev/build.rs",
-      "src-tauri-dev/capabilities/default.json",
-      "src-tauri-dev/frontend/index.html",
-      "src-tauri-dev/icons/icon.png",
-      "src-tauri-dev/src/main.rs",
-      "src-tauri-dev/tauri.conf.json",
-      "src-tauri-dev/test-launch.sh",
-      "src-tauri/.gitignore",
-      "src-tauri/Cargo.toml",
-      "src-tauri/build.rs",
-      "src-tauri/capabilities/default.json",
-      "src-tauri/icons/icon.png",
-      "src-tauri/src/main.rs",
-      "src-tauri/tauri.conf.json",
       "src/config/tag-vocabulary.ts",
       "src/content/docs-ja/changelog/index.mdx",
       "src/content/docs-ja/getting-started/index.mdx",
@@ -1311,6 +1263,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "utf-8",
     );
     expect(config).not.toContain("children:");
+    expect(config).not.toContain("findInPage");
   });
 });
 
@@ -1369,19 +1322,6 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     );
     expect(config).toContain('githubUrl: "https://github.com/x/y"');
     expect(config).toContain('component: "github-link"');
-  });
-
-  it("emits findInPage: true when tauri is selected (#2690 — rides the tauri feature, package-owned island)", async () => {
-    await scaffold({
-      ...baseChoices,
-      projectName: "test-tauri-config",
-      features: ["tauri"],
-    });
-    const config = await fs.readFile(
-      projectPath("test-tauri-config", "zfb.config.ts"),
-      "utf-8",
-    );
-    expect(config).toContain("findInPage: true");
   });
 
   it("does NOT emit inline plugins, collections, or zod (all delegated to the package)", async () => {
@@ -1494,28 +1434,18 @@ describe("scaffold — .gitignore base blocks", () => {
     expect(lines).toContain(".zudo-doc/");
   });
 
-  it("tauri appends src-tauri/target and src-tauri/gen", async () => {
-    await scaffold({ ...baseChoices, projectName: "test-tauri-gi", features: ["tauri"] });
-    const gitignore = await fs.readFile(
-      projectPath("test-tauri-gi", ".gitignore"),
-      "utf-8",
-    );
-    expect(gitignore).toContain("src-tauri/target");
-    expect(gitignore).toContain("src-tauri/gen");
-  });
-
-  it("tauriDev appends src-tauri-dev/target and src-tauri-dev/gen", async () => {
+  it("never emits Tauri build-artifact entries", async () => {
     await scaffold({
       ...baseChoices,
-      projectName: "test-tauri-dev-gi",
-      features: ["tauriDev"],
+      projectName: "test-no-tauri-gi",
+      features: ALL_FEATURES,
+      mcpDeploy: "cloudflare",
     });
     const gitignore = await fs.readFile(
-      projectPath("test-tauri-dev-gi", ".gitignore"),
+      projectPath("test-no-tauri-gi", ".gitignore"),
       "utf-8",
     );
-    expect(gitignore).toContain("src-tauri-dev/target");
-    expect(gitignore).toContain("src-tauri-dev/gen");
+    expect(gitignore).not.toContain("src-tauri");
   });
 });
 
@@ -2469,25 +2399,20 @@ describe("scaffold — generated package.json", () => {
     );
   });
 
-  it("adds dev:tauri/build:tauri scripts only when tauri is enabled", async () => {
-    await scaffold({ ...baseChoices, projectName: "test-tauri-scripts", features: ["tauri"] });
-    const pkg = await fs.readJson(
-      projectPath("test-tauri-scripts", "package.json"),
-    );
-    expect(pkg.scripts["dev:tauri"]).toBe("cargo tauri dev");
-    expect(pkg.scripts["build:tauri"]).toBe("pnpm build && cargo tauri build");
-  });
-
-  it("adds dev:tauri-dev/build:tauri-dev scripts only when tauriDev is enabled", async () => {
+  it("emits no Tauri scripts even with every feature enabled", async () => {
     await scaffold({
       ...baseChoices,
-      projectName: "test-tauri-dev-scripts",
-      features: ["tauriDev"],
+      projectName: "test-no-tauri-scripts",
+      features: ALL_FEATURES,
+      mcpDeploy: "cloudflare",
     });
     const pkg = await fs.readJson(
-      projectPath("test-tauri-dev-scripts", "package.json"),
+      projectPath("test-no-tauri-scripts", "package.json"),
     );
-    expect(pkg.scripts["dev:tauri-dev"]).toBe("cd src-tauri-dev && cargo tauri dev");
+    const tauriScripts = Object.entries(pkg.scripts as Record<string, string>).filter(
+      ([name, command]) => /tauri/i.test(name) || /tauri/i.test(command),
+    );
+    expect(tauriScripts).toEqual([]);
   });
 });
 

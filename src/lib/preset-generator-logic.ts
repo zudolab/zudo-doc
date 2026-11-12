@@ -296,8 +296,6 @@ export const FEATURES = [
   { value: "agentExport", label: "Agent-readable documentation export", cliFlag: "agent-export", default: false },
   { value: "mcp", label: "Read-only MCP server (Cloudflare Workers)", cliFlag: "mcp", default: false },
   { value: "skillSymlinker", label: "Skill symlinker", cliFlag: "skill-symlinker", default: false, docPath: "/docs/guides/doc-skill-symlinker/" },
-  { value: "tauri", label: "Tauri desktop app", cliFlag: "tauri", default: false, docPath: "/docs/guides/tauri-modes/" },
-  { value: "tauriDev", label: "Tauri dev wrapper (Mode 2)", cliFlag: "tauri-dev", default: false, docPath: "/docs/guides/tauri-modes/" },
   { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false, docPath: "/docs/guides/footer/" },
   { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true, docPath: "/docs/markdown-features/image-enlarge/" },
   { value: "assetViewer", label: "Asset viewer", cliFlag: "asset-viewer", default: true },
@@ -435,7 +433,18 @@ export function normalizeAdditionalLangs(
   return resolvePresetLocalePlan(defaultLang, additionalLangsInput).additionalLangs;
 }
 
+/** Feature names create-zudo-doc rejects since Tauri support was retired. */
+export const RETIRED_FEATURES: readonly string[] = ["tauri", "tauriDev"];
+
 function resolveFeatures(features: string[], i18n: boolean): string[] {
+  const retired = features.filter((feature) => RETIRED_FEATURES.includes(feature));
+  if (retired.length > 0) {
+    throw new Error(
+      `Tauri desktop app support was retired from zudo-doc; remove ${retired
+        .map((feature) => JSON.stringify(feature))
+        .join(", ")} from features`,
+    );
+  }
   const resolved = i18n
     ? [...new Set([...features, "i18n"])]
     : features.filter((feature) => feature !== "i18n");

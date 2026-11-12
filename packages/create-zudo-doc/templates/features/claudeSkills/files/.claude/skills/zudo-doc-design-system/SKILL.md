@@ -73,7 +73,7 @@ Within Tier 1, the `base` and `accent` ramps are addressed by a plain numeric in
 Highlight roles are deliberately split across dedicated semantic tokens — do **not** share one token across unrelated highlight UIs.
 
 - `matched-keyword-bg` / `matched-keyword-fg` — background and foreground of the search panel `<mark>` element. Driven by `--color-matched-keyword-bg` / `--color-matched-keyword-fg`; live-editable in the Design Token Panel, if that feature is enabled. This is the single source of truth for "why is this color yellow in the search results" — the panel swatch matches the rendered highlight 1:1.
-- `warning` — drives admonitions (`:::warning`), find-in-page (`.find-match`, `.find-match-active`), and any UI that is semantically a warning. Do **not** reuse it for new UI-chrome highlights.
+- `warning` — drives admonitions (`:::warning`) and any UI that is semantically a warning. Do **not** reuse it for new UI-chrome highlights.
 
 **Rule**: when a new highlight role appears (new kind of mark, new pill, new callout), add a dedicated semantic token rather than bolting it onto `--color-warning` or another existing token. Each visible highlight color should map to exactly one panel swatch.
 

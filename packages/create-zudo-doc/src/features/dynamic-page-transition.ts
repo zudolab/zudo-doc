@@ -19,9 +19,8 @@ import type { FeatureModule } from "../compose.js";
  * already calls it "a redundant fallback" once PageLoadingOverlay covers the
  * loading UI. Known gap (documented, out of this generator's scope): the
  * package's SSR-only `<ClientRouter/>` import may still need a "use client"
- * bootstrap to guarantee the click-intercept ships to the browser bundle —
- * same class of issue as tauri's find-in-page island (see tauri.ts). If a
- * project needs it restored, wire a custom island through
+ * bootstrap to guarantee the click-intercept ships to the browser bundle.
+ * If a project needs it restored, wire a custom island through
  * `settings.chromeBindingsModule`'s `BodyEndIslands` slot.
  */
 export const dynamicPageTransitionFeature: FeatureModule = () => ({

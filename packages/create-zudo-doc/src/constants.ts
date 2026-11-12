@@ -240,6 +240,33 @@ export interface Feature {
   cliFlag: string;
 }
 
+export interface RetiredFeature {
+  value: string;
+  cliFlag: string;
+}
+
+// Feature names that no longer exist but are still rejected explicitly, so an
+// old command, preset, or API call fails loudly instead of being ignored.
+export const RETIRED_FEATURES: RetiredFeature[] = [
+  { value: "tauri", cliFlag: "tauri" },
+  { value: "tauriDev", cliFlag: "tauri-dev" },
+];
+
+export const TAURI_RETIRED_MESSAGE =
+  "Tauri desktop app support was retired from zudo-doc and can no longer be scaffolded";
+
+/**
+ * Error for a `features` list (preset JSON or programmatic API) that still
+ * names a retired feature; `null` when none is present.
+ */
+export function retiredFeatureError(features: unknown): string | null {
+  if (!Array.isArray(features)) return null;
+  const retired = RETIRED_FEATURES.filter((f) => features.includes(f.value));
+  if (retired.length === 0) return null;
+  const names = retired.map((f) => `"${f.value}"`).join(", ");
+  return `${TAURI_RETIRED_MESSAGE}. Remove ${names} from "features".`;
+}
+
 export const FEATURES: Feature[] = [
   {
     value: "i18n",
@@ -373,20 +400,6 @@ export const FEATURES: Feature[] = [
     hint: "Symlink documentation skills into Claude Code or Codex",
     default: false,
     cliFlag: "skill-symlinker",
-  },
-  {
-    value: "tauri",
-    label: "Tauri desktop app",
-    hint: "macOS desktop wrapper with in-page search",
-    default: false,
-    cliFlag: "tauri",
-  },
-  {
-    value: "tauriDev",
-    label: "Tauri dev wrapper (Mode 2)",
-    hint: "Configurable desktop dev wrapper for any project",
-    default: false,
-    cliFlag: "tauri-dev",
   },
   {
     value: "footerNavGroup",

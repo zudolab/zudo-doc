@@ -17,7 +17,6 @@ import { ImageEnlarge } from "../image-enlarge/index.js";
 import { ImageEnlargeSsrFallback } from "../image-enlarge/ssr-fallback.js";
 import { MermaidEnlarge } from "../mermaid-enlarge/index.js";
 import { MermaidEnlargeSsrFallback } from "../mermaid-enlarge/ssr-fallback.js";
-import { FindInPageInit } from "../find-in-page/index.js";
 // Named export (`page-loading/index.ts` re-exports `{ default as PageLoadingOverlay }`).
 import { PageLoadingOverlay } from "../page-loading/index.js";
 import { createDesignTokenPanelIsland } from "./design-token-panel-island.js";
@@ -46,13 +45,6 @@ export interface BodyEndIslandsSettings {
    *  `true`, nothing mounts unless `deps.DesignTokenPanelBootstrap` was also
    *  supplied — see {@link BodyEndIslandsDeps}. */
   designTokenPanel: boolean;
-  /**
-   * Gates the `FindInPageInit` island mount (zudolab/zudo-doc#2689).
-   * Controls the PACKAGE-DEFAULT `BodyEndIslands` slot only — a host that
-   * overrides the `BodyEndIslands` chrome binding must mount `FindInPageInit`
-   * itself.
-   */
-  findInPage: boolean;
   /**
    * Gates the `ThemePackSwitcher` flyout island mount (ADR
    * `docs/adr/theme-packs.md` Decision 7; #2821). Optional — the field is
@@ -168,21 +160,6 @@ export function createBodyEndIslands(
         }))
       : null;
 
-    // Gated on `settings.findInPage` (zudolab/zudo-doc#2689). This gate
-    // controls the PACKAGE-DEFAULT `BodyEndIslands` slot ONLY — a host that
-    // overrides the `BodyEndIslands` chrome binding must mount
-    // `FindInPageInit` itself. Mirrors `designTokenPanelBootstrap` above:
-    // `when: "load"` so the Cmd/Ctrl+F listener is registered as early as
-    // possible, no `ssrFallback` (the component renders nothing on either
-    // side — it self-gates on `window.__TAURI_INTERNALS__` — so this is the
-    // plain non-skip-ssr `Island` form, `data-zfb-island="FindInPageInit"`).
-    const findInPageInit = settings.findInPage
-      ? (Island({
-          when: "load",
-          children: <FindInPageInit />,
-        }))
-      : null;
-
     return (
       <>
         {/* Pure SSR — no <Island> wrap. Gated on `settings.dynamicPageTransition`
@@ -202,7 +179,6 @@ export function createBodyEndIslands(
         {/* Package-owned, settings-gated load-time island (#2821) — same
             composition contract as DesignTokenPanelIsland above. */}
         <ThemePackSwitcherIsland />
-        {findInPageInit}
         {aiAssistant}
         {imageEnlarge}
         {mermaidEnlarge}

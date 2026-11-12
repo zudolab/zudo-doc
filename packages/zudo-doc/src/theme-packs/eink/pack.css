@@ -30,7 +30,7 @@
      callable 9.3, number 7.6, string 6.4, type 5.7, comment
      4.92; inserted 8.2, deleted 7.7; selection 11.3:1
    Composited surfaces verified too: flattened admonition paper,
-   header/pager surface, find-in-page washes, diff-line
+   header/pager surface, diff-line
    backgrounds (8% mix override keeps 6.7:1+ in both modes),
    chat bubbles, matched-keyword inversion, aria-current
    inversion. Adjacent gray-ladder steps run 1.12x–1.26x in
@@ -347,19 +347,6 @@ html[data-theme-pack="eink"] .hi-com {
 }
 html[data-theme-pack="eink"] .hi-ty {
   font-style: italic;
-}
-
-/* find-in-page: the stock warning-tinted washes go gray here — a quiet
-   ink wash for matches, the full refresh inversion for the active one */
-html[data-theme-pack="eink"] .find-match {
-  background-color: color-mix(in srgb, var(--zd-fg) 12%, transparent);
-  border-radius: 0;
-}
-html[data-theme-pack="eink"] .find-match-active {
-  background-color: var(--zd-fg);
-  color: var(--zd-bg);
-  border-radius: 0;
-  outline: 1px solid var(--zd-fg);
 }
 
 /* admonitions: flat paper cards in a hairline frame — no tint washes.

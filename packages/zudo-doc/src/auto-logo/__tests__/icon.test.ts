@@ -121,7 +121,7 @@ describe("renderAutoLogoIconSvg", () => {
     for (const seed of ["zudo-doc", "acme-docs", "hyperfab", "notes-garden"]) {
       expect(renderAutoLogoIconSvg(seed)).toContain(`data-auto-logo="${pickGlyphName(seed)}"`);
     }
-    // the committed Tauri icon's seed (epic #3285): zudo-doc -> bookmark
+    // this repo's own seed (epic #3285): zudo-doc -> bookmark
     expect(pickGlyphName("zudo-doc")).toBe("bookmark");
   });
 

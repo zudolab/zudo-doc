@@ -96,7 +96,6 @@ const veryLongExample = "${"long-example".repeat(30)}";
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "classic" as string,
-  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   claudeResources: {
     claudeDir: "src/content/resources/.claude",

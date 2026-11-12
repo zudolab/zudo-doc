@@ -33,7 +33,7 @@ export default defineConfig(
 
     // ── Shell passthrough fields (not part of `Settings`) ───────────────────
     // Pin the dev/preview port — zfb defaults to 3000, but CLAUDE.md, the
-    // EADDRINUSE guidance, and the Tauri Mode-1 devUrl all assume 4321 (#2043).
+    // EADDRINUSE guidance, and the e2e/preview tooling all assume 4321 (#2043).
     port: 4321,
     // Cloudflare adapter — required for routes with `prerender = false`
     // (currently pages/api/ai-chat.tsx). Bindings via wrangler.toml.

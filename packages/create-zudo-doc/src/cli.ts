@@ -1,6 +1,13 @@
 import minimist from "minimist";
 import pc from "picocolors";
-import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
+import {
+  FEATURES,
+  RETIRED_FEATURES,
+  SINGLE_SCHEMES,
+  SUPPORTED_LANGS,
+  TAURI_RETIRED_MESSAGE,
+  THEME_PACKS,
+} from "./constants.js";
 import {
   normalizeAgentMcpChoices,
   parseChangelogPackages,
@@ -50,8 +57,6 @@ export interface CliArgs {
   agentExport?: boolean;
   mcp?: boolean;
   skillSymlinker?: boolean;
-  tauri?: boolean;
-  tauriDev?: boolean;
   footerNavGroup?: boolean;
   dynamicPageTransition?: boolean;
   footerCopyright?: boolean;
@@ -70,6 +75,37 @@ export interface CliArgs {
   git?: boolean;
   yes?: boolean;
   help?: boolean;
+  /** Set when argv requests a retired feature; validateArgs() reports it first. */
+  retiredFlagError?: string;
+}
+
+/**
+ * Reject any retired feature flag other than its exact legacy negative
+ * spellings (`--no-<flag>`, `--<flag>=false`), which previously exported
+ * commands still contain and which stay silent no-ops. Raw argv is scanned
+ * before minimist so a later negative flag or value coercion cannot mask an
+ * affirmative request.
+ */
+export function findRetiredFlagError(argv: string[]): string | null {
+  const rejected: string[] = [];
+  // No `--` terminator handling: wasPassed() also honours feature flags after
+  // `--`, so a `-- --tauri` passthrough must be rejected too.
+  for (const token of argv) {
+    for (const { cliFlag } of RETIRED_FEATURES) {
+      const isNegative =
+        token === `--no-${cliFlag}` || token === `--${cliFlag}=false`;
+      if (isNegative) continue;
+      if (
+        token === `--${cliFlag}` ||
+        token.startsWith(`--${cliFlag}=`) ||
+        token.startsWith(`--no-${cliFlag}=`)
+      ) {
+        rejected.push(token);
+      }
+    }
+  }
+  if (rejected.length === 0) return null;
+  return `${TAURI_RETIRED_MESSAGE}. Remove ${rejected.join(", ")} from the command.`;
 }
 
 /** Presets are the base layer; an explicitly supplied CLI list replaces it. */
@@ -116,6 +152,9 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   }
 
   const args: CliArgs = {};
+
+  const retiredFlagError = findRetiredFlagError(argv);
+  if (retiredFlagError) args.retiredFlagError = retiredFlagError;
 
   // Destination: first positional arg. Project name: --name (a bare name), or
   // the destination's final segment when --name is absent.
@@ -233,6 +272,8 @@ ${pc.bold("Examples:")}
 }
 
 export function validateArgs(args: CliArgs): string | null {
+  if (args.retiredFlagError) return args.retiredFlagError;
+
   const agentMcp = normalizeAgentMcpChoices({
     agentExport: args.agentExport,
     mcp: args.mcp,

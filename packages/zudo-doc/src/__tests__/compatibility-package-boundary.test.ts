@@ -48,8 +48,9 @@ type DynamicPageTransitionIsRequired = Expect<
 type DesignTokenPanelIsRequired = Expect<
   IsRequired<BodyEndIslandsSettings, "designTokenPanel">
 >;
-type FindInPageIsRequired = Expect<
-  IsRequired<BodyEndIslandsSettings, "findInPage">
+// The Tauri-only find-in-page setting was retired (#4758).
+type FindInPageIsRetired = Expect<
+  "findInPage" extends keyof BodyEndIslandsSettings ? false : true
 >;
 
 describe("collapsed compatibility package boundary", () => {

@@ -80,7 +80,6 @@ export const settings = {
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "classic" as string,
   imageEnlarge: true as boolean,
-  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,

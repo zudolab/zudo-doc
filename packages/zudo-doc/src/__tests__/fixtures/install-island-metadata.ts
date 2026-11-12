@@ -8,7 +8,7 @@ runtime.__zfb = {
   zudoReactIslands: [
     ...new Set([
       ...(runtime.__zfb?.zudoReactIslands ?? []),
-      "AiChatModal", "ImageEnlarge", "MermaidEnlarge", "FindInPageInit",
+      "AiChatModal", "ImageEnlarge", "MermaidEnlarge",
       "DesignTokenPanelBootstrap", "ThemePackSwitcher", "SiteTreeNav",
       "SidebarTree", "SidebarToggle", "DocHistoryStub", "DocHistory",
       "MobileToc", "Toc", "HtmlPreviewWrapperInner", "DesktopTocToggle",

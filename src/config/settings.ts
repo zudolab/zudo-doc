@@ -260,13 +260,6 @@ Start with the **essentials**, then explore the live examples.
   sidebarToggle: true as boolean,
   tocToggle: true as boolean,
   imageEnlarge: true as boolean,
-  // Tauri-desktop-only (mounts the package's Cmd/Ctrl+F find-in-page island).
-  // Inert for this showcase: `BodyEndIslands` below (this repo's own
-  // chrome-bindings slot, see pages/lib/_body-end-islands.tsx) overrides the
-  // package default and never mounts `FindInPageInit`, so the flag has no
-  // runtime effect here regardless of its value. Kept `false` for census
-  // parity with the package `Settings` type.
-  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,

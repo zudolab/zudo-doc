@@ -164,14 +164,14 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]body-foot-util` | Right-aligned strip below each doc (history trigger + GitHub source link) | off |
 | `--[no-]llms-txt` | Generate `llms.txt` for LLM consumption | on |
 | `--[no-]skill-symlinker` | Symlink documentation skills into `.claude/` | off |
-| `--[no-]tauri` | Tauri desktop app — Mode 1 offline reader | off |
-| `--[no-]tauri-dev` | Tauri dev wrapper — Mode 2 configurable dev wrapper | off |
 | `--[no-]footer-nav-group` | Navigation links in the footer | off |
 | `--[no-]dynamic-page-transition` | SPA-style page transition with history handling | on |
 | `--[no-]footer-copyright` | Copyright notice in the footer | on |
 | `--[no-]footer-taglist` | Grouped tag index in the footer (requires tag-governance) | off |
 | `--[no-]changelog` | Changelog page | off |
 | `--changelog-packages <a,b>` | Per-package changelog pages and a Changelog dropdown (implies `--changelog`) | none |
+
+The `--tauri` and `--tauri-dev` desktop app features are retired: enabling either one exits with an error before any files are written. `--no-tauri` and `--no-tauri-dev` are still accepted and do nothing.
 
 ### Advanced
 
