@@ -1,5 +1,7 @@
 # Port FindInPageInit and FindBar (Tauri)
 
+> Superseded 2026-11-12 ([#4758](https://github.com/zudolab/zudo-doc/issues/4758)): the Tauri-only find-in-page feature (`FindInPageInit`, `FindBar`, the `findInPage` setting and the `./find-in-page` export) is removed from source. This port record is historical; do not restore or port the feature from it.
+
 Owner: [#4449](https://github.com/zudolab/zudo-doc/issues/4449). Status: **pending port**. [Index and column meanings](README.md). [Binding decisions](conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.

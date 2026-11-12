@@ -4,6 +4,13 @@ description: Changes planned for the next release.
 sidebar_position: 1157
 ---
 
+### Breaking Changes
+
+- Tauri desktop app support is retired, together with the Tauri-only find-in-page feature. This needs a major release. Versions already published keep the feature. The "Retired Tauri Desktop Modes" guide lists the clean-up steps. (#4758)
+- The `findInPage` setting is removed from `ZudoDocConfig`, `Settings` and the defaults. Remove `findInPage` from your config. (#4758)
+- The `@takazudo/zudo-doc/find-in-page` export and the `FindInPageInit` body-end island are removed. Remove direct imports of that subpath and any manual `FindInPageInit` mount in a `BodyEndIslands` override. Cmd/Ctrl+F is the browser's own find again. (#4758)
+- The `.find-match` and `.find-match-active` styles, and the Beacon and E-Ink theme pack overrides for the native find bar, are removed. Matched-keyword search colours, the warning and accent tokens, and the Bauhaus search token settings are unchanged. (#4758)
+
 ### Features
 
 - New optional `home.image` setting (`{ src, alt?, width?, height?, darkSrc? }`) shows a full-colour picture in the home hero, in the box the logo uses, instead of the one-colour logo mask. `darkSrc` is shown in dark mode by CSS keyed on the colour mode, with no extra script. Paths must be root-absolute site paths; external URLs and malformed values throw a `TypeError` at config resolution. Output without `home.image` is unchanged. (#4750)

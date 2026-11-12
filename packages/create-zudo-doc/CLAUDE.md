@@ -17,9 +17,9 @@ chrome, islands, default design-token custom properties, even the doc ROUTES the
    patched by exactly one feature's `postProcess` hook.
 2. **Generate** the ONE `zfb.config.ts` programmatically (`zfb-config-gen.ts`)
    — diff-from-defaults: only fields the user actually chose are emitted.
-3. **Compose** selected features — copy feature files (only five features have
+3. **Compose** selected features — copy feature files (only three features have
    a `templates/features/<name>/files/` directory: `claudeSkills`,
-   `claudeSkillsWriting`, `i18n`, `tauri`, `tauriDev`) and run `postProcess`
+   `claudeSkillsWriting`, `i18n`) and run `postProcess`
    hooks for the handful of cases
    that need a small source patch (`docHistory` threads itself into the doc
    stub(s); `designTokenPanel` inserts the one conditional zdtp CSS import
@@ -68,7 +68,7 @@ remain in parity for this value as well as the other preset-only options.
 | Directory | Role |
 |-----------|------|
 | `templates/base/` | The static half of the locked ~21-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form), `scripts/check-links.js` (source-first link/anchor validation), `scripts/setup-doc-skill.sh`, and four `public/` favicon files. `zfb.config.ts`/`package.json`/`CLAUDE.md`/`AGENTS.md`/`README.md`/`AUTHORING.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
-| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Exactly five have a template directory: `claudeSkills` (skill copies, driven from `scaffold.ts`), `claudeSkillsWriting` (the zudo-doc-writing skill, also driven from `scaffold.ts`), `i18n` (locale doc stub), `tauri` and `tauriDev` (Rust shells). `tagGovernance` has **no** template directory — it writes one explicit tag vocabulary/config module inline in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
+| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Exactly three have a template directory: `claudeSkills` (skill copies, driven from `scaffold.ts`), `claudeSkillsWriting` (the zudo-doc-writing skill, also driven from `scaffold.ts`), and `i18n` (locale doc stub). The former `tauri` and `tauriDev` Rust-shell features are retired (#4758): positive `--tauri`/`--tauri-dev` flags and preset/API feature names are rejected before writing, while the legacy negative forms are accepted as unadvertised no-ops. `tagGovernance` has **no** template directory — it writes one explicit tag vocabulary/config module inline in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
 
 ### Injection anchors — mostly retired
 

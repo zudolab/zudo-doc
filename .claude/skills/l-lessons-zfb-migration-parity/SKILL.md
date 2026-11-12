@@ -755,6 +755,8 @@ Specific rule for View Transitions + persist: the moment a persist annotation is
 
 ## 2026-05-22 — Two-Mode Tauri (epic #1673)
 
+> Superseded 2026-11-12 (zudolab/zudo-doc#4758): both Tauri modes and the generator's `tauri`/`tauriDev` features are retired. The lessons below are historical; the general ones (re-framing, reference implementations, silent template-dir misses) still apply.
+
 ### What we set out to do
 
 Issue #1672 recommended adopting zfb's new embed-as-library API (`ServerMode::Embed` + `extraWatchPaths`) to give the Tauri stub a "Tauri-with-live-content" shape. The goal that emerged after re-framing: ship a standalone offline reader (Mode 1, the existing `src-tauri/`) AND a configurable dev wrapper (Mode 2, new `src-tauri-dev/`) that spawns a project's `pnpm dev` and opens a WebView at the dev URL — plus a host-side chokidar watcher so `.claude/` edits regenerate during `pnpm dev`.

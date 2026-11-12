@@ -880,14 +880,6 @@ Each subkey is off unless it is explicitly `true`, including when the setting is
 
 See [Asset Viewer](./asset-viewer.mdx#opting-asset-pages-into-indexing) for a configuration example. This showcase enables all three subkeys.
 
-### findInPage
-
-Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar) in the body-end islands.
-
-Default: `false`
-
-Auto-enabled by `create-zudo-doc`'s tauri feature for generated Tauri scaffolds (the generator emits `findInPage: true` when the tauri feature is selected; it ships with the next `create-zudo-doc` release). Self-gates on `window.__TAURI_INTERNALS__`, so it is a safe no-op outside a Tauri shell even when `true`. A host that overrides the `BodyEndIslands` chrome-bindings slot (part of `ChromeHostBindings` — see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) for the general seam) must mount the island itself — the package default only applies when the slot is left unset.
-
 ### dynamicPageTransition
 
 Enable the dynamic (view-transition) page-loading overlay.

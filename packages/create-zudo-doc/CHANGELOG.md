@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- The `tauri` and `tauriDev` features are removed, so the generator no longer scaffolds `src-tauri/`, `src-tauri-dev/`, the Tauri scripts, or `findInPage: true`. This needs a major release. Versions already published still offer them. The "Retired Tauri Desktop Modes" guide lists the clean-up steps. (#4758)
+- `--tauri` and `--tauri-dev`, including `=true` and any other enabling value, fail with a clear error before any files are written. JSON presets and programmatic `features` arrays that list `tauri` or `tauriDev` are rejected before writing. (#4758)
+- `--no-tauri`, `--no-tauri-dev`, `--tauri=false` and `--tauri-dev=false` are still accepted as unadvertised no-ops, so older exported commands keep working. New output never emits them. (#4758)
+
 ## [10.0.3] - 2026-11-11
 
 - No package-specific changes.

@@ -83,7 +83,7 @@ OKLCH override** instead of a ramp ref (an AA tune that only one mode needs) —
 | admonition **danger** = `danger` / mix(danger 12%, bg) | danger=per-mode literal (see §1.1) | Title (`content.css:400`) on tint (`content.css:394`). Also drives `caution` (`content.css:434`, reuses `--color-danger`). | 4.5 |
 | admonition **important** = `accent` / mix(accent 12%, bg) | accent=`{accent:1}` | Title reads **semantic `--color-accent`** (`content.css:411-417`, tint `content.css:412`) — NOT a raw ramp stop. Unlike the pre-restructure model, there is no raw-palette render path here anymore; see §2. | 4.5 |
 | `selectionFg` / `selectionBg` | fg/bg fallbacks | Selected text (`src/styles/global.css:326-328`, `::selection`). | 4.5 |
-| `matchedKeywordFg` / `matchedKeywordBg` | both shared literals (see §1.1) | Search/find `<mark>` text (`global.css:362-363`, `.find-match`). | 4.5 |
+| `matchedKeywordFg` / `matchedKeywordBg` | both shared literals (see §1.1) | Search `<mark>` text (`global.css:362-363`). | 4.5 |
 | `chatUserText` / `chatUserBg` | text=`{base:4}`, bg=`{accent:1}` | Chat user bubble text (`…/ai-chat-modal/index.tsx:41`). | 4.5 |
 | `chatAssistantText` / `chatAssistantBg` | text=`{base:0}`, bg=`{base:4}` (= `bg`) | Chat assistant bubble text (`…/ai-chat-modal/index.tsx:46`). | 4.5 |
 

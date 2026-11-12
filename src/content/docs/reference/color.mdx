@@ -164,7 +164,7 @@ Both schemes wire all 23 roles; the table below shows Default Dark's `map.semant
 | `codeFg` | `{ base: 0 }` | Inline code text |
 | `success` | `{ state: "success" }` | Success states, confirmations |
 | `danger` | per-mode literal | Errors, destructive actions |
-| `warning` | `{ state: "warning" }` | Warning messages, admonitions, find-in-page highlight |
+| `warning` | `{ state: "warning" }` | Warning messages, admonitions |
 | `info` | `{ state: "info" }` | Informational highlights |
 | `mermaidNodeBg` / `mermaidText` / `mermaidLine` / `mermaidLabelBg` / `mermaidNoteBg` | see `@takazudo/zudo-doc/color-schemes-defaults` | Mermaid diagram colors |
 | `chatUserBg` / `chatUserText` | `{ accent: 1 }` / `{ base: 4 }` | AI chat user bubble |
@@ -333,7 +333,7 @@ Links are colored by where they sit, not by the fact that they are links:
 Highlight roles are deliberately split across dedicated semantic tokens — reusing one token across unrelated highlight UIs is an anti-pattern.
 
 - `matched-keyword-bg` / `matched-keyword-fg` drive the search panel `<mark>` element. Because they are dedicated tokens (not a `color-mix()` of another role), the [Design Token Panel](./design-token-panel.mdx) swatch is the single source of truth for the highlight color — what you see on the swatch is what the highlight renders as.
-- `warning` drives admonitions (`:::warning`), find-in-page (`.find-match`, `.find-match-active`), and any UI that is semantically a _warning_. Do **not** reuse `warning` for new UI-chrome highlights.
+- `warning` drives admonitions (`:::warning`) and any UI that is semantically a _warning_. Do **not** reuse `warning` for new UI-chrome highlights.
 
 When a new highlight role appears (new kind of `<mark>`, new pill, new callout), add a dedicated semantic token rather than bolting another responsibility onto an existing role-overloaded token. Each visible highlight color in the product should map to exactly one panel swatch.
 

@@ -132,7 +132,7 @@ KVとcustom-domain routeもコピーしません。liveのAI admissionとrate-li
 
 <Tip>
 
-postBuildがローカルでデフォルトオフなのは、コンテンツファイルごとの`git log --follow`チェーンが大規模なコーパスではzfbの120秒のpostBuildライフサイクル予算を超え、通常の`pnpm build`を失敗させるためです。ローカルでは冗長でもあります：開発時は履歴をスタンドアロンの`:4322`サーバーからライブで読み取り、CIは専用の並列`build-history`ジョブでJSONを生成します。ローカルビルドした`dist/`をプレビューするとき（またはTauriオフラインリーダーをビルドするとき）にドロップダウンを動作させるには、`GEN_DOC_HISTORY=1 pnpm build`を実行します。これはzfbプラグインのpostBuildのみを制御する点に注意してください — `build-history`ジョブで使われるスタンドアロンの`@takazudo/zudo-doc-history-server generate` CLIは制御対象外で、呼び出されると常に生成します。
+postBuildがローカルでデフォルトオフなのは、コンテンツファイルごとの`git log --follow`チェーンが大規模なコーパスではzfbの120秒のpostBuildライフサイクル予算を超え、通常の`pnpm build`を失敗させるためです。ローカルでは冗長でもあります：開発時は履歴をスタンドアロンの`:4322`サーバーからライブで読み取り、CIは専用の並列`build-history`ジョブでJSONを生成します。ローカルビルドした`dist/`をプレビューするときにドロップダウンを動作させるには、`GEN_DOC_HISTORY=1 pnpm build`を実行します。これはzfbプラグインのpostBuildのみを制御する点に注意してください — `build-history`ジョブで使われるスタンドアロンの`@takazudo/zudo-doc-history-server generate` CLIは制御対象外で、呼び出されると常に生成します。
 
 </Tip>
 
