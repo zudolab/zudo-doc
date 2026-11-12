@@ -34,8 +34,7 @@ injection anchors:
    package-owned (package-first migration, epics #2321/#2344/#2356). Only a
    handful still do real work:
    - **Genuine file copies**: `i18n` (locale doc-route stub), `tagGovernance`
-     (one explicit `src/config/tag-vocabulary.ts` CLI/config module), `tauri` /
-     `tauriDev` (Rust shells under `src-tauri*/`), `skillSymlinker`
+     (one explicit `src/config/tag-vocabulary.ts` CLI/config module), `skillSymlinker`
      (`scripts/setup-doc-skill.sh`, copied in `scaffold.ts` directly, not a
      `templates/features/` dir), `claudeSkills` (copies curated
      `zudo-doc-*` Claude Code skills from the monorepo, also in
@@ -49,9 +48,12 @@ injection anchors:
      conditional `@import "@takazudo/zdtp/styles.css";` line into
      `global.css` — the one thing that can't ship unconditionally from
      `@takazudo/zudo-doc/theme.css`, since it pulls in zdtp's own bytes),
-     `tagGovernance` (writes the explicit `tag-vocabulary.ts` module), `tauri`
-     (patches `Cargo.toml`/`tauri.conf.json` names + appends `.gitignore`
-     entries), `tauriDev` (similar name patching).
+     `tagGovernance` (writes the explicit `tag-vocabulary.ts` module).
+   - **Retired features**: `tauri` / `tauriDev` were removed (#4758). Do not
+     treat their absence as drift; positive flags and preset/API feature names
+     must keep failing before any write, and `--no-tauri` / `--no-tauri-dev` /
+     `--tauri=false` / `--tauri-dev=false` stay accepted as unadvertised
+     no-ops.
 
 `tagGovernance` passes its module explicitly to the package-owned
 `tags-audit`/`tags-suggest` bins with `--config`; there are no project-side CLI
@@ -127,7 +129,7 @@ Check that features in the main project have corresponding feature modules:
 
 - **Main**: does the showcase demonstrate a behavior with no `ZudoDocConfig` field and no generator feature module backing it?
 - **Generator**: `packages/create-zudo-doc/src/features/*.ts` — feature modules (mostly settings-field emission now; injections/postProcess only for the handful of genuine gaps listed in "Architecture Overview" above)
-- **Templates**: `packages/create-zudo-doc/templates/features/*/files/` — feature-specific files (only `i18n`, `tagGovernance`, `tauri`, `tauriDev` still have any)
+- **Templates**: `packages/create-zudo-doc/templates/features/*/files/` — feature-specific files (only `i18n` has one; `claudeSkills`/`claudeSkillsWriting` directories are copied from `scaffold.ts`)
 
 For each feature-gated behavior in the main project, verify:
 
@@ -149,7 +151,7 @@ Compare the 6 source-code base template files against their showcase / package c
 
 **Automated first check**: Run `pnpm check:template-drift` before doing manual analysis. This runs `scripts/check-template-drift.sh` and quickly identifies files that differ between the main project and the base template.
 
-**Allowlist note**: The 7 pairs in `.template-drift-allowlist` (`global.css`, `tsconfig.json`, `pages/index.tsx`, the two doc-route stubs, `scripts/check-links.js`, and the `tauri` feature's orphaned find-in-page files) are skipped by the automated script's whole-file content check because they intentionally differ (the showcase carries wiring the minimal template doesn't need). These files **still require manual review** — check that validation-core or other relevant changes in the main project are reflected in the template counterpart. `global.css` also has a dedicated automated guard (`check_global_css_legacy_tokens` in `scripts/check-template-drift.sh`) that fails if the template regresses to a pre-ramp-restructure token or drops the `@import "@takazudo/zudo-doc/theme.css"` line — that one drift class stays automated even though the rest of the file needs manual review.
+**Allowlist note**: The base-template pairs in `.template-drift-allowlist` (`global.css`, `tsconfig.json`, `pages/index.tsx`, the two doc-route stubs, and `scripts/check-links.js`) are skipped by the automated script's whole-file content check because they intentionally differ (the showcase carries wiring the minimal template doesn't need). These files **still require manual review** — check that validation-core or other relevant changes in the main project are reflected in the template counterpart. `global.css` also has a dedicated automated guard (`check_global_css_legacy_tokens` in `scripts/check-template-drift.sh`) that fails if the template regresses to a pre-ramp-restructure token or drops the `@import "@takazudo/zudo-doc/theme.css"` line — that one drift class stays automated even though the rest of the file needs manual review.
 
 ## Step 2: Report Findings
 
@@ -209,7 +211,7 @@ After fixes:
 | `packages/create-zudo-doc/src/scaffold.ts` | Orchestrates generation pipeline, generates `package.json`, `.gitignore`, `.npmrc`, seeds starter content |
 | `packages/create-zudo-doc/src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` |
 | `packages/create-zudo-doc/templates/base/` | The locked ~21-file (barebone) minimal manifest's static half — 10 files, no `@slot:` anchors |
-| `packages/create-zudo-doc/templates/features/` | Feature-specific files copied when a feature is enabled — only `i18n`, `tagGovernance`, `tauri`, `tauriDev` still have any |
+| `packages/create-zudo-doc/templates/features/` | Feature-specific files copied when a feature is enabled — only `i18n` has one (`claudeSkills`/`claudeSkillsWriting` directories are copied from `scaffold.ts`) |
 | `packages/zudo-doc/src/preset.ts` | `zudoDocPreset()` — wires plugins/collections/markdown from settings fields; the generator never wires plugins directly |
 | `packages/create-zudo-doc/src/__tests__/scaffold.test.ts` | Manifest-shape assertions (exact 12-file barebone list, exact all-on list, settings-drift guard) |
 | `packages/create-zudo-doc/src/__tests__/zfb-config-gen.test.ts` | Field-mapping / diff-from-defaults unit tests |

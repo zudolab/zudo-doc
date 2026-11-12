@@ -35,7 +35,9 @@ Where `<pattern>` is one of the test patterns listed below.
 | `lang-ja` | Japanese as default language |
 | `multi-changelog` | Per-package changelog pages and nested Changelog dropdown |
 | `asset-viewer` | Asset viewer enabled (`--asset-viewer`) |
-| `all-features` | Everything ON (except tauri/tauriDev — Rust toolchain, out of scope for this smoke pattern) |
+| `all-features` | Everything ON |
+
+The `tauri` / `tauriDev` features are retired (#4758): there is no Tauri pattern. Positive `--tauri` / `--tauri-dev` must fail before any files are written; the legacy negative forms are accepted no-ops.
 
 ## Architecture context (read before verifying files)
 
@@ -46,7 +48,7 @@ Everything else — layout, chrome, islands, default `:root` tokens, even the
 doc ROUTES themselves — ships from `@takazudo/zudo-doc` in `node_modules`.
 
 **Consequence for this skill: almost every feature is now a pure
-`zfb.config.ts` field, not a file.** Only 5 features ship or mutate real
+`zfb.config.ts` field, not a file.** Only a few features ship or mutate real
 files:
 
 | Feature | What it touches |
@@ -55,7 +57,6 @@ files:
 | `tagGovernance` | Adds one explicit `src/config/tag-vocabulary.ts` module consumed by zfb and passed to the package-owned audit/suggest bins with `--config` |
 | `docHistory` | (postProcess) patches the doc-route stub(s) in place to thread the real `DocHistory` component — no new file |
 | `designTokenPanel` | (postProcess) inserts one `@import "@takazudo/zdtp/styles.css";` line into `src/styles/global.css` — no new file |
-| `tauri` / `tauriDev` | Ship `src-tauri/**` / `src-tauri-dev/**` Rust project shells |
 | `skillSymlinker` | Copies `scripts/setup-doc-skill.sh` |
 | `claudeSkills` | Copies `.claude/skills/{zudo-doc-design-system,zudo-doc-translate,zudo-doc-version-bump}/**` from the monorepo |
 | `claudeSkillsWriting` | Copies `.claude/skills/zudo-doc-writing/**` (scaffold.ts, from `templates/features/claudeSkillsWriting/`) |
@@ -236,7 +237,7 @@ printf 'export const sample = true;\n' > test-project/public/assets/sample.js
 The sample file gives the package-owned injected route a concrete page to
 build. The viewer route is not a generated `pages/files/` stub.
 
-**all-features** (mirrors `scaffold.test.ts`'s `ALL_FEATURES` minus `tauri`/`tauriDev`):
+**all-features** (mirrors `scaffold.test.ts`'s `ALL_FEATURES`):
 
 ```bash
 cd __inbox/generator-test-all-features && \
@@ -439,7 +440,7 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 | `.claude/skills/zudo-doc-translate/` | PRESENT (claudeSkills) |
 | `.claude/skills/zudo-doc-version-bump/` | PRESENT (claudeSkills) |
 | `.claude/skills/zudo-doc-writing/` | PRESENT (claudeSkillsWriting) |
-| `src-tauri/` | ABSENT (tauri excluded from this pattern) |
+| `src-tauri/`, `src-tauri-dev/` | ABSENT (the Tauri features are retired) |
 | `pages/docs/tags/index.tsx` | ABSENT (docTags routes are package-injected, never a file — even with `docTags: true`) |
 | `src/components/` | ABSENT (still true even with every feature on) |
 

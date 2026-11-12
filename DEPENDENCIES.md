@@ -2,6 +2,8 @@
 
 Current adoption checkpoint (2026-11-06): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
 
+Tauri desktop support is retired at source level (2026-11-12, zudolab/zudo-doc#4758): the `src-tauri/` and `src-tauri-dev/` applications and the generator's `tauri`/`tauriDev` templates are gone, so dependency audits no longer cover Rust or Cargo. Rust findings in the dated audits below are historical.
+
 ## 2026-10-27 audit: stale overrides dropped, advisories cleared, Vite+ not adopted
 
 Audited against `093defd96` on Node 24.22.1 and pnpm 10.30.3, covering the root
@@ -170,6 +172,8 @@ consumer relationship. This adds no unique formatter package to the lockfile.
 | `parse5`, `smol-toml`, `yaml`, `esbuild`, `tsx`, `@inquirer/prompts` | Package-owned parsing, resource generation, bundling, TS CLI execution, and interactive CLI consumers. |
 | `tauri-build` | Cargo-machete flags both applications and both templates, but all four `build.rs` files call `tauri_build::build()`. Keep. |
 | `tauri`, `open`, `libc`, `serde`, `serde_json` | Direct Rust consumers, including subprocess cleanup and configuration parsing. No platform behavior changes attempted. |
+
+Superseded 2026-11-12 (zudolab/zudo-doc#4758): both Tauri applications and their scaffold templates are removed from the source, so the two Rust rows above no longer have a consumer and the repository has no Cargo manifests to audit.
 
 ### Keep scope and detector limits explicit
 

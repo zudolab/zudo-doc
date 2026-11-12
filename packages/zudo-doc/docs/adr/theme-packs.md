@@ -180,8 +180,9 @@ Concretely:
 bootstrap and the runtime engine both read versions from the inlined
 registry). Font URLs inside `pack.css` are RELATIVE
 (`url("./fonts/x.woff2")`) — resolved against the stylesheet URL, so they are
-base-prefix-agnostic and work identically in dev, build, preview, the
-Cloudflare services, and the Tauri offline reader.
+base-prefix-agnostic and work identically in dev, build, preview, and the
+Cloudflare services. (The Tauri offline reader originally listed here was
+retired on 2026-11-12, zudolab/zudo-doc#4758.)
 
 ### 3. Runtime switch mechanism + FOUC-safe bootstrap
 
@@ -453,9 +454,10 @@ B's tokens.
   by Google), declared via `@font-face` in `pack.css` with relative
   `url("./fonts/…")` and **`font-display: swap`** (mandatory). No CDN
   `@import`/`<link>`: a fonts.googleapis.com dependency breaks strict-CSP
-  deployments, phones home, and — decisively — breaks the Tauri offline
-  reader (`src-tauri/` bundles `dist/` and must render every pack with zero
-  network).
+  deployments, phones home, and breaks a built `dist/` viewed with zero
+  network. (The original decisive case, the Tauri offline reader, was
+  retired on 2026-11-12, zudolab/zudo-doc#4758; the self-hosting rule
+  stands.)
 - **Cross-platform guarantee (hard):** every pack must render its intended
   typographic character on a machine with NO commercial local fonts
   (Windows/Linux baseline). A commercial face is never load-bearing: for
@@ -469,8 +471,8 @@ B's tokens.
 - **`local()` rule: FORBIDDEN.** No `local("Futura")`-style src entries, and
   commercial family names must not appear ANYWHERE in a pack's `@font-face`
   src lists or `font-family` stacks. Rationale: pixel-consistency everywhere
-  — a mac rendering real Futura while CI screenshots, Windows users, and the
-  Tauri build render Jost makes visual baselines untestable and bug reports
+  — a mac rendering real Futura while CI screenshots and Windows users
+  render Jost makes visual baselines untestable and bug reports
   irreproducible. The validator greps for a commercial-name denylist
   (Futura, Helvetica, Helvetica Neue, Avenir, Gill Sans, Univers, Frutiger,
   Garamond Premier, …).
