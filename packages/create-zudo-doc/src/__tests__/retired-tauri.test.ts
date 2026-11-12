@@ -1,10 +1,10 @@
 // Retired Tauri inputs must fail before anything is written, on every entry
 // point, and the legacy negative CLI spellings must stay harmless no-ops.
 //
-// The CLI cases spawn the built bin, so (like the tarball tests) this assumes
-// `dist/` is populated by a prior `pnpm --filter create-zudo-doc build`.
+// The CLI cases spawn the real entry point from source (via tsx), so they run
+// in the fast tier without a prior `pnpm --filter create-zudo-doc build`.
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -14,7 +14,7 @@ import { createZudoDoc } from "../api.js";
 import { FEATURES } from "../constants.js";
 
 const PKG_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const BIN = path.join(PKG_ROOT, "bin/create-zudo-doc.js");
+const ENTRY = path.join(PKG_ROOT, "src/index.ts");
 const RETIRED_RE = /Tauri desktop app support was retired/;
 
 let tempDir: string;
@@ -46,8 +46,10 @@ async function seedExisting(name: string): Promise<string> {
 }
 
 function runCli(args: string[]) {
-  return spawnSync(process.execPath, [BIN, ...args], {
-    cwd: tempDir,
+  // cwd stays the package root so `--import tsx` resolves from the workspace;
+  // destinations are passed as absolute paths under tempDir.
+  return spawnSync(process.execPath, ["--import", "tsx", ENTRY, ...args], {
+    cwd: PKG_ROOT,
     encoding: "utf-8",
     env: { ...process.env, CI: "1" },
   });
@@ -90,13 +92,7 @@ describe("createZudoDoc — retired Tauri features touch no files", () => {
   });
 });
 
-describe("CLI — retired Tauri inputs (built bin)", () => {
-  beforeAll(() => {
-    if (!fs.existsSync(path.join(PKG_ROOT, "dist/index.js"))) {
-      throw new Error("dist/ is missing — run `pnpm --filter create-zudo-doc build` first");
-    }
-  });
-
+describe("CLI — retired Tauri inputs (source entry point)", () => {
   it.each([
     [["--tauri"]],
     [["--tauri-dev"]],
@@ -108,7 +104,7 @@ describe("CLI — retired Tauri inputs (built bin)", () => {
     [["--no-tauri-dev", "--tauri-dev"]],
     [["--tauri", "--help"]],
   ])("%j exits non-zero and leaves a nonexistent destination uncreated", (flags) => {
-    const result = runCli(["cli-new", "--yes", "--no-install", "--no-git", ...flags]);
+    const result = runCli([path.join(tempDir, "cli-new"), "--yes", "--no-install", "--no-git", ...flags]);
     expect(result.status).not.toBe(0);
     expect(result.stderr + result.stdout).toMatch(RETIRED_RE);
     expect(fs.existsSync(path.join(tempDir, "cli-new"))).toBe(false);
@@ -117,7 +113,7 @@ describe("CLI — retired Tauri inputs (built bin)", () => {
   it("leaves an existing destination unchanged", async () => {
     const dir = await seedExisting("cli-existing");
     const before = await snapshot(dir);
-    const result = runCli(["cli-existing", "--yes", "--no-install", "--no-git", "--tauri-dev=true"]);
+    const result = runCli([path.join(tempDir, "cli-existing"), "--yes", "--no-install", "--no-git", "--tauri-dev=true"]);
     expect(result.status).not.toBe(0);
     expect(result.stderr + result.stdout).toMatch(RETIRED_RE);
     expect(await snapshot(dir)).toEqual(before);
@@ -127,7 +123,7 @@ describe("CLI — retired Tauri inputs (built bin)", () => {
     const presetFile = path.join(tempDir, "preset.json");
     await fs.writeJson(presetFile, { features: ["search", "tauri"] });
     await fs.ensureDir(path.join(tempDir, "cli-preset"));
-    const result = runCli(["cli-preset", "--preset", presetFile, "--no-install", "--no-git"]);
+    const result = runCli([path.join(tempDir, "cli-preset"), "--preset", presetFile, "--no-install", "--no-git"]);
     expect(result.status).not.toBe(0);
     expect(result.stderr + result.stdout).toMatch(RETIRED_RE);
     expect(await fs.readdir(path.join(tempDir, "cli-preset"))).toEqual([]);
@@ -135,7 +131,7 @@ describe("CLI — retired Tauri inputs (built bin)", () => {
 
   it("treats the exact legacy negative spellings as no-ops and emits no Tauri artifacts", async () => {
     const result = runCli([
-      "cli-legacy",
+      path.join(tempDir, "cli-legacy"),
       "--yes",
       "--no-install",
       "--no-git",
@@ -160,7 +156,7 @@ describe("CLI — retired Tauri inputs (built bin)", () => {
       features: FEATURES.map((f) => f.value),
       mcpDeploy: "cloudflare",
     });
-    const result = runCli(["cli-all", "--preset", presetFile, "--no-install", "--no-git"]);
+    const result = runCli([path.join(tempDir, "cli-all"), "--preset", presetFile, "--no-install", "--no-git"]);
     expect(result.status, result.stderr).toBe(0);
     const project = path.join(tempDir, "cli-all");
     const files = Object.keys(await snapshot(project));
