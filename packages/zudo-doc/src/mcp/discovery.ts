@@ -36,7 +36,7 @@ export interface McpServerCard {
 export interface AiCatalog {
   specVersion: string;
   host: { displayName: string; identifier: string; documentationUrl: string };
-  entries: Array<{ identifier: string; type: string; url: string }>;
+  entries: Array<{ identifier: string; displayName: string; type: string; url: string }>;
 }
 
 export interface McpDiscoveryOptions {
@@ -83,6 +83,12 @@ function clip(text: string, max: number): string {
   return chars.length <= max ? text : `${chars.slice(0, max - 1).join("")}…`;
 }
 
+/** Server Card `title`: the site name within the schema's length limit, absent when blank. */
+function cardTitle(siteName: string): string | undefined {
+  const name = siteName.trim();
+  return name ? clip(name, TITLE_MAX) : undefined;
+}
+
 function serverName(base: string): string {
   const name = base.split("/").filter(Boolean).join("-")
     .replace(/[^a-zA-Z0-9._-]+/g, "-")
@@ -104,6 +110,7 @@ function cardName(hostname: string, base: string): string {
 export function buildMcpServerCard(options: McpDiscoveryOptions): McpServerCard {
   const { hostname } = new URL(options.origin);
   const siteName = options.siteName.trim();
+  const title = cardTitle(siteName);
   const describedSite = `Read-only search and fetch for the ${siteName} documentation.`;
   return {
     $schema: MCP_SERVER_CARD_SCHEMA,
@@ -112,7 +119,7 @@ export function buildMcpServerCard(options: McpDiscoveryOptions): McpServerCard 
     description: siteName && Array.from(describedSite).length <= DESCRIPTION_MAX
       ? describedSite
       : "Read-only search and fetch for this documentation site.",
-    ...(siteName ? { title: clip(siteName, TITLE_MAX) } : {}),
+    ...(title === undefined ? {} : { title }),
     websiteUrl: siteUrl(options, "/"),
     remotes: [{
       type: "streamable-http",
@@ -123,9 +130,12 @@ export function buildMcpServerCard(options: McpDiscoveryOptions): McpServerCard 
 }
 
 /**
- * Domain-level catalog for a root deployment. Entries omit `displayName`,
- * `description` and `version`: the AI Catalog spec says to leave them to the
- * referenced Server Card so the two cannot drift.
+ * Domain-level catalog for a root deployment. The entry repeats the card
+ * `title` as `displayName` because ARD (Agentic Resource Discovery) requires a
+ * name on every entry, and a catalog reader that skips the card would otherwise
+ * fall back to the identifier's last segment. Both come from `siteName`, so
+ * they cannot drift; `description` and `version` stay on the card alone, as the
+ * AI Catalog spec recommends.
  */
 export function buildAiCatalog(options: McpDiscoveryOptions): AiCatalog {
   const { hostname } = new URL(options.origin);
@@ -138,6 +148,7 @@ export function buildAiCatalog(options: McpDiscoveryOptions): AiCatalog {
     },
     entries: [{
       identifier: `urn:air:${hostname}:mcp:${serverName(options.base)}`,
+      displayName: cardTitle(options.siteName) ?? hostname,
       type: MCP_SERVER_CARD_MEDIA_TYPE,
       url: mcpServerCardUrl(options),
     }],

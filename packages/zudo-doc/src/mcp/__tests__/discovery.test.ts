@@ -129,16 +129,26 @@ describe("buildAiCatalog", () => {
       },
       entries: [{
         identifier: "urn:air:zudo-doc.takazudomodular.com:mcp:docs",
+        displayName: "zudo-doc",
         type: MCP_SERVER_CARD_MEDIA_TYPE,
         url: "https://zudo-doc.takazudomodular.com/mcp/server-card",
       }],
     });
   });
 
-  it("leaves the entry name, description and version to the card", () => {
-    const [entry] = buildAiCatalog(production).entries;
-    expect(Object.keys(entry!).sort()).toEqual(["identifier", "type", "url"]);
-    expect(buildAiCatalog({ ...production, siteName: " " }).host.displayName).toBe("zudo-doc.takazudomodular.com");
+  it("names the entry with the card title and leaves description and version to the card", () => {
+    for (const siteName of ["zudo-doc", " Manual ", "x".repeat(250), "絵文字👍".repeat(40)]) {
+      const options = { ...production, siteName };
+      const [entry] = buildAiCatalog(options).entries;
+      expect(Object.keys(entry!).sort()).toEqual(["displayName", "identifier", "type", "url"]);
+      expect(entry!.displayName).toBe(buildMcpServerCard(options).title);
+    }
+  });
+
+  it("falls back to the host name when the site name is blank", () => {
+    const catalog = buildAiCatalog({ ...production, siteName: " " });
+    expect(catalog.host.displayName).toBe("zudo-doc.takazudomodular.com");
+    expect(catalog.entries[0]!.displayName).toBe("zudo-doc.takazudomodular.com");
   });
 });
 
