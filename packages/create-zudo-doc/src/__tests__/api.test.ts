@@ -29,3 +29,22 @@ describe("createZudoDoc — agent export and MCP choices", () => {
     );
   });
 });
+
+describe("createZudoDoc — retired Tauri features", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each([["tauri"], ["tauriDev"]])("rejects %s before scaffolding", async (feature) => {
+    await expect(
+      createZudoDoc({
+        projectName: "api-retired",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: ["search", feature],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Tauri desktop app support was retired/);
+    expect(scaffold).not.toHaveBeenCalled();
+  });
+});

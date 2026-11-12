@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { generateZfbConfig, orderDesiredKeys, DEFAULT_MIRROR } from "../zfb-config-gen.js";
 import type { UserChoices } from "../prompts.js";
+import { FEATURES } from "../constants.js";
 
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660 / Wave 7
 // #2662): `zfb-config-gen.ts` is now the ONE generator, emitting
@@ -331,23 +332,18 @@ describe("generateZfbConfig — Cloudflare adapter is MCP-only", () => {
   });
 });
 
-describe("generateZfbConfig — findInPage rides the tauri feature (#2690)", () => {
-  // findInPage has no CLI flag/prompt of its own — it is set whenever the
-  // tauri feature is selected (the Cmd/Ctrl+F find bar only makes sense
-  // inside the Tauri desktop shell). Deliberately its own describe block,
-  // NOT folded into the "simple boolean feature fields" table above: that
-  // table's negative-case helper assumes feature name === field name
-  // (`expected_field_name(feature) === feature`), which would check for a
-  // literal `tauri: true` — the wrong field name — and pass vacuously
-  // without proving findInPage is actually omitted.
-  it("selecting tauri emits findInPage: true", () => {
-    const result = generateZfbConfig({ ...baseChoices, features: ["tauri"] });
-    expect(result).toContain("findInPage: true");
+describe("generateZfbConfig — findInPage is retired with the Tauri features", () => {
+  it("never emits findInPage, even for every supported feature", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: FEATURES.map((f) => f.value),
+      mcpDeploy: "cloudflare",
+    });
+    expect(result).not.toContain("findInPage");
   });
 
-  it("NOT selecting tauri omits findInPage entirely (matches its false default)", () => {
-    const result = generateZfbConfig(baseChoices);
-    expect(result).not.toContain("findInPage");
+  it("drops findInPage from the default mirror", () => {
+    expect(Object.keys(DEFAULT_MIRROR)).not.toContain("findInPage");
   });
 });
 

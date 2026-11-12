@@ -72,7 +72,6 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   sidebarToggle: false,
   tocToggle: false,
   imageEnlarge: false,
-  findInPage: false,
   dynamicPageTransition: false,
   docHistory: false,
   docHistoryExclude: [],
@@ -276,11 +275,6 @@ function buildDesiredConfig(
   desired.sidebarToggle = choices.features.includes("sidebarToggle");
   desired.tocToggle = choices.features.includes("tocToggle");
   desired.imageEnlarge = choices.features.includes("imageEnlarge");
-  // findInPage rides the existing tauri feature (#2690) — the Cmd/Ctrl+F find
-  // bar only makes sense inside the Tauri desktop shell, so it has no CLI
-  // flag or prompt of its own; there is no separate "findInPage" feature
-  // module.
-  desired.findInPage = choices.features.includes("tauri");
   desired.dynamicPageTransition = choices.features.includes(
     "dynamicPageTransition",
   );
@@ -448,7 +442,6 @@ const FIELD_ORDER = [
   "sidebarToggle",
   "tocToggle",
   "imageEnlarge",
-  "findInPage",
   "dynamicPageTransition",
   "docHistory",
   "assetViewer",

@@ -21,8 +21,6 @@ import { designTokenPanelFeature } from "./design-token-panel.js";
 import { themePackSwitcherFeature } from "./theme-pack-switcher.js";
 import { i18nFeature } from "./i18n.js";
 import { versioningFeature } from "./versioning.js";
-import { tauriFeature } from "./tauri.js";
-import { tauriDevFeature } from "./tauri-dev.js";
 import { imageEnlargeFeature } from "./image-enlarge.js";
 import { assetViewerFeature } from "./asset-viewer.js";
 import { dynamicPageTransitionFeature } from "./dynamic-page-transition.js";
@@ -53,8 +51,6 @@ export const featureModules: Record<string, FeatureModule> = {
   bodyFootUtil: bodyFootUtilFeature,
   llmsTxt: llmsTxtFeature,
   mcp: mcpFeature,
-  tauri: tauriFeature,
-  tauriDev: tauriDevFeature,
   imageEnlarge: imageEnlargeFeature,
   assetViewer: assetViewerFeature,
   dynamicPageTransition: dynamicPageTransitionFeature,

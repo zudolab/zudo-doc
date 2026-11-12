@@ -12,6 +12,7 @@ import {
 } from "./authoring-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
+import { retiredFeatureError } from "./constants.js";
 import {
   capitalize,
   destinationLabel,
@@ -276,6 +277,8 @@ sidebar_position: ${position}
 `;
 
 export async function scaffold(choices: UserChoices): Promise<void> {
+  const retiredError = retiredFeatureError(choices.features);
+  if (retiredError) throw new Error(retiredError);
   // This must remain before path resolution and every filesystem operation.
   // Direct callers receive the same locale validation as CLI/preset/API users.
   const localePlan = resolveLocalePlan({
@@ -1260,16 +1263,6 @@ function generatePackageJson(
   // free to expand this into a richer pre-push pipeline later.
   if (choices.features.includes("claudeSkills")) {
     scripts["b4push"] = `${pmRunCommand(pm, "check")} && ${pmRunCommand(pm, "build")}`;
-  }
-
-  if (choices.features.includes("tauri")) {
-    scripts["dev:tauri"] = "cargo tauri dev";
-    scripts["build:tauri"] = `${pmRunCommand(pm, "build")} && cargo tauri build`;
-  }
-
-  if (choices.features.includes("tauriDev")) {
-    scripts["dev:tauri-dev"] = "cd src-tauri-dev && cargo tauri dev";
-    scripts["build:tauri-dev"] = "cd src-tauri-dev && cargo tauri build";
   }
 
   return {

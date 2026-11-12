@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { presetToChoices, validatePreset } from "../preset.js";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { FEATURES } from "../constants.js";
+import { loadPreset, presetToChoices, validatePreset } from "../preset.js";
 // F4 (S4 #2013) — project-name validation on preset path
 
 describe("presetToChoices — cjkFriendly", () => {
@@ -470,5 +474,38 @@ describe("presetToChoices — metaTags (S5 #2079)", () => {
     };
     const choices = presetToChoices({ metaTags: mt });
     expect(choices.metaTags).toEqual(mt);
+  });
+});
+
+describe("retired Tauri features in presets", () => {
+  it.each([["tauri"], ["tauriDev"]])("validatePreset rejects %s", (feature) => {
+    expect(validatePreset({ features: ["search", feature] })).toMatch(
+      /Tauri desktop app support was retired.*Remove "/,
+    );
+  });
+
+  it("presetToChoices refuses a retired feature instead of ignoring it", () => {
+    expect(() => presetToChoices({ features: ["tauri"] })).toThrow(
+      /Tauri desktop app support was retired/,
+    );
+  });
+
+  it("loadPreset fails before returning choices", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "create-zudo-doc-preset-"));
+    try {
+      const file = path.join(dir, "preset.json");
+      writeFileSync(file, JSON.stringify({ features: ["tauriDev"] }));
+      expect(() => loadPreset(file)).toThrow(/Tauri desktop app support was retired/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("every remaining supported feature resolves without a Tauri key", () => {
+    const features = FEATURES.map((f) => f.value);
+    expect(validatePreset({ features, mcpDeploy: "cloudflare" })).toBeNull();
+    const choices = presetToChoices({ features, mcpDeploy: "cloudflare" });
+    expect(choices.features).not.toHaveProperty("tauri");
+    expect(choices.features).not.toHaveProperty("tauriDev");
   });
 });
