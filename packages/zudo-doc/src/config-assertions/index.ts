@@ -9,6 +9,7 @@
 
 import type { FaviconConfig } from "../settings.js";
 import { CONTROL_CHARS } from "../asset-path/index.js";
+import { isCanonicalDocSlug } from "../doc-card-nav/slug.js";
 
 /** Structural subset of Settings used by the agent-export/MCP config guard. */
 export interface AgentDocsConsistentSubject {
@@ -251,6 +252,131 @@ export function assertValidLocaleOgImages(settings: LocaleOgImageSubject): void 
         `Invalid locales.${code}.ogImage ${describeValue(value)}: pass false, or a root-absolute site path such as "/img/ogp-${code}.png".`,
       );
     }
+  }
+}
+
+const HOME_SECTION_KEYS: Record<string, ReadonlySet<string>> = {
+  "doc-cards": new Set(["type", "heading", "description", "docs", "locales"]),
+  "site-tree": new Set(["type", "heading", "description", "variant", "locales"]),
+};
+const HOME_SECTION_LOCALE_KEYS = new Set(["heading", "description"]);
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Validate `home.sections`: absent, or an array holding exactly one
+ * `{ type: "site-tree" }` and at most one `{ type: "doc-cards", docs }`, in
+ * either order. Every field is serializable presentation data — unknown
+ * kinds, unknown keys, non-string text, invalid variants and non-canonical
+ * slugs (leading/trailing `/`, whitespace, URLs) throw a `TypeError` naming
+ * the entry. Whether a slug matches a published document is checked at
+ * render time against the content (see `DocCardNav`).
+ */
+export function assertValidHomeSections(
+  settings: HomeImageSubject & { defaultLocale?: unknown; locales?: unknown },
+): void {
+  const home = settings.home;
+  if (home === undefined || home === null || typeof home !== "object") return;
+  const value = (home as { sections?: unknown }).sections;
+  if (value === undefined) return;
+
+  if (!Array.isArray(value)) {
+    throw new TypeError(
+      `Invalid home.sections ${describeValue(value)}: omit it, or pass an array such as [{ type: "site-tree" }].`,
+    );
+  }
+
+  // Locale codes an override may target; unknown when the subject carries no i18n settings.
+  const knownLocales =
+    typeof settings.defaultLocale === "string"
+      ? new Set([settings.defaultLocale, ...(isPlainRecord(settings.locales) ? Object.keys(settings.locales) : [])])
+      : undefined;
+
+  const counts = { "doc-cards": 0, "site-tree": 0 };
+  value.forEach((entry, index) => {
+    const at = `home.sections[${index}]`;
+    if (!isPlainRecord(entry)) {
+      throw new TypeError(`Invalid ${at} ${describeValue(entry)}: each section must be an object.`);
+    }
+    const type = entry.type;
+    if (type !== "doc-cards" && type !== "site-tree") {
+      throw new TypeError(
+        `Invalid ${at}.type ${describeValue(type)}: allowed section types are "doc-cards" and "site-tree".`,
+      );
+    }
+    const allowed = HOME_SECTION_KEYS[type]!;
+    for (const key of Object.keys(entry)) {
+      if (!allowed.has(key)) {
+        throw new TypeError(
+          `Invalid ${at}: unknown key "${key}" for a "${type}" section. Allowed keys: ${[...allowed].join(", ")}.`,
+        );
+      }
+    }
+    for (const field of ["heading", "description"] as const) {
+      if (entry[field] !== undefined && typeof entry[field] !== "string") {
+        throw new TypeError(`Invalid ${at}.${field} ${describeValue(entry[field])}: must be a string.`);
+      }
+    }
+    if (entry.locales !== undefined) {
+      if (!isPlainRecord(entry.locales)) {
+        throw new TypeError(
+          `Invalid ${at}.locales ${describeValue(entry.locales)}: must be an object keyed by locale code.`,
+        );
+      }
+      for (const [code, text] of Object.entries(entry.locales)) {
+        if (knownLocales && !knownLocales.has(code)) {
+          throw new TypeError(
+            `Invalid ${at}.locales.${code}: unknown locale code. Configured locales: ${[...knownLocales].join(", ")}.`,
+          );
+        }
+        if (!isPlainRecord(text)) {
+          throw new TypeError(`Invalid ${at}.locales.${code} ${describeValue(text)}: must be an object.`);
+        }
+        for (const [key, v] of Object.entries(text)) {
+          if (!HOME_SECTION_LOCALE_KEYS.has(key)) {
+            throw new TypeError(
+              `Invalid ${at}.locales.${code}: unknown key "${key}". Allowed keys: heading, description.`,
+            );
+          }
+          if (v !== undefined && typeof v !== "string") {
+            throw new TypeError(`Invalid ${at}.locales.${code}.${key} ${describeValue(v)}: must be a string.`);
+          }
+        }
+      }
+    }
+    if (type === "doc-cards") {
+      const docs = entry.docs;
+      if (!Array.isArray(docs)) {
+        throw new TypeError(
+          `Invalid ${at}.docs ${describeValue(docs)}: must be an array of canonical document slugs such as ["getting-started/introduction"].`,
+        );
+      }
+      docs.forEach((slug, i) => {
+        if (!isCanonicalDocSlug(slug)) {
+          throw new TypeError(
+            `Invalid ${at}.docs[${i}] ${describeValue(slug)}: must be a canonical document slug such as "getting-started/introduction" (no leading or trailing "/", no URL).`,
+          );
+        }
+      });
+    } else if (entry.variant !== undefined && entry.variant !== "default" && entry.variant !== "described") {
+      throw new TypeError(
+        `Invalid ${at}.variant ${describeValue(entry.variant)}: must be "default" or "described".`,
+      );
+    }
+    counts[type] += 1;
+  });
+
+  if (counts["site-tree"] !== 1) {
+    throw new TypeError(
+      `Invalid home.sections: exactly one { type: "site-tree" } section is required (found ${counts["site-tree"]}).`,
+    );
+  }
+  if (counts["doc-cards"] > 1) {
+    throw new TypeError(
+      `Invalid home.sections: at most one { type: "doc-cards" } section is allowed (found ${counts["doc-cards"]}).`,
+    );
   }
 }
 

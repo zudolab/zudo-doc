@@ -1,0 +1,71 @@
+---
+title: DocCardNav
+description: A server-rendered card grid for a hand-picked, ordered list of documents, plus the WideSectionHeading used to introduce composed sections.
+sidebar_position: 7.5
+---
+
+## Overview
+
+`DocCardNav` renders a card grid for an explicit, ordered list of document slugs. Use it when you want to point readers at a few chosen pages, such as a "Start here" block, rather than every child of one category (that is [`CategoryNav`](./category-nav.mdx)).
+
+Each slug is resolved through the same locale-, version- and base-aware navigation data as the sidebar. Titles and descriptions come from the target page's frontmatter, so the cards never duplicate content.
+
+<Info>
+
+`DocCardNav` and `WideSectionHeading` are globally available in MDX doc pages, with no import needed. The current locale and version are injected automatically.
+
+</Info>
+
+## Live Example
+
+<DocCardNav docs={["getting-started/introduction", "getting-started/installation", "guides/configuration"]} />
+
+## Usage
+
+```mdx
+<WideSectionHeading>Start here</WideSectionHeading>
+
+<DocCardNav
+  docs={[
+    "getting-started/introduction",
+    "getting-started/installation",
+    "guides/configuration",
+  ]}
+/>
+```
+
+`DocCardNav` renders entirely on the server with zero client-side JavaScript.
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `docs` | `string[]` | — | Canonical document slugs, in display order (for example `"guides/configuration"`, without a leading slash, locale prefix, or extension) |
+| `ariaLabel` | `string` | `"Selected documents"` | Accessible name of the card navigation |
+| `layout` | `"auto" \| "default"` | `"auto"` | `"auto"` fits up to three columns to the available width; `"default"` keeps the one-to-two column `DocCardGrid` layout |
+
+## Resolution rules
+
+- Cards keep the order of `docs`. A slug that appears more than once is shown only at its first position.
+- A slug that does not resolve to a published page with its own URL is never turned into a link. Missing pages, drafts, invalid slugs, and categories without an index page are omitted, and the build logs a `[zudo-doc]` warning naming the slug and the reason.
+- When no slug resolves, nothing is rendered.
+
+## WideSectionHeading
+
+`WideSectionHeading` is a semantic `h2` with the standard content heading typography and the gradient top rule. It has no outer margin, so the surrounding layout decides the spacing. It accepts the usual heading attributes, including `id`.
+
+```mdx
+<WideSectionHeading id="start-here">Start here</WideSectionHeading>
+```
+
+## Card layout
+
+The underlying `DocCardGrid` component (from `@takazudo/zudo-doc/nav-indexing`) gains an optional `layout="auto"` mode used by `DocCardNav`. Without it, `DocCardGrid` keeps its existing one-to-two column layout.
+
+## On the homepage
+
+The homepage intro Markdown cannot host these components. To show selected documents on the homepage, use the `home.sections` recipe described in [Composed navigation sections](../guides/configuration.mdx#home-page-home-composed-navigation-sections), which renders the same heading and cards.
+
+## Package API
+
+Page modules can build the same component with `createDocCardNavWrapper` from `@takazudo/zudo-doc/doc-card-nav`. The subpath also exports `resolveDocCards` (pure resolution returning items and diagnostics), `reportDocCardDiagnostics`, and `isCanonicalDocSlug`.

@@ -239,10 +239,56 @@ export interface HomeConfig {
    * @default "logo"
    */
   imageLayout?: HomeImageLayout;
+  /**
+   * Optional navigation recipe that replaces the legacy sitemap block: exactly
+   * one `site-tree` section and at most one `doc-cards` section, in either
+   * order. Omitted keeps the legacy home page (sitemap heading + tree).
+   * See {@link HomeSection}.
+   * @default undefined
+   */
+  sections?: readonly HomeSection[];
 }
 
 /** Placement of the `home.image` picture in the home hero. */
 export type HomeImageLayout = "logo" | "large" | "banner" | "backdrop";
+
+/** Per-locale presentation overrides for a home section heading/description. */
+export interface HomeSectionLocaleText {
+  heading?: string;
+  description?: string;
+}
+
+/**
+ * Selected document cards: entry points to existing documents, resolved from
+ * canonical published slugs (e.g. `"getting-started/introduction"`) in order.
+ * Unknown, duplicate and no-page references produce no card.
+ */
+export interface HomeDocCardsSection {
+  type: "doc-cards";
+  /** Section heading. Blank/omitted uses the translated "Start here" label. */
+  heading?: string;
+  /** Short plain-text line under the heading. */
+  description?: string;
+  /** Ordered canonical document slugs. */
+  docs: readonly string[];
+  /** Per-locale heading/description overrides keyed by locale code. */
+  locales?: Readonly<Record<string, HomeSectionLocaleText>>;
+}
+
+/** The canonical site tree (categories → documents). */
+export interface HomeSiteTreeSection {
+  type: "site-tree";
+  /** Section heading. Blank/omitted uses the sitemap heading chain. */
+  heading?: string;
+  /** Short plain-text line under the heading. */
+  description?: string;
+  /** `"described"` shows descriptions and document counts. @default "default" */
+  variant?: "default" | "described";
+  /** Per-locale heading/description overrides keyed by locale code. */
+  locales?: Readonly<Record<string, HomeSectionLocaleText>>;
+}
+
+export type HomeSection = HomeDocCardsSection | HomeSiteTreeSection;
 
 /**
  * Full-colour home hero image (`home.image`). Rendered as a real `<img>` in

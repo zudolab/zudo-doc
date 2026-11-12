@@ -90,6 +90,10 @@ import type {
   HeaderNavItem,
   HeaderRightItem,
   HomeConfig,
+  HomeSection,
+  HomeDocCardsSection,
+  HomeSiteTreeSection,
+  HomeSectionLocaleText,
   AssetViewerIndexingConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
@@ -110,6 +114,7 @@ import {
   assertValidHeaderBrand,
   assertValidHomeImage,
   assertValidLocaleOgImages,
+  assertValidHomeSections,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -265,7 +270,9 @@ export interface ZudoDocConfig {
   trailingSlash?: boolean;
   /**
    * Package-owned home-page layout. Set `wide: true` to let the category grid
-   * fill most of the viewport on both `/` and locale home routes.
+   * fill most of the viewport on both `/` and locale home routes. The optional
+   * `sections` recipe (one `site-tree`, at most one `doc-cards`, either order)
+   * replaces the legacy sitemap block; it is omitted by default.
    * @default { wide: false, introMarkdown: "", sitemapHeading: "" }
    */
   home?: HomeConfig;
@@ -869,6 +876,7 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // hero picture. Also enforced inside `zudoDocPreset()`.
   assertValidHomeImage(settings);
   assertValidLocaleOgImages(settings);
+  assertValidHomeSections(settings);
 
   // `designTokenPanel: true` + `bundleZdtp: false` mounts the package panel on
   // top of a stubbed `zdtp-loader` — a guaranteed runtime throw (#4261). Also

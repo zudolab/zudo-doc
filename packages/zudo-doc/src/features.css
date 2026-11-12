@@ -1495,15 +1495,169 @@ html:not([data-theme="dark"]) [data-zd-home-image="dark"] {
   background: color-mix(in oklch, var(--zd-bg) 92%, transparent);
 }
 
-/* Home-grid category card cover (`cover` frontmatter on a top-level category
- * index). Bleeds over the card's left/top padding so it sits flush with the
- * border; the 1200:630 box is reserved before the picture loads. */
+/* ======== SiteTreeNav tree geometry ======== */
+/* One set of shared lengths drives every connector of `SiteTreeNav`
+ * (site-tree-nav-island). The disclosure box and the category-marker slot are
+ * the same `--zd-stn-slot` square, and every rail sits on that slot's centre
+ * (`--zd-stn-rail-x`), so:
+ *   - a category's double-chevron (centred in its slot) shares the x axis of
+ *     the dashed rail of the tree directly below it;
+ *   - a nested rail starts at the bottom centre of its parent's boxed toggle;
+ *   - each branch sits on the first text line (`--zd-stn-mid`), never on the
+ *     middle of a multi-line row; the last rail stops at its branch.
+ * Stacked categories keep a short lead-in above the first branch (the root
+ * rail starts at the first row's top). A lone described category whose own
+ * tree box (the `<nav>`, which it fills alone) is at least 48.75rem wide splits into summary + tree columns; the SAME
+ * container condition sets `--zd-stn-split: 1`, which crops the root rail so
+ * it begins at the first branch (no vertical segment for an only child).
+ * Container queries are authored here because Wind has no container-query
+ * variant. Sidebar connectors (tree-nav-shared) are unaffected. */
+.zd-site-tree {
+  --zd-stn-slot: 1.75rem;
+  --zd-stn-rail-x: calc(var(--zd-stn-slot) / 2);
+  --zd-stn-indent: calc(var(--zd-stn-slot) + var(--spacing-hsp-sm));
+  --zd-stn-row-pad: var(--spacing-vsp-2xs);
+  container: zd-site-tree / inline-size;
+}
+
+.zd-site-tree-card {
+  --zd-stn-card-pad: var(--spacing-hsp-sm);
+  padding: var(--zd-stn-card-pad);
+}
+
+.zd-site-tree-card[data-described] {
+  --zd-stn-card-pad: var(--spacing-hsp-xl);
+}
+
+@container zd-site-tree (max-width: 38.75rem) {
+  .zd-site-tree-card[data-described] {
+    --zd-stn-card-pad: var(--spacing-hsp-lg);
+  }
+}
+
+/* Category card cover (`cover` frontmatter on a top-level category index).
+ * Bleeds over the card padding so it sits flush with the border; the 1200:630
+ * box is reserved before the picture loads. */
 .zd-site-nav-cover {
   display: block;
-  width: calc(100% + var(--spacing-hsp-sm));
+  width: calc(100% + 2 * var(--zd-stn-card-pad));
   max-width: none;
   height: auto;
   aspect-ratio: 1200 / 630;
   object-fit: cover;
-  margin: calc(-1 * var(--spacing-vsp-2xs)) 0 var(--spacing-vsp-2xs) calc(-1 * var(--spacing-hsp-sm));
+  margin: calc(-1 * var(--zd-stn-card-pad)) calc(-1 * var(--zd-stn-card-pad)) var(--zd-stn-card-pad);
+}
+
+.zd-site-tree-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-vsp-2xs);
+}
+
+.zd-site-tree-card[data-described] .zd-site-tree-body {
+  gap: var(--spacing-vsp-sm);
+}
+
+@container zd-site-tree (min-width: 48.75rem) {
+  .zd-site-tree-body[data-split="true"] {
+    display: grid;
+    grid-template-columns: minmax(12rem, 20rem) minmax(0, 1fr);
+    column-gap: var(--spacing-hsp-2xl);
+    align-items: start;
+    --zd-stn-split: 1;
+  }
+}
+
+.zd-site-tree-head,
+.zd-site-tree-row {
+  font-size: var(--text-small);
+  line-height: var(--leading-relaxed);
+}
+
+/* First text line centred on the slot; `max()` keeps tall line-heights intact. */
+.zd-site-tree-label {
+  padding-block-start: calc((max(var(--zd-stn-slot), 1lh) - 1lh) / 2);
+}
+
+.zd-site-tree-marker {
+  inline-size: var(--zd-stn-slot);
+  block-size: 1lh;
+}
+
+.zd-site-tree-toggle {
+  inline-size: var(--zd-stn-slot);
+  block-size: var(--zd-stn-slot);
+  padding: 0;
+  background: transparent;
+}
+
+.zd-site-tree-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zd-site-tree-row {
+  --zd-stn-mid: calc(var(--zd-stn-row-pad) + max(var(--zd-stn-slot), 1lh) / 2);
+  position: relative;
+  min-inline-size: 0;
+  margin: 0;
+  padding-inline-start: var(--zd-stn-indent);
+}
+
+.zd-site-tree-line {
+  padding-block: var(--zd-stn-row-pad);
+}
+
+.zd-site-tree-rail,
+.zd-site-tree-branch,
+.zd-site-tree-stem {
+  position: absolute;
+  inline-size: 0;
+  border: 0 dashed var(--color-muted);
+  pointer-events: none;
+}
+
+.zd-site-tree-rail {
+  inset-inline-start: var(--zd-stn-rail-x);
+  inset-block: 0;
+  border-inline-start-width: 1px;
+}
+
+.zd-site-tree-rail[data-last="true"] {
+  inset-block-end: auto;
+  block-size: var(--zd-stn-mid);
+}
+
+.zd-site-tree-rail[data-root][data-first="true"] {
+  inset-block-start: calc(var(--zd-stn-mid) * var(--zd-stn-split, 0));
+}
+
+.zd-site-tree-rail[data-root][data-first="true"][data-last="true"] {
+  block-size: calc(var(--zd-stn-mid) * (1 - var(--zd-stn-split, 0)));
+}
+
+.zd-site-tree-branch {
+  inset-inline-start: var(--zd-stn-rail-x);
+  inset-block-start: var(--zd-stn-mid);
+  inline-size: calc(var(--zd-stn-indent) - var(--zd-stn-rail-x) - var(--spacing-hsp-xs));
+  border-block-start-width: 1px;
+}
+
+.zd-site-tree-row[data-group] > .zd-site-tree-branch {
+  inline-size: calc(var(--zd-stn-indent) - var(--zd-stn-rail-x));
+}
+
+.zd-site-tree-stem {
+  inset-inline-start: var(--zd-stn-rail-x);
+  inset-block: calc(var(--zd-stn-row-pad) + var(--zd-stn-slot)) 0;
+  border-inline-start-width: 1px;
+}
+
+@media (forced-colors: active) {
+  .zd-site-tree-rail,
+  .zd-site-tree-branch,
+  .zd-site-tree-stem {
+    border-color: CanvasText;
+  }
 }

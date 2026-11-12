@@ -50,6 +50,7 @@ import {
   assertValidHeaderBrand,
   assertValidHomeImage,
   assertValidLocaleOgImages,
+  assertValidHomeSections,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -452,6 +453,7 @@ export function zudoDocPreset({
   // `home.image` exactly like `zudoDoc()` does.
   assertValidHomeImage(settings);
   assertValidLocaleOgImages(settings);
+  assertValidHomeSections(settings);
 
   // Same rationale again: `designTokenPanel: true` + `bundleZdtp: false` mounts
   // the package panel over a stubbed `zdtp-loader` and can only throw at

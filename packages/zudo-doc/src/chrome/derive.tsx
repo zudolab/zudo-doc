@@ -92,6 +92,8 @@ import { createCategoryNavWrapper } from "../category-nav/index.js";
 import { createNoteTrayIndexWrapper } from "../note-tray-index/index.js";
 import { createCategoryTreeNavWrapper } from "../category-tree-nav/index.js";
 import { createSiteTreeNavWrapper } from "../site-tree-nav/index.js";
+import { createDocCardNavWrapper, type DocCardNavProps } from "../doc-card-nav/index.js";
+import { WideSectionHeading } from "../content/wide-section-heading.js";
 import { Details } from "../details/index.js";
 import {
   HtmlPreviewWrapper,
@@ -702,6 +704,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       categoryIgnore: ctx.settings.siteTreeNavIgnore,
       initiallyCollapsedCategorySlugs: ctx.settings.siteTreeNavInitiallyCollapsed,
       dateFormat: ctx.settings.dateFormat,
+      t: (key, locale) => ctx.t(key, locale),
     }) as unknown as FactoryComponent);
 
   const NoteTrayIndexWrapper = createNoteTrayIndexWrapper({
@@ -724,6 +727,14 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     t: (key, locale) => ctx.t(key, locale),
     versionedDocsUrl: ctx.versionedDocsUrl,
     dateFormat: ctx.settings.dateFormat,
+  });
+
+  const DocCardNavWrapper = createDocCardNavWrapper({
+    defaultLocale: ctx.defaultLocale,
+    resolveNavSource: ctx.resolveNavSource as never,
+    toRouteSlug: ctx.toRouteSlug,
+    docsUrl: (slug, locale) => ctx.docsUrl(slug, locale),
+    versionedDocsUrl: ctx.versionedDocsUrl,
   });
 
   const assetComponentContext = {
@@ -803,6 +814,10 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       Asset: createAssetCard(localizedAssetContext) as never,
       AssetCode: createAssetCode(localizedAssetContext) as never,
       Details: Details as never,
+      // Selected-document cards resolve against this page's locale/version.
+      DocCardNav: ((props: DocCardNavProps) =>
+        DocCardNavWrapper({ ...props, lang, currentVersion })) as never,
+      WideSectionHeading: WideSectionHeading as never,
       HtmlPreview: HtmlPreviewBound as never,
       Island: IslandPassthrough as never,
       // PresetGenerator stays a package stub (render nothing): it is the
