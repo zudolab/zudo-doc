@@ -52,6 +52,7 @@ import {
   type DocCardSourceDoc,
 } from "../doc-card-nav/index.js";
 import { resolveSiteTreeNavCountLabels } from "../site-tree-nav/index.js";
+import { getNoteTrayItems } from "../note-tray-model/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands, deriveDateFormats } from "../chrome/derive.js";
@@ -116,8 +117,10 @@ function sectionText(
   locale: string,
   field: "heading" | "description",
 ): string | undefined {
-  const value = section.locales?.[locale]?.[field] ?? section[field];
-  return value?.trim() ? value : undefined;
+  for (const value of [section.locales?.[locale]?.[field], section[field]]) {
+    if (value?.trim()) return value;
+  }
+  return undefined;
 }
 
 /**
@@ -335,7 +338,12 @@ export function createHomePageView<S extends Settings = Settings>(
     // The page owns widths and gaps; the components own their appearance.
     const homeSections = settings.home?.sections;
     const ignoredRoots = new Set([...categoryIgnore, ...movedNodes.map((n) => n.slug)]);
-    const treeRootCount = tree.filter((n) => !ignoredRoots.has(n.slug)).length;
+    // Mirrors the island's own root filter (ignored roots, empty note trays).
+    const treeRootCount = (tree as unknown as SidebarNavNode[]).filter(
+      (n) =>
+        !ignoredRoots.has(n.slug) &&
+        (n.shape !== "note-tray" || getNoteTrayItems(n).length > 0),
+    ).length;
 
     const siteTreeIsland = (variant: "default" | "described") => {
       const countLabels =
@@ -346,7 +354,7 @@ export function createHomePageView<S extends Settings = Settings>(
           <SiteTreeNav
             tree={withCoverHrefs(tree as unknown as SidebarNavNode[], settings.base)}
             categoryOrder={categoryOrder}
-            categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
+            categoryIgnore={[...ignoredRoots]}
             {...(effectiveInitiallyCollapsedCategorySlugs !== undefined
               ? { initiallyCollapsedCategorySlugs: effectiveInitiallyCollapsedCategorySlugs }
               : {})}
@@ -474,22 +482,7 @@ export function createHomePageView<S extends Settings = Settings>(
           <section data-zd-home-sitemap>
             <HomeSectionHeading>{sitemapHeading}</HomeSectionHeading>
 
-            {Island({
-              when: "idle",
-              children: (
-                <SiteTreeNav
-                  tree={withCoverHrefs(tree as unknown as SidebarNavNode[], settings.base)}
-                  categoryOrder={categoryOrder}
-                  categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
-                  {...(effectiveInitiallyCollapsedCategorySlugs !== undefined
-                    ? { initiallyCollapsedCategorySlugs: effectiveInitiallyCollapsedCategorySlugs }
-                    : {})}
-                  locale={locale}
-                  updatedLabel={t("doc.updated", locale)}
-                  dateFormats={dateFormatsFor(locale)}
-                />
-              ),
-            }) as unknown as Description}
+            {siteTreeIsland("default")}
 
             {movedNodes.length > 0 && (
               <nav

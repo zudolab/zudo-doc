@@ -311,8 +311,20 @@ describe("assertValidHomeSections", () => {
     expect(check([tree, { type: "doc-cards" }])).toThrow(/docs undefined: must be an array/);
   });
 
+  it("rejects locale overrides for locales that are not configured", () => {
+    const withLocales = (code: string) => () =>
+      assertValidHomeSections({
+        defaultLocale: "en",
+        locales: { ja: { label: "日本語", dir: "x" } },
+        home: { sections: [{ ...tree, locales: { [code]: { heading: "x" } } }] },
+      });
+    expect(withLocales("ja")).not.toThrow();
+    expect(withLocales("en")).not.toThrow();
+    expect(withLocales("jp")).toThrow(/locales\.jp: unknown locale code/);
+  });
+
   it("rejects non-canonical document slugs", () => {
-    for (const bad of ["/getting-started/introduction", "guides/", "", "https://example.com/a", "a b", 7, "a?x", "a#b"]) {
+    for (const bad of ["/getting-started/introduction", "guides/", "", "https://example.com/a", "a b", 7, "a?x", "a#b", "./a", "a/../b", "a//b", "a\\b"]) {
       expect(check([tree, { ...cards, docs: [bad] }])).toThrow(/docs\[0\]/);
     }
   });

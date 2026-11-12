@@ -2,7 +2,8 @@
 
 /**
  * True for a canonical document slug as written in `home.sections` or MDX:
- * non-empty, no surrounding slash, no whitespace, no URL scheme.
+ * non-empty, no surrounding slash, no whitespace, no URL scheme, query or
+ * hash, no backslash, and no empty, "." or ".." path segment.
  */
 export function isCanonicalDocSlug(value: unknown): value is string {
   return (
@@ -13,6 +14,8 @@ export function isCanonicalDocSlug(value: unknown): value is string {
     !/\s/.test(value) &&
     !value.includes("://") &&
     !value.includes("?") &&
-    !value.includes("#")
+    !value.includes("#") &&
+    !value.includes("\\") &&
+    value.split("/").every((segment) => segment !== "" && segment !== "." && segment !== "..")
   );
 }

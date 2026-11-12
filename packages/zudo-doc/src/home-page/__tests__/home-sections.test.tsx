@@ -202,6 +202,14 @@ describe("home.sections", () => {
     expect(ja).toContain('<p class="text-muted">Hand-picked.</p>');
   });
 
+  it("falls back to the entry's own text when a locale override is blank", () => {
+    const HomePageView = makeView([
+      { type: "doc-cards", heading: "Picks", docs: ["guides/setup"], locales: { ja: { heading: " " } } },
+      { type: "site-tree" },
+    ]);
+    expect(render(<HomePageView {...props("ja")} />)).toContain(">Picks</h2>");
+  });
+
   it("caps a single-category tree at 80rem and leaves a multi-category tree on the full band", () => {
     const Single = makeView([TREE_SECTION]);
     const single = render(<Single {...props()} />);

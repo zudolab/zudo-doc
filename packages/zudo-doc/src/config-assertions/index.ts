@@ -274,7 +274,9 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
  * the entry. Whether a slug matches a published document is checked at
  * render time against the content (see `DocCardNav`).
  */
-export function assertValidHomeSections(settings: HomeImageSubject): void {
+export function assertValidHomeSections(
+  settings: HomeImageSubject & { defaultLocale?: unknown; locales?: unknown },
+): void {
   const home = settings.home;
   if (home === undefined || home === null || typeof home !== "object") return;
   const value = (home as { sections?: unknown }).sections;
@@ -285,6 +287,12 @@ export function assertValidHomeSections(settings: HomeImageSubject): void {
       `Invalid home.sections ${describeValue(value)}: omit it, or pass an array such as [{ type: "site-tree" }].`,
     );
   }
+
+  // Locale codes an override may target; unknown when the subject carries no i18n settings.
+  const knownLocales =
+    typeof settings.defaultLocale === "string"
+      ? new Set([settings.defaultLocale, ...(isPlainRecord(settings.locales) ? Object.keys(settings.locales) : [])])
+      : undefined;
 
   const counts = { "doc-cards": 0, "site-tree": 0 };
   value.forEach((entry, index) => {
@@ -318,6 +326,11 @@ export function assertValidHomeSections(settings: HomeImageSubject): void {
         );
       }
       for (const [code, text] of Object.entries(entry.locales)) {
+        if (knownLocales && !knownLocales.has(code)) {
+          throw new TypeError(
+            `Invalid ${at}.locales.${code}: unknown locale code. Configured locales: ${[...knownLocales].join(", ")}.`,
+          );
+        }
         if (!isPlainRecord(text)) {
           throw new TypeError(`Invalid ${at}.locales.${code} ${describeValue(text)}: must be an object.`);
         }

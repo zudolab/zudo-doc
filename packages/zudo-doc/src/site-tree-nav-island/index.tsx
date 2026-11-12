@@ -77,7 +77,7 @@ function formatCount(count: number, locale: string, labels: SiteTreeNavCountLabe
     category = count === 1 ? "one" : "other";
   }
   const template = category === "one" ? labels.one : labels.other;
-  return template.replace("{count}", String(count));
+  return template.replaceAll("{count}", String(count));
 }
 
 export interface SiteTreeNavProps {
@@ -371,28 +371,18 @@ function NodeList({
   context: TreeContext;
   root: boolean;
 }) {
+  // Rows without a link or children render nothing, so first/last (which crop
+  // the rails) are taken from the rows that are actually drawn.
+  const visible = computed(() =>
+    nodes.value.filter((node) => node.children.length > 0 || Boolean(node.href)),
+  );
   return (
     <ul class="zd-site-tree-list" role="list">
-      <For each={nodes} by={(node) => node.slug}>
+      <For each={visible} by={(node) => node.slug}>
         {(node, index) => {
-          const isLast = computed(() => index.value === nodes.value.length - 1);
+          const isLast = computed(() => index.value === visible.value.length - 1);
           const isFirst = computed(() => index.value === 0);
-          return (
-            <Show
-              when={computed(() => node.value.children.length > 0)}
-              fallback={() => (
-                <Show when={computed(() => Boolean(node.value.href))}>
-                  {() => (
-                    <TreeRow node={node} isFirst={isFirst} isLast={isLast} root={root} context={context} />
-                  )}
-                </Show>
-              )}
-            >
-              {() => (
-                <TreeRow node={node} isFirst={isFirst} isLast={isLast} root={root} context={context} />
-              )}
-            </Show>
-          );
+          return <TreeRow node={node} isFirst={isFirst} isLast={isLast} root={root} context={context} />;
         }}
       </For>
     </ul>

@@ -13,7 +13,7 @@ const NAV_DOCS = [{ slug: "guides/setup", data: { title: "Setup", description: "
 describe("navigation composition MDX components", () => {
   it("registers DocCardNav and WideSectionHeading per page and binds the page locale/version", () => {
     const resolveNavSource = vi.fn(() => ({ navDocs: NAV_DOCS, categoryMeta: new Map() }));
-    const ctx = makeFakeChromeContext({ overrides: { resolveNavSource } as Partial<ChromeContext> });
+    const ctx = makeFakeChromeContext({ overrides: { resolveNavSource } as unknown as Partial<ChromeContext> });
     const { createMdxComponentsBound } = deriveMdxComponents(ctx);
     const components = createMdxComponentsBound("ja", "1.0");
     const DocCardNav = components.DocCardNav as Component<{ docs: string[] }>;
@@ -27,7 +27,7 @@ describe("navigation composition MDX components", () => {
   it("lets host mdxExtras replace the defaults", () => {
     const HostCards = () => "host";
     const ctx = makeFakeChromeContext({
-      overrides: { hostBindings: { mdxExtras: { DocCardNav: HostCards } } } as Partial<ChromeContext>,
+      overrides: { hostBindings: { mdxExtras: { DocCardNav: HostCards } } } as unknown as Partial<ChromeContext>,
     });
     expect(deriveMdxComponents(ctx).createMdxComponentsBound().DocCardNav).toBe(HostCards);
   });

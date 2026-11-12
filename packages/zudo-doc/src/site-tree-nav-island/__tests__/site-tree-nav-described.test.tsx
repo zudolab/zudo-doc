@@ -74,6 +74,18 @@ describe("SiteTreeNav described variant — SSR", () => {
     expect(html).toContain('data-node="studio/tools/editor"><span aria-hidden="true" class="zd-site-tree-rail" data-tree-rail="true" data-first="true" data-last="false">');
   });
 
+  it("crops rails at the rows actually drawn when a leaf has no link", () => {
+    const linkless: SidebarNavNode = { slug: "studio/draft", label: "Draft", position: 9, hasPage: false, children: [] };
+    const html = renderSsr(<SiteTreeNav tree={[{ ...STUDIO, children: [linkless, ...STUDIO.children, linkless] }]} />);
+    expect(html).not.toContain('data-node="studio/draft"');
+    expect(html).toContain('data-node="studio/onboarding"><span aria-hidden="true" class="zd-site-tree-rail" data-tree-rail="true" data-root="" data-first="true"');
+    expect(html).toContain('data-node="studio/glossary"><span aria-hidden="true" class="zd-site-tree-rail" data-tree-rail="true" data-root="" data-first="false" data-last="true">');
+  });
+
+  it("substitutes every {count} in a count template", () => {
+    expect(renderSsr(<SiteTreeNav tree={[MISC]} variant="described" countLabels={{ one: "{count} / {count}", other: "{count} / {count}" }} />)).toContain(">1 / 1</p>");
+  });
+
   it("counts published documents below a category, excluding the category page itself", () => {
     expect(countCategoryDocuments(STUDIO)).toBe(4);
     expect(countCategoryDocuments(MISC)).toBe(1);
