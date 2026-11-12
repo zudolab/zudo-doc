@@ -34,6 +34,7 @@ import {
   deriveGetUnavailableVersions,
 } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+import { isRootAbsoluteSitePath } from "../config-assertions/index.js";
 
 export type { DocPageBaseProps };
 
@@ -111,6 +112,7 @@ export interface DocPageRendererDeps {
     title: string;
     description?: string;
     canonical?: string;
+    ogImage?: string;
     alternateLinks?: ReadonlyArray<{
       rel: string;
       href: string;
@@ -335,6 +337,11 @@ export function createRenderDocPage<S extends Settings = Settings>(
         title={title}
         description={description}
         canonical={canonical}
+        ogImage={
+          typeof entryData?.og_image === "string" && isRootAbsoluteSitePath(entryData.og_image)
+            ? entryData.og_image
+            : undefined
+        }
         alternateLinks={agentMarkdownAlternates}
         breadcrumbs={breadcrumbs}
         prev={prev}

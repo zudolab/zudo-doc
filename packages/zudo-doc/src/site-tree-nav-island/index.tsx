@@ -125,6 +125,17 @@ export function SiteTreeNav({
             >
               {() => (
                 <div class="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
+                  {node.value.coverHref ? (
+                    <img
+                      src={node.value.coverHref}
+                      alt=""
+                      width="1200"
+                      height="630"
+                      loading="lazy"
+                      decoding="async"
+                      class="zd-site-nav-cover"
+                    />
+                  ) : null}
                   <Show
                     when={computed(() => node.value.children.length > 0)}
                     fallback={() => (

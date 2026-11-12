@@ -571,6 +571,27 @@ describe("createHomePageView — SiteTreeNav island", () => {
     expect(latestSiteTreeProps().initiallyCollapsedCategorySlugs).toEqual(["changelog"]);
   });
 
+  it("turns a top-level cover into a base-prefixed coverHref for SiteTreeNav", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext({ settings: { base: "/sub/" } }));
+    const tree = [{ ...CHANGELOG_TREE[0]!, cover: "/img/covers/changelog.png" }];
+    render(<HomePageView {...makeProps({ tree: tree as typeof CHANGELOG_TREE })} />);
+
+    const [node] = latestSiteTreeProps().tree as Array<Record<string, unknown>>;
+    expect(node!.coverHref).toBe("/sub/img/covers/changelog.png");
+    expect(node!).not.toHaveProperty("cover");
+  });
+
+  it("strips nested covers so they never reach the island props", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext());
+    const [root] = CHANGELOG_TREE;
+    const tree = [{ ...root!, children: root!.children.map((c) => ({ ...c, cover: "/img/x.png" })) }];
+    render(<HomePageView {...makeProps({ tree: tree as typeof CHANGELOG_TREE })} />);
+
+    const [node] = latestSiteTreeProps().tree as Array<{ coverHref?: string; children: object[] }>;
+    expect(node!.coverHref).toBeUndefined();
+    expect(node!.children[0]).not.toHaveProperty("cover");
+  });
+
   it("keeps the existing expanded default when no initial-collapse slugs are provided", () => {
     const ctx = makeFakeChromeContext();
     const HomePageView = createHomePageView(ctx);

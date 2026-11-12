@@ -46,6 +46,7 @@ Default: `{ wide: false, introMarkdown: "", sitemapHeading: "" }`
 | `introMarkdown` | `string` | Optional prose below the logo, title, short tagline and navigation. |
 | `sitemapHeading` | `string` | Plain-text heading above the existing documentation tree. Blank uses the translated default. |
 | `image` | `HomeImageConfig` | Optional full-colour picture shown in the hero in place of the logo. See [Full-colour home image](#home-page-home-full-colour-home-image). Omitted by default. |
+| `imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | Placement of `image` in the hero. Defaults to `"logo"`. Ignored without `image`. |
 
 Use `siteDescription` for the short tagline and existing metadata uses; `locales.<code>.description` overrides the tagline. Use `introMarkdown` for longer prose. It does not replace metadata or the tagline. Keep [homeExtras / extras](../reference/host-chrome-bindings.mdx) for inline navigation additions in the slash-separated links row; they are not a prose slot.
 
@@ -78,6 +79,19 @@ The picture takes the box the logo uses: 320 CSS px wide at a 1200:630 ratio, sh
 With `darkSrc`, both pictures are in the page and CSS shows the one that matches the colour mode chosen before first paint, so there is no flash and no script runs for the choice. With `colorMode: false`, only `src` is used.
 
 Paths must start with a single `/`. External URLs, protocol-relative `//` paths, `data:` URLs, backslashes and control characters are rejected, which keeps the picture compatible with a strict `img-src 'self'` policy. Unknown keys, a missing `src`, a non-string `alt` and an incomplete or non-integer size throw a `TypeError` at config resolution that names the field.
+
+`home.imageLayout` chooses how much room the picture gets:
+
+| Value | Layout |
+|---|---|
+| `"logo"` (default) | The logo's box: 320 CSS px beside the title. |
+| `"large"` | A 560 CSS px box beside the title on wide screens; stacked above it on narrow ones. |
+| `"banner"` | The full content width above a centred title, at 1200:630. |
+| `"backdrop"` | Behind the centred title at 1200:630, cropped to cover, with the title, tagline and links on a panel of the page background at 92% opacity so they stay readable. The picture is treated as decorative, so `alt` is not used. On narrow screens the hero grows taller than 1200:630 when the text needs it. |
+
+Every layout reserves the picture's box before it loads, and `darkSrc` works the same way in all of them. Any other value throws a `TypeError` at config resolution.
+
+To show the same hero outside the home route, for example in a settings preview, render `HomeHero` from `@takazudo/zudo-doc/home-hero` with plain props (`siteName`, `description`, `logo`, `image`, `imageLayout`, `base`, `links`). It needs the package stylesheets (such as `@takazudo/zudo-doc/compiled.css`) and, for `darkSrc`, an `html[data-theme]` attribute. The module also re-exports `assertValidHomeImage` to check settings before rendering.
 
 #### Markdown-first example
 
@@ -403,7 +417,7 @@ Default: `{ description: true, keywords: false, ogImage: false, ogSiteName: true
 |----------|------|-------------|
 | `description` | `boolean` | Emit `<meta name="description">` |
 | `keywords` | `string \| false` | `<meta name="keywords">` value, or omit |
-| `ogImage` | `string \| false` | Path for `og:image` / `twitter:image`, or omit |
+| `ogImage` | `string \| false` | Path for `og:image` / `twitter:image`, or omit. A locale’s `ogImage` and a page’s `og_image` override it |
 | `ogSiteName` | `boolean` | Emit `og:site_name` |
 | `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter Card type, or omit the block |
 | `twitterSite` | `string` (optional) | `twitter:site` handle |
@@ -647,7 +661,7 @@ Default: `"en"`
 
 ### locales
 
-Additional locales: code → `{ label, dir, description?, introMarkdown?, sitemapHeading? }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection. The map is ordered: the language switcher renders every configured `label` in that order, so labels are not hard-coded to `JP` or `JA`.
+Additional locales: code → `{ label, dir, description?, introMarkdown?, sitemapHeading?, ogImage? }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection. The map is ordered: the language switcher renders every configured `label` in that order, so labels are not hard-coded to `JP` or `JA`.
 
 Default: `{}`
 
@@ -664,7 +678,9 @@ locales: {
 
 `description` is an optional string for that locale’s home page hero. When omitted, it falls back to `settings.siteDescription`; an empty string (`""`) intentionally leaves the hero description blank. `settings.locales` contains only non-default locales, so the default locale always uses `settings.siteDescription` and has no locale-specific override.
 
-Current limitations: this field affects only the home page hero description. `llms.txt` still uses the global `siteDescription` for every locale, and home pages still emit no `<meta name="description">`.
+`ogImage` sets the `og:image` / `twitter:image` path for every page of that locale, overriding `metaTags.ogImage`. Use a root-absolute path such as `/img/og-ja.png`; the site `base` is prefixed for you. `false` turns the image off for that locale. A page’s own [`og_image`](./frontmatter.mdx#fields-og_image) frontmatter still wins.
+
+Current limitations: `description` affects only the home page hero description. `llms.txt` still uses the global `siteDescription` for every locale, and home pages still emit no `<meta name="description">`.
 
 Locale codes are used as URL segments and directory suffixes. Keep them
 lowercase and path-safe; duplicate codes, the primary `defaultLocale`, path

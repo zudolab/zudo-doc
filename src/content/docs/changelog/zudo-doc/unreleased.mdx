@@ -14,3 +14,7 @@ sidebar_position: 1157
 ### Features
 
 - New optional `home.image` setting (`{ src, alt?, width?, height?, darkSrc? }`) shows a full-colour picture in the home hero, in the box the logo uses, instead of the one-colour logo mask. `darkSrc` is shown in dark mode by CSS keyed on the colour mode, with no extra script. Paths must be root-absolute site paths; external URLs and malformed values throw a `TypeError` at config resolution. Output without `home.image` is unchanged. (#4750)
+- New `home.imageLayout` (`"logo"`, `"large"`, `"banner"`, `"backdrop"`) gives `home.image` more room: a 560px side box, a full-width banner above the title, or a cropped backdrop behind a readable copy panel. The default `"logo"` keeps the current output. (#4751)
+- New `@takazudo/zudo-doc/home-hero` export: `HomeHero` renders the home hero from plain props, so hosts can preview the exact hero outside the home route. (#4753)
+- Social preview images per locale and per page: `locales.<code>.ogImage` (or `false`) and the `og_image` frontmatter field override `metaTags.ogImage`. (#4752)
+- New `cover` frontmatter field shows a 1200×630 cover image on a top-level section's card in the home page site index. (#4754)

@@ -46,6 +46,7 @@ export default defineConfig(
 | `introMarkdown` | `string` | ロゴ、タイトル、短い説明、ナビゲーションの下に表示する紹介文。 |
 | `sitemapHeading` | `string` | 既存のドキュメントツリーの上に表示するプレーンテキストの見出し。空欄なら翻訳済みのデフォルトを使用。 |
 | `image` | `HomeImageConfig` | ロゴの代わりにヒーローへ表示するフルカラー画像（省略可能）。[フルカラーのホーム画像](#ホームページ-home-フルカラーのホーム画像)を参照。デフォルトでは未設定。 |
+| `imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | ヒーロー内での `image` の配置。デフォルトは `"logo"`。`image` がなければ無視されます。 |
 
 短い説明と既存のメタデータ用途には `siteDescription` を使い、ロケール別の短い説明は `locales.<code>.description` で上書きします。長い紹介文には `introMarkdown` を使います。メタデータや短い説明を置き換える設定ではありません。[homeExtras / extras](../reference/host-chrome-bindings.mdx) はスラッシュ区切りのリンク行にナビゲーションを追加するためのもので、紹介文用のスロットではありません。
 
@@ -78,6 +79,19 @@ zudoDoc({
 `darkSrc` を指定すると両方の画像がページに含まれ、最初の描画より前に決まるカラーモードに合わせて CSS が一方だけを表示します。ちらつきはなく、この切り替えのためにスクリプトは動きません。`colorMode: false` の場合は `src` だけを使います。
 
 パスは 1 つの `/` で始まる必要があります。外部 URL、プロトコル相対の `//` パス、`data:` URL、バックスラッシュ、制御文字は拒否されるため、厳格な `img-src 'self'` ポリシーとも両立します。未知のキー、`src` の欠落、文字列以外の `alt`、片方だけまたは整数でないサイズは、設定解決の時点でフィールド名を示す `TypeError` になります。
+
+`home.imageLayout` で画像に与える広さを選べます。
+
+| 値 | レイアウト |
+|---|---|
+| `"logo"`（デフォルト） | ロゴと同じボックス。タイトルの横に幅 320 CSS px。 |
+| `"large"` | 広い画面ではタイトルの横に幅 560 CSS px のボックス。狭い画面ではタイトルの上に積みます。 |
+| `"banner"` | 中央揃えのタイトルの上に、コンテンツ幅いっぱい・比率 1200:630 で表示。 |
+| `"backdrop"` | 中央揃えのタイトルの背後に比率 1200:630 で敷き、はみ出す部分は切り取ります。タイトル・短い説明・リンクは、読みやすさのため不透明度 92% のページ背景色のパネルに載せます。画像は装飾として扱うため `alt` は使いません。狭い画面では、文章が収まるようヒーローが 1200:630 より縦に伸びます。 |
+
+どのレイアウトでも読み込み前に画像のボックスを確保し、`darkSrc` も同じように働きます。それ以外の値は設定解決の時点で `TypeError` になります。
+
+ホームのルート以外（設定画面のプレビューなど）で同じヒーローを表示するには、`@takazudo/zudo-doc/home-hero` の `HomeHero` をプレーンな props（`siteName`、`description`、`logo`、`image`、`imageLayout`、`base`、`links`）で描画します。パッケージのスタイルシート（`@takazudo/zudo-doc/compiled.css` など）が必要で、`darkSrc` を使う場合は `html[data-theme]` 属性も必要です。描画前に設定を検査できるよう、このモジュールは `assertValidHomeImage` も再エクスポートしています。
 
 #### Markdown 中心の例
 
@@ -403,7 +417,7 @@ MDX 内のインラインマークダウンリンク（例 `[text](/docs/some-pa
 |----------|------|-------------|
 | `description` | `boolean` | `<meta name="description">` を出力 |
 | `keywords` | `string \| false` | `<meta name="keywords">` の値、または省略 |
-| `ogImage` | `string \| false` | `og:image` / `twitter:image` のパス、または省略 |
+| `ogImage` | `string \| false` | `og:image` / `twitter:image` のパス、または省略。ロケールの`ogImage`とページの`og_image`がこれを上書きします |
 | `ogSiteName` | `boolean` | `og:site_name` を出力 |
 | `twitterCard` | `"summary" \| "summary_large_image" \| false` | Twitter カードの種類、またはブロックを省略 |
 | `twitterSite` | `string`（任意） | `twitter:site` ハンドル |
@@ -647,7 +661,7 @@ export default defineConfig(
 
 ### locales
 
-追加ロケール: コード → `{ label, dir, description?, introMarkdown?, sitemapHeading? }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。マップの順序が維持され、言語切り替えは設定したすべての `label` をその順序で表示するため、`JP` や `JA` に固定されません。
+追加ロケール: コード → `{ label, dir, description?, introMarkdown?, sitemapHeading?, ogImage? }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。マップの順序が維持され、言語切り替えは設定したすべての `label` をその順序で表示するため、`JP` や `JA` に固定されません。
 
 デフォルト: `{}`
 
@@ -664,7 +678,9 @@ locales: {
 
 `description`は、そのロケールのホームページのヒーローに表示する説明文です。文字列で指定でき、省略すると`settings.siteDescription`が使われます。空文字列（`""`）を指定した場合は、説明文を空欄にできます。`settings.locales`に登録するのはデフォルト以外のロケールだけなので、デフォルトロケールでは常に`settings.siteDescription`が使われ、ロケール別の上書きはできません。
 
-現時点では、この設定が反映されるのはホームページのヒーローの説明文だけです。`llms.txt`はどのロケールでも共通の`siteDescription`を使い、ホームページには引き続き`<meta name="description">`が出力されません。
+`ogImage`は、そのロケールの全ページの`og:image` / `twitter:image`のパスを指定し、`metaTags.ogImage`を上書きします。`/img/og-ja.png`のようなルートからの絶対パスで指定してください。サイトの`base`は自動で前に付きます。`false`を指定すると、そのロケールでは画像を出力しません。ページ自身の[`og_image`](./frontmatter.mdx#フィールド詳細-og_image)フロントマターがあれば、そちらが優先されます。
+
+現時点では、`description`が反映されるのはホームページのヒーローの説明文だけです。`llms.txt`はどのロケールでも共通の`siteDescription`を使い、ホームページには引き続き`<meta name="description">`が出力されません。
 
 ロケールコードは URL セグメントとディレクトリのサフィックスに使われます。小文字でパス安全な値にしてください。重複、プライマリの `defaultLocale`、パス区切り文字、トラバーサル要素は、`create-zudo-doc` がファイルを書き込む前に拒否します。生成される `ja` ツリーは日本語の文章、それ以外の任意のロケールツリーは翻訳用の英語プレースホルダー文章から始まります。
 

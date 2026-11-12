@@ -31,6 +31,10 @@ export interface SidebarNavNode {
   slug: string;
   label: string;
   description?: string;
+  /** Raw `cover` frontmatter path; the home page turns it into `coverHref`. */
+  cover?: string;
+  /** Base-prefixed home-grid card picture URL (top-level nodes on the home page only). */
+  coverHref?: string;
   position: number;
   href?: string;
   hasPage: boolean;

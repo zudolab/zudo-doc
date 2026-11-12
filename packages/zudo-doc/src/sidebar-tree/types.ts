@@ -13,6 +13,8 @@
 export interface SidebarFrontmatter {
   title: string;
   description?: string;
+  /** Home-grid card picture (root-absolute site path). */
+  cover?: string;
   sidebar_position?: number;
   sidebar_label?: string;
   sidebar_initial_expansion?: "collapsed" | "expanded";
@@ -95,6 +97,8 @@ export interface SidebarNode {
   id: string;
   label: string;
   description?: string;
+  /** Raw `cover` frontmatter path; base-prefixed by the home page. */
+  cover?: string;
   href?: string;
   sidebar_position?: number;
   /** True when an actual MDX file backs this slug (vs. directory-only). */

@@ -40,6 +40,8 @@ title: Quick Start
 | `description` | string | いいえ | -- | タイトル下に表示されるサブタイトル |
 | `sidebar_position` | number | いいえ | `999` | サイドバーカテゴリ内のソート順 |
 | `sidebar_label` | string | いいえ | `title`の値 | サイドバーに表示されるラベルのオーバーライド |
+| `og_image` | string | いいえ | ロケールまたはサイトの`ogImage` | このページの`og:image` / `twitter:image`に使う、ルートからの絶対パス |
+| `cover` | string | いいえ | -- | ホームページのトップレベルセクションのカードに表示するカバー画像の、ルートからの絶対パス |
 | `sidebar_initial_expansion` | `"collapsed"`または`"expanded"` | いいえ | 継承値、未設定時は従来の動作 | サイドバーの初期展開状態。カテゴリのインデックスから配下に継承 |
 | `category` | string | いいえ | ディレクトリ名 | 将来の使用のために予約 |
 | `category_no_page` | boolean | いいえ | `false` | カテゴリをリンクなしのヘッダーにする（ルート・サイトマップ・検索エントリなし） |
@@ -125,6 +127,37 @@ sidebar_position: 1
 ---
 title: Configuring Color Schemes and Themes
 sidebar_label: Color Schemes
+---
+```
+
+### `og_image`
+
+- **型：** `string`
+- **必須：** いいえ
+- **デフォルト：** ロケールの`ogImage`、次に`metaTags.ogImage`
+
+このページのSNSプレビュー画像（`og:image`と`twitter:image`）を指定します。ルートからの絶対パスで指定してください。サイトの`base`は自動で前に付きます。[`locales.<code>.ogImage`](./configuration.mdx#コンテンツと-i18n-locales)と`metaTags.ogImage`の設定より優先されます。
+
+```mdx
+---
+title: Release Notes
+og_image: /img/og/release-notes.png
+---
+```
+
+### `cover`
+
+- **型：** `string`
+- **必須：** いいえ
+- **デフォルト：** --
+
+ホームページのサイトインデックスで、トップレベルセクションのカードにカバー画像を表示します。セクションの`index.mdx`に指定してください。それより深い階層では効果がありません。1200×630の画像を、ルートからの絶対パスで指定してください。サイトの`base`は自動で前に付き、画像はこの比率に切り抜かれます。装飾用の画像なので、代替テキストは付きません。
+
+```mdx
+---
+title: Guides
+sidebar_position: 1
+cover: /img/covers/guides.png
 ---
 ```
 

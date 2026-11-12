@@ -48,6 +48,8 @@ export interface DocNavNode {
   slug: string;
   label: string;
   description?: string;
+  /** Raw `cover` frontmatter path of a category index page. */
+  cover?: string;
   position: number;
   href?: string;
   hasPage: boolean;
@@ -98,6 +100,7 @@ export interface DocPageFrontmatter {
   pagination_prev?: string | null;
   pagination_next?: string | null;
   tags?: string[];
+  og_image?: string;
   [key: string]: unknown;
 }
 

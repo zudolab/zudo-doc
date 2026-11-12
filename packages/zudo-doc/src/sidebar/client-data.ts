@@ -2,7 +2,7 @@ import { normalizeIslandData } from "../chrome/island-data.js";
 import type { SidebarNavNode, SidebarNavigationContext } from "./types.js";
 
 /** Navigation data needed by the native sidebar islands, without server prose. */
-export type SidebarClientNode = Omit<SidebarNavNode, "description" | "children"> & {
+export type SidebarClientNode = Omit<SidebarNavNode, "description" | "cover" | "coverHref" | "children"> & {
   children: SidebarClientNode[];
 };
 
@@ -16,6 +16,8 @@ const nodeFields = {
   slug: true,
   label: true,
   description: false,
+  cover: false,
+  coverHref: false,
   position: true,
   href: true,
   hasPage: true,
