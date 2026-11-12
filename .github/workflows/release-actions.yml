@@ -84,7 +84,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  RELEASE_EVIDENCE: ${{ github.workspace }}/../release-evidence
+  # Inside the workspace: upload-artifact rejects paths with '..' segments.
+  # Each job checks out first, then writes or downloads evidence here.
+  RELEASE_EVIDENCE: ${{ github.workspace }}/.release-evidence
 
 jobs:
   admit:
@@ -233,7 +235,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           persist-credentials: false
 
       - name: Setup Node.js
@@ -278,7 +280,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           persist-credentials: false
 
       - name: Setup Node.js
@@ -307,6 +309,8 @@ jobs:
 
       - name: Read back
         if: ${{ always() }}
+        # bash (not the default `bash -e {0}`) adds pipefail, so tee cannot hide a failed readback.
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           IN_VERSION: ${{ inputs.version }}

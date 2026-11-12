@@ -701,6 +701,10 @@ async function dispatchPublish(d, pkg, tag, sha, known, timeoutMs) {
     if (c.state === "denied" || c.state === "missing") {
       throw new ReleaseError(`workflow_dispatch of ${pkg.workflow} on ${tag} was refused (${c.why}): ${msg}. Not retried through another route; a person with Actions write access can run it from the Actions UI (RELEASE.md, "Actions release path").`);
     }
+    const code = Number(/HTTP (\d{3})/.exec(r.stderr ?? "")?.[1] ?? 0);
+    if (code >= 400 && code < 500 && code !== 408 && code !== 429 && !/rate limit/i.test(r.stderr ?? "")) {
+      throw new ReleaseError(`workflow_dispatch of ${pkg.workflow} on ${tag} was rejected (HTTP ${code}): ${msg}. A definite rejection is not re-sent; fix the cause, then dispatch the release workflow again.`);
+    }
     d.log(`${pkg.workflow}: dispatch answer was not a success (${c.why}): ${msg} — checking whether a run started anyway`);
   }
   const run = await waitForNewRun(d, pkg, tag, sha, known, timeoutMs);
@@ -848,6 +852,20 @@ export async function cmdAdmit(d, o) {
     return finish(1);
   }
 
+  try {
+    return await admitChecks(d, declared, record, out, finish);
+  } catch (e) {
+    const err = /** @type {Error & {exitCode?: number}} */ (e);
+    record.errors.push(redact(err.message));
+    return finish(err.exitCode ?? 1);
+  }
+}
+
+/**
+ * @param {Deps} d @param {Record<string,string>} declared @param {Record<string, any>} record
+ * @param {string} out @param {(code: number) => number} finish
+ */
+async function admitChecks(d, declared, record, out, finish) {
   // 1. Re-derive the A2 evidence and the integration binding from GitHub.
   const a2Code = await cmdA2Evidence(d, { pr: declared.pr, run: declared.run, attempt: declared.attempt, candidate: declared.candidate, base: declared.base, out });
   const a2 = readJson(d, join(out, "a2-evidence.json"));

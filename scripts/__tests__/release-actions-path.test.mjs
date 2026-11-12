@@ -423,7 +423,15 @@ describe("admit re-derives evidence server-side and never writes", () => {
   it("blocks a package version that is not the fixed version at the integration", async () => {
     const w = world({ versionAt: "10.0.3" });
     expect(await releaseMain(admitArgs(w), w.deps)).toBe(1);
-    expect(w.logs.join()).toMatch(/is 10.0.3, not 11.0.0/);
+    expect(admission(w)).toMatchObject({ ok: false, errors: [expect.stringMatching(/is 10.0.3, not 11.0.0/)] });
+  });
+
+  it("records a git/GitHub failure after the evidence step as unknown in admission.json", async () => {
+    const w = world();
+    const exec = w.deps.exec;
+    w.deps.exec = (cmd, args, opts) => (cmd === "git" && args[0] === "ls-remote" ? fail("fatal: unable to access remote") : exec(cmd, args, opts));
+    expect(await releaseMain(admitArgs(w), w.deps)).toBe(2);
+    expect(admission(w)).toMatchObject({ ok: false, errors: [expect.stringMatching(/ls-remote failed/)] });
   });
 
   it("resumes same-SHA tags and refuses a tag at another SHA", async () => {
@@ -587,6 +595,14 @@ describe("publish --initiation dispatch", () => {
     expect(dispatches(w)).toHaveLength(1);
   });
 
+  it("does not wait on a definite non-permission rejection (e.g. 422)", async () => {
+    const w = await tagged({ dispatchStartsRun: false });
+    w.s.dispatch = () => fail("could not create workflow dispatch event: HTTP 422: Unexpected inputs provided");
+    expect(await releaseMain(pubArgs(w), w.deps)).toBe(1);
+    expect(w.logs.join()).toMatch(/was rejected \(HTTP 422\).*not re-sent/);
+    expect(w.logs.join()).not.toMatch(/checking whether a run started anyway/);
+  });
+
   it("attaches to an active run of the exact workflow/tag/SHA and ignores look-alikes", async () => {
     const w = await tagged();
     const tag = `${HISTORY.tagPrefix}${VERSION}`;
@@ -707,6 +723,11 @@ describe("release-actions.yml contract", () => {
     expect(y).toMatch(/^permissions: \{\}$/m);
     expect(y).toMatch(/concurrency:\n {2}group: release-actions\n {2}cancel-in-progress: false/);
     expect(job("admit")).toContain("if: ${{ github.ref == 'refs/heads/main' }}");
+  });
+
+  it("keeps artifact paths free of '..' and does not hide a failed readback behind tee", () => {
+    expect(/RELEASE_EVIDENCE: (\S+)/.exec(y)?.[1]).not.toContain("..");
+    expect(job("finalize")).toMatch(/- name: Read back\n(?: {8}.*\n)*? {8}shell: bash\n/);
   });
 
   it("separates read-only admission, contents write and actions write", () => {
