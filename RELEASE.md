@@ -114,7 +114,7 @@ other mutation to test a permission), and each row states how it was established
 | git checkout, Node ≥ 24, `unzip` | local checks | every step |
 | `gh auth status` | hint only; a proxy-injected credential can fail it while the API works, so the reads below decide | — |
 | GitHub read: repository metadata, commits, workflow runs, workflow jobs (of one sample run), artifact list | one GET each | A2 + main-workflow evidence, `status` |
-| GitHub read: job logs, artifact download | **not exercised**; `a2-evidence` performs them and stops (exit 2) if they fail | A2 evidence |
+| GitHub read: job logs, artifact download | **not exercised**; `a2-evidence` performs them and stops if they fail | A2 evidence |
 | GitHub contents write | role inference only | `tag`, `releases`, publishing a draft release |
 | GitHub actions write | role inference only | `workflow_dispatch` (initiation fallback, resume) |
 | npm registry read | one public GET | registry state, provenance |
@@ -122,7 +122,7 @@ other mutation to test a permission), and each row states how it was established
 
 Exit codes: `1` when a required check is `missing` or `denied`; `2` when a required read is
 `unknown` (retry later; it is not a denial); `0` otherwise, including a usable read-only
-session. Exit `0` means only that the reported nonpublishing checks succeeded. It does not
+session. The jobs read is required only when a sample run exists to read it from. Exit `0` means only that the reported nonpublishing checks succeeded. It does not
 establish tag or release authorization, `workflow_dispatch` success, or npm OIDC
 publication; those are proven only when their steps run. Write capabilities therefore
 always stay `inferred`, `missing` or `unknown`, never `ok`. The report never prints

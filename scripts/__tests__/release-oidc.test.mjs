@@ -355,6 +355,7 @@ describe("release preflight capability report", () => {
       fetchImpl: async (url, init) => {
         fetchCalls.push({ url, method: init?.method ?? "GET" });
         if (registry === "ok") return jsonResponse(200, { name: "create-zudo-doc", versions: {}, "dist-tags": {} });
+        if (registry === "absent") return jsonResponse(404, {});
         return jsonResponse(503, {});
       },
       sleep: noSleep,
@@ -453,16 +454,32 @@ describe("release preflight capability report", () => {
   });
 
   it("fails on a definite missing prerequisite", async () => {
-    const p = preflight({ remote: ok("https://github.com/someone/fork.git") });
-    expect(await p.run()).toBe(1);
-    expect(p.row("git checkout of zudolab/zudo-doc")).toContain("| missing |");
+    for (const remote of ["https://github.com/someone/fork.git", "https://github.com/notzudolab/zudo-doc.git"]) {
+      const p = preflight({ remote: ok(remote) });
+      expect(await p.run()).toBe(1);
+      expect(p.row("git checkout of zudolab/zudo-doc")).toContain("| missing |");
+    }
+    const noCredential = preflight({ api: Object.fromEntries(Object.values(READS).map((r) => [r, () => fail("To get started with GitHub CLI, please run:  gh auth login")])) });
+    expect(await noCredential.run()).toBe(1);
+    expect(noCredential.row("read: repository metadata")).toContain("| missing | gh has no credential");
+    const npmAbsent = preflight({ registry: "absent" });
+    expect(await npmAbsent.run()).toBe(1);
+    expect(npmAbsent.row("npm registry read")).toContain("| missing |");
+  });
+
+  it("retries one unparseable body before reporting it unknown", async () => {
+    let n = 0;
+    const p = preflight({ api: { [READS.commits]: () => (n++ === 0 ? ok("<html>proxy error</html>") : ok200([{ sha: SHA }])) } });
+    expect(await p.run()).toBe(0);
+    expect(p.row("read: commits")).toContain("| observed |");
+    expect(n).toBe(2);
   });
 
   it("lets the API reads, not `gh auth status`, decide GitHub access", async () => {
     const authFails = fail("github.com\n  X Failed to log in to github.com using token (GH_TOKEN)");
     const usable = preflight({ auth: authFails });
     expect(await usable.run()).toBe(0);
-    expect(usable.row("gh auth status")).toContain("| unknown |");
+    expect(usable.row("gh auth status")).toContain("| unknown | gh reports no usable credential (X Failed to log in");
     expect(usable.row("read: workflow runs (metadata)")).toContain("| observed |");
 
     const unauthenticated = preflight({ auth: authFails, api: Object.fromEntries(Object.values(READS).map((r) => [r, () => fail("gh: Bad credentials (HTTP 401)")])) });

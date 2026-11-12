@@ -167,10 +167,11 @@ export function redact(/** @type {string} */ s) {
 
 /**
  * Classify a failed `gh api` call from its stderr without echoing it.
- * @returns {{state: "denied"|"unknown", why: string}}
+ * @returns {{state: "missing"|"denied"|"unknown", why: string}}
  */
 export function classifyGhFailure(/** @type {string} */ stderr) {
   const code = /HTTP (\d{3})/.exec(stderr)?.[1];
+  if (!code && /gh auth login|not logged in/i.test(stderr)) return { state: "missing", why: "gh has no credential" };
   if (code === "429" || /rate limit/i.test(stderr)) return { state: "unknown", why: "rate limited" };
   if (code === "401" || code === "403") return { state: "denied", why: `HTTP ${code}` };
   if (code === "404") return { state: "unknown", why: "HTTP 404 (absent or not visible to this credential)" };
@@ -179,13 +180,13 @@ export function classifyGhFailure(/** @type {string} */ stderr) {
 }
 
 /**
- * One bounded read-only GET. 4xx answers are final; rate limits and transport/5xx
- * failures get one retry.
+ * One bounded read-only GET. Definite answers (missing credential, 4xx) are final;
+ * rate limits, transport/5xx failures and unparseable bodies get one retry.
  * @param {Deps} d @param {string} path
- * @returns {Promise<{state: "observed"|"denied"|"unknown", why: string, body?: any}>}
+ * @returns {Promise<{state: "observed"|"missing"|"denied"|"unknown", why: string, body?: any}>}
  */
 async function ghProbe(d, path, attempts = 2) {
-  /** @type {{state: "denied"|"unknown", why: string}} */
+  /** @type {{state: "missing"|"denied"|"unknown", why: string}} */
   let last = { state: "unknown", why: "not attempted" };
   for (let i = 1; i <= attempts; i++) {
     const r = d.exec("gh", ["api", "-X", "GET", path]);
@@ -193,11 +194,12 @@ async function ghProbe(d, path, attempts = 2) {
       try {
         return { state: "observed", why: "read succeeded", body: JSON.parse(r.stdout) };
       } catch {
-        return { state: "unknown", why: "unparseable response" };
+        last = { state: "unknown", why: "unparseable response" };
       }
+    } else {
+      last = classifyGhFailure(r.stderr ?? "");
+      if (last.state !== "unknown" || last.why.startsWith("HTTP 4")) return last;
     }
-    last = classifyGhFailure(r.stderr ?? "");
-    if (last.state === "denied" || last.why.startsWith("HTTP 4")) return last;
     if (i < attempts) await d.sleep(2000 * i);
   }
   return last;
@@ -223,7 +225,7 @@ export async function cmdPreflight(d) {
   };
 
   const git = d.exec("git", ["remote", "get-url", "origin"]);
-  const gitOk = git.status === 0 && /zudolab\/zudo-doc(\.git)?$/.test(git.stdout.trim());
+  const gitOk = git.status === 0 && /[/:]zudolab\/zudo-doc(\.git)?$/.test(git.stdout.trim());
   row("git checkout of zudolab/zudo-doc", gitOk ? "ok" : "missing", git.stdout.trim() || git.stderr.trim().split("\n")[0] || "no origin", { required: true });
   const node = d.exec("node", ["--version"]).stdout.trim();
   row("Node >= 24", Number(/^v(\d+)/.exec(node)?.[1] ?? 0) >= 24 ? "ok" : "missing", node || "node not found", { required: true });
@@ -232,7 +234,9 @@ export async function cmdPreflight(d) {
   // `gh auth status` is a hint only: it can reject a credential that the API still accepts
   // (e.g. one injected by a proxy), so the reads below decide.
   const auth = d.exec("gh", ["auth", "status"]);
-  row("gh auth status", auth.status === 0 ? "ok" : "unknown", auth.status === 0 ? "gh reports a credential" : `gh reports no usable credential (${(auth.stderr || auth.stdout).trim().split("\n")[0] ?? ""}); the API reads below decide`);
+  const authLines = (auth.stderr || auth.stdout).split("\n").map((l) => l.trim()).filter(Boolean);
+  const authWhy = authLines.find((l) => /^X\s|not logged|invalid|fail/i.test(l)) ?? authLines[0] ?? "";
+  row("gh auth status", auth.status === 0 ? "ok" : "unknown", auth.status === 0 ? "gh reports a credential" : `gh reports no usable credential (${authWhy}); the API reads below decide`);
 
   const repo = await ghProbe(d, `repos/${REPO}`);
   row("read: repository metadata", repo.state, repo.why, { required: true });
@@ -254,8 +258,8 @@ export async function cmdPreflight(d) {
 
   const artifacts = await ghProbe(d, `repos/${REPO}/actions/artifacts?per_page=1`);
   row("read: artifact list (metadata)", artifacts.state, `${artifacts.why}; a list is not a download`, { required: true });
-  row("read: job logs", "unknown", "not exercised by preflight; `a2-evidence` reads it and stops with exit 2 if unavailable");
-  row("read: artifact download", "unknown", "not exercised by preflight; `a2-evidence` downloads and digest-checks it");
+  row("read: job logs", "unknown", "not exercised by preflight; `a2-evidence` reads it and stops if it fails");
+  row("read: artifact download", "unknown", "not exercised by preflight; `a2-evidence` downloads and digest-checks it and stops if it fails");
 
   const role = perms === undefined ? undefined : Boolean(perms.push || perms.maintain || perms.admin);
   const roleDetail =
@@ -269,7 +273,7 @@ export async function cmdPreflight(d) {
   row("write: actions (workflow_dispatch)", writeState, `${roleDetail} (initiation/resume)`);
 
   const reg = await registryGet("/create-zudo-doc", { fetchImpl: d.fetchImpl, attempts: 2, sleep: d.sleep });
-  row("npm registry read", reg.state === "ok" ? "observed" : "unknown", `public read of create-zudo-doc (${reg.state})`, { required: true });
+  row("npm registry read", reg.state === "ok" ? "observed" : reg.state === "absent" ? "missing" : "unknown", `public read of create-zudo-doc (${reg.state})`, { required: true });
   rows.push(`| npm credential | not used | npm writes happen only in publish-*.yml via OIDC (npm ${NPM_CLI_PIN.version}) |`);
 
   d.log(["| capability | state | detail |", "|---|---|---|", ...rows].join("\n"));
@@ -720,7 +724,7 @@ export async function main(argv, d) {
     }
   } catch (e) {
     const err = /** @type {Error & {exitCode?: number}} */ (e);
-    d.log(`ERROR: ${err.message}`);
+    d.log(`ERROR: ${redact(err.message)}`);
     return err.exitCode ?? 1;
   }
 }
