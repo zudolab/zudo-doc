@@ -534,7 +534,6 @@ export function deriveBodyEndIslands(ctx: ChromeContext) {
               mermaid: false,
               dynamicPageTransition: false,
               designTokenPanel: false,
-              findInPage: false,
               themePackSwitcher: false,
             },
           })

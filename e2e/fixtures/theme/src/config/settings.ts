@@ -131,7 +131,6 @@ export const settings = {
     "warm-mineral",
     "quiet-slate",
   ] as string[],
-  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   docHistory: false,
   docHistoryExclude: [],

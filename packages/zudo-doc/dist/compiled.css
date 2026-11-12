@@ -611,17 +611,6 @@ body {
   }
 }
 
-.find-match {
-  background-color: color-mix(in oklch, var(--color-warning) 40%, transparent);
-  border-radius: 2px;
-}
-
-.find-match-active {
-  background-color: color-mix(in oklch, var(--color-warning) 70%, transparent);
-  border-radius: 2px;
-  outline: 2px solid color-mix(in oklch, var(--color-warning) 90%, transparent);
-}
-
 .zd-content {
   color: var(--color-fg);
   font-size: var(--text-body);
@@ -2498,9 +2487,6 @@ html[data-theme="dark"] [data-zd-home-image="light"], html:not([data-theme="dark
 .min-w-\[10rem\] {
   min-width: 10rem;
 }
-.min-w-\[3rem\] {
-  min-width: 3rem;
-}
 .min-w-\[44px\] {
   min-width: 44px;
 }
@@ -2539,9 +2525,6 @@ html[data-theme="dark"] [data-zd-home-image="light"], html:not([data-theme="dark
 }
 .w-\[1\.875rem\] {
   width: 1.875rem;
-}
-.w-\[12rem\] {
-  width: 12rem;
 }
 .w-\[14px\] {
   width: 14px;
@@ -2683,10 +2666,6 @@ html[data-theme="dark"] [data-zd-home-image="light"], html:not([data-theme="dark
 .py-\[2px\] {
   padding-top: 2px;
   padding-bottom: 2px;
-}
-.py-\[4px\] {
-  padding-top: 4px;
-  padding-bottom: 4px;
 }
 .py-\[calc\(var\(--spacing-vsp-xs\)_\+_0\.15rem\)\] {
   padding-top: calc(var(--spacing-vsp-xs) + 0.15rem);
@@ -3162,9 +3141,6 @@ html[data-theme="dark"] [data-zd-home-image="light"], html:not([data-theme="dark
 .text-fg {
   color: var(--zw-color-fg);
 }
-.text-fg\/60 {
-  color: color-mix(in oklab, var(--zw-color-fg) 60%, transparent);
-}
 .text-info {
   color: var(--zw-color-info);
 }
@@ -3381,9 +3357,6 @@ html[data-theme="dark"] [data-zd-home-image="light"], html:not([data-theme="dark
 }
 .rounded-bl-\[1rem\] {
   border-bottom-left-radius: 1rem;
-}
-.rounded-bl-lg {
-  border-bottom-left-radius: var(--zw-radius-lg);
 }
 .rounded-br-\[0\.25rem\] {
   border-bottom-right-radius: 0.25rem;

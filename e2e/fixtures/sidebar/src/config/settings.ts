@@ -44,7 +44,6 @@ export const settings = {
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "classic" as string,
-  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   noindex: true as boolean,
   editUrl: false as string | false,

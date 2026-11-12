@@ -327,21 +327,6 @@ html[data-theme-pack="beacon"] .hi-com {
   font-style: italic;
 }
 
-/* find-in-page: the stock warning-tinted washes drop body ink below
-   AA on beacon's red warning role — repaint them in the accent.
-   Ink stays 12.3:1+ on the 30% wash; the active match inverts like
-   the selection (7.8:1 light / 9.5:1 dark). */
-html[data-theme-pack="beacon"] .find-match {
-  background-color: color-mix(in srgb, var(--zd-accent) 30%, transparent);
-  border-radius: 0;
-}
-html[data-theme-pack="beacon"] .find-match-active {
-  background-color: var(--zd-accent);
-  color: var(--zd-selection-fg);
-  border-radius: 0;
-  outline: 2px solid var(--zd-accent);
-}
-
 /* admonitions: fully boxed, square, 6px signal edge. Backgrounds
    pin to the page ground (not the stock 12% tint) so every variant
    title ink keeps its full AAA ratio — the border does the

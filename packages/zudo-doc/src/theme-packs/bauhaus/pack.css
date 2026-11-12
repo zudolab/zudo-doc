@@ -130,8 +130,8 @@ html[data-theme-pack="bauhaus"] {
   --zd-warning: light-dark(#6d5500, #f5c51c);
   --zd-info: light-dark(#1e42ad, #8fb0ff);
 
-  /* find-in-page / search match = the yellow location band, same as
-     selection and the sidebar/TOC current markers. */
+  /* search match = the yellow location band, same as selection and
+     the sidebar/TOC current markers. */
   --zd-matched-keyword-bg: light-dark(#f2c400, #f5cb1a);
   --zd-matched-keyword-fg: light-dark(#141414, #141414);
 
