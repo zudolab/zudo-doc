@@ -143,8 +143,6 @@ Because `--respect-system-preference` defaults to `true`, a first visit without 
 | `--[no-]mcp` | Add read-only MCP `search` and `fetch` tools | off |
 | `--mcp-deploy cloudflare` | Cloudflare Workers deployment preset for MCP; requires MCP | — |
 | `--[no-]skill-symlinker` | Symlink documentation skills into Claude Code or Codex | off |
-| `--[no-]tauri` | Tauri desktop app (Mode 1) — macOS offline reader with in-page search | off |
-| `--[no-]tauri-dev` | Tauri dev wrapper (Mode 2) — configurable desktop dev wrapper for any project | off |
 | `--[no-]footer-nav-group` | Navigation links in the footer | off |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized markdown images | on |
 | `--[no-]asset-viewer` | Viewer pages for files under public/assets | on |
@@ -155,6 +153,10 @@ Because `--respect-system-preference` defaults to `true`, a first visit without 
 | `--[no-]doc-tags` | Per-tag and tag-index browsing routes (docs/tags/...) | off |
 | `--[no-]footer-taglist` | Grouped tag index in the footer (requires tagGovernance) | off |
 | `--[no-]noindex` | Avoid robots indexing — noindex meta + robots.txt | off |
+
+:::note[Retired desktop app features]
+The `tauri` and `tauriDev` features are retired (see [Retired Tauri Desktop Modes](../guides/tauri-modes.mdx)). `--tauri` and `--tauri-dev` — including `--tauri=true` and any other enabling value — fail with an error before any files are written, and so do JSON presets or programmatic `features` arrays that list `tauri` or `tauriDev`. The disabling forms `--no-tauri`, `--no-tauri-dev`, `--tauri=false`, and `--tauri-dev=false` are still accepted and do nothing, so older exported commands keep working. New output never includes them.
+:::
 
 ### Preset
 

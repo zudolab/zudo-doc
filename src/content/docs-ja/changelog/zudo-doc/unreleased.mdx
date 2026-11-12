@@ -4,6 +4,13 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1157
 ---
 
+### 破壊的変更
+
+- Tauri デスクトップアプリのサポートを、Tauri 専用のページ内検索機能とあわせて廃止しました。メジャーリリースが必要です。公開済みのバージョンにはこの機能が残っています。後片付けの手順は「廃止された Tauri デスクトップモード」ガイドにあります。(#4758)
+- `findInPage` 設定を `ZudoDocConfig`、`Settings`、デフォルト値から削除しました。設定から `findInPage` を削除してください。(#4758)
+- `@takazudo/zudo-doc/find-in-page` エクスポートと、body-end の `FindInPageInit` アイランドを削除しました。このサブパスの直接インポートと、`BodyEndIslands` の上書きで手動マウントしている `FindInPageInit` を削除してください。Cmd/Ctrl+F はブラウザ自身の検索に戻ります。(#4758)
+- `.find-match` と `.find-match-active` のスタイル、および Beacon と E-Ink テーマパックのネイティブ検索バー向けの上書きを削除しました。検索のマッチしたキーワードの色、warning と accent のトークン、Bauhaus の検索トークン設定は変わりません。(#4758)
+
 ### Features
 
 - 新しい省略可能な設定 `home.image`（`{ src, alt?, width?, height?, darkSrc? }`）で、単色のロゴマスクの代わりに、ロゴと同じボックスへフルカラー画像をホームのヒーローに表示できるようになりました。`darkSrc` はカラーモードに応じた CSS によってダークモードで表示され、追加のスクリプトは不要です。パスはルート絶対のサイトパスである必要があり、外部 URL や不正な値は設定解決の時点で `TypeError` になります。`home.image` を設定しない場合の出力は変わりません。(#4750)
