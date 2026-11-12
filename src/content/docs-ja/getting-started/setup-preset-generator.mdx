@@ -50,6 +50,10 @@ sidebar_position: 2.5
 
 `og:title` は常に出力され、ここには表示されません — DocHead の契約であり、この設定では無効化できません。
 
+## コンテンツシグナル
+
+「Content signals」セクションは `contentSignals` フィールドを設定し、`robots.txt` に `Content-Signal` 行を出力します。**Search**、**AI input**、**AI training** はそれぞれ **Not declared**（意向を示さない。デフォルト）のままにするか、**yes** または **no** に設定できます。プリセット JSON の `contentSignals` オブジェクトと CLI コマンドの `--content-signals` フラグは、少なくとも1つのシグナルを宣言したときだけ出力されます。各シグナルの対象は[コンテンツシグナル](../guides/seo.mdx#コンテンツシグナル)を参照してください。
+
 ## その他の機能
 
 Features セクションには、以下の機能もあります。

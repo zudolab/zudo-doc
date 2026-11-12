@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderRobots } from "../robots.js";
+import { CONTENT_SIGNAL_KEYS, renderContentSignal, renderRobots } from "../robots.js";
 
 describe("renderRobots", () => {
   it("noindex: disallows all crawlers with no Sitemap line", () => {
@@ -112,5 +112,45 @@ describe("renderRobots", () => {
   it("empty-string siteUrl with sitemap enabled omits the Sitemap line", () => {
     const out = renderRobots({ noindex: false, siteUrl: "", sitemap: true });
     expect(out).toBe("User-agent: *\nAllow: /\n");
+  });
+});
+
+describe("renderContentSignal", () => {
+  it("renders the declared signals in policy order with yes/no values", () => {
+    expect(renderContentSignal({ aiTrain: false, search: true, aiInput: true })).toBe(
+      "search=yes, ai-input=yes, ai-train=no",
+    );
+    expect(renderContentSignal({ aiTrain: true })).toBe("ai-train=yes");
+    expect(CONTENT_SIGNAL_KEYS).toEqual(["search", "aiInput", "aiTrain"]);
+  });
+
+  it("returns undefined when no signal is declared", () => {
+    expect(renderContentSignal(undefined)).toBeUndefined();
+    expect(renderContentSignal(false)).toBeUndefined();
+    expect(renderContentSignal({})).toBeUndefined();
+    expect(renderContentSignal({ search: undefined })).toBeUndefined();
+  });
+});
+
+describe("renderRobots — Content Signals", () => {
+  const contentSignals = { search: true, aiInput: true, aiTrain: false };
+
+  it("puts the Content-Signal line in the User-agent: * group before the rules", () => {
+    expect(
+      renderRobots({ noindex: false, siteUrl: "https://example.com", sitemap: true, contentSignals }),
+    ).toBe(
+      "User-agent: *\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nAllow: /\nSitemap: https://example.com/sitemap.xml\n",
+    );
+  });
+
+  it("keeps the declared signals when noindex disallows crawling", () => {
+    expect(renderRobots({ noindex: true, contentSignals: { aiTrain: false } })).toBe(
+      "User-agent: *\nContent-Signal: ai-train=no\nDisallow: /\n",
+    );
+  });
+
+  it("publishes no line for false or an empty object", () => {
+    expect(renderRobots({ noindex: false, contentSignals: false })).toBe("User-agent: *\nAllow: /\n");
+    expect(renderRobots({ noindex: false, contentSignals: {} })).toBe("User-agent: *\nAllow: /\n");
   });
 });

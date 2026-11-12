@@ -19,6 +19,8 @@ import {
   resolvePresetLocalePlan,
   validateAdditionalLangs,
 } from "../lib/preset-generator-logic";
+import { CONTENT_SIGNAL_FIELDS as GENERATOR_CONTENT_SIGNAL_FIELDS } from "../../packages/create-zudo-doc/src/preset";
+import { CONTENT_SIGNAL_FIELDS as HOST_CONTENT_SIGNAL_FIELDS } from "../lib/preset-generator-logic";
 import { validateArgs } from "../../packages/create-zudo-doc/src/cli";
 import { resolveLocalePlan } from "../../packages/create-zudo-doc/src/locale-plan";
 
@@ -42,6 +44,11 @@ describe("host preset-generator lists mirror constants.ts exactly", () => {
   });
   it("THEME_PACKS matches", () => {
     expect(HOST_THEME_PACKS).toEqual(THEME_PACKS);
+  });
+  it("CONTENT_SIGNAL_FIELDS keys and robots.txt names match preset.ts", () => {
+    expect(HOST_CONTENT_SIGNAL_FIELDS.map(({ key, name }) => [key, name])).toEqual(
+      GENERATOR_CONTENT_SIGNAL_FIELDS.map(([key, name]) => [key, name]),
+    );
   });
 });
 

@@ -7,6 +7,7 @@ import {
   DEFAULT_HEADER_RIGHT_ITEMS,
   INITIAL_HEADER_RIGHT_ITEMS,
   DEFAULT_META_TAGS,
+  DEFAULT_CONTENT_SIGNALS,
   type FormState,
   type HeaderRightItemSpec,
   type MetaTagsFormState,
@@ -380,6 +381,7 @@ describe("default generator state — regression: matches target JSON (#4007)", 
       packageManager: "pnpm",
       headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
       metaTags: makeMetaState({ ogImageEnabled: true }),
+      contentSignals: { ...DEFAULT_CONTENT_SIGNALS },
     };
 
     const json = buildJson(initialState);
@@ -525,6 +527,22 @@ describe("buildJson — metaTags (S5 #2079)", () => {
     const mt = json.metaTags as Record<string, unknown>;
     expect(mt.twitterSite).toBeUndefined();
     expect(mt.twitterCreator).toBeUndefined();
+  });
+});
+
+describe("contentSignals", () => {
+  it("emits nothing while every signal is unset or the state is absent", () => {
+    for (const contentSignals of [undefined, { ...DEFAULT_CONTENT_SIGNALS }]) {
+      const state = makeState({ contentSignals });
+      expect(buildJson(state)).not.toHaveProperty("contentSignals");
+      expect(buildCliCommand(state)).not.toContain("--content-signals");
+    }
+  });
+
+  it("emits only the declared signals in the JSON preset and the CLI command", () => {
+    const state = makeState({ contentSignals: { search: "yes", aiInput: "unset", aiTrain: "no" } });
+    expect(buildJson(state).contentSignals).toEqual({ search: true, aiTrain: false });
+    expect(buildCliCommand(state)).toContain("--content-signals search=yes,ai-train=no --pm pnpm");
   });
 });
 

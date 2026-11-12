@@ -19,6 +19,7 @@ export type {
   DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
 import type {
+  ContentSignalsConfig,
   HeaderNavItem,
   HeaderRightItem,
   ColorModeConfig,
@@ -100,6 +101,13 @@ Start with the **essentials**, then explore the live examples.
   // non-routed fixtures on the EN and JA transclude documentation pages.
   transclude: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
+  // Content Signals (contentsignals.org) published in robots.txt. public/_headers
+  // sends the same value as a Content-Signal header; a unit test keeps them equal.
+  contentSignals: {
+    search: true,
+    aiInput: true,
+    aiTrain: false,
+  } satisfies ContentSignalsConfig as ContentSignalsConfig | false,
   // Not yet wired: wiring requires adding an editLink slot to BodyFootUtilArea (v2 package API change, #2140).
   editUrl: false as string | false,
   githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,

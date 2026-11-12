@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { FEATURES } from "../constants.js";
-import { loadPreset, presetToChoices, validatePreset } from "../preset.js";
+import {
+  loadPreset,
+  parseContentSignals,
+  presetToChoices,
+  validateContentSignals,
+  validatePreset,
+} from "../preset.js";
 // F4 (S4 #2013) — project-name validation on preset path
 
 describe("presetToChoices — cjkFriendly", () => {
@@ -474,6 +480,49 @@ describe("presetToChoices — metaTags (S5 #2079)", () => {
     };
     const choices = presetToChoices({ metaTags: mt });
     expect(choices.metaTags).toEqual(mt);
+  });
+});
+
+describe("contentSignals preset support", () => {
+  it("accepts and forwards an object of booleans", () => {
+    const contentSignals = { search: true, aiInput: true, aiTrain: false };
+    expect(validatePreset({ contentSignals })).toBeNull();
+    expect(presetToChoices({ contentSignals }).contentSignals).toEqual(contentSignals);
+    expect(presetToChoices({}).contentSignals).toBeUndefined();
+  });
+
+  it.each([
+    ["a string", "search=yes", /"contentSignals" must be an object/],
+    ["an array", [], /"contentSignals" must be an object/],
+    ["a robots.txt key", { "ai-train": false }, /Unknown "contentSignals" key "ai-train"/],
+    ["a yes/no string", { aiTrain: "no" }, /"contentSignals.aiTrain" must be a boolean/],
+  ])("rejects %s", (_label, contentSignals, pattern) => {
+    expect(validatePreset({ contentSignals })).toMatch(pattern);
+    expect(validateContentSignals(contentSignals)).toMatch(pattern);
+  });
+});
+
+describe("parseContentSignals", () => {
+  it("parses the robots.txt syntax with or without spaces", () => {
+    expect(parseContentSignals("search=yes,ai-input=yes,ai-train=no")).toEqual({
+      signals: { search: true, aiInput: true, aiTrain: false },
+      error: null,
+    });
+    expect(parseContentSignals(" ai-train = NO , ")).toEqual({
+      signals: { aiTrain: false },
+      error: null,
+    });
+  });
+
+  it.each([
+    ["an unknown signal", "train-ai=no", /Invalid --content-signals entry "train-ai=no"/],
+    ["a non yes/no value", "search=true", /Invalid --content-signals entry "search=true"/],
+    ["a duplicate", "search=yes,search=no", /lists "search" more than once/],
+    ["an empty list", " , ", /needs at least one entry/],
+  ])("rejects %s", (_label, text, pattern) => {
+    const result = parseContentSignals(text);
+    expect(result.signals).toBeNull();
+    expect(result.error).toMatch(pattern);
   });
 });
 

@@ -191,6 +191,26 @@ mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.
 
 ビルド成果物、デプロイ、既存プロジェクトへの追加方法は[エージェント向けエクスポート](../guides/agent-export.mdx)と[MCPサーバー](../guides/mcp-server.mdx)を参照してください。
 
+### コンテンツシグナル
+
+| フラグ | 説明 |
+|------|-------------|
+| `--content-signals <list>` | `robots.txt` に出力する[コンテンツシグナル](../guides/seo.mdx#コンテンツシグナル)。`search=yes,ai-input=yes,ai-train=no` のように `robots.txt` の書式で指定します |
+
+名前は `search`、`ai-input`、`ai-train` で、それぞれ `=yes` か `=no` を付けます。省略したシグナルは意向を示さず、フラグを付けなければ何も宣言しません。JSON プリセットとプログラム API では、同じ選択を真偽値の `contentSignals` オブジェクトで指定し、ジェネレーターはそれをそのまま `zfb.config.ts` に書き込みます。
+
+```json
+{
+  "contentSignals": { "search": true, "aiInput": true, "aiTrain": false }
+}
+```
+
+```bash
+pnpm create zudo-doc my-docs --content-signals search=yes,ai-input=yes,ai-train=no --yes
+```
+
+未知の名前、`yes` と `no` 以外の値、同じ名前の重複、プリセットの未知のキー、真偽値でないプリセットの値は、ファイルを書き込む前にエラーになります。このオプションには対話式のプロンプトはありません。
+
 ### 一般
 
 | フラグ | 説明 |

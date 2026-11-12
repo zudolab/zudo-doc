@@ -395,7 +395,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./smart-break` | Smart line break utilities |
 | `./use-modal-dialog` | `modalDialog(scope, options)` setup helper plus `ModalDialogOptions` and `ModalDialogResult` types |
 | `./island-types` | Shared island prop types |
-| `./robots` | Robots.txt generation utilities |
+| `./robots` | Robots.txt generation utilities (`renderRobots`, `renderContentSignal`, `CONTENT_SIGNAL_KEYS`) |
 | `./tags-audit` | Tag audit utilities |
 | `./tag-helpers` | Tag helper functions |
 | `./github-helpers` | GitHub autolink helpers |

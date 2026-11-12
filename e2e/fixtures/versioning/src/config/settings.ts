@@ -31,6 +31,7 @@ export const settings = {
   mermaid: false,
   transclude: false,
   noindex: true as boolean,
+  contentSignals: false as const,
   editUrl: false as string | false,
   siteUrl: "" as string,
   metaTags: {

@@ -21,3 +21,10 @@
 
 /agent/v1/pages/*.md
   Content-Type: text/markdown; charset=utf-8
+
+# Content Signals (https://contentsignals.org), the same value robots.txt
+# publishes from settings.contentSignals (a unit test keeps the two equal).
+# Cloudflare Markdown for Agents keeps an origin Content-Signal header instead
+# of adding its default, which allows ai-train.
+/*
+  Content-Signal: search=yes, ai-input=yes, ai-train=no

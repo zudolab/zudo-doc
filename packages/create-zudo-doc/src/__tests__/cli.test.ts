@@ -248,6 +248,32 @@ describe("validateArgs — changelog packages", () => {
   });
 });
 
+describe("--content-signals", () => {
+  it("keeps the raw value for validation", () => {
+    expect(
+      parseArgs(["my-docs", "--content-signals", "search=yes,ai-input=yes,ai-train=no"]).contentSignals,
+    ).toBe("search=yes,ai-input=yes,ai-train=no");
+    expect(parseArgs(["my-docs"]).contentSignals).toBeUndefined();
+  });
+
+  it("accepts a valid list and rejects an invalid one", () => {
+    expect(validateArgs({ contentSignals: "search=yes,ai-train=no" })).toBeNull();
+    expect(validateArgs({ contentSignals: "ai-train=maybe" })).toMatch(
+      /Invalid --content-signals entry "ai-train=maybe"/,
+    );
+  });
+
+  it("is listed in the help text", () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      printHelp();
+      expect(log.mock.calls.flat().join("\n")).toContain("--content-signals <list>");
+    } finally {
+      log.mockRestore();
+    }
+  });
+});
+
 describe("validateArgs — agent export and MCP", () => {
   it("accepts MCP with omitted export and deployment target", () => {
     expect(validateArgs({ mcp: true })).toBeNull();

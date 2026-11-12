@@ -2,10 +2,17 @@ import { describe, it, expect } from "vitest";
 import {
   FEATURES,
   buildCliCommand,
+  buildJson,
   DEFAULT_HEADER_RIGHT_ITEMS,
+  DEFAULT_META_TAGS,
   type FormState,
 } from "../lib/preset-generator-logic";
 import { parseArgs, validateArgs } from "../../packages/create-zudo-doc/src/cli";
+import {
+  parseContentSignals,
+  presetToChoices,
+  validatePreset,
+} from "../../packages/create-zudo-doc/src/preset";
 
 /**
  * Split a CLI command string (as produced by buildCliCommand) into an argv
@@ -191,3 +198,20 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
     );
   });
 });
+
+describe("roundtrip: content signals", () => {
+  it("the CLI flag and the JSON preset reach create-zudo-doc as the same signals", () => {
+    const state = makeState({
+      metaTags: { ...DEFAULT_META_TAGS },
+      contentSignals: { search: "yes", aiInput: "yes", aiTrain: "no" },
+    });
+    const parsed = parseArgs(cliCommandToArgv(buildCliCommand(state)));
+    expect(validateArgs(parsed)).toBeNull();
+    const fromCli = parseContentSignals(parsed.contentSignals!).signals;
+    const json = buildJson(state);
+    expect(validatePreset(json)).toBeNull();
+    expect(presetToChoices(json).contentSignals).toEqual(fromCli);
+    expect(fromCli).toEqual({ search: true, aiInput: true, aiTrain: false });
+  });
+});
+

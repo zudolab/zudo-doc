@@ -212,6 +212,20 @@ describe("custom Worker entry", () => {
     expect(await markdown.text()).toMatch(/[぀-ヿ一-鿿]/);
   });
 
+  it("declares the same Content Signals in robots.txt and the page headers", async () => {
+    const signal = "search=yes, ai-input=yes, ai-train=no";
+    const robots = await exports.default.fetch(new Request("https://example.com/robots.txt"));
+    expect(await robots.text()).toBe(
+      `User-agent: *\nContent-Signal: ${signal}\nAllow: /\nSitemap: https://zudo-doc.takazudomodular.com/sitemap.xml\n`,
+    );
+    for (const path of ["/", "/ja/", "/docs/getting-started/", "/llms.txt"]) {
+      const response = await exports.default.fetch(new Request(`https://example.com${path}`));
+      expect(response.status, path).toBe(200);
+      expect(response.headers.get("content-signal"), path).toBe(signal);
+      await response.body?.cancel();
+    }
+  });
+
   it("uses the locked MCP method contract", async () => {
     for (const method of ["GET", "HEAD", "DELETE"]) {
       const response = await exports.default.fetch(

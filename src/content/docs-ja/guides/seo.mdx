@@ -114,12 +114,54 @@ base がルートで配信されるデプロイでは、生成された行は引
 
 2 つの選択肢のうち、ルートを配信しないほうが安全です。よく知られた URL は、プレースホルダーではなく主張として読まれます。空の `<urlset>` は「このサイトにはインデックス可能な URL が存在しない」とクローラーに伝えるものであり、404 が伝える「このサイトはサイトマップを公開していない」よりも強く、害の大きい主張です。これは後述の「逆にクローラーを遠ざけたい場合」で説明している、`noindex` のときに `Sitemap:` 行を落とすのと同じ理屈です。そして `robots.txt` は `sitemap` が無効なときすでにその行を省いているので、ルートを出力しないことで両者は矛盾せず一致します。
 
+## コンテンツシグナル
+
+[Content Signals](https://contentsignals.org) は、クローラーが取得したコンテンツをどの用途に使ってよいかを伝えます。3つのシグナルはそれぞれ `yes` か `no` です。
+
+| シグナル | 対象となる用途 |
+|---|---|
+| `search` | 検索インデックスの構築と検索結果の表示（AI が生成する検索の要約は含みません） |
+| `ai-input` | 検索拡張生成（RAG）、グラウンディング、エージェントなど、AI モデルへの入力としてコンテンツを渡すこと |
+| `ai-train` | AI モデルの学習やファインチューニング |
+
+宣言するには `contentSignals` を設定します。`true` は `yes`、`false` は `no` として出力され、省略したキーはそのシグナルについて意向を示しません。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    contentSignals: { search: true, aiInput: true, aiTrain: false },
+  }),
+);
+```
+
+生成される `robots.txt` の `User-agent: *` グループにシグナルが入ります。
+
+```
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+```
+
+デフォルトの `false` では `Content-Signal` 行を出力しません。[`noindex`](./avoid-robots-indexing.mdx) で `Allow: /` が `Disallow: /` に置き換わってもこの行は残ります。ほかの経路で取得されたコンテンツにも、利用に関する意向は当てはまるためです。新しいプロジェクトでは、[セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx#コンテンツシグナル)や `create-zudo-doc --content-signals` フラグからも設定できます。
+
+### 同じ値をレスポンスヘッダーで送る
+
+Content Signals は `robots.txt` 用に定義されています。Cloudflare の Markdown for Agents は、変換した Markdown に `Content-Signal` ヘッダーも付け、そのデフォルト値は `ai-train` を許可します。オリジンが送ったヘッダーがあればそちらを保持するので、異なるシグナルを宣言する Cloudflare 上のサイトは、すべての静的アセットのレスポンスで同じ値を送れます。Workers Static Assets はこれをアセットディレクトリの `_headers` から読み取ります。このファイルは `public/_headers` に置いておけます。
+
+```text title="public/_headers"
+/*
+  Content-Signal: search=yes, ai-input=yes, ai-train=no
+```
+
+`@takazudo/zudo-doc/robots` の `renderContentSignal(settings.contentSignals)` は `robots.txt` が出力する値を返すので、テストで両者を一致させておけます。
+
 ## 出力の確認
 
 ビルド後、結果を確認しましょう。
 
 - ページの `View Source`（ソースを表示）を開き、`og:*`、`twitter:*`、`<link rel="canonical">` のタグが絶対 URL を伴って存在することを確認します。
 - `/sitemap.xml` を取得し、絶対的な `<loc>` の値でページが列挙されていることを確認します。
+- `contentSignals` を設定した場合は、`/robots.txt` を取得して `Content-Signal` 行を確認します。
 - ページの URL をソーシャルプラットフォームのカードデバッガー（X、LinkedIn、Facebook）に貼り付け、リンクを告知する前にレンダリングされるシェアカードをプレビューします。
 
 ## 逆にクローラーを遠ざけたい場合
@@ -128,6 +170,6 @@ base がルートで配信されるデプロイでは、生成された行は引
 
 ## 関連項目
 
-- [設定 — `metaTags`](./configuration.mdx#アイデンティティと-url-metatags)、[`sitemap`](./configuration.mdx#アイデンティティと-url-sitemap)、[`siteUrl`](./configuration.mdx#アイデンティティと-url-siteurl) — フィールドの完全なリファレンス。
+- [設定 — `metaTags`](./configuration.mdx#アイデンティティと-url-metatags)、[`sitemap`](./configuration.mdx#アイデンティティと-url-sitemap)、[`siteUrl`](./configuration.mdx#アイデンティティと-url-siteurl)、[`contentSignals`](./configuration.mdx#アイデンティティと-url-contentsignals) — フィールドの完全なリファレンス。
 - [フロントマター](./frontmatter.mdx) — 各ページの `description`（つまり検索スニペット）の出どころ。
 - [ロボットインデックス回避](./avoid-robots-indexing.mdx) — プライベートまたはステージングサイトでインデックスを完全にブロックする。

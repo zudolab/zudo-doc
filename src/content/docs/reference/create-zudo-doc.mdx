@@ -191,6 +191,26 @@ mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.
 
 See [Agent-readable export](../guides/agent-export.mdx) and [MCP server](../guides/mcp-server.mdx) for build output, deployment, and an existing-project recipe.
 
+### Content signals
+
+| Flag | Description |
+|------|-------------|
+| `--content-signals <list>` | [Content Signals](../guides/seo.mdx#content-signals) for `robots.txt`, written in the `robots.txt` syntax, such as `search=yes,ai-input=yes,ai-train=no` |
+
+The names are `search`, `ai-input` and `ai-train`, each `=yes` or `=no`. A signal you leave out expresses no preference, and nothing is declared without the flag. JSON presets and the programmatic API take the same choice as a `contentSignals` object of booleans, which the generator writes to `zfb.config.ts` unchanged:
+
+```json
+{
+  "contentSignals": { "search": true, "aiInput": true, "aiTrain": false }
+}
+```
+
+```bash
+pnpm create zudo-doc my-docs --content-signals search=yes,ai-input=yes,ai-train=no --yes
+```
+
+An unknown name, a value other than `yes` or `no`, a repeated name, an unknown preset key or a non-boolean preset value is rejected before any files are written. There is no interactive prompt for this option.
+
 ### General
 
 | Flag | Description |

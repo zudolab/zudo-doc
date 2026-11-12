@@ -319,6 +319,49 @@ export type FeatureEntry = {
 
 export type ColorSchemeMode = "single" | "light-dark";
 
+/** One Content Signal choice; "unset" leaves the signal undeclared. */
+export type ContentSignalChoice = "unset" | "yes" | "no";
+
+export interface ContentSignalsFormState {
+  search: ContentSignalChoice;
+  aiInput: ContentSignalChoice;
+  aiTrain: ContentSignalChoice;
+}
+
+/** Mirrors CONTENT_SIGNAL_FIELDS in packages/create-zudo-doc/src/preset.ts (key, robots.txt name). */
+export const CONTENT_SIGNAL_FIELDS = [
+  { key: "search", name: "search", label: "Search", hint: "Search indexes and search results (not AI-generated summaries)" },
+  { key: "aiInput", name: "ai-input", label: "AI input", hint: "Content given to AI models, such as retrieval, grounding or agents" },
+  { key: "aiTrain", name: "ai-train", label: "AI training", hint: "Training or fine-tuning AI models" },
+] as const satisfies ReadonlyArray<{ key: keyof ContentSignalsFormState; name: string; label: string; hint: string }>;
+
+/** No signal declared — the scaffold default, which publishes no Content-Signal line. */
+export const DEFAULT_CONTENT_SIGNALS: ContentSignalsFormState = {
+  search: "unset",
+  aiInput: "unset",
+  aiTrain: "unset",
+};
+
+/** The preset `contentSignals` object for the declared choices, or undefined when none is declared. */
+export function resolveContentSignals(
+  state: ContentSignalsFormState | undefined,
+): Partial<Record<keyof ContentSignalsFormState, boolean>> | undefined {
+  if (!state) return undefined;
+  const entries = CONTENT_SIGNAL_FIELDS.flatMap(({ key }) =>
+    state[key] === "unset" ? [] : [[key, state[key] === "yes"] as const],
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+/** The `--content-signals` value (robots.txt syntax), or undefined when none is declared. */
+export function contentSignalsCliValue(state: ContentSignalsFormState | undefined): string | undefined {
+  const signals = resolveContentSignals(state);
+  if (!signals) return undefined;
+  return CONTENT_SIGNAL_FIELDS.flatMap(({ key, name }) =>
+    signals[key] === undefined ? [] : [`${name}=${signals[key] ? "yes" : "no"}`],
+  ).join(",");
+}
+
 /** Mirrors MetaTagsConfig from @takazudo/zudo-doc/settings for preset-generator form state. */
 export interface MetaTagsFormState {
   description: boolean;
@@ -483,6 +526,8 @@ export interface FormState {
   packageManager: string;
   headerRightItems: HeaderRightItemSpec[];
   metaTags: MetaTagsFormState;
+  /** robots.txt Content Signals; omitted or all "unset" declares none. */
+  contentSignals?: ContentSignalsFormState;
 }
 
 export function buildJson(state: FormState): Record<string, unknown> {
@@ -563,6 +608,11 @@ export function buildJson(state: FormState): Record<string, unknown> {
     base.metaTags = metaTagsJson;
   }
 
+  const contentSignals = resolveContentSignals(state.contentSignals);
+  if (contentSignals) {
+    base.contentSignals = contentSignals;
+  }
+
   return base;
 }
 
@@ -604,6 +654,10 @@ export function buildCliCommand(state: FormState): string {
   }
   if (features.includes("mcp")) {
     parts.push(`--mcp-deploy ${MCP_DEPLOY_TARGET}`);
+  }
+  const contentSignals = contentSignalsCliValue(state.contentSignals);
+  if (contentSignals) {
+    parts.push(`--content-signals ${contentSignals}`);
   }
 
   parts.push(`--pm ${pm}`);

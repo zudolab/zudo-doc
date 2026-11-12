@@ -15,6 +15,7 @@ sidebar_position: 1157
 
 - 新しい省略可能な設定 `home.image`（`{ src, alt?, width?, height?, darkSrc? }`）で、単色のロゴマスクの代わりに、ロゴと同じボックスへフルカラー画像をホームのヒーローに表示できるようになりました。`darkSrc` はカラーモードに応じた CSS によってダークモードで表示され、追加のスクリプトは不要です。パスはルート絶対のサイトパスである必要があり、外部 URL や不正な値は設定解決の時点で `TypeError` になります。`home.image` を設定しない場合の出力は変わりません。(#4750)
 - `mcp: true` のとき、Worker は `<base>/mcp/server-card` で MCP Server Card（SEP-2127）を配信し、`base` が `/` の場合はそのカードを掲載した AI Catalog を `/.well-known/ai-catalog.json` で配信するようになりました。どちらも CORS、キャッシュ、ETag による再検証に対応した読み取り専用の JSON です。ルートの base では全ページが `<link rel="ai-catalog">` でカタログへリンクし、`llms.txt` の MCP セクションにもカードが載ります。`@takazudo/zudo-doc/mcp` から `buildMcpServerCard`、`buildAiCatalog`、メディアタイプの定数もエクスポートします。`/mcp` のツールと上限は変わりません。(#4769)
+- 新しい省略可能な設定 `contentSignals`（`{ search?, aiInput?, aiTrain? } | false`、デフォルト `false`）で、[Content Signals](https://contentsignals.org) を `robots.txt` の `User-agent: *` グループに `Content-Signal` 行として出力できるようになりました。`true` は `yes`、`false` は `no` として出力され、省略したキーは意向を示さず、`noindex` のときもこの行は残ります。未知のキーや真偽値でない値は、設定解決の時点で `TypeError` になります。`@takazudo/zudo-doc/robots` から `renderContentSignal` と `CONTENT_SIGNAL_KEYS` もエクスポートします。`contentSignals` を設定しない場合の出力は変わりません。(#4767)
 
 ### バグ修正
 

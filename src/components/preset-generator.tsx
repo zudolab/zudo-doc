@@ -10,12 +10,15 @@ import {
   DEFAULT_HEADER_RIGHT_ITEMS,
   INITIAL_HEADER_RIGHT_ITEMS,
   DEFAULT_META_TAGS,
+  CONTENT_SIGNAL_FIELDS,
+  DEFAULT_CONTENT_SIGNALS,
   SINGLE_SCHEMES,
   LIGHT_SCHEMES,
   SUPPORTED_LANGS,
   HEADER_RIGHT_LABELS,
   THEME_PACKS,
   validateAdditionalLangs,
+  type ContentSignalChoice,
   type FormState,
   type HeaderRightItemSpec,
   type FeatureEntry,
@@ -234,6 +237,11 @@ export default function PresetGenerator() {
   const twitterCard = signal<FormState["metaTags"]["twitterCard"]>(DEFAULT_META_TAGS.twitterCard);
   const twitterSite = signal(DEFAULT_META_TAGS.twitterSite);
   const twitterCreator = signal(DEFAULT_META_TAGS.twitterCreator);
+  const contentSignals = {
+    search: signal<ContentSignalChoice>(DEFAULT_CONTENT_SIGNALS.search),
+    aiInput: signal<ContentSignalChoice>(DEFAULT_CONTENT_SIGNALS.aiInput),
+    aiTrain: signal<ContentSignalChoice>(DEFAULT_CONTENT_SIGNALS.aiTrain),
+  };
   const modalState = signal<FormState | null>(null);
 
   const additionalLangsError = computed(() => validateAdditionalLangs(additionalLangs.value, defaultLang.value));
@@ -248,6 +256,8 @@ export default function PresetGenerator() {
       keywords: keywords.value, ogImageEnabled: ogImageEnabled.value, ogImage: ogImage.value,
       ogSiteName: ogSiteName.value, twitterCardEnabled: twitterCardEnabled.value,
       twitterCard: twitterCard.value, twitterSite: twitterSite.value, twitterCreator: twitterCreator.value },
+    contentSignals: { search: contentSignals.search.value, aiInput: contentSignals.aiInput.value,
+      aiTrain: contentSignals.aiTrain.value },
   }));
   const jsonOutput = computed(() => additionalLangsError.value === null ? buildJson(currentState.value) : null);
   const missingItems = computed(() => {
@@ -580,6 +590,35 @@ export default function PresetGenerator() {
               </div>
             )}</Show>
           </li>
+        </ul>
+      </section>
+
+      {/* Content signals */}
+      <section>
+        <SectionHeading>Content signals</SectionHeading>
+        <p class="mb-vsp-xs text-caption text-muted">
+          Declare how crawlers may use the content with a <code>Content-Signal</code> line
+          in robots.txt (<a href="https://contentsignals.org/" target="_blank" rel="noopener" class="text-accent underline">contentsignals.org</a>).
+          A signal left as "Not declared" expresses no preference.
+        </p>
+        <ul class="flex flex-col gap-y-vsp-xs">
+          {CONTENT_SIGNAL_FIELDS.map((field) => (
+            <li key={field.key} class="flex flex-col gap-y-vsp-2xs text-small text-fg">
+              <label for={`preset-content-signal-${field.name}`}>
+                {field.label} <code class="text-caption">{field.name}</code>
+                <span class="block text-caption text-muted">{field.hint}</span>
+              </label>
+              <select
+                id={`preset-content-signal-${field.name}`}
+                modelValue={contentSignals[field.key]}
+                class={inputClass}
+              >
+                <option value="unset">Not declared</option>
+                <option value="yes">yes (allow)</option>
+                <option value="no">no (disallow)</option>
+              </select>
+            </li>
+          ))}
         </ul>
       </section>
 

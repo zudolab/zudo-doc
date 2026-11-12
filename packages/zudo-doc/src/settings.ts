@@ -297,6 +297,20 @@ export interface ChangelogConfig {
   title?: string;
 }
 
+/**
+ * Content Signals (https://contentsignals.org) declared in the `User-agent: *`
+ * group of `robots.txt`. `true` renders `yes`, `false` renders `no`, and an
+ * omitted key expresses no preference for that use.
+ */
+export interface ContentSignalsConfig {
+  /** Building a search index and providing search results (not AI-generated search summaries). */
+  search?: boolean;
+  /** Inputting content into AI models, such as retrieval, grounding or agent use. */
+  aiInput?: boolean;
+  /** Training or fine-tuning AI models. */
+  aiTrain?: boolean;
+}
+
 export interface MetaTagsConfig {
   /** Emit <meta name="description">. Default true. */
   description: boolean;
@@ -452,6 +466,12 @@ export interface Settings {
   mermaid: boolean;
   transclude: boolean;
   noindex: boolean;
+  /**
+   * Content Signals for `robots.txt` — see {@link ContentSignalsConfig}.
+   * Optional so complete `Settings` literals built outside `zudoDoc()` keep
+   * compiling; absent and `false` both publish no `Content-Signal` line.
+   */
+  contentSignals?: ContentSignalsConfig | false;
   editUrl: string | false;
   githubUrl: string | false;
   siteUrl: string;

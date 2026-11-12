@@ -11,6 +11,7 @@ import {
 import {
   normalizeAgentMcpChoices,
   parseChangelogPackages,
+  parseContentSignals,
   validateChangelogPackages,
 } from "./preset.js";
 import {
@@ -63,6 +64,8 @@ export interface CliArgs {
   changelog?: boolean;
   changelogPackages?: string[];
   mcpDeploy?: string;
+  /** Raw `--content-signals` value; validateArgs() parses it. */
+  contentSignals?: string;
   tagGovernance?: boolean;
   footerTaglist?: boolean;
   bodyFootUtil?: boolean;
@@ -130,6 +133,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
       "theme-pack",
       "changelog-packages",
       "mcp-deploy",
+      "content-signals",
       "github-url",
       "preset",
       "pm",
@@ -186,6 +190,9 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (raw["mcp-deploy"] !== undefined) {
     args.mcpDeploy = String(raw["mcp-deploy"]);
   }
+  if (raw["content-signals"] !== undefined) {
+    args.contentSignals = String(raw["content-signals"]);
+  }
   if (raw.preset) args.preset = raw.preset;
   if (raw.pm) args.pm = raw.pm;
   if (typeof raw["github-url"] === "string") args.githubUrl = raw["github-url"];
@@ -241,6 +248,8 @@ ${pc.bold("Options:")}
 ${featureHelp}
   --changelog-packages <a,b>  Per-package changelog pages (implies changelog)
   --mcp-deploy <target>       MCP deployment preset (cloudflare)
+  --content-signals <list>    robots.txt Content Signals, e.g.
+                               search=yes,ai-input=yes,ai-train=no
   --github-url <url>           GitHub repository URL (drives header link + source link)
   --preset <path>              Load settings from a JSON preset file (use "-" for stdin)
   --pm <manager>               pnpm | npm | yarn | bun
@@ -339,6 +348,11 @@ export function validateArgs(args: CliArgs): string | null {
   if (args.changelogPackages !== undefined) {
     const changelogError = validateChangelogPackages(args.changelogPackages);
     if (changelogError) return changelogError;
+  }
+
+  if (args.contentSignals !== undefined) {
+    const { error } = parseContentSignals(args.contentSignals);
+    if (error) return error;
   }
 
   // Validate scheme combinations

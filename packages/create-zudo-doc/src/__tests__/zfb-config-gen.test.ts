@@ -841,3 +841,26 @@ describe("hand-edited home configuration census", () => {
     expect(generateZfbConfig(packageDefaultChoices)).not.toContain("introMarkdown");
   });
 });
+
+describe("generateZfbConfig — contentSignals", () => {
+  it("emits the declared signals in robots.txt order after noindex", () => {
+    const result = generateZfbConfig({
+      ...packageDefaultChoices,
+      features: ["noindex"],
+      contentSignals: { aiTrain: false, search: true, aiInput: true },
+    });
+    expect(result).toContain(
+      "    contentSignals: {\n      search: true,\n      aiInput: true,\n      aiTrain: false,\n    },\n",
+    );
+    expect(result.indexOf("noindex: true")).toBeLessThan(result.indexOf("contentSignals:"));
+  });
+
+  it("omits the field when nothing is declared", () => {
+    expect(generateZfbConfig(packageDefaultChoices)).not.toContain("contentSignals");
+    expect(
+      generateZfbConfig({ ...packageDefaultChoices, contentSignals: {} }),
+    ).not.toContain("contentSignals");
+    expect(DEFAULT_MIRROR.contentSignals).toBe(false);
+  });
+});
+
