@@ -115,6 +115,13 @@ export interface LocaleConfig {
   introMarkdown?: string;
   /** Sitemap title override. Blank restores the translated default. @default undefined */
   sitemapHeading?: string;
+  /**
+   * Link-preview image (og:image / twitter:image) for this locale's pages, a
+   * root-absolute site path. Overrides `metaTags.ogImage`; `false` emits none
+   * for this locale. A page's `og_image` frontmatter still wins.
+   * @default undefined
+   */
+  ogImage?: string | false;
 }
 
 export interface FooterLinkItem {
@@ -224,7 +231,18 @@ export interface HomeConfig {
    * @default undefined
    */
   image?: HomeImageConfig;
+  /**
+   * How `image` is placed in the hero. `"logo"` uses the logo's box (320px);
+   * `"large"` a 560px box beside the title; `"banner"` a full-width picture
+   * above the centred title; `"backdrop"` the picture behind the title, cropped
+   * to cover, with the copy on a readable panel. Ignored without `image`.
+   * @default "logo"
+   */
+  imageLayout?: HomeImageLayout;
 }
+
+/** Placement of the `home.image` picture in the home hero. */
+export type HomeImageLayout = "logo" | "large" | "banner" | "backdrop";
 
 /**
  * Full-colour home hero image (`home.image`). Rendered as a real `<img>` in

@@ -33,7 +33,7 @@
 import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
-import { AutoLogo } from "../auto-logo/index.js";
+import { HomeHero, homeAssetHref } from "../home-hero/index.js";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { CompactProse, HOME_SECTION_HEADING_CLASS, resolveHomeIntro } from "../home-intro/index.js";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
@@ -43,7 +43,7 @@ import { CategoryLinkIcon } from "../tree-nav-shared/index.js";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import type { DocNavNode } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
-import type { HomeImageConfig, Settings } from "../settings.js";
+import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands, deriveDateFormats } from "../chrome/derive.js";
@@ -103,66 +103,27 @@ function selectSecondaryNodes(
 }
 
 /**
- * Serialize a URL as a quoted CSS `url()` token. The `logo` setting accepts an
- * arbitrary user-supplied path, and an unquoted `url()` breaks on characters
- * that are legal in a filename but not in a CSS url-token — whitespace and
- * parentheses, e.g. `/img/logo (1).svg` — which makes the browser drop the
- * whole mask declaration and render nothing.
+ * Turn each top-level category's raw `cover` frontmatter path into a
+ * base-prefixed `coverHref` for the home grid card. Nodes without a cover are
+ * returned as-is, so a site without covers serializes the same island props.
  */
-function cssUrl(url: string): string {
-  return `url("${url.replace(/[\\"]/g, "\\$&")}")`;
+function hasCover(nodes: SidebarNavNode[]): boolean {
+  return nodes.some((node) => node.cover !== undefined || hasCover(node.children));
 }
 
-function logoMaskStyle(url: string) {
-  const mask = `${cssUrl(url)} center/contain no-repeat`;
-  return { "-webkit-mask": mask, mask };
+function withoutCovers(node: SidebarNavNode): SidebarNavNode {
+  const { cover: _cover, ...rest } = node;
+  return { ...rest, children: node.children.map(withoutCovers) };
 }
 
-const HOME_HERO_BOX_CLASS = "w-[320px] max-w-full aspect-[1200/630] shrink-0";
-
-/**
- * Full-colour hero picture (`home.image`). The box is the logo's box, so the
- * hero never shifts while the picture loads; `object-fit: contain` keeps any
- * ratio undistorted. With `darkSrc`, both pictures are emitted and the
- * `[data-zd-home-image]` rules in `features.css` show the one matching
- * `html[data-theme]`, which the colour-mode bootstrap sets before first paint.
- * Those two are `loading="lazy"` so the hidden (`display: none`) one is never
- * fetched. `assetHref` prefixes `base` without the page-URL trailing-slash rule.
- */
-function HomeHeroImage({
-  image,
-  assetHref,
-}: {
-  image: HomeImageConfig;
-  assetHref: (path: string) => string;
-}) {
-  const alt = image.alt ?? "";
-  const size =
-    image.width !== undefined && image.height !== undefined
-      ? { width: image.width, height: image.height }
-      : {};
-  const variants: Array<{ src: string; mode?: "light" | "dark" }> =
-    image.darkSrc === undefined
-      ? [{ src: image.src }]
-      : [
-          { src: image.src, mode: "light" },
-          { src: image.darkSrc, mode: "dark" },
-        ];
-  return (
-    <div class={HOME_HERO_BOX_CLASS} data-zd-home-image-box>
-      {variants.map(({ src, mode }) => (
-        <img
-          src={assetHref(src)}
-          alt={alt}
-          {...size}
-          {...(mode ? { loading: "lazy" as const } : {})}
-          decoding="async"
-          class="block w-full h-full object-contain"
-          {...(mode ? { "data-zd-home-image": mode } : {})}
-        />
-      ))}
-    </div>
-  );
+function withCoverHrefs(tree: SidebarNavNode[], base: string | undefined): SidebarNavNode[] {
+  if (!hasCover(tree)) return tree;
+  return tree.map((node) => {
+    const stripped = withoutCovers(node);
+    return node.cover === undefined
+      ? stripped
+      : { ...stripped, coverHref: homeAssetHref(base, node.cover) };
+  });
 }
 
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */
@@ -281,7 +242,7 @@ export function createHomePageView<S extends Settings = Settings>(
     wide,
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
-    // Same URL route-enumerators emits as this page's sitemap <loc>.
+    // The URL route-enumerators emits as this page's sitemap <loc>.
     const homePath = withBase(prefix === "" ? "/" : prefix);
     const effectiveInitiallyCollapsedCategorySlugs =
       initiallyCollapsedCategorySlugs ?? settings.siteTreeNavInitiallyCollapsed;
@@ -352,11 +313,6 @@ export function createHomePageView<S extends Settings = Settings>(
     if (hasExtras) {
       rowItems.push(resolvedExtras as Child);
     }
-    const rowContent: Child[] = [];
-    rowItems.forEach((item, index) => {
-      if (index > 0) rowContent.push(<span class="text-muted">/</span>);
-      rowContent.push(item);
-    });
 
     return (
       <DocLayoutWithDefaults
@@ -367,7 +323,7 @@ export function createHomePageView<S extends Settings = Settings>(
             title={settings.siteName}
             description={description}
             canonical={ctx.absoluteUrl(homePath)}
-            lang={locale}
+            locale={locale}
           />
         }
         lang={locale}
@@ -382,34 +338,16 @@ export function createHomePageView<S extends Settings = Settings>(
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
         enableClientRouter={settings.dynamicPageTransition}
       >
-        <div data-zd-home-hero class="mb-vsp-xl">
-          <div class="zd-home-inner flex flex-col items-center justify-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
-            {homeImage ? (
-              <HomeHeroImage
-                image={homeImage}
-                assetHref={(path) => `${(settings.base ?? "/").replace(/\/+$/, "")}${path}`}
-              />
-            ) : logoSetting === "auto" ? (
-              <AutoLogo
-                seed={settings.siteName}
-                class="w-[320px] max-w-full aspect-[1200/630] text-fg shrink-0"
-              />
-            ) : logoSetting !== false ? (
-              <div
-                class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
-                style={logoMaskStyle(withBase(logoSetting))}
-                aria-hidden="true"
-              />
-            ) : null}
-            <div class="zd-home-copy min-w-0 lg:flex-1">
-              <h1 class="text-heading font-bold mb-vsp-2xs zd-wrap-anywhere" data-zd-site-name>{settings.siteName}</h1>
-              <p class="text-muted text-small mb-vsp-sm">{rawDescription}</p>
-              <div class="zd-home-links flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
-                {rowContent}
-              </div>
-            </div>
-          </div>
-        </div>
+        <HomeHero
+          siteName={settings.siteName}
+          description={rawDescription}
+          logo={logoSetting}
+          image={homeImage}
+          imageLayout={settings.home?.imageLayout}
+          base={settings.base}
+          links={rowItems}
+          logoHref={withBase}
+        />
 
         {hasIntro && (
           <>
@@ -431,7 +369,7 @@ export function createHomePageView<S extends Settings = Settings>(
             when: "idle",
             children: (
               <SiteTreeNav
-                tree={tree as unknown as SidebarNavNode[]}
+                tree={withCoverHrefs(tree as unknown as SidebarNavNode[], settings.base)}
                 categoryOrder={categoryOrder}
                 categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
                 {...(effectiveInitiallyCollapsedCategorySlugs !== undefined

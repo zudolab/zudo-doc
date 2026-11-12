@@ -46,7 +46,7 @@ export interface VersionsPageSettings {
 
 /** Host-supplied component bindings injected into the versions page factory. */
 export interface VersionsPageComponents {
-  HeadWithDefaults: (props: { title: string; lang?: string }) => JSX.Element;
+  HeadWithDefaults: (props: { title: string; locale?: string }) => JSX.Element;
   HeaderWithDefaults: (props: { lang: string; currentPath?: string }) => JSX.Element;
   FooterWithDefaults: (props: { lang: string }) => JSX.Element;
   BodyEndIslands: (props: { basePath: string }) => JSX.Element;
@@ -152,7 +152,7 @@ export function createVersionsPageView<S extends Settings = Settings>(
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(pageTitle)}
-        head={<HeadWithDefaults title={pageTitle} lang={locale} />}
+        head={<HeadWithDefaults title={pageTitle} locale={locale} />}
         lang={locale}
         {...(dataThemePack !== undefined ? { dataThemePack } : {})}
         {...(settings.noindex !== undefined ? { noindex: settings.noindex } : {})}

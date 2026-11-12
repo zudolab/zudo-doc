@@ -41,4 +41,6 @@ export const defaultFrontmatterPreviewIgnoreKeys: readonly string[] = [
   "note_tray_sidebar",
   "date",
   "updated",
+  "og_image",
+  "cover",
 ];

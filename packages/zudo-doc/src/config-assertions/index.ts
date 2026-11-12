@@ -150,6 +150,7 @@ export interface HomeImageSubject {
 }
 
 const HOME_IMAGE_KEYS = new Set(["src", "alt", "width", "height", "darkSrc"]);
+const HOME_IMAGE_LAYOUTS = new Set<string>(["logo", "large", "banner", "backdrop"]);
 
 /**
  * True for a root-absolute site path: one leading `/` (never `//`, which is
@@ -163,7 +164,8 @@ export function isRootAbsoluteSitePath(value: string): boolean {
 }
 
 /**
- * Validate `home.image`: absent, or `{ src, alt?, width?, height?, darkSrc? }`
+ * Validate `home.imageLayout` (one of the four layouts, when present) and
+ * `home.image`: absent, or `{ src, alt?, width?, height?, darkSrc? }`
  * with root-absolute `src`/`darkSrc`, a string `alt`, and positive-integer
  * `width`/`height` given together. Unknown keys are rejected so a typo such
  * as `dark` fails loudly instead of being ignored. Throws a `TypeError`
@@ -172,6 +174,12 @@ export function isRootAbsoluteSitePath(value: string): boolean {
 export function assertValidHomeImage(settings: HomeImageSubject): void {
   const home = settings.home;
   if (home === undefined || home === null || typeof home !== "object") return;
+  const layout = (home as { imageLayout?: unknown }).imageLayout;
+  if (layout !== undefined && !HOME_IMAGE_LAYOUTS.has(layout as string)) {
+    throw new TypeError(
+      `Invalid home.imageLayout ${describeValue(layout)}: must be one of "logo", "large", "banner", "backdrop".`,
+    );
+  }
   const value = (home as { image?: unknown }).image;
   if (value === undefined) return;
 
@@ -250,6 +258,31 @@ export function assertValidContentSignals(settings: ContentSignalsSubject): void
     if (signal !== undefined && typeof signal !== "boolean") {
       throw new TypeError(
         `Invalid contentSignals.${key} ${describeValue(signal)}: must be true, false or omitted.`,
+      );
+    }
+  }
+}
+
+/** Structural subset of `Settings` {@link assertValidLocaleOgImages} reads. */
+export interface LocaleOgImageSubject {
+  locales?: unknown;
+}
+
+/**
+ * Validate every `locales.<code>.ogImage`: absent, `false`, or a root-absolute
+ * site path (it is base-prefixed and joined to `siteUrl`, so an external URL
+ * would produce a broken og:image). Throws a `TypeError` naming the locale.
+ */
+export function assertValidLocaleOgImages(settings: LocaleOgImageSubject): void {
+  const locales = settings.locales;
+  if (locales === undefined || locales === null || typeof locales !== "object") return;
+  for (const [code, config] of Object.entries(locales as Record<string, unknown>)) {
+    if (config === null || typeof config !== "object") continue;
+    const value = (config as { ogImage?: unknown }).ogImage;
+    if (value === undefined || value === false) continue;
+    if (typeof value !== "string" || !isRootAbsoluteSitePath(value)) {
+      throw new TypeError(
+        `Invalid locales.${code}.ogImage ${describeValue(value)}: pass false, or a root-absolute site path such as "/img/ogp-${code}.png".`,
       );
     }
   }

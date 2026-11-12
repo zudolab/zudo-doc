@@ -62,6 +62,14 @@ describe("buildDocsSchema", () => {
     expect(schema.safeParse(fixture).success).toBe(true);
   });
 
+  it("accepts a root-absolute og_image and rejects other values", () => {
+    const schema = buildDocsSchema();
+    expect(schema.safeParse({ title: "T", og_image: "/img/page.png" }).success).toBe(true);
+    for (const og_image of ["https://example.com/a.png", "img/a.png", "//cdn/a.png", 1]) {
+      expect(schema.safeParse({ title: "T", og_image }).success).toBe(false);
+    }
+  });
+
   it("rejects an invalid category_sort_order value", () => {
     const schema = buildDocsSchema();
     const result = schema.safeParse({ title: "Hello", category_sort_order: "random" });

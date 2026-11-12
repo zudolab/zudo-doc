@@ -515,9 +515,9 @@ describe("HeadWithDefaults — agent discovery links", () => {
       overrides: { withBase: manualBase },
     });
     const HeadWithDefaults = createHeadWithDefaults(ctx);
-    expect(render(<HeadWithDefaults title="Test" lang="ja" />)).toContain(llmsLink("/manual/ja/llms.txt"));
-    for (const lang of ["en", undefined, "fr"]) {
-      expect(render(<HeadWithDefaults title="Test" lang={lang} />), String(lang)).toContain(llmsLink("/manual/llms.txt"));
+    expect(render(<HeadWithDefaults title="Test" locale="ja" />)).toContain(llmsLink("/manual/ja/llms.txt"));
+    for (const locale of ["en", undefined, "fr"]) {
+      expect(render(<HeadWithDefaults title="Test" locale={locale} />), String(locale)).toContain(llmsLink("/manual/llms.txt"));
     }
   });
 
@@ -530,5 +530,44 @@ describe("HeadWithDefaults — agent discovery links", () => {
     expect(head({ mcp: true })).toContain(catalogLink);
     expect(head({ mcp: false })).not.toContain('rel="ai-catalog"');
     expect(head({ base: "/manual/", mcp: true }, manualBase)).not.toContain('rel="ai-catalog"');
+  });
+});
+
+describe("HeadWithDefaults — og:image resolution", () => {
+  function render4(settings: Record<string, unknown>, props: Record<string, unknown> = {}) {
+    const ctx = makeFakeChromeContext({
+      settings: { metaTags: { description: true, ogImage: "/img/ogp.png" }, ...settings },
+      overrides: { absoluteUrl: (p: string) => `https://example.com${p}` },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    return render(<HeadWithDefaults title="T" {...props} />);
+  }
+
+  it("uses metaTags.ogImage with no locale or page override", () => {
+    expect(render4({})).toContain('<meta property="og:image" content="https://example.com/img/ogp.png">');
+    expect(render4({ locales: { ja: { label: "JA", dir: "x" } } }, { locale: "ja" })).toContain(
+      'content="https://example.com/img/ogp.png"',
+    );
+  });
+
+  it("uses locales[locale].ogImage for that locale only", () => {
+    const settings = { locales: { ja: { label: "JA", dir: "x", ogImage: "/img/ogp-ja.png" } } };
+    expect(render4(settings, { locale: "ja" })).toContain(
+      '<meta property="og:image" content="https://example.com/img/ogp-ja.png">',
+    );
+    expect(render4(settings, { locale: "en" })).toContain('content="https://example.com/img/ogp.png"');
+  });
+
+  it("omits og:image for a locale set to false", () => {
+    const out = render4({ locales: { ja: { label: "JA", dir: "x", ogImage: false } } }, { locale: "ja" });
+    expect(out).not.toContain('property="og:image"');
+  });
+
+  it("a page og_image wins over locale and site settings", () => {
+    const out = render4(
+      { locales: { ja: { label: "JA", dir: "x", ogImage: false } } },
+      { locale: "ja", ogImage: "/img/page.png" },
+    );
+    expect(out).toContain('<meta property="og:image" content="https://example.com/img/page.png">');
   });
 });

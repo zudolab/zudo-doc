@@ -111,6 +111,7 @@ import {
   assertValidHeaderBrand,
   assertValidHomeImage,
   assertValidContentSignals,
+  assertValidLocaleOgImages,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -877,6 +878,7 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // A malformed `home.image` would otherwise render a broken or off-origin
   // hero picture. Also enforced inside `zudoDocPreset()`.
   assertValidHomeImage(settings);
+  assertValidLocaleOgImages(settings);
 
   // A malformed `contentSignals` would otherwise drop the robots.txt signal silently.
   assertValidContentSignals(settings);

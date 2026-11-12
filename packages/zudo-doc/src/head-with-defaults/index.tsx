@@ -40,8 +40,11 @@ export interface HeadWithDefaultsProps {
   canonical?: string;
   /** Page-specific alternate links, such as an exported Markdown version. */
   alternateLinks?: HeadProps["alternateLinks"];
-  /** Page locale; a configured non-default locale gets its own `llms.txt` link. */
-  lang?: string;
+  /** Active locale: selects `locales[locale].ogImage` when set, and a configured non-default
+   * locale links its own `llms.txt`. */
+  locale?: string;
+  /** Page link-preview image path (frontmatter `og_image`); wins over every setting. */
+  ogImage?: string;
 }
 
 /** Settings subset read by {@link createHeadWithDefaults}. Retained for the
@@ -57,13 +60,14 @@ export interface HeadWithDefaultsSettings {
     twitterCreator?: string;
   };
   siteName: string;
+  /** Per-locale settings: `ogImage` is read here, and each configured code has its own `llms.txt`. */
+  locales?: Record<string, { ogImage?: string | false }>;
   /** Emit agent-discovery links only when the opt-in static export is enabled. */
   agentExport?: boolean;
   /** Existing llms.txt output setting; retained independently from agent export. */
   llmsTxt?: boolean;
   /** The read-only MCP endpoint; on a root base it also publishes the AI Catalog. */
   mcp?: boolean;
-  locales?: Record<string, unknown>;
   colorMode?: ColorSchemeProviderColorMode | null | false;
   sidebarResizer?: boolean;
   /** Configured theme-pack slug (ADR `docs/adr/theme-packs.md`, #2822). */
@@ -254,10 +258,10 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
   const defaultLocale = ctx.defaultLocale;
   const configuredLocales = settings.locales ?? {};
   // The llms-txt emitter writes `/<code>/llms.txt` for every configured locale.
-  const llmsTxtHref = (lang: string | undefined): string =>
+  const llmsTxtHref = (locale: string | undefined): string =>
     withBase(
-      lang !== undefined && lang !== defaultLocale && Object.prototype.hasOwnProperty.call(configuredLocales, lang)
-        ? `/${lang}/llms.txt`
+      locale !== undefined && locale !== defaultLocale && Object.prototype.hasOwnProperty.call(configuredLocales, locale)
+        ? `/${locale}/llms.txt`
         : "/llms.txt",
     );
   // plugins/routes.ts injects the AI Catalog route only for MCP on a root base.
@@ -274,9 +278,14 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
     description,
     canonical,
     alternateLinks,
-    lang,
+    locale,
+    ogImage,
   }: HeadWithDefaultsProps): JSX.Element {
     const { metaTags } = settings;
+    // Page `og_image` > `locales[locale].ogImage` (false disables) > metaTags.ogImage.
+    const localeOgImage = locale !== undefined ? settings.locales?.[locale]?.ogImage : undefined;
+    const configuredOgImage =
+      ogImage ?? (localeOgImage !== undefined ? localeOgImage : metaTags.ogImage);
 
     // og:image / twitter:image must be absolute URLs — crawlers silently drop
     // relative og:image values. absoluteUrl joins siteUrl (no trailing slash) +
@@ -285,8 +294,8 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
     // already gate their image emission on the prop being defined.
     // Guard against both `false` (disabled) and `undefined` (not configured).
     const ogImageUrl =
-      metaTags.ogImage != null && metaTags.ogImage !== false
-        ? absoluteUrl(withBase(metaTags.ogImage))
+      configuredOgImage != null && configuredOgImage !== false
+        ? absoluteUrl(withBase(configuredOgImage))
         : undefined;
 
     // Resolve the palette CSS body once per page render (the v2 component
@@ -370,7 +379,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
           />
         ))}
         {settings.agentExport && settings.llmsTxt && (
-          <link rel="alternate" href={llmsTxtHref(lang)} type="text/plain" />
+          <link rel="alternate" href={llmsTxtHref(locale)} type="text/plain" />
         )}
         {publishesAiCatalog && (
           <link rel="ai-catalog" href={AI_CATALOG_WELL_KNOWN_PATH} type={AI_CATALOG_MEDIA_TYPE} />

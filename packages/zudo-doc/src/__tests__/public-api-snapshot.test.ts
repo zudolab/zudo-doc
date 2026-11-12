@@ -109,6 +109,7 @@ describe("package.json exports keyset snapshot", () => {
         "./head-with-defaults",
         "./header",
         "./header-with-defaults",
+        "./home-hero",
         "./home-intro",
         "./home-intro/prepare",
         "./home-page",

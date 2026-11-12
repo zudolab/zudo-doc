@@ -81,6 +81,8 @@ export interface DocPageShellProps {
   description?: string;
   /** Absolute canonical URL, or undefined when siteUrl is unset. */
   canonical?: string;
+  /** Page link-preview image path (frontmatter `og_image`). */
+  ogImage?: string;
   /** Additional per-page alternate links passed through to the head defaults. */
   alternateLinks?: ReadonlyArray<{
     rel: string;
@@ -269,6 +271,7 @@ export function createDocPageShell<S extends Settings = Settings>(
       title,
       description,
       canonical,
+      ogImage,
       alternateLinks,
       breadcrumbs,
       prev,
@@ -361,7 +364,8 @@ export function createDocPageShell<S extends Settings = Settings>(
               description={description}
               canonical={canonical}
               alternateLinks={alternateLinks}
-              lang={locale}
+              locale={locale}
+              ogImage={ogImage}
             />
             {/* Pre-paint sidebar-visibility restore — must sit in <head> so it
                 runs before the <aside> desktop sidebar is painted (#2571).

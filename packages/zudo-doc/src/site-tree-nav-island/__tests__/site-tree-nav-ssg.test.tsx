@@ -66,6 +66,19 @@ describe("SiteTreeNav — SSG HTML presence", () => {
     expect(html).toBe(TREE_BLOCK_HTML);
   });
 
+  it("renders a lazy 1200x630 cover image on a root card with coverHref", () => {
+    const tree = [{ ...SAMPLE_TREE[2]!, coverHref: "/img/covers/reference.png" }];
+    const html = render(<SiteTreeNav tree={tree} />);
+    expect(html).toContain(
+      '<img src="/img/covers/reference.png" alt="" width="1200" height="630" loading="lazy" decoding="async" class="zd-site-nav-cover">',
+    );
+  });
+
+  it("renders no cover image without coverHref", () => {
+    const html = render(<SiteTreeNav tree={SAMPLE_TREE} />);
+    expect(html).not.toContain("zd-site-nav-cover");
+  });
+
   it("renders a nav element with aria-label in static HTML", () => {
     const html = render(<SiteTreeNav tree={SAMPLE_TREE} />);
     expect(html).toContain("<nav");

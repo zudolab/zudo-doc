@@ -185,6 +185,7 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
       id: child.fullPath,
       label,
       ...(description !== undefined ? { description } : {}),
+      ...(doc?.data.cover !== undefined ? { cover: doc.data.cover } : {}),
       ...(positionRaw !== undefined ? { sidebar_position: positionRaw } : {}),
       ...(href !== undefined ? { href } : {}),
       hasPage,

@@ -14,6 +14,7 @@
  */
 
 import { z } from "zod";
+import { isRootAbsoluteSitePath } from "../config-assertions/index.js";
 import type { PresetTagVocabularyEntry } from "../preset.js";
 
 export interface BuildDocsSchemaOptions {
@@ -83,6 +84,20 @@ export function buildDocsSchema(opts?: BuildDocsSchemaOptions) {
       standalone: z.boolean().optional(),
       slug: z.string().optional(),
       generated: z.boolean().optional(),
+      // Home-grid card picture for a top-level category's index page, a root-absolute site path.
+      cover: z
+        .string()
+        .refine(isRootAbsoluteSitePath, {
+          message: 'cover must be a root-absolute site path such as "/img/guides.png"',
+        })
+        .optional(),
+      // Page link-preview image (og:image / twitter:image), a root-absolute site path.
+      og_image: z
+        .string()
+        .refine(isRootAbsoluteSitePath, {
+          message: 'og_image must be a root-absolute site path such as "/img/page.png"',
+        })
+        .optional(),
       // Category metadata expressed as a directory index.mdx's frontmatter — the
       // frontmatter form of `_category_.json`. `category_no_page` makes the index
       // a non-linked sidebar header excluded from routes/sitemap/search;
