@@ -241,8 +241,6 @@ export function generateCLAUDEFile(
       choices.changelogPackages && choices.changelogPackages.length > 0
         ? `Changelog pages at \`/docs/changelog/<slug>\` — one per package: ${choices.changelogPackages.join(", ")}`
         : "Changelog page at `/docs/changelog`",
-    tauri:
-      "Desktop app wrapper (`cargo tauri dev` / `cargo tauri build`) — Cmd/Ctrl+F find bar via the package-owned `FindInPageInit` island (`findInPage: true` in `zfb.config.ts`)",
     tagGovernance:
       "Vocabulary-aware tag audit (`tags:audit`) / suggest (`tags:suggest`) scripts",
   };

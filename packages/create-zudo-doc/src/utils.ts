@@ -268,8 +268,8 @@ export function getLangLabel(langCode: string): string {
  * npm and bun BOTH require the `run` verb — `bun build` invokes Bun's bundler,
  * NOT the package.json `build` script (a real footgun), so bun must emit
  * `bun run build`. pnpm and yarn accept the bare script name (`pnpm build`).
- * The single source of truth for this rule across claude-md-gen.ts,
- * scaffold.ts, and features/tauri.ts.
+ * The single source of truth for this rule across claude-md-gen.ts and
+ * scaffold.ts.
  */
 export function pmRunCommand(
   pm: "pnpm" | "npm" | "yarn" | "bun",

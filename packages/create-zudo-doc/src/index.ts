@@ -22,6 +22,13 @@ import {
 async function main() {
   const args = parseArgs();
 
+  // A retired feature request fails even alongside --help, so no invocation
+  // that names one can exit 0.
+  if (args.retiredFlagError) {
+    console.error(pc.red(`Error: ${args.retiredFlagError}`));
+    process.exit(1);
+  }
+
   // Handle --help
   if (args.help) {
     printHelp();

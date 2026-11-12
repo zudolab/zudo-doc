@@ -411,3 +411,77 @@ describe("validateArgs — destination path (#4023)", () => {
     );
   });
 });
+
+describe("retired Tauri flags", () => {
+  const RETIRED_RE = /Tauri desktop app support was retired/;
+
+  it.each([
+    [["--tauri"]],
+    [["--tauri-dev"]],
+    [["--tauri=true"]],
+    [["--tauri-dev=true"]],
+    [["--tauri=yes"]],
+    [["--tauri=1"]],
+    [["--tauri="]],
+    [["--tauri-dev=foo"]],
+    [["--tauri-dev=0"]],
+    [["--tauri=FALSE"]],
+    [["--no-tauri=true"]],
+    [["--no-tauri-dev=false"]],
+    [["--tauri", "false"]],
+    [["my-docs", "--tauri", "--yes"]],
+  ])("rejects %j", (argv) => {
+    const args = parseArgs(argv);
+    expect(args.retiredFlagError).toMatch(RETIRED_RE);
+    expect(validateArgs(args)).toMatch(RETIRED_RE);
+  });
+
+  it.each([
+    [["--tauri", "--no-tauri"]],
+    [["--no-tauri", "--tauri"]],
+    [["--tauri=false", "--tauri"]],
+    [["--tauri=true", "--tauri=false"]],
+    [["--tauri-dev", "--no-tauri-dev"]],
+    [["--no-tauri-dev", "--tauri-dev=yes"]],
+    [["--no-tauri", "--tauri-dev"]],
+  ])("a later or earlier negative flag does not hide an affirmative request: %j", (argv) => {
+    expect(validateArgs(parseArgs(argv))).toMatch(RETIRED_RE);
+  });
+
+  it("names every rejected token in the message", () => {
+    const error = validateArgs(parseArgs(["--tauri", "--tauri-dev=yes"]));
+    expect(error).toContain("--tauri,");
+    expect(error).toContain("--tauri-dev=yes");
+  });
+
+  it.each([
+    [["--no-tauri"]],
+    [["--no-tauri-dev"]],
+    [["--tauri=false"]],
+    [["--tauri-dev=false"]],
+    [["my-docs", "--no-tauri", "--no-tauri-dev", "--tauri=false", "--tauri-dev=false", "--yes"]],
+  ])("accepts the exact legacy negative spelling %j as a silent no-op", (argv) => {
+    const args = parseArgs(argv);
+    expect(args.retiredFlagError).toBeUndefined();
+    expect(validateArgs(args)).toBeNull();
+    expect(args).not.toHaveProperty("tauri");
+    expect(args).not.toHaveProperty("tauriDev");
+  });
+
+  it("ignores a --tauri token after the -- terminator", () => {
+    expect(parseArgs(["--", "--tauri"]).retiredFlagError).toBeUndefined();
+  });
+
+  it("no longer registers either Tauri feature or advertises its flags", () => {
+    const values = FEATURES.map((f) => f.value);
+    expect(values).not.toContain("tauri");
+    expect(values).not.toContain("tauriDev");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      printHelp();
+      expect(log.mock.calls.flat().join("\n")).not.toMatch(/tauri/i);
+    } finally {
+      log.mockRestore();
+    }
+  });
+});

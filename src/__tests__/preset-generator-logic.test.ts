@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   FEATURES,
+  RETIRED_FEATURES,
   buildJson,
   buildCliCommand,
   DEFAULT_HEADER_RIGHT_ITEMS,
@@ -213,7 +214,7 @@ describe("buildCliCommand", () => {
       );
       // Split only the first line to exclude the trailing shell-comment line,
       // then tokenise on whitespace. Whole-token matching avoids the substring
-      // trap where e.g. "--no-tauri-dev" would match a naive .toContain("--no-tauri").
+      // trap where e.g. "--no-claude-skills-writing" would match a naive .toContain("--no-claude-skills").
       const tokens = cmd.split("\n")[0]!.split(/\s+/);
       expect(tokens).toContain(`--${cliFlag}`);
       expect(tokens).not.toContain(`--no-${cliFlag}`);
@@ -524,5 +525,36 @@ describe("buildJson — metaTags (S5 #2079)", () => {
     const mt = json.metaTags as Record<string, unknown>;
     expect(mt.twitterSite).toBeUndefined();
     expect(mt.twitterCreator).toBeUndefined();
+  });
+});
+
+describe("retired Tauri features", () => {
+  it("are absent from the feature catalog", () => {
+    const values = FEATURES.map((f) => f.value as string);
+    for (const retired of RETIRED_FEATURES) {
+      expect(values).not.toContain(retired);
+    }
+    expect(FEATURES.some((f) => /tauri/i.test(f.cliFlag) || /tauri/i.test(f.label))).toBe(false);
+  });
+
+  it.each(RETIRED_FEATURES.map((f) => [f]))("buildJson rejects stale %s state", (feature) => {
+    expect(() => buildJson(makeState({ features: ["search", feature] }))).toThrow(
+      /Tauri desktop app support was retired/,
+    );
+  });
+
+  it.each(RETIRED_FEATURES.map((f) => [f]))("buildCliCommand rejects stale %s state", (feature) => {
+    expect(() => buildCliCommand(makeState({ features: [feature] }))).toThrow(
+      /Tauri desktop app support was retired/,
+    );
+  });
+
+  it("emits no Tauri flag (positive or negative) and no Tauri feature for every supported feature", () => {
+    const all = FEATURES.map((f) => f.value);
+    const cmd = buildCliCommand(makeState({ features: all, additionalLangs: "ja" }));
+    expect(cmd).not.toMatch(/tauri/i);
+    const json = buildJson(makeState({ features: all, additionalLangs: "ja" }));
+    expect(JSON.stringify(json)).not.toMatch(/tauri/i);
+    expect(buildCliCommand(makeState({ features: [] }))).not.toMatch(/tauri/i);
   });
 });
