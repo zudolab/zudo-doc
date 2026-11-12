@@ -103,18 +103,17 @@ search_exclude: true
 
 ## HTMLによる検出
 
-`llmsTxt`が有効な場合、zudo-docはすべてのページの`<head>`に`<link>`タグを追加し、サイトがサブパスにデプロイされている場合でもAIツールがファイルを発見できるようにします：
+`llmsTxt`と`agentExport`の両方が有効な場合、zudo-docはすべてのページの`<head>`に`<link>`タグを追加し、サイトがサブパスにデプロイされている場合でもAIツールがインデックスを発見できるようにします：
 
 ```html
-<link rel="alternate" type="text/plain" href="/my-docs/llms.txt" title="llms.txt" />
-<link rel="alternate" type="text/plain" href="/my-docs/llms-full.txt" title="llms-full.txt" />
+<link rel="alternate" href="/my-docs/llms.txt" type="text/plain">
 ```
 
-これは、サイトが`/my-docs/`のような`base`パスを使用している場合に機能しない可能性がある、標準的なパスベースの検出（ドメインルートの`/llms.txt`）を補完します。
+設定済みのデフォルト以外のロケールのページは、そのロケールのインデックス（たとえば`/my-docs/ja/llms.txt`）へリンクします。これは、サイトが`/my-docs/`のような`base`パスを使用している場合に機能しない可能性がある、標準的なパスベースの検出（ドメインルートの`/llms.txt`）を補完します。
 
 ## エージェント向けエクスポートとMCPのリンク
 
-`agentExport: true`を有効にすると、簡潔な`llms.txt`インデックスは各ページのクリーンなMarkdown代替ファイル`/agent/v1/pages/<page-key>.md`へリンクします。無効な場合、従来のページリンクは変わりません。全文ファイルには人が読むページの正規URLが残ります。`mcp: true`も有効なら、インデックスは別の`<base>/mcp`エンドポイントを案内します。生成されるMarkdownとMCPエンドポイントは[エージェント向けエクスポート](./agent-export.mdx)と[MCPサーバー](./mcp-server.mdx)で説明しています。
+`agentExport: true`を有効にすると、簡潔な`llms.txt`インデックスは各ページのクリーンなMarkdown代替ファイル`/agent/v1/pages/<page-key>.md`へリンクします。無効な場合、従来のページリンクは変わりません。全文ファイルには人が読むページの正規URLが残ります。`mcp: true`も有効なら、インデックスは別の`<base>/mcp`エンドポイントと、そのServer Cardである`<base>/mcp/server-card`を案内します。生成されるMarkdownとMCPエンドポイントは[エージェント向けエクスポート](./agent-export.mdx)と[MCPサーバー](./mcp-server.mdx)で説明しています。
 
 ホームページのURLを渡しただけで、エージェントが必ず`llms.txt`を読むわけではありません。ブラウザーだけで使う場合は、`llms.txt`のURLか生成されたMarkdownページのURLを明示的に渡してください。イニシャライザーでは`llmsTxt`はデフォルトで有効ですが、`zudoDoc`を直接設定する場合のパッケージ既定値は`false`です。
 

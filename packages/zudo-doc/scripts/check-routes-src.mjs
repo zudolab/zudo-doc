@@ -45,6 +45,8 @@ const REQUIRED_ENTRYPOINTS = [
   "docs-tags-tag.tsx",
   "api-ai-chat.tsx",
   "mcp.tsx",
+  "mcp-server-card.tsx",
+  "ai-catalog.tsx",
   "locale-index.tsx",
   "locale-docs-slug.tsx",
   "locale-docs-versions.tsx",

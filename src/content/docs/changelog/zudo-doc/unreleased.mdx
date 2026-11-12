@@ -14,3 +14,9 @@ sidebar_position: 1157
 ### Features
 
 - New optional `home.image` setting (`{ src, alt?, width?, height?, darkSrc? }`) shows a full-colour picture in the home hero, in the box the logo uses, instead of the one-colour logo mask. `darkSrc` is shown in dark mode by CSS keyed on the colour mode, with no extra script. Paths must be root-absolute site paths; external URLs and malformed values throw a `TypeError` at config resolution. Output without `home.image` is unchanged. (#4750)
+- With `mcp: true`, the Worker serves an MCP Server Card (SEP-2127) at `<base>/mcp/server-card` and, when `base` is `/`, an AI Catalog at `/.well-known/ai-catalog.json` that lists the card. Both are read-only JSON with CORS, caching and ETag revalidation. At a root base every page links the catalog with `<link rel="ai-catalog">`, and the `llms.txt` MCP section lists the card. `@takazudo/zudo-doc/mcp` also exports `buildMcpServerCard`, `buildAiCatalog` and the media-type constants. The `/mcp` tools and their limits are unchanged. (#4769)
+
+### Bug Fixes
+
+- The home page and each locale home page emit a canonical link and `og:url` when `siteUrl` is set, using the same URL as the sitemap. (#4767)
+- Pages in a configured non-default locale point their `llms.txt` alternate link at that locale's `/<locale>/llms.txt` instead of the default-locale index. (#4767)

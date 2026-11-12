@@ -106,7 +106,10 @@ export function createLlmsTxtDevMiddleware(
   const generationOptions = {
     agentExport: options.agentExport === true,
     ...(options.mcp === true
-      ? { mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl) }
+      ? {
+          mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl),
+          mcpServerCardUrl: withLlmsBase("/mcp/server-card", base, siteUrl),
+        }
       : {}),
   };
 

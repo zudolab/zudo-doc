@@ -179,6 +179,7 @@ export interface DocPageShellDeps {
     description?: string;
     canonical?: string;
     alternateLinks?: ReadonlyArray<{ rel: string; href: string; type?: string; title?: string }>;
+    lang?: string;
   }) => JSX.Element;
   SidebarWithDefaults: (props: {
     currentSlug?: string;
@@ -360,6 +361,7 @@ export function createDocPageShell<S extends Settings = Settings>(
               description={description}
               canonical={canonical}
               alternateLinks={alternateLinks}
+              lang={locale}
             />
             {/* Pre-paint sidebar-visibility restore — must sit in <head> so it
                 runs before the <aside> desktop sidebar is painted (#2571).

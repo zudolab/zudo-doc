@@ -283,6 +283,14 @@ function deriveRoutes(
   if (settings.mcp === true) {
     const base = `/${String(settings.base ?? "").split("/").filter(Boolean).join("/")}`.replace(/\/$/, "");
     routes.push({ pattern: `${base}/mcp`, entrypoint: "@takazudo/zudo-doc/routes/mcp", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
+    routes.push({ pattern: `${base}/mcp/server-card`, entrypoint: "@takazudo/zudo-doc/routes/mcp-server-card", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
+    // RFC 8615 well-known URIs live at the origin root, which only a root-base deployment owns.
+    // The first segment is a parameter because zfb enumerates pages under a dot-directory but
+    // leaves them out of the bundle, which silently drops a literal `/.well-known/…` pattern.
+    // The route itself answers only AI_CATALOG_WELL_KNOWN_PATH.
+    if (base === "") {
+      routes.push({ pattern: "/[wellKnown]/ai-catalog.json", entrypoint: "@takazudo/zudo-doc/routes/ai-catalog", opts: { prerender: false }, includedInDtpShadowDiagnostic: false });
+    }
   }
 
   if (options.packageOwnedRoutes === false) {

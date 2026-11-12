@@ -26,6 +26,7 @@ import type { Settings, FaviconConfig } from "../settings.js";
 import { renderAutoLogoIconSvg } from "../auto-logo/icon.js";
 import { deriveComposeMetaTitle, deriveColorSchemeGenerators } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+import { AI_CATALOG_MEDIA_TYPE, AI_CATALOG_WELL_KNOWN_PATH } from "../mcp/constants.js";
 
 export interface HeadWithDefaultsProps {
   /** Page title forwarded to og:title. Required. */
@@ -39,6 +40,8 @@ export interface HeadWithDefaultsProps {
   canonical?: string;
   /** Page-specific alternate links, such as an exported Markdown version. */
   alternateLinks?: HeadProps["alternateLinks"];
+  /** Page locale; a configured non-default locale gets its own `llms.txt` link. */
+  lang?: string;
 }
 
 /** Settings subset read by {@link createHeadWithDefaults}. Retained for the
@@ -58,6 +61,9 @@ export interface HeadWithDefaultsSettings {
   agentExport?: boolean;
   /** Existing llms.txt output setting; retained independently from agent export. */
   llmsTxt?: boolean;
+  /** The read-only MCP endpoint; on a root base it also publishes the AI Catalog. */
+  mcp?: boolean;
+  locales?: Record<string, unknown>;
   colorMode?: ColorSchemeProviderColorMode | null | false;
   sidebarResizer?: boolean;
   /** Configured theme-pack slug (ADR `docs/adr/theme-packs.md`, #2822). */
@@ -245,6 +251,18 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
   // re-serialize its ~1KB SVG on every page.
   const faviconLinks = resolveFaviconLinks(settings.favicon, settings.siteName, withBase);
 
+  const defaultLocale = ctx.defaultLocale;
+  const configuredLocales = settings.locales ?? {};
+  // The llms-txt emitter writes `/<code>/llms.txt` for every configured locale.
+  const llmsTxtHref = (lang: string | undefined): string =>
+    withBase(
+      lang !== undefined && lang !== defaultLocale && Object.prototype.hasOwnProperty.call(configuredLocales, lang)
+        ? `/${lang}/llms.txt`
+        : "/llms.txt",
+    );
+  // plugins/routes.ts injects the AI Catalog route only for MCP on a root base.
+  const publishesAiCatalog = settings.mcp === true && withBase("/") === "/";
+
   /**
    * Default-bearing host wrapper that injects og:title / og:description,
    * the ColorSchemeProvider (`:root { --zd-* }` palette + theme bootstrap),
@@ -256,6 +274,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
     description,
     canonical,
     alternateLinks,
+    lang,
   }: HeadWithDefaultsProps): JSX.Element {
     const { metaTags } = settings;
 
@@ -351,7 +370,10 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
           />
         ))}
         {settings.agentExport && settings.llmsTxt && (
-          <link rel="alternate" href={withBase("/llms.txt")} type="text/plain" />
+          <link rel="alternate" href={llmsTxtHref(lang)} type="text/plain" />
+        )}
+        {publishesAiCatalog && (
+          <link rel="ai-catalog" href={AI_CATALOG_WELL_KNOWN_PATH} type={AI_CATALOG_MEDIA_TYPE} />
         )}
         {/* Site-wide <head> extras from settings.head (SiteHeadConfig).
             The entire block is gated on ctx.settings.head being present so that

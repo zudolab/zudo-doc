@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (179 total)
+## 1. Subpath Exports (184 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -348,6 +348,9 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./routes/docs-tags-index` | Docs tags index route |
 | `./routes/docs-tags-tag` | Docs tags tag detail route |
 | `./routes/api-ai-chat` | AI chat API route |
+| `./routes/mcp` | Read-only MCP endpoint at `<base>/mcp` (enabled by `mcp`) |
+| `./routes/mcp-server-card` | MCP Server Card at `<base>/mcp/server-card` (enabled by `mcp`) |
+| `./routes/ai-catalog` | AI Catalog at `/.well-known/ai-catalog.json` (enabled by `mcp` at a root `base`) |
 | `./routes/locale-index` | Locale index route |
 | `./routes/locale-docs-slug` | Locale docs slug route |
 | `./routes/locale-docs-versions` | Locale docs versions route |
@@ -400,6 +403,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./frontmatter-preview-data` | Frontmatter preview data extraction |
 | `./frontmatter` | Frontmatter splitter (`matter()`) over the `yaml` package |
 | `./extract-headings` | Heading extraction utilities |
+| `./mcp` | `createMcpHandler()` for the read-only MCP endpoint, the discovery builders `buildMcpServerCard()` / `buildAiCatalog()`, `respondWithDiscoveryDocument()`, the discovery URL helpers and media-type constants. Requires the optional `@modelcontextprotocol/sdk` peer |
 
 ### Package Defaults (epic #2651, S4 #2654)
 

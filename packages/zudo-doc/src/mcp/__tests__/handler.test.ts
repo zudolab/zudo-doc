@@ -3,6 +3,8 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { createHash } from "node:crypto";
 import { createMcpHandler } from "../handler.js";
+import { MCP_SERVER_NAME } from "../constants.js";
+import { buildMcpServerCard } from "../discovery.js";
 import { AgentCorpusLoader } from "../loader.js";
 import type { AgentItem, AgentManifest, AgentSearchIndex } from "../../agent-docs/types.js";
 
@@ -108,6 +110,21 @@ describe("MCP handler", () => {
     const missing = await client.callTool({ name: "fetch", arguments: { id: "../secret" } });
     expect(missing.isError).toBe(true);
     await client.close();
+  });
+  it("initializes with the identity and protocol versions its Server Card advertises", async () => {
+    const { handler } = fixture();
+    const card = buildMcpServerCard({ base: "/manual/", siteName: "Test", origin: new URL(endpoint).origin });
+    expect(card.remotes[0]!.url).toBe(endpoint);
+    const client = new Client({ name: "test", version: "1.0.0" });
+    const transport = new StreamableHTTPClientTransport(new URL(endpoint), { fetch: (input, init) => handler(new Request(input, init)) });
+    await client.connect(transport);
+    expect(client.getServerVersion()).toEqual({ name: MCP_SERVER_NAME, version: card.version });
+    expect(card.remotes[0]!.supportedProtocolVersions).toContain(transport.protocolVersion);
+    await client.close();
+    for (const protocolVersion of card.remotes[0]!.supportedProtocolVersions) {
+      const response = await handler(post({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion, capabilities: {}, clientInfo: { name: "card", version: "1" } } }, { "mcp-protocol-version": protocolVersion }));
+      expect((await response.json()).result.protocolVersion, protocolVersion).toBe(protocolVersion);
+    }
   });
   it("enforces methods, origin, body and corpus failures", async () => {
     const { files, manifest, handler } = fixture();

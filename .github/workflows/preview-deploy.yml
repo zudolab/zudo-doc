@@ -266,6 +266,8 @@ jobs:
         #   dist/doc-history/*.json                             (g) merged below
         #   dist/_worker.js + dist/_zfb_inner.mjs               (h) generated CF
         #                                                       adapter graph
+        #   dist/_headers                                       (i) Workers Static
+        #                                                        Assets headers
         #   dist/.assetsignore                                  excludes (h) from
         #                                                       public asset index
         #

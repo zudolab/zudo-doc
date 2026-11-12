@@ -113,6 +113,105 @@ describe("custom Worker entry", () => {
     }
   });
 
+  it("serves the MCP Server Card and AI Catalog for the live endpoint", async () => {
+    const cardUrl = "https://example.com/mcp/server-card";
+    const card = await exports.default.fetch(new Request(cardUrl));
+    expect(card.status).toBe(200);
+    expect(card.headers.get("content-type")).toBe("application/mcp-server-card+json");
+    expect(card.headers.get("access-control-allow-origin")).toBe("*");
+    expect(card.headers.get("cache-control")).toBe("public, max-age=3600");
+    const cardBody = (await card.json()) as {
+      version: string;
+      remotes: Array<{ url: string; supportedProtocolVersions: string[] }>;
+    };
+    expect(cardBody).toMatchObject({
+      $schema: "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
+      name: "com.takazudomodular.zudo-doc/docs",
+      title: "zudo-doc",
+      websiteUrl: "https://zudo-doc.takazudomodular.com/",
+      remotes: [{ type: "streamable-http", url: "https://zudo-doc.takazudomodular.com/mcp" }],
+    });
+
+    const catalog = await exports.default.fetch(
+      new Request("https://example.com/.well-known/ai-catalog.json"),
+    );
+    expect(catalog.status).toBe(200);
+    expect(catalog.headers.get("content-type")).toBe("application/ai-catalog+json");
+    await expect(catalog.json()).resolves.toEqual({
+      specVersion: "1.0",
+      host: {
+        displayName: "zudo-doc",
+        identifier: "zudo-doc.takazudomodular.com",
+        documentationUrl: "https://zudo-doc.takazudomodular.com/",
+      },
+      entries: [{
+        identifier: "urn:air:zudo-doc.takazudomodular.com:mcp:docs",
+        type: "application/mcp-server-card+json",
+        url: "https://zudo-doc.takazudomodular.com/mcp/server-card",
+      }],
+    });
+    // The catalog route matches any first segment (zfb drops dot-directory pages); only `.well-known` serves it.
+    const elsewhere = await exports.default.fetch(new Request("https://example.com/ja/ai-catalog.json"));
+    expect(elsewhere.status).toBe(404);
+
+    const client = new Client({ name: "worker-card", version: "1.0.0" });
+    const transport = new StreamableHTTPClientTransport(new URL(mcpUrl), {
+      fetch: (input, init) =>
+        exports.default.fetch(
+          new Request(input, init) as Parameters<typeof exports.default.fetch>[0],
+        ),
+    });
+    try {
+      await client.connect(transport);
+      expect(client.getServerVersion()).toEqual({ name: "zudo-doc", version: cardBody.version });
+      expect(cardBody.remotes[0]!.supportedProtocolVersions).toContain(transport.protocolVersion);
+    } finally {
+      await client.close();
+    }
+
+    const etag = card.headers.get("etag");
+    expect(etag).toMatch(/^"[0-9a-f]{32}"$/);
+    const revalidated = await exports.default.fetch(
+      new Request(cardUrl, { headers: { "if-none-match": etag! } }),
+    );
+    expect(revalidated.status).toBe(304);
+    const head = await exports.default.fetch(new Request(cardUrl, { method: "HEAD" }));
+    expect(head.status).toBe(200);
+    expect(head.headers.get("etag")).toBe(etag);
+    expect((await exports.default.fetch(new Request(cardUrl, { method: "OPTIONS" }))).status).toBe(204);
+    expect(
+      (await exports.default.fetch(new Request(cardUrl, { method: "POST", body: "{}" }))).status,
+    ).toBe(405);
+  });
+
+  it("applies the static asset discovery links and text charsets", async () => {
+    for (const [path, llms] of [["/", "/llms.txt"], ["/ja/", "/ja/llms.txt"]] as const) {
+      const page = await exports.default.fetch(new Request(`https://example.com${path}`));
+      expect(page.status).toBe(200);
+      expect(page.headers.get("link")).toBe(
+        `</.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json", <${llms}>; rel="describedby"; type="text/plain"`,
+      );
+      await page.body?.cancel();
+    }
+    for (const path of ["/llms.txt", "/ja/llms.txt", "/robots.txt"]) {
+      const text = await exports.default.fetch(new Request(`https://example.com${path}`));
+      expect(text.status).toBe(200);
+      expect(text.headers.get("content-type"), path).toBe("text/plain; charset=utf-8");
+      await text.body?.cancel();
+    }
+    const manifest = (await (
+      await exports.default.fetch(new Request("https://example.com/agent/v1/manifest.json"))
+    ).json()) as { documents: Array<{ locale: string; markdownUrl: string }> };
+    const japanese = manifest.documents.find(({ locale }) => locale === "ja");
+    expect(japanese?.markdownUrl).toMatch(/\/agent\/v1\/pages\/[^/]+\.md$/);
+    const markdown = await exports.default.fetch(
+      new Request(new URL(japanese!.markdownUrl, "https://example.com")),
+    );
+    expect(markdown.status).toBe(200);
+    expect(markdown.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+    expect(await markdown.text()).toMatch(/[぀-ヿ一-鿿]/);
+  });
+
   it("uses the locked MCP method contract", async () => {
     for (const method of ["GET", "HEAD", "DELETE"]) {
       const response = await exports.default.fetch(

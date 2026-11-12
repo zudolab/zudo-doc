@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AGENT_MAX_POST_BYTES, AGENT_MAX_TOOL_RESPONSE_BYTES } from "../agent-docs/limits.js";
 import { searchAgentIndex } from "../agent-docs/search.js";
 import { AgentCorpusLoader, CorpusUnavailable, type ReadAsset } from "./loader.js";
+import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from "./constants.js";
 
 const encoder = new TextEncoder();
 const annotations = { readOnlyHint: true, idempotentHint: true, destructiveHint: false, openWorldHint: false };
@@ -81,7 +82,7 @@ export function createMcpHandler(options: McpHandlerOptions) {
       if (error instanceof CorpusUnavailable) return finish(json({ error: error.message }, 503));
       throw error;
     }
-    const server = new McpServer({ name: "zudo-doc", version: "1.0.0" });
+    const server = new McpServer({ name: MCP_SERVER_NAME, version: MCP_SERVER_VERSION });
     const publicOrigin = options.siteUrl ? new URL(options.siteUrl).origin : requestOrigin;
     server.registerTool("search", { description: "Search published documentation.", inputSchema: { query: z.string() }, outputSchema: { results: z.array(z.object({ id: z.string(), title: z.string(), url: z.string() })) }, annotations }, async ({ query }) => {
       const corpus = await loader.corpus();

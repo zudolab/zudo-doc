@@ -574,6 +574,14 @@
       "types": "./dist/routes/mcp.d.ts",
       "default": "./dist/routes/mcp.js"
     },
+    "./routes/mcp-server-card": {
+      "types": "./dist/routes/mcp-server-card.d.ts",
+      "default": "./dist/routes/mcp-server-card.js"
+    },
+    "./routes/ai-catalog": {
+      "types": "./dist/routes/ai-catalog.d.ts",
+      "default": "./dist/routes/ai-catalog.js"
+    },
     "./mcp": {
       "types": "./dist/mcp/index.d.ts",
       "default": "./dist/mcp/index.js"

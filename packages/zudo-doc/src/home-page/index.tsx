@@ -281,6 +281,8 @@ export function createHomePageView<S extends Settings = Settings>(
     wide,
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
+    // Same URL route-enumerators emits as this page's sitemap <loc>.
+    const homePath = withBase(prefix === "" ? "/" : prefix);
     const effectiveInitiallyCollapsedCategorySlugs =
       initiallyCollapsedCategorySlugs ?? settings.siteTreeNavInitiallyCollapsed;
     // Same resolution the hero paragraph below reads (locale override falls
@@ -360,7 +362,14 @@ export function createHomePageView<S extends Settings = Settings>(
       <DocLayoutWithDefaults
         title={composeMetaTitle(settings.siteName)}
         description={settings.metaTags.description ? description : undefined}
-        head={<HeadWithDefaults title={settings.siteName} description={description} />}
+        head={
+          <HeadWithDefaults
+            title={settings.siteName}
+            description={description}
+            canonical={ctx.absoluteUrl(homePath)}
+            lang={locale}
+          />
+        }
         lang={locale}
         dataThemePack={dataThemePack}
         noindex={settings.noindex}

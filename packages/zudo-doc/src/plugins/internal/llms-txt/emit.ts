@@ -55,7 +55,10 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
   const generationOptions = {
     agentExport: agentExport === true,
     ...(mcp === true
-      ? { mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl) }
+      ? {
+          mcpEndpointUrl: withLlmsBase("/mcp", base, siteUrl),
+          mcpServerCardUrl: withLlmsBase("/mcp/server-card", base, siteUrl),
+        }
       : {}),
   };
 

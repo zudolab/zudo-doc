@@ -25,6 +25,8 @@ export interface LlmsTxtGenerationOptions {
   agentExport?: boolean;
   /** Add an MCP discovery section with this base-aware endpoint URL. */
   mcpEndpointUrl?: string;
+  /** List the endpoint's Server Card in the MCP section. */
+  mcpServerCardUrl?: string;
 }
 
 function utf8Width(codePoint: number): number {
@@ -102,6 +104,9 @@ export function generateLlmsTxt(
     lines.push("## MCP");
     lines.push("");
     lines.push(`- [Read-only MCP endpoint](${options.mcpEndpointUrl})`);
+    if (options.mcpServerCardUrl !== undefined) {
+      lines.push(`- [MCP Server Card](${options.mcpServerCardUrl})`);
+    }
     lines.push("");
   }
   return lines.join("\n");
