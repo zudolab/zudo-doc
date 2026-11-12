@@ -218,6 +218,31 @@ export interface HomeConfig {
   introMarkdown?: string;
   /** Sitemap title; blank uses the translated package label. @default "" */
   sitemapHeading?: string;
+  /**
+   * Full-colour picture drawn in the home hero in place of the logo. Omitted
+   * keeps the logo. See {@link HomeImageConfig}.
+   * @default undefined
+   */
+  image?: HomeImageConfig;
+}
+
+/**
+ * Full-colour home hero image (`home.image`). Rendered as a real `<img>` in
+ * the box the logo occupies (320px wide, 1200:630, fluid on narrow screens)
+ * with `object-fit: contain`. Unlike a `logo` path it is never masked, so it
+ * keeps its own colours.
+ */
+export interface HomeImageConfig {
+  /** Root-absolute site path (e.g. `"/img/hero.png"`), prefixed with `base`. External URLs are rejected. */
+  src: string;
+  /** Alternative text. Defaults to `""` because the site name is printed beside the image. */
+  alt?: string;
+  /** Intrinsic width in pixels (positive integer). Give together with `height`. */
+  width?: number;
+  /** Intrinsic height in pixels (positive integer). Give together with `width`. */
+  height?: number;
+  /** Root-absolute site path shown instead of `src` while the site is in dark colour mode. */
+  darkSrc?: string;
 }
 
 export type TagPlacement = "after-title" | "before-pager";

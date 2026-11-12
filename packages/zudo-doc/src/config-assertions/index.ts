@@ -8,6 +8,7 @@
 // must hit the same guard rather than only the caller that happens to wrap it.
 
 import type { FaviconConfig } from "../settings.js";
+import { CONTROL_CHARS } from "../asset-path/index.js";
 
 /** Structural subset of Settings used by the agent-export/MCP config guard. */
 export interface AgentDocsConsistentSubject {
@@ -139,6 +140,84 @@ export function assertValidHeaderBrand(settings: HeaderBrandSubject): void {
     throw new TypeError(
       `Invalid headerBrand.icon ${describeValue(icon)}: must be a non-empty string (a "/"-prefixed path, a data: URL, or an absolute URL).`,
     );
+  }
+}
+
+/** Structural subset of `Settings` {@link assertValidHomeImage} reads. */
+export interface HomeImageSubject {
+  home?: unknown;
+}
+
+const HOME_IMAGE_KEYS = new Set(["src", "alt", "width", "height", "darkSrc"]);
+
+/**
+ * True for a root-absolute site path: one leading `/` (never `//`, which is
+ * protocol-relative), no backslash and no C0/C1 control character. Such a
+ * path can only resolve to the site's own origin, which keeps `home.image`
+ * compatible with a strict `img-src 'self'` policy.
+ */
+export function isRootAbsoluteSitePath(value: string): boolean {
+  if (!value.startsWith("/") || value.startsWith("//")) return false;
+  return !value.includes("\\") && !CONTROL_CHARS.test(value);
+}
+
+/**
+ * Validate `home.image`: absent, or `{ src, alt?, width?, height?, darkSrc? }`
+ * with root-absolute `src`/`darkSrc`, a string `alt`, and positive-integer
+ * `width`/`height` given together. Unknown keys are rejected so a typo such
+ * as `dark` fails loudly instead of being ignored. Throws a `TypeError`
+ * naming the field.
+ */
+export function assertValidHomeImage(settings: HomeImageSubject): void {
+  const home = settings.home;
+  if (home === undefined || home === null || typeof home !== "object") return;
+  const value = (home as { image?: unknown }).image;
+  if (value === undefined) return;
+
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError(
+      `Invalid home.image ${describeValue(value)}: omit it, or pass an object { src: "/img/hero.png" }.`,
+    );
+  }
+
+  for (const key of Object.keys(value)) {
+    if (!HOME_IMAGE_KEYS.has(key)) {
+      throw new TypeError(
+        `Invalid home.image: unknown key "${key}". Allowed keys: src, alt, width, height, darkSrc.`,
+      );
+    }
+  }
+
+  const image = value as Record<string, unknown>;
+  const checkPath = (field: "src" | "darkSrc"): void => {
+    const path = image[field];
+    if (typeof path !== "string" || !isRootAbsoluteSitePath(path)) {
+      throw new TypeError(
+        `Invalid home.image.${field} ${describeValue(path)}: must be a root-absolute site path such as "/img/hero.png" (no external URL, no "//", no backslash or control character).`,
+      );
+    }
+  };
+  checkPath("src");
+  if (image.darkSrc !== undefined) checkPath("darkSrc");
+
+  if (image.alt !== undefined && typeof image.alt !== "string") {
+    throw new TypeError(`Invalid home.image.alt ${describeValue(image.alt)}: must be a string.`);
+  }
+
+  const hasWidth = image.width !== undefined;
+  const hasHeight = image.height !== undefined;
+  if (hasWidth !== hasHeight) {
+    throw new TypeError(
+      "Invalid home.image: width and height must be given together, or both omitted.",
+    );
+  }
+  for (const field of ["width", "height"] as const) {
+    const n = image[field];
+    if (n !== undefined && (typeof n !== "number" || !Number.isInteger(n) || n <= 0)) {
+      throw new TypeError(
+        `Invalid home.image.${field} ${describeValue(n)}: must be a positive integer (pixels).`,
+      );
+    }
   }
 }
 

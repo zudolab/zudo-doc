@@ -84,7 +84,7 @@ Host islands rendered through `headerRightComponents` can preserve session-scope
 
 ### `createHomePageView(ctx)` (`./home-page`)
 
-Factory for the shared home-page (site index) body: hero (logo mask block,
+Factory for the shared home-page (site index) body: hero (logo mask block or `home.image` picture,
 `<h1>` siteName, description, primary link + GitHub + extras links row), the
 `SiteTreeNav` idle Island, and the optional docTags section. Returns a
 `HomePageView` component with props
@@ -797,3 +797,16 @@ and serializable types. `RouteContextPayload.homeIntros` and
 `RouteContext.homeIntros` carry the prepared result. See the
 [full rendering and URL contract](src/home-intro/CONTRACT.md) for the supported
 Markdown matrix, safety policy and exact adapter instructions.
+
+### Full-colour home image
+
+`HomeConfig.image?: HomeImageConfig` (`{ src, alt?, width?, height?, darkSrc? }`)
+draws a real `<img>` in the home hero's logo box (320px, 1200:630,
+`object-fit: contain`) instead of the logo. `src`/`darkSrc` must be
+root-absolute site paths (base-prefixed at render; external, `//`, `data:`,
+backslash and control-character values are rejected); `alt` defaults to `""`;
+`width`/`height` are positive integers given together. With `darkSrc`, both
+images are emitted `loading="lazy"` with `data-zd-home-image="light"|"dark"` and `features.css`
+shows the one matching `html[data-theme]`. `assertValidHomeImage` (run by both
+`zudoDoc()` and `zudoDocPreset()`) throws a `TypeError` naming the field.
+Absent `image` leaves the hero output unchanged.

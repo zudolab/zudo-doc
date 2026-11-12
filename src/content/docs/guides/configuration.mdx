@@ -45,8 +45,39 @@ Default: `{ wide: false, introMarkdown: "", sitemapHeading: "" }`
 | `wide` | `boolean` | Widen the outer page container for a larger category grid; defaults to `false`. |
 | `introMarkdown` | `string` | Optional prose below the logo, title, short tagline and navigation. |
 | `sitemapHeading` | `string` | Plain-text heading above the existing documentation tree. Blank uses the translated default. |
+| `image` | `HomeImageConfig` | Optional full-colour picture shown in the hero in place of the logo. See [Full-colour home image](#home-page-home-full-colour-home-image). Omitted by default. |
 
 Use `siteDescription` for the short tagline and existing metadata uses; `locales.<code>.description` overrides the tagline. Use `introMarkdown` for longer prose. It does not replace metadata or the tagline. Keep [homeExtras / extras](../reference/host-chrome-bindings.mdx) for inline navigation additions in the slash-separated links row; they are not a prose slot.
+
+#### Full-colour home image
+
+A [`logo`](#identity-and-urls-logo) path is drawn as a one-colour CSS mask so it follows the theme, which turns a colour picture into a silhouette. Set `home.image` to show a real picture in the hero instead:
+
+```ts
+zudoDoc({
+  home: {
+    image: {
+      src: "/img/hero.png",
+      darkSrc: "/img/hero-dark.png",
+      width: 1200,
+      height: 630,
+    },
+  },
+});
+```
+
+| Field | Type | Purpose |
+|---|---|---|
+| `src` | `string` | Required. Root-absolute site path to the picture, usually a file in `public/`. `base` is prefixed automatically. |
+| `alt` | `string` | Alternative text. Defaults to `""` because the site name is printed beside the picture. |
+| `width`, `height` | `number` | Intrinsic size in pixels, as positive integers. Give both or neither. |
+| `darkSrc` | `string` | Root-absolute site path shown instead of `src` while the site is in dark mode. |
+
+The picture takes the box the logo uses: 320 CSS px wide at a 1200:630 ratio, shrinking on narrow screens. The box is reserved before the picture loads, so the hero does not shift, and `object-fit: contain` keeps any ratio undistorted; a 1200 × 630 picture fills it exactly. The logo is not drawn in the hero while `image` is set, and `logo` keeps its meaning everywhere else.
+
+With `darkSrc`, both pictures are in the page and CSS shows the one that matches the colour mode chosen before first paint, so there is no flash and no script runs for the choice. With `colorMode: false`, only `src` is used.
+
+Paths must start with a single `/`. External URLs, protocol-relative `//` paths, `data:` URLs, backslashes and control characters are rejected, which keeps the picture compatible with a strict `img-src 'self'` policy. Unknown keys, a missing `src`, a non-string `alt` and an incomplete or non-integer size throw a `TypeError` at config resolution that names the field.
 
 #### Markdown-first example
 
@@ -225,6 +256,8 @@ Home-hero logo. `"auto"` (the default) renders a generated deterministic SVG see
 Run `npx zudo-doc eject logo` to materialize the generated mark as a real file: it writes `public/img/logo.svg` and flips this field to `"/img/logo.svg"`, so you own an editable asset — tweak it, replace it, or reuse it elsewhere (e.g. for OGP) — instead of the request-time generated default. See [Customizing → Rung 5](../reference/customizing.mdx#rung-5-—-ejecting-a-component) for the CLI flags.
 
 `logo: ""` throws a `TypeError` at config resolution instead of silently rendering a CSS mask of an empty path — pass `false` to hide the logo, or omit the field for the default.
+
+For a full-colour picture in the hero, use [`home.image`](#home-page-home-full-colour-home-image); it takes the logo's place in the hero only.
 
 Default: `"auto"`
 

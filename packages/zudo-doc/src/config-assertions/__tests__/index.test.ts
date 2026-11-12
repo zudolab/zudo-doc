@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertValidHomeImage,
+  isRootAbsoluteSitePath,
   assertAgentDocsConsistent,
   assertValidHeaderBrand,
   assertValidSearchMaxBodyLength,
@@ -163,5 +165,88 @@ describe("assertValidHeaderBrand", () => {
   ])("rejects %s, naming headerBrand.icon", (_label, value) => {
     expect(() => assertValidHeaderBrand({ headerBrand: value })).toThrow(TypeError);
     expect(() => assertValidHeaderBrand({ headerBrand: value })).toThrow(/headerBrand\.icon/);
+  });
+});
+
+describe("assertValidHomeImage", () => {
+  it("accepts an absent home or image", () => {
+    expect(() => assertValidHomeImage({})).not.toThrow();
+    expect(() => assertValidHomeImage({ home: { wide: true } })).not.toThrow();
+  });
+
+  it("accepts a complete valid image", () => {
+    expect(() =>
+      assertValidHomeImage({
+        home: {
+          image: {
+            src: "/img/hero.png",
+            alt: "",
+            width: 1200,
+            height: 630,
+            darkSrc: "/img/hero dark (1).png",
+          },
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ["https://example.com/a.png"],
+    ["//cdn.example.com/a.png"],
+    ["data:image/png;base64,AAAA"],
+    ["img/hero.png"],
+    [""],
+    ["/img\\hero.png"],
+    ["/img/hero.png\n"],
+    ["/img/hero\u0085.png"],
+  ])("rejects src %j", (src) => {
+    expect(() => assertValidHomeImage({ home: { image: { src } } })).toThrow(
+      /home\.image\.src .*root-absolute site path/,
+    );
+  });
+
+  it("rejects an external darkSrc", () => {
+    expect(() =>
+      assertValidHomeImage({
+        home: { image: { src: "/a.png", darkSrc: "https://example.com/b.png" } },
+      }),
+    ).toThrow(/home\.image\.darkSrc/);
+  });
+
+  it.each([[true], ["/img/hero.png"], [[]], [null]])("rejects a non-object image %j", (image) => {
+    expect(() => assertValidHomeImage({ home: { image } })).toThrow(/Invalid home\.image /);
+  });
+
+  it("rejects a missing src and unknown keys", () => {
+    expect(() => assertValidHomeImage({ home: { image: {} } })).toThrow(/home\.image\.src/);
+    expect(() =>
+      assertValidHomeImage({ home: { image: { src: "/a.png", dark: "/b.png" } } }),
+    ).toThrow(/unknown key "dark"/);
+  });
+
+  it("rejects a non-string alt", () => {
+    expect(() => assertValidHomeImage({ home: { image: { src: "/a.png", alt: 1 } } })).toThrow(
+      /home\.image\.alt/,
+    );
+  });
+
+  it("requires width and height together, as positive integers", () => {
+    expect(() =>
+      assertValidHomeImage({ home: { image: { src: "/a.png", width: 1200 } } }),
+    ).toThrow(/width and height must be given together/);
+    for (const bad of [0, -1, 1.5, "1200", Number.NaN]) {
+      expect(() =>
+        assertValidHomeImage({ home: { image: { src: "/a.png", width: bad, height: 630 } } }),
+      ).toThrow(/home\.image\.width .*positive integer/);
+    }
+  });
+});
+
+describe("isRootAbsoluteSitePath", () => {
+  it("classifies paths", () => {
+    expect(isRootAbsoluteSitePath("/")).toBe(true);
+    expect(isRootAbsoluteSitePath("/a b.png")).toBe(true);
+    expect(isRootAbsoluteSitePath("//a")).toBe(false);
+    expect(isRootAbsoluteSitePath("a")).toBe(false);
   });
 });
