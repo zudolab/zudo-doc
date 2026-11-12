@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertValidLocaleOgImages,
   assertValidHomeImage,
+  assertValidHomeSections,
   isRootAbsoluteSitePath,
   assertAgentDocsConsistent,
   assertValidHeaderBrand,
@@ -273,5 +274,46 @@ describe("assertValidLocaleOgImages", () => {
     expect(() => assertValidLocaleOgImages({ locales: { ja: { ogImage } } })).toThrow(
       /Invalid locales\.ja\.ogImage/,
     );
+  });
+});
+
+describe("assertValidHomeSections", () => {
+  const tree = { type: "site-tree" };
+  const cards = { type: "doc-cards", docs: ["getting-started/introduction"] };
+  const check = (sections: unknown) => () => assertValidHomeSections({ home: { sections } });
+
+  it("accepts an omitted recipe and both supported orders", () => {
+    expect(() => assertValidHomeSections({})).not.toThrow();
+    expect(() => assertValidHomeSections({ home: { wide: true } })).not.toThrow();
+    expect(check([tree])).not.toThrow();
+    expect(check([cards, { ...tree, variant: "described" }])).not.toThrow();
+    expect(check([{ ...tree, variant: "default", heading: "Docs", description: "All." }, { ...cards, docs: [], locales: { ja: { heading: "選択" } } }])).not.toThrow();
+  });
+
+  it("rejects non-array recipes, unknown kinds and missing/duplicate trees", () => {
+    expect(check({})).toThrow(/home\.sections .*array/);
+    expect(check([])).toThrow(/exactly one \{ type: "site-tree" \}.*found 0/);
+    expect(check([cards])).toThrow(/found 0/);
+    expect(check([tree, tree])).toThrow(/found 2/);
+    expect(check([tree, cards, cards])).toThrow(/at most one \{ type: "doc-cards" \}/);
+    expect(check([tree, { type: "widget" }])).toThrow(/home\.sections\[1\]\.type "widget"/);
+    expect(check(["site-tree"])).toThrow(/home\.sections\[0\]/);
+  });
+
+  it("rejects unsupported fields and values", () => {
+    expect(check([{ ...tree, maxWidth: "80rem" }])).toThrow(/unknown key "maxWidth"/);
+    expect(check([{ ...tree, docs: [] }])).toThrow(/unknown key "docs" for a "site-tree"/);
+    expect(check([tree, { ...cards, variant: "described" }])).toThrow(/unknown key "variant" for a "doc-cards"/);
+    expect(check([{ ...tree, variant: "fancy" }])).toThrow(/variant "fancy"/);
+    expect(check([{ ...tree, heading: 3 }])).toThrow(/heading 3: must be a string/);
+    expect(check([{ ...tree, locales: { ja: { title: "x" } } }])).toThrow(/unknown key "title"/);
+    expect(check([{ ...tree, locales: { ja: "x" } }])).toThrow(/locales\.ja/);
+    expect(check([tree, { type: "doc-cards" }])).toThrow(/docs undefined: must be an array/);
+  });
+
+  it("rejects non-canonical document slugs", () => {
+    for (const bad of ["/getting-started/introduction", "guides/", "", "https://example.com/a", "a b", 7, "a?x", "a#b"]) {
+      expect(check([tree, { ...cards, docs: [bad] }])).toThrow(/docs\[0\]/);
+    }
   });
 });

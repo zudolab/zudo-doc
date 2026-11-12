@@ -35,6 +35,7 @@ import type {
   FaviconConfig,
   HeaderBrandConfig,
   DateFormatSetting,
+  HomeSection,
   Settings,
 } from "@takazudo/zudo-doc/settings";
 
@@ -59,6 +60,28 @@ Start with the **essentials**, then explore the live examples.
 - [Configuration](docs/guides/configuration/)
 - [Markdown features](docs/markdown-features/)`,
     sitemapHeading: "",
+    // Composed navigation (cards first, then the described site tree). Swap
+    // the two entries to put the tree first. Omit `sections` for the legacy
+    // sitemap block that fresh scaffolds keep.
+    sections: [
+      {
+        type: "doc-cards",
+        heading: "Start here",
+        docs: [
+          "getting-started/introduction",
+          "getting-started/installation",
+          "getting-started/writing-docs",
+          "guides/configuration",
+          "getting-started/structuring-navigations",
+          "guides/deployment",
+        ],
+        locales: { ja: { heading: "まずはここから" } },
+      },
+      {
+        type: "site-tree",
+        variant: "described",
+      },
+    ] as HomeSection[],
   },
   // Showcase keeps its hand-drawn asset; downstream default is "auto" (generated SVG).
   logo: "/img/logo.svg" as string | false,
