@@ -28,6 +28,10 @@ export const defaultTranslations: PresetTranslations = {
   en: {
     "home.sitemapHeading": "Explore the documentation",
     "home.secondaryNav": "More categories",
+    "home.selectedDocsHeading": "Start here",
+    "home.selectedDocsNav": "Selected documents",
+    "siteTreeNav.documentCount.one": "{count} document",
+    "siteTreeNav.documentCount.other": "{count} documents",
     "nav.gettingStarted": "Getting Started",
     "nav.learn": "Learn",
     "nav.guides": "Guides",
@@ -170,6 +174,10 @@ export const defaultTranslations: PresetTranslations = {
   ja: {
     "home.sitemapHeading": "ドキュメントを探す",
     "home.secondaryNav": "その他のカテゴリ",
+    "home.selectedDocsHeading": "まずはここから",
+    "home.selectedDocsNav": "選んだ文書",
+    "siteTreeNav.documentCount.one": "{count} 件の文書",
+    "siteTreeNav.documentCount.other": "{count} 件の文書",
     "nav.gettingStarted": "はじめに",
     "nav.learn": "学ぶ",
     "nav.guides": "ガイド",

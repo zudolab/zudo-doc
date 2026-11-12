@@ -32,7 +32,17 @@ export interface DocCardGridProps {
   ariaLabel?: string;
   /** Optional extra CSS classes appended to the `<nav>` element. */
   class?: string;
+  /**
+   * Column layout. Omitted keeps the established one column, two from `sm`.
+   * `"auto"` fits as many ~18rem columns as the available width allows,
+   * capped at three: a lone card fills its section and further cards wrap.
+   */
+  layout?: "auto";
 }
+
+/** `layout="auto"`: track width is max(18rem, a third of the row), so at most three columns. */
+const AUTO_GRID_COLUMNS =
+  "repeat(auto-fit, minmax(min(100%, max(18rem, calc((100% - 2 * var(--spacing-hsp-lg)) / 3))), 1fr))";
 
 function ArrowIcon(): JSX.Element {
   return (
@@ -61,19 +71,28 @@ function ArrowIcon(): JSX.Element {
  * Returns `null` when `items` is empty.
  */
 export function DocCardGrid(props: DocCardGridProps): JSX.Element | null {
-  const { items, ariaLabel = "Child pages", class: className } = props;
+  const { items, ariaLabel = "Child pages", class: className, layout } = props;
 
   if (items.length === 0) return null;
 
+  const auto = layout === "auto";
   const navClass = [
-    "grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2",
+    auto
+      ? "grid gap-x-hsp-lg gap-y-vsp-md"
+      : "grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2",
     className,
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <nav aria-label={ariaLabel} class={navClass}>
+    <nav
+      aria-label={ariaLabel}
+      class={navClass}
+      {...(auto
+        ? { "data-layout": "auto", style: { "grid-template-columns": AUTO_GRID_COLUMNS } }
+        : {})}
+    >
       {items.map((item, i) => (
         <a
           key={`doc-card-${i}`}

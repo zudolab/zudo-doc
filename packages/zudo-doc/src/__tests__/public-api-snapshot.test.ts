@@ -80,6 +80,7 @@ describe("package.json exports keyset snapshot", () => {
         "./directive-vocabulary-defaults",
         "./doc-body-end",
         "./doc-body-end-islands",
+        "./doc-card-nav",
         "./doc-content-header",
         "./doc-history",
         "./doc-history-area",

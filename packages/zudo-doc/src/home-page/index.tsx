@@ -43,7 +43,16 @@ import { CategoryLinkIcon } from "../tree-nav-shared/index.js";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import type { DocNavNode } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
-import type { Settings } from "../settings.js";
+import type { HomeSection, Settings } from "../settings.js";
+import { WideSectionHeading } from "../content/wide-section-heading.js";
+import { DocCardGrid } from "../nav-indexing/doc-card-grid.js";
+import {
+  reportDocCardDiagnostics,
+  resolveDocCards,
+  type DocCardSourceDoc,
+} from "../doc-card-nav/index.js";
+import { resolveSiteTreeNavCountLabels } from "../site-tree-nav/index.js";
+import { getNoteTrayItems } from "../note-tray-model/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands, deriveDateFormats } from "../chrome/derive.js";
@@ -100,6 +109,18 @@ function selectSecondaryNodes(
     moved.push(node as DocNavNode & { href: string });
   }
   return moved;
+}
+
+/** Section heading/description for `locale`: per-locale override, then the entry's own text. */
+function sectionText(
+  section: HomeSection,
+  locale: string,
+  field: "heading" | "description",
+): string | undefined {
+  for (const value of [section.locales?.[locale]?.[field], section[field]]) {
+    if (value?.trim()) return value;
+  }
+  return undefined;
 }
 
 /**
@@ -314,6 +335,109 @@ export function createHomePageView<S extends Settings = Settings>(
       rowItems.push(resolvedExtras as Child);
     }
 
+    // `home.sections` (validated at config resolution) replaces the legacy
+    // sitemap block below with independent heading + navigation components.
+    // The page owns widths and gaps; the components own their appearance.
+    const homeSections = settings.home?.sections;
+    const ignoredRoots = new Set([...categoryIgnore, ...movedNodes.map((n) => n.slug)]);
+    // Mirrors the island's own root filter (ignored roots, empty note trays).
+    const treeRootCount = (tree as unknown as SidebarNavNode[]).filter(
+      (n) =>
+        !ignoredRoots.has(n.slug) &&
+        (n.shape !== "note-tray" || getNoteTrayItems(n).length > 0),
+    ).length;
+
+    const siteTreeIsland = (variant: "default" | "described") => {
+      const countLabels =
+        variant === "described" ? resolveSiteTreeNavCountLabels(t, locale) : undefined;
+      return Island({
+        when: "idle",
+        children: (
+          <SiteTreeNav
+            tree={withCoverHrefs(tree as unknown as SidebarNavNode[], settings.base)}
+            categoryOrder={categoryOrder}
+            categoryIgnore={[...ignoredRoots]}
+            {...(effectiveInitiallyCollapsedCategorySlugs !== undefined
+              ? { initiallyCollapsedCategorySlugs: effectiveInitiallyCollapsedCategorySlugs }
+              : {})}
+            {...(variant === "described" ? { variant } : {})}
+            {...(countLabels ? { countLabels } : {})}
+            locale={locale}
+            updatedLabel={t("doc.updated", locale)}
+            dateFormats={dateFormatsFor(locale)}
+          />
+        ),
+      }) as unknown as Description;
+    };
+
+    const secondaryRow = movedNodes.length > 0 && (
+      <nav
+        aria-label={t("home.secondaryNav", locale)}
+        data-home-secondary-nav
+        class="flex flex-wrap items-center gap-x-hsp-xl gap-y-vsp-xs"
+      >
+        {movedNodes.map((n) => (
+          <HomeMetaLink key={n.slug} href={n.href}>
+            {n.label}
+          </HomeMetaLink>
+        ))}
+      </nav>
+    );
+
+    function renderSiteTreeSection(section: Extract<HomeSection, { type: "site-tree" }>) {
+      const variant = section.variant ?? "default";
+      const headingId = "zd-home-site-tree-heading";
+      const sectionDescription = sectionText(section, locale, "description");
+      // A single category reads as one 80rem block (and may split into summary
+      // + tree columns); several categories use the whole band.
+      const capped = treeRootCount === 1;
+      return (
+        <section
+          data-zd-home-sitemap
+          data-zd-home-section="site-tree"
+          aria-labelledby={headingId}
+          class={`flex w-full min-w-0 flex-col gap-vsp-md${capped ? " mx-auto max-w-[80rem]" : ""}`}
+        >
+          <WideSectionHeading id={headingId}>
+            {sectionText(section, locale, "heading") ?? sitemapHeading}
+          </WideSectionHeading>
+          {sectionDescription && <p class="text-muted">{sectionDescription}</p>}
+          {siteTreeIsland(variant)}
+          {secondaryRow}
+        </section>
+      );
+    }
+
+    function renderDocCardsSection(section: Extract<HomeSection, { type: "doc-cards" }>) {
+      const { items, diagnostics } = resolveDocCards(section.docs, {
+        docs: ctx.resolveNavSource(locale, undefined, {
+          applyDefaultLocaleOnlyFilter: true,
+          keepUnlisted: true,
+        }).navDocs as unknown as DocCardSourceDoc[],
+        locale,
+        toRouteSlug: ctx.toRouteSlug,
+        docsUrl: (slug, loc) => ctx.docsUrl(slug, loc),
+      });
+      reportDocCardDiagnostics(diagnostics, "home.sections doc-cards");
+      // No resolvable document → no heading, no empty section.
+      if (items.length === 0) return null;
+      const headingId = "zd-home-doc-cards-heading";
+      const sectionDescription = sectionText(section, locale, "description");
+      return (
+        <section
+          data-zd-home-section="doc-cards"
+          aria-labelledby={headingId}
+          class="mx-auto flex w-full min-w-0 max-w-[80rem] flex-col gap-vsp-md"
+        >
+          <WideSectionHeading id={headingId}>
+            {sectionText(section, locale, "heading") ?? t("home.selectedDocsHeading", locale)}
+          </WideSectionHeading>
+          {sectionDescription && <p class="text-muted">{sectionDescription}</p>}
+          <DocCardGrid items={items} ariaLabel={t("home.selectedDocsNav", locale)} layout="auto" />
+        </section>
+      );
+    }
+
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(settings.siteName)}
@@ -360,42 +484,39 @@ export function createHomePageView<S extends Settings = Settings>(
           </>
         )}
 
-        <hr class="zd-home-rule" data-home-rule="lower" />
+        {homeSections === undefined ? (
+          <>
+          <hr class="zd-home-rule" data-home-rule="lower" />
 
-        <section data-zd-home-sitemap>
-          <HomeSectionHeading>{sitemapHeading}</HomeSectionHeading>
+          <section data-zd-home-sitemap>
+            <HomeSectionHeading>{sitemapHeading}</HomeSectionHeading>
 
-          {Island({
-            when: "idle",
-            children: (
-              <SiteTreeNav
-                tree={withCoverHrefs(tree as unknown as SidebarNavNode[], settings.base)}
-                categoryOrder={categoryOrder}
-                categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
-                {...(effectiveInitiallyCollapsedCategorySlugs !== undefined
-                  ? { initiallyCollapsedCategorySlugs: effectiveInitiallyCollapsedCategorySlugs }
-                  : {})}
-                locale={locale}
-                updatedLabel={t("doc.updated", locale)}
-                dateFormats={dateFormatsFor(locale)}
-              />
-            ),
-          }) as unknown as Description}
+            {siteTreeIsland("default")}
 
-          {movedNodes.length > 0 && (
-            <nav
-              aria-label={t("home.secondaryNav", locale)}
-              data-home-secondary-nav
-              class="mt-vsp-md flex flex-wrap items-center gap-x-hsp-xl gap-y-vsp-xs"
-            >
-              {movedNodes.map((n) => (
-                <HomeMetaLink key={n.slug} href={n.href}>
-                  {n.label}
-                </HomeMetaLink>
-              ))}
-            </nav>
-          )}
-        </section>
+            {movedNodes.length > 0 && (
+              <nav
+                aria-label={t("home.secondaryNav", locale)}
+                data-home-secondary-nav
+                class="mt-vsp-md flex flex-wrap items-center gap-x-hsp-xl gap-y-vsp-xs"
+              >
+                {movedNodes.map((n) => (
+                  <HomeMetaLink key={n.slug} href={n.href}>
+                    {n.label}
+                  </HomeMetaLink>
+                ))}
+              </nav>
+            )}
+          </section>
+          </>
+        ) : (
+          <div data-zd-home-sections class="mt-vsp-2xl flex flex-col gap-vsp-2xl">
+            {homeSections.map((section) =>
+              section.type === "doc-cards"
+                ? renderDocCardsSection(section)
+                : renderSiteTreeSection(section),
+            )}
+          </div>
+        )}
 
         {settings.docTags && tagCount > 0 && (
           <>

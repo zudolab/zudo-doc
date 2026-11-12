@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (185 total)
+## 1. Subpath Exports (186 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -248,6 +248,7 @@ its own sidebar-tree data prep and does not receive this prop.
 | `./category-nav` | Category navigation component |
 | `./category-tree-nav` | Category tree navigation component |
 | `./site-tree-nav` | Site tree navigation component; its `SiteTreeNavDeps.categoryIgnore` and `initiallyCollapsedCategorySlugs` fields are optional (omitted means nothing is hidden or collapsed) |
+| `./doc-card-nav` | Server-side selected-document cards: `createDocCardNavWrapper`, `resolveDocCards`, `reportDocCardDiagnostics`, `isCanonicalDocSlug` |
 | `./html-preview-wrapper` | HTML preview wrapper component |
 | `./design-token-panel-bootstrap` | Design token panel bootstrap wiring |
 

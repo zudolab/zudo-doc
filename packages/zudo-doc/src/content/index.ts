@@ -18,6 +18,7 @@
 
 // Components
 export { HeadingH2 } from "./heading-h2.js";
+export { WideSectionHeading } from "./wide-section-heading.js";
 export { HeadingH3 } from "./heading-h3.js";
 export { HeadingH4 } from "./heading-h4.js";
 export { ContentParagraph } from "./content-paragraph.js";

@@ -9,13 +9,7 @@ import {
 } from "@takazudo/zfb/zudo-react";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import type { ResolvedDateFormats } from "../settings.js";
-import {
-  INDENT,
-  connectorLeft,
-  connectorLabelStart,
-  ConnectorLines,
-  CategoryLinkIcon,
-} from "../tree-nav-shared/index.js";
+import { CategoryLinkIcon } from "../tree-nav-shared/index.js";
 import { ChevronRight } from "../icons/index.js";
 import {
   formatDate,
@@ -27,20 +21,30 @@ import {
 } from "../note-tray-model/index.js";
 import { formatMonthDay } from "../format-date/index.js";
 import { initialCategoryOpenState, toggleCategoryOpenState } from "./state.js";
+import { countCategoryDocuments } from "./count.js";
 
-// site-tree-nav uses wider padding than the narrow sidebar
-const SITE_BASE_PAD = "clamp(0.5rem, 0.8vw, 1rem)";
+// Tree geometry (slot, rail axis, indent, first-line midpoint, lead-in/crop
+// switch) is authored once as `.zd-site-tree*` rules in `features.css`; this
+// file only emits the hook classes and data attributes those rules read.
 
-// The homepage draws its connectors at twice the sidebar width, so on wide
-// viewports the branch endpoint passes the fixed label indent. The label starts
-// at whichever is further right: that indent, or the endpoint plus a gap.
-const CONNECTOR_WIDTH_SCALE = 2;
-const CONNECTOR_LABEL_GAP = "var(--spacing-hsp-xs)";
+/** Standard keeps the established 18rem grid; described cards need ~22rem. */
+const GRID_COLUMNS = {
+  default: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
+  described: "repeat(auto-fit, minmax(min(22rem, 100%), 1fr))",
+} as const;
 
-function padLeft(depth: number): string {
-  if (depth === 0) return SITE_BASE_PAD;
-  return `max(calc(${depth} * ${INDENT} + 1.25rem + 5px), ${connectorLabelStart(depth, CONNECTOR_WIDTH_SCALE, CONNECTOR_LABEL_GAP)})`;
+/** Pluralized "N documents" templates for the described variant; `{count}` is replaced. */
+export interface SiteTreeNavCountLabels {
+  one: string;
+  other: string;
 }
+
+const DEFAULT_COUNT_LABELS: SiteTreeNavCountLabels = {
+  one: "{count} document",
+  other: "{count} documents",
+};
+
+export type SiteTreeNavVariant = "default" | "described";
 
 function reorderTree(tree: SidebarNavNode[], order: string[]): SidebarNavNode[] {
   const map = new Map(tree.map((node) => [node.slug, node]));
@@ -59,6 +63,23 @@ function reorderTree(tree: SidebarNavNode[], order: string[]): SidebarNavNode[] 
   return ordered;
 }
 
+/** DOM-id-safe, deterministic encoding of a nav slug. */
+function slugToId(slug: string): string {
+  if (slug === "") return "root";
+  return slug.replace(/[^A-Za-z0-9_-]/g, (c) => `_${c.codePointAt(0)!.toString(16)}`);
+}
+
+function formatCount(count: number, locale: string, labels: SiteTreeNavCountLabels): string {
+  let category = "other";
+  try {
+    category = new Intl.PluralRules(locale).select(count);
+  } catch {
+    category = count === 1 ? "one" : "other";
+  }
+  const template = category === "one" ? labels.one : labels.other;
+  return template.replaceAll("{count}", String(count));
+}
+
 export interface SiteTreeNavProps {
   tree: SidebarNavNode[];
   ariaLabel?: string;
@@ -66,7 +87,7 @@ export interface SiteTreeNavProps {
   categoryIgnore?: string[];
   /** Exact full category slugs at any depth that should start collapsed. */
   initiallyCollapsedCategorySlugs?: string[];
-  /** Locale used by dated note-tray rows. */
+  /** Locale used by dated note-tray rows and the described document count. */
   locale?: string;
   /**
    * Per-role date patterns already resolved for the page's locale, serialized
@@ -77,6 +98,29 @@ export interface SiteTreeNavProps {
   dateFormats?: ResolvedDateFormats;
   /** @deprecated — no longer rendered (created date only). */
   updatedLabel?: string;
+  /**
+   * `"described"` shows available category/document descriptions and each
+   * category's document count in a ~22rem-column grid; a lone category splits
+   * into summary + tree columns when its own box is wide enough. Omitted (or
+   * `"default"`) keeps the standard compact grid.
+   */
+  variant?: SiteTreeNavVariant;
+  /** Described-variant count templates (`{count}` placeholder). English when omitted. */
+  countLabels?: SiteTreeNavCountLabels;
+  /**
+   * Prefix for the disclosure-target ids. Give distinct values when several
+   * site trees share one page. @default "zd-site-tree"
+   */
+  idPrefix?: string;
+}
+
+interface TreeContext {
+  initiallyCollapsed: ReadonlySet<string>;
+  idPrefix: string;
+  described: boolean;
+  locale: string;
+  dateFormats?: ResolvedDateFormats;
+  updatedLabel: string;
 }
 
 export function SiteTreeNav({
@@ -88,6 +132,9 @@ export function SiteTreeNav({
   locale = "en",
   dateFormats,
   updatedLabel = "Updated",
+  variant = "default",
+  countLabels = DEFAULT_COUNT_LABELS,
+  idPrefix = "zd-site-tree",
 }: SiteTreeNavProps) {
   let processedTree = tree;
   if (categoryIgnore) {
@@ -98,238 +145,349 @@ export function SiteTreeNav({
     processedTree = reorderTree(processedTree, categoryOrder);
   }
 
+  const described = variant === "described";
   // Every value used to seed the tree is part of the JSON-serializable island
   // props. There is no browser storage or location read during setup.
   const roots = signal(processedTree);
-  const initiallyCollapsed = new Set(initiallyCollapsedCategorySlugs);
+  const visibleRootCount = processedTree.filter(
+    (node) => node.shape !== "note-tray" || getNoteTrayItems(node).length > 0,
+  ).length;
+  const context: TreeContext = {
+    initiallyCollapsed: new Set(initiallyCollapsedCategorySlugs),
+    idPrefix,
+    described,
+    locale,
+    dateFormats,
+    updatedLabel,
+  };
 
   return (
     <nav
       aria-label={ariaLabel}
       data-site-nav
-      class="grid gap-vsp-md"
-      style={{
-        "grid-template-columns": "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
-      }}
+      data-variant={described ? "described" : "default"}
+      class="zd-site-tree grid gap-vsp-md"
+      style={{ "grid-template-columns": GRID_COLUMNS[described ? "described" : "default"] }}
     >
       <For each={roots} by={(node) => node.slug}>
-        {(node, index) => {
-          const isLast = computed(() => index.value === roots.value.length - 1);
-          return (
-            <Show
-              when={computed(
-                () =>
-                  node.value.shape !== "note-tray" ||
-                  getNoteTrayItems(node.value).length > 0,
-              )}
-            >
-              {() => (
-                <div class="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
-                  {node.value.coverHref ? (
-                    <img
-                      src={node.value.coverHref}
-                      alt=""
-                      width="1200"
-                      height="630"
-                      loading="lazy"
-                      decoding="async"
-                      class="zd-site-nav-cover"
-                    />
-                  ) : null}
-                  <Show
-                    when={computed(() => node.value.children.length > 0)}
-                    fallback={() => (
-                      <LeafNode node={node} depth={0} isLast={isLast} />
-                    )}
-                  >
-                    {() => (
-                      <CategoryNode
-                        node={node}
-                        depth={0}
-                        isLast={isLast}
-                        initiallyCollapsedCategorySlugs={initiallyCollapsed}
-                        locale={locale}
-                        dateFormats={dateFormats}
-                        updatedLabel={updatedLabel}
-                      />
-                    )}
-                  </Show>
-                </div>
-              )}
-            </Show>
-          );
-        }}
+        {(node) => (
+          <Show
+            when={computed(
+              () =>
+                node.value.shape !== "note-tray" ||
+                getNoteTrayItems(node.value).length > 0,
+            )}
+          >
+            {() => (
+              <RootCard
+                node={node}
+                context={context}
+                single={visibleRootCount === 1}
+                countLabels={countLabels}
+              />
+            )}
+          </Show>
+        )}
       </For>
     </nav>
   );
 }
 SiteTreeNav.displayName = "SiteTreeNav";
 
-function NodeList({
-  nodes,
-  depth,
-  initiallyCollapsedCategorySlugs,
+function DisclosureButton({
+  open,
+  label,
+  controls,
+  onToggle,
 }: {
-  nodes: ReadonlySignal<readonly SidebarNavNode[]>;
-  depth: number;
-  initiallyCollapsedCategorySlugs: ReadonlySet<string>;
+  open: ReadonlySignal<boolean>;
+  label: ReadonlySignal<string>;
+  controls: string;
+  onToggle: () => void;
 }) {
   return (
-    <For each={nodes} by={(node) => node.slug}>
-      {(node, index) => {
-        const isLast = computed(() => index.value === nodes.value.length - 1);
-        return (
-          <Show
-            when={computed(() => node.value.children.length > 0)}
-            fallback={() => (
-              <LeafNode node={node} depth={depth} isLast={isLast} />
-            )}
-          >
-            {() => (
-              <CategoryNode node={node} depth={depth} isLast={isLast} initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs} />
-            )}
-          </Show>
-        );
-      }}
-    </For>
+    <button
+      type="button"
+      on:click={onToggle}
+      class="zd-site-tree-toggle flex shrink-0 items-center justify-center border border-muted text-muted hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+      aria-expanded={computed(() => (open.value ? "true" : "false"))}
+      aria-label={computed(() => `${open.value ? "Collapse" : "Expand"} ${label.value}`)}
+      aria-controls={controls}
+    >
+      <span
+        class="inline-flex transition-transform duration-150"
+        aria-hidden="true"
+        style={computed(() => `transform:rotate(${open.value ? "90deg" : "0deg"})`)}
+      >
+        <ChevronRight class="h-icon-xs w-icon-xs" />
+      </span>
+    </button>
   );
 }
 
-function CategoryNode({
+function RootCard({
   node,
-  depth,
-  isLast,
-  initiallyCollapsedCategorySlugs,
-  locale = "en",
-  dateFormats,
-  updatedLabel = "Updated",
+  context,
+  single,
+  countLabels,
 }: {
   node: ReadonlySignal<SidebarNavNode>;
-  depth: number;
-  isLast: ReadonlySignal<boolean>;
-  initiallyCollapsedCategorySlugs: ReadonlySet<string>;
-  locale?: string;
-  dateFormats?: ResolvedDateFormats;
-  updatedLabel?: string;
+  context: TreeContext;
+  single: boolean;
+  countLabels: SiteTreeNavCountLabels;
 }) {
-  const open = signal(initialCategoryOpenState(initiallyCollapsedCategorySlugs.has(node.value.slug)));
+  const { described } = context;
+  const hasChildren = node.value.children.length > 0;
+  const open = signal(
+    initialCategoryOpenState(context.initiallyCollapsed.has(node.value.slug)),
+  );
   const toggle = () => {
     open.value = toggleCategoryOpenState(open.value);
   };
   const label = computed(() => node.value.label);
   const href = computed(() => node.value.href);
-  const children = computed(() => node.value.children);
-  const paddingLeft = padLeft(depth);
+  const description = computed(() => node.value.description ?? "");
+  const controls = `${context.idPrefix}-${slugToId(node.value.slug)}`;
+  const isNoteTray = node.value.shape === "note-tray";
+  const splitCandidate = described && single && hasChildren;
+  const labelClass =
+    "zd-site-tree-label flex min-w-0 flex-1 items-start text-left font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent";
+  const labelContent = (
+    <>
+      <span class="zd-site-tree-marker flex shrink-0 items-center justify-center" aria-hidden="true">
+        <CategoryLinkIcon class="w-[18px]" />
+      </span>
+      <span class="min-w-0">{label}</span>
+    </>
+  );
 
   return (
-    <div class={computed(() => (depth >= 1 && !isLast.value ? "relative" : ""))}>
-      <Show when={computed(() => depth >= 1 && !isLast.value && open.value)}>
-        {() => (
-          <div
-            class="absolute border-l border-dashed border-muted z-local-1"
-            style={{
-              left: connectorLeft(depth),
-              top: "0px",
-              bottom: "0px",
-            }}
-          />
-        )}
-      </Show>
-      <div class="relative">
-        <Show when={isLast}>
-          {() => (
-            <ConnectorLines
-              depth={depth}
-              isLast={true}
-              widthScale={CONNECTOR_WIDTH_SCALE}
-              topPad="calc(0.15rem + var(--spacing-vsp-xs))"
-            />
-          )}
-        </Show>
-        <Show when={computed(() => !isLast.value)}>
-          {() => (
-            <ConnectorLines
-              depth={depth}
-              isLast={false}
-              widthScale={CONNECTOR_WIDTH_SCALE}
-              topPad="calc(0.15rem + var(--spacing-vsp-xs))"
-            />
-          )}
-        </Show>
-        <div
-          class="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg"
-          style={{ "padding-left": paddingLeft }}
-        >
-          <Show
-            when={computed(() => Boolean(href.value))}
-            fallback={() => (
-              <button
-                type="button"
-                on:click={toggle}
-                class="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline"
-              >
-                {label}
-              </button>
-            )}
-          >
-            {() => (
-              <a
-                href={computed(() => href.value ?? "")}
-                class="flex-1 flex items-start gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
-              >
-                {depth === 0 && (
-                  <span class="flex h-[1lh] items-center">
-                    <CategoryLinkIcon class="w-[18px]" />
-                  </span>
-                )}
-                {label}
-              </a>
-            )}
-          </Show>
-          <button
-            type="button"
-            on:click={toggle}
-            class="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline"
-            aria-expanded={computed(() => (open.value ? "true" : "false"))}
-            aria-label={computed(
-              () => `${open.value ? "Collapse" : "Expand"} ${label.value}`,
-            )}
-          >
-            <span
-              class="inline-flex transition-transform duration-150"
-              style={computed(
-                () => `transform:rotate(${open.value ? "90deg" : "0deg"})`,
-              )}
-            >
-              <ChevronRight class="h-icon-xs w-icon-xs text-muted" />
-            </span>
-          </button>
-        </div>
-      </div>
-      <Show when={open}>
-        {() => (
-          <div>
+    <div
+      class="zd-site-tree-card min-w-0 border border-muted bg-bg"
+      data-site-tree-root={node.value.slug}
+      {...(described ? { "data-described": "" } : {})}
+    >
+      {node.value.coverHref ? (
+        <img
+          src={node.value.coverHref}
+          alt=""
+          width="1200"
+          height="630"
+          loading="lazy"
+          decoding="async"
+          class="zd-site-nav-cover"
+        />
+      ) : null}
+      <div
+        class="zd-site-tree-body"
+        {...(splitCandidate
+          ? { "data-split": computed(() => (open.value ? "true" : "false")) }
+          : {})}
+      >
+        <div class="min-w-0">
+          <div class="zd-site-tree-head flex items-start justify-between gap-hsp-xs text-small">
             <Show
-              when={computed(
-                () => node.value.shape === "note-tray" && depth === 0,
-              )}
-              fallback={() => (
-                <NodeList nodes={children} depth={depth + 1} initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs} />
-              )}
+              when={computed(() => Boolean(href.value))}
+              fallback={() =>
+                hasChildren ? (
+                  <button
+                    type="button"
+                    on:click={toggle}
+                    class={labelClass}
+                    aria-expanded={computed(() => (open.value ? "true" : "false"))}
+                    aria-controls={controls}
+                  >
+                    {labelContent}
+                  </button>
+                ) : (
+                  <span class={labelClass}>{labelContent}</span>
+                )
+              }
             >
               {() => (
-                <NoteTrayNodeList
-                  node={node}
-                  locale={locale}
-                  dateFormats={dateFormats}
-                  updatedLabel={updatedLabel}
-                />
+                <a href={computed(() => href.value ?? "")} class={labelClass}>
+                  {labelContent}
+                </a>
               )}
+            </Show>
+            {hasChildren && (
+              <DisclosureButton open={open} label={label} controls={controls} onToggle={toggle} />
+            )}
+          </div>
+          {described && (
+            <>
+              <Show when={computed(() => description.value.length > 0)}>
+                {() => (
+                  <p class="mt-vsp-xs text-small text-muted break-words" data-site-tree-description>
+                    {description}
+                  </p>
+                )}
+              </Show>
+              <p class="mt-vsp-2xs text-caption text-muted" data-site-tree-count>
+                {computed(() =>
+                  formatCount(countCategoryDocuments(node.value), context.locale, countLabels),
+                )}
+              </p>
+            </>
+          )}
+        </div>
+        {hasChildren && (
+          <div
+            id={controls}
+            class="min-w-0"
+            hidden={computed(() => !open.value)}
+          >
+            <Show when={open}>
+              {() =>
+                isNoteTray ? (
+                  <NoteTrayNodeList
+                    node={node}
+                    locale={context.locale}
+                    dateFormats={context.dateFormats}
+                    updatedLabel={context.updatedLabel}
+                  />
+                ) : (
+                  <NodeList
+                    nodes={computed(() => node.value.children)}
+                    context={context}
+                    root={true}
+                  />
+                )
+              }
             </Show>
           </div>
         )}
-      </Show>
+      </div>
     </div>
+  );
+}
+
+function NodeList({
+  nodes,
+  context,
+  root,
+}: {
+  nodes: ReadonlySignal<readonly SidebarNavNode[]>;
+  context: TreeContext;
+  root: boolean;
+}) {
+  // Rows without a link or children render nothing, so first/last (which crop
+  // the rails) are taken from the rows that are actually drawn.
+  const visible = computed(() =>
+    nodes.value.filter((node) => node.children.length > 0 || Boolean(node.href)),
+  );
+  return (
+    <ul class="zd-site-tree-list" role="list">
+      <For each={visible} by={(node) => node.slug}>
+        {(node, index) => {
+          const isLast = computed(() => index.value === visible.value.length - 1);
+          const isFirst = computed(() => index.value === 0);
+          return <TreeRow node={node} isFirst={isFirst} isLast={isLast} root={root} context={context} />;
+        }}
+      </For>
+    </ul>
+  );
+}
+
+function TreeRow({
+  node,
+  isFirst,
+  isLast,
+  root,
+  context,
+}: {
+  node: ReadonlySignal<SidebarNavNode>;
+  isFirst: ReadonlySignal<boolean>;
+  isLast: ReadonlySignal<boolean>;
+  root: boolean;
+  context: TreeContext;
+}) {
+  const group = node.value.children.length > 0;
+  const open = signal(
+    initialCategoryOpenState(context.initiallyCollapsed.has(node.value.slug)),
+  );
+  const toggle = () => {
+    open.value = toggleCategoryOpenState(open.value);
+  };
+  const label = computed(() => node.value.label);
+  const href = computed(() => node.value.href);
+  const description = computed(() =>
+    context.described ? (node.value.description ?? "") : "",
+  );
+  const controls = `${context.idPrefix}-${slugToId(node.value.slug)}`;
+  const labelClass = `zd-site-tree-label block min-w-0 flex-1 text-left text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent${group ? " font-semibold" : ""}`;
+  const labelContent = (
+    <>
+      <span class="block">{label}</span>
+      <Show when={computed(() => description.value.length > 0)}>
+        {() => (
+          <span class="mt-vsp-3xs block text-caption text-muted" data-site-tree-description>
+            {description}
+          </span>
+        )}
+      </Show>
+    </>
+  );
+
+  return (
+    <li
+      class="zd-site-tree-row"
+      data-node={node.value.slug}
+      {...(group ? { "data-group": "" } : {})}
+    >
+      <span
+        aria-hidden="true"
+        class="zd-site-tree-rail"
+        data-tree-rail
+        {...(root ? { "data-root": "" } : {})}
+        data-first={computed(() => (isFirst.value ? "true" : "false"))}
+        data-last={computed(() => (isLast.value ? "true" : "false"))}
+      />
+      <span aria-hidden="true" class="zd-site-tree-branch" data-tree-branch />
+      <div class="zd-site-tree-line relative flex min-w-0 items-start gap-hsp-xs">
+        {group && (
+          <DisclosureButton open={open} label={label} controls={controls} onToggle={toggle} />
+        )}
+        <Show
+          when={computed(() => Boolean(href.value))}
+          fallback={() => (
+            <button
+              type="button"
+              on:click={toggle}
+              class={labelClass}
+              aria-expanded={computed(() => (open.value ? "true" : "false"))}
+              aria-controls={controls}
+            >
+              {labelContent}
+            </button>
+          )}
+        >
+          {() => (
+            <a href={computed(() => href.value ?? "")} class={labelClass}>
+              {labelContent}
+            </a>
+          )}
+        </Show>
+        {group && (
+          <Show when={open}>
+            {() => <span aria-hidden="true" class="zd-site-tree-stem" data-tree-stem />}
+          </Show>
+        )}
+      </div>
+      {group && (
+        <div id={controls} hidden={computed(() => !open.value)}>
+          <Show when={open}>
+            {() => (
+              <NodeList
+                nodes={computed(() => node.value.children)}
+                context={context}
+                root={false}
+              />
+            )}
+          </Show>
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -480,72 +638,6 @@ function NoteTrayRow({
             <span>{computed(() => item.value.label)}</span>
           </span>
         </a>
-      )}
-    </Show>
-  );
-}
-
-function LeafNode({
-  node,
-  depth,
-  isLast,
-}: {
-  node: ReadonlySignal<SidebarNavNode>;
-  depth: number;
-  isLast: ReadonlySignal<boolean>;
-}) {
-  const href = computed(() => node.value.href);
-  const label = computed(() => node.value.label);
-  const isRoot = depth === 0;
-  const paddingLeft = padLeft(depth);
-
-  const topPad = isRoot
-    ? "calc(var(--spacing-vsp-xs) + 0.15rem)"
-    : "var(--spacing-vsp-2xs)";
-
-  return (
-    <Show when={computed(() => Boolean(href.value))}>
-      {() => (
-        <div>
-          <div class="relative">
-            <Show when={isLast}>
-              {() => (
-                <ConnectorLines
-                  depth={depth}
-                  isLast={true}
-                  widthScale={CONNECTOR_WIDTH_SCALE}
-                  topPad={topPad}
-                />
-              )}
-            </Show>
-            <Show when={computed(() => !isLast.value)}>
-              {() => (
-                <ConnectorLines
-                  depth={depth}
-                  isLast={false}
-                  widthScale={CONNECTOR_WIDTH_SCALE}
-                  topPad={topPad}
-                />
-              )}
-            </Show>
-            <a
-              href={computed(() => href.value ?? "")}
-              class={computed(() =>
-                isRoot
-                  ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)_+_0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent"
-                  : `block py-vsp-2xs pr-hsp-sm ${isLast.value ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent`,
-              )}
-              style={{ "padding-left": paddingLeft }}
-            >
-              {isRoot && (
-                <span class="flex h-[1lh] items-center">
-                  <CategoryLinkIcon class="w-[18px]" />
-                </span>
-              )}
-              {isRoot ? <span class="min-w-0">{label}</span> : label}
-            </a>
-          </div>
-        </div>
       )}
     </Show>
   );

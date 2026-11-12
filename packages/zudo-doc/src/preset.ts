@@ -52,6 +52,7 @@ import {
   assertValidHomeImage,
   assertValidContentSignals,
   assertValidLocaleOgImages,
+  assertValidHomeSections,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
   assertAgentDocsConsistent,
@@ -457,6 +458,7 @@ export function zudoDocPreset({
   // `home.image` exactly like `zudoDoc()` does.
   assertValidHomeImage(settings);
   assertValidLocaleOgImages(settings);
+  assertValidHomeSections(settings);
 
   // A malformed `contentSignals` would otherwise drop the robots.txt signal silently.
   assertValidContentSignals(settings);

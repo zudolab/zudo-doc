@@ -66,6 +66,13 @@ export interface SiteTreeNavWrapperProps {
    * leaves behavior unchanged.
    */
   currentVersion?: string;
+  /**
+   * `"described"` shows category/document descriptions and per-category
+   * document counts. Omitted keeps the standard compact grid.
+   */
+  variant?: "default" | "described";
+  /** Disclosure-target id prefix; give distinct values for several trees on one page. */
+  idPrefix?: string;
 }
 
 /** Injected dependencies for {@link createSiteTreeNavWrapper}. */
@@ -137,6 +144,24 @@ export interface SiteTreeNavDeps {
    * to `"locale"` — today's behaviour.
    */
   dateFormat?: DateFormatSetting;
+  /**
+   * Translator for the described variant's document-count labels
+   * (`siteTreeNav.documentCount.one` / `.other`). Optional for existing
+   * hand-constructed deps; omitted leaves the island's English default.
+   */
+  t?: (key: string, locale: string) => string;
+}
+
+/** Locale-resolved described-variant count templates, or `undefined` without a translator. */
+export function resolveSiteTreeNavCountLabels(
+  t: ((key: string, locale: string) => string) | undefined,
+  locale: string,
+): { one: string; other: string } | undefined {
+  if (!t) return undefined;
+  return {
+    one: t("siteTreeNav.documentCount.one", locale),
+    other: t("siteTreeNav.documentCount.other", locale),
+  };
 }
 
 /**
@@ -165,12 +190,15 @@ export function createSiteTreeNavWrapper(
     categoryIgnore,
     initiallyCollapsedCategorySlugs,
     dateFormat,
+    t,
   } = deps;
 
   function SiteTreeNavWrapper({
     lang = defaultLocale,
     ariaLabel,
     currentVersion,
+    variant,
+    idPrefix,
   }: SiteTreeNavWrapperProps): JSX.Element | null {
     const locale = lang;
 
@@ -204,6 +232,8 @@ export function createSiteTreeNavWrapper(
 
     if (tree.length === 0) return null;
 
+    const countLabels = resolveSiteTreeNavCountLabels(t, locale);
+
     // Island props cross the SSR→hydrate boundary as JSON. Copy the nav tree
     // through its declared field allowlist so absent optional node fields are
     // omitted rather than transported as own properties with `undefined`.
@@ -213,6 +243,9 @@ export function createSiteTreeNavWrapper(
       ...(categoryIgnore !== undefined ? { categoryIgnore } : {}),
       ...(initiallyCollapsedCategorySlugs !== undefined ? { initiallyCollapsedCategorySlugs } : {}),
       ...(ariaLabel !== undefined ? { ariaLabel } : {}),
+      ...(variant !== undefined && variant !== "default" ? { variant } : {}),
+      ...(variant === "described" && countLabels ? { countLabels } : {}),
+      ...(idPrefix !== undefined ? { idPrefix } : {}),
       locale,
       dateFormats: resolveDateFormats(dateFormat, locale),
     });
