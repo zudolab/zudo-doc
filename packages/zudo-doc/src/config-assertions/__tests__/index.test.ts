@@ -198,6 +198,7 @@ describe("assertValidHomeImage", () => {
     [""],
     ["/img\\hero.png"],
     ["/img/hero.png\n"],
+    ["/img/hero\u0085.png"],
   ])("rejects src %j", (src) => {
     expect(() => assertValidHomeImage({ home: { image: { src } } })).toThrow(
       /home\.image\.src .*root-absolute site path/,

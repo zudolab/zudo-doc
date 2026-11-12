@@ -361,12 +361,22 @@ describe("createHomePageView — hero markup", () => {
   it("prefixes home.image paths with base", () => {
     const ctx = makeFakeChromeContext({
       settings: { base: "/pj/site/", home: { image: { src: "/img/hero.png" } } },
-      overrides: { withBase: (p: string) => `/pj/site${p}` },
     });
     const HomePageView = createHomePageView(ctx);
     const html = render(<HomePageView {...makeProps()} />);
 
     expect(html).toContain('src="/pj/site/img/hero.png"');
+  });
+
+  it("never appends a trailing slash to an extensionless image path", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { trailingSlash: true, home: { image: { src: "/api/og-hero" } } },
+      overrides: { withBase: (p: string) => `${p}/` },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toContain('src="/api/og-hero"');
   });
 
   it("emits a light and a dark picture, tagged for the colour-mode CSS, when darkSrc is set", () => {
@@ -381,6 +391,8 @@ describe("createHomePageView — hero markup", () => {
     expect(html).toMatch(/<img src="\/img\/hero-light.png"[^>]*data-zd-home-image="light"/);
     expect(html).toMatch(/<img src="\/img\/hero-dark.png"[^>]*data-zd-home-image="dark"/);
     expect(html.match(/<img /g)).toHaveLength(2);
+    // Lazy so the display:none variant is never downloaded.
+    expect(html.match(/loading="lazy"/g)).toHaveLength(2);
   });
 
   it("leaves the hero unchanged when home is set without image", () => {

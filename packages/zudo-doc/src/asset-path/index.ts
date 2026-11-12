@@ -28,7 +28,8 @@ export interface AssetViewerPathSettings {
   routePrefix: string;
 }
 
-const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
+/** C0, DEL and C1 control characters, rejected in every public asset path. */
+export const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
 
 /**
  * Normalize a public asset path to NFC POSIX form.

@@ -8,6 +8,7 @@
 // must hit the same guard rather than only the caller that happens to wrap it.
 
 import type { FaviconConfig } from "../settings.js";
+import { CONTROL_CHARS } from "../asset-path/index.js";
 
 /** Structural subset of Settings used by the agent-export/MCP config guard. */
 export interface AgentDocsConsistentSubject {
@@ -151,13 +152,13 @@ const HOME_IMAGE_KEYS = new Set(["src", "alt", "width", "height", "darkSrc"]);
 
 /**
  * True for a root-absolute site path: one leading `/` (never `//`, which is
- * protocol-relative), no backslash and no ASCII control
- * character. Such a path can only resolve to the site's own origin, which
- * keeps `home.image` compatible with a strict `img-src 'self'` policy.
+ * protocol-relative), no backslash and no C0/C1 control character. Such a
+ * path can only resolve to the site's own origin, which keeps `home.image`
+ * compatible with a strict `img-src 'self'` policy.
  */
 export function isRootAbsoluteSitePath(value: string): boolean {
   if (!value.startsWith("/") || value.startsWith("//")) return false;
-  return !/[\\\u0000-\u001f\u007f]/.test(value);
+  return !value.includes("\\") && !CONTROL_CHARS.test(value);
 }
 
 /**

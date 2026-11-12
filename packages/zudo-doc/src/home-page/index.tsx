@@ -126,45 +126,41 @@ const HOME_HERO_BOX_CLASS = "w-[320px] max-w-full aspect-[1200/630] shrink-0";
  * ratio undistorted. With `darkSrc`, both pictures are emitted and the
  * `[data-zd-home-image]` rules in `features.css` show the one matching
  * `html[data-theme]`, which the colour-mode bootstrap sets before first paint.
+ * Those two are `loading="lazy"` so the hidden (`display: none`) one is never
+ * fetched. `assetHref` prefixes `base` without the page-URL trailing-slash rule.
  */
 function HomeHeroImage({
   image,
-  withBase,
+  assetHref,
 }: {
   image: HomeImageConfig;
-  withBase: (path: string) => string;
+  assetHref: (path: string) => string;
 }) {
   const alt = image.alt ?? "";
   const size =
     image.width !== undefined && image.height !== undefined
       ? { width: image.width, height: image.height }
       : {};
-  const imgClass = "block w-full h-full object-contain";
-  if (image.darkSrc === undefined) {
-    return (
-      <div class={HOME_HERO_BOX_CLASS} data-zd-home-image-box>
-        <img src={withBase(image.src)} alt={alt} {...size} decoding="async" class={imgClass} />
-      </div>
-    );
-  }
+  const variants: Array<{ src: string; mode?: "light" | "dark" }> =
+    image.darkSrc === undefined
+      ? [{ src: image.src }]
+      : [
+          { src: image.src, mode: "light" },
+          { src: image.darkSrc, mode: "dark" },
+        ];
   return (
     <div class={HOME_HERO_BOX_CLASS} data-zd-home-image-box>
-      <img
-        src={withBase(image.src)}
-        alt={alt}
-        {...size}
-        decoding="async"
-        class={imgClass}
-        data-zd-home-image="light"
-      />
-      <img
-        src={withBase(image.darkSrc)}
-        alt={alt}
-        {...size}
-        decoding="async"
-        class={imgClass}
-        data-zd-home-image="dark"
-      />
+      {variants.map(({ src, mode }) => (
+        <img
+          src={assetHref(src)}
+          alt={alt}
+          {...size}
+          {...(mode ? { loading: "lazy" as const } : {})}
+          decoding="async"
+          class="block w-full h-full object-contain"
+          {...(mode ? { "data-zd-home-image": mode } : {})}
+        />
+      ))}
     </div>
   );
 }
@@ -380,7 +376,10 @@ export function createHomePageView<S extends Settings = Settings>(
         <div data-zd-home-hero class="mb-vsp-xl">
           <div class="zd-home-inner flex flex-col items-center justify-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
             {homeImage ? (
-              <HomeHeroImage image={homeImage} withBase={withBase} />
+              <HomeHeroImage
+                image={homeImage}
+                assetHref={(path) => `${(settings.base ?? "/").replace(/\/+$/, "")}${path}`}
+              />
             ) : logoSetting === "auto" ? (
               <AutoLogo
                 seed={settings.siteName}
