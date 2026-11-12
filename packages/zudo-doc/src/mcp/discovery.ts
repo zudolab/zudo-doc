@@ -53,11 +53,13 @@ export function mcpBasePath(base: string): string {
   return segments.length > 0 ? `/${segments.join("/")}` : "";
 }
 
-/** The origin the MCP handler cites and the discovery documents advertise: the `siteUrl` origin, else the request origin. */
+/** The origin the MCP handler cites and the discovery documents advertise: an http(s) `siteUrl` origin, else the request origin. */
 export function mcpPublicOrigin(siteUrl: string | undefined, requestUrl: string): string {
   if (siteUrl) {
     try {
-      return new URL(siteUrl).origin;
+      const url = new URL(siteUrl);
+      // A scheme-less `host:port` parses with `host:` as its scheme and the opaque origin "null".
+      if (url.protocol === "http:" || url.protocol === "https:") return url.origin;
     } catch {
       // An invalid siteUrl cannot name a public origin; serve the request origin.
     }
@@ -129,14 +131,7 @@ export function buildMcpServerCard(options: McpDiscoveryOptions): McpServerCard 
   };
 }
 
-/**
- * Domain-level catalog for a root deployment. The entry repeats the card
- * `title` as `displayName` because ARD (Agentic Resource Discovery) requires a
- * name on every entry, and a catalog reader that skips the card would otherwise
- * fall back to the identifier's last segment. Both come from `siteName`, so
- * they cannot drift; `description` and `version` stay on the card alone, as the
- * AI Catalog spec recommends.
- */
+/** Root-deployment catalog. ARD §4.2 requires an entry `displayName`; the AI Catalog spec leaves `description` and `version` to the card. */
 export function buildAiCatalog(options: McpDiscoveryOptions): AiCatalog {
   const { hostname } = new URL(options.origin);
   return {

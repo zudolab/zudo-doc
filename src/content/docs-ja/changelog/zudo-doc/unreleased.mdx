@@ -18,11 +18,11 @@ sidebar_position: 1157
 - 新しいエクスポート `@takazudo/zudo-doc/home-hero`：`HomeHero` でホームのヒーローをプレーンな props から描画でき、ホームのルート以外でも同じヒーローをプレビューできます。(#4753)
 - ロケールごと・ページごとのSNSプレビュー画像：`locales.<code>.ogImage`（または`false`）と`og_image`フロントマターで`metaTags.ogImage`を上書きできます。(#4752)
 - 新しい`cover`フロントマターで、ホームページのサイトインデックスにあるトップレベルセクションのカードに1200×630のカバー画像を表示できます。(#4754)
-- `mcp: true` のとき、Worker は `<base>/mcp/server-card` で MCP Server Card（SEP-2127）を配信し、`base` が `/` の場合はそのカードをサイト名で掲載した AI Catalog を `/.well-known/ai-catalog.json` で配信するようになりました。エントリーに名前があるので、Agentic Resource Discovery（ARD）のクライアントもそのまま受け付けます。どちらも CORS、キャッシュ、ETag による再検証に対応した読み取り専用の JSON です。ルートの base では全ページが `<link rel="ai-catalog">` でカタログへリンクし、`llms.txt` の MCP セクションにもカードが載ります。`@takazudo/zudo-doc/mcp` は既存のエクスポートを保ったまま、`buildMcpServerCard`、`buildAiCatalog`、ディスカバリー URL のヘルパー、メディアタイプとパスの定数を追加でエクスポートします。`/mcp` のツールと上限は変わりません。(#4769)
+- `mcp: true` のとき、Worker は `<base>/mcp/server-card` で MCP Server Card（SEP-2127）を配信し、`base` が `/` の場合はそのカードをサイト名で掲載した AI Catalog を `/.well-known/ai-catalog.json` で配信するようになりました。どちらも CORS、キャッシュ、ETag による再検証に対応した読み取り専用の JSON です。ルートの base では全ページが `<link rel="ai-catalog">` でカタログへリンクし、`llms.txt` の MCP セクションにもカードが載ります。`@takazudo/zudo-doc/mcp` は既存のエクスポートを保ったまま、`buildMcpServerCard`、`buildAiCatalog`、ディスカバリー URL のヘルパー、メディアタイプとパスの定数を追加でエクスポートします。`/mcp` のツールと上限は変わりません。(#4769)
 - 新しい省略可能な設定 `contentSignals`（`{ search?, aiInput?, aiTrain? } | false`、デフォルト `false`）で、[Content Signals](https://contentsignals.org) を `robots.txt` の `User-agent: *` グループに `Content-Signal` 行として出力できるようになりました。`true` は `yes`、`false` は `no` として出力され、省略したキーは意向を示さず、`noindex` のときもこの行は残ります。未知のキーや真偽値でない値は、設定解決の時点で `TypeError` になります。`@takazudo/zudo-doc/robots` から `renderContentSignal` と `CONTENT_SIGNAL_KEYS` もエクスポートします。`contentSignals` を設定しない場合の出力は変わりません。(#4767)
 
 ### バグ修正
 
 - `siteUrl` が設定されている場合、ホームページと各ロケールのホームページがサイトマップと同じ URL で canonical リンクと `og:url` を出力するようになりました。(#4767)
 - 設定済みのデフォルト以外のロケールのページは、`llms.txt` の alternate リンクでデフォルトロケールのインデックスではなく、そのロケールの `/<locale>/llms.txt` を指すようになりました。(#4767)
-- `siteUrl` が絶対 URL でない場合でも、MCP ハンドラーがすべての `/mcp` リクエストで失敗しなくなりました。その場合、引用 URL にはリクエストのオリジンを使います。Server Card と AI Catalog が示すオリジンと同じです。(#4769)
+- `siteUrl` が `http:` または `https:` の URL でない場合（スキームのない `docs.example.com:8443` など）でも、MCP ハンドラーがすべての `/mcp` リクエストで失敗しなくなりました。その場合、引用 URL にはリクエストのオリジンを使います。Server Card と AI Catalog が示すオリジンと同じです。(#4769)

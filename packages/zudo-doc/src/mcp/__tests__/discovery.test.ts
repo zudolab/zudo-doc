@@ -42,6 +42,9 @@ describe("MCP discovery URLs", () => {
     expect(mcpPublicOrigin(undefined, request)).toBe("https://zudo-doc.example.workers.dev");
     expect(mcpPublicOrigin("", request)).toBe("https://zudo-doc.example.workers.dev");
     expect(mcpPublicOrigin("not a url", request)).toBe("https://zudo-doc.example.workers.dev");
+    for (const siteUrl of ["localhost:4321", "docs.example.com:8443", "ftp://docs.example.com/"]) {
+      expect(mcpPublicOrigin(siteUrl, request), siteUrl).toBe("https://zudo-doc.example.workers.dev");
+    }
   });
 });
 
