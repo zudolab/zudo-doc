@@ -1,5 +1,6 @@
 // auto-logo/icon.ts — direct-paint square app-icon SVG renderer (epic
-// #3285, sub #3286 — the Tauri `src-tauri/icons/icon.png` source artwork).
+// #3285, sub #3286 — first written for the since-retired Tauri app icon,
+// #4758; it now backs the head-with-defaults auto favicon).
 //
 // standalone.ts serializes the design as an alpha-only luminance-mask
 // silhouette (for CSS `mask-image`), which is unusable as an app icon: an
