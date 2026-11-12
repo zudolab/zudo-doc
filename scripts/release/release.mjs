@@ -147,35 +147,144 @@ function readJson(d, file) {
 }
 
 // ── preflight ────────────────────────────────────────────────────────────────
+//
+// Preflight only ever issues read-only requests. Each row says how its state was
+// established: `observed` (the read was exercised and succeeded), `inferred`
+// (repository-role metadata, which is not proof of what the active credential
+// may do), `denied`/`missing` (confirmed), or `unknown` (ambiguous 404, rate
+// limit, transport/5xx failure, no sample to read, or not exercised).
+
+const TOKEN_RE = /\b(gh[pousr]_[A-Za-z0-9_]{8,}|github_pat_[A-Za-z0-9_]{8,})\b/g;
+
+/** Drop credentials that could ride along in a remote URL or a CLI message. */
+export function redact(/** @type {string} */ s) {
+  return s
+    .replace(/(https?:\/\/)[^/@\s]+@/g, "$1***@")
+    .replace(/(authorization:\s*)\S+(\s+\S+)?/gi, "$1***")
+    .replace(/\b(bearer|token)\s+[A-Za-z0-9._-]{8,}/gi, "$1 ***")
+    .replace(TOKEN_RE, "***");
+}
+
+/**
+ * Classify a failed `gh api` call from its stderr without echoing it.
+ * @returns {{state: "denied"|"unknown", why: string}}
+ */
+export function classifyGhFailure(/** @type {string} */ stderr) {
+  const code = /HTTP (\d{3})/.exec(stderr)?.[1];
+  if (code === "429" || /rate limit/i.test(stderr)) return { state: "unknown", why: "rate limited" };
+  if (code === "401" || code === "403") return { state: "denied", why: `HTTP ${code}` };
+  if (code === "404") return { state: "unknown", why: "HTTP 404 (absent or not visible to this credential)" };
+  if (code) return { state: "unknown", why: `HTTP ${code}` };
+  return { state: "unknown", why: "transport failure (no HTTP response)" };
+}
+
+/**
+ * One bounded read-only GET. 4xx answers are final; rate limits and transport/5xx
+ * failures get one retry.
+ * @param {Deps} d @param {string} path
+ * @returns {Promise<{state: "observed"|"denied"|"unknown", why: string, body?: any}>}
+ */
+async function ghProbe(d, path, attempts = 2) {
+  /** @type {{state: "denied"|"unknown", why: string}} */
+  let last = { state: "unknown", why: "not attempted" };
+  for (let i = 1; i <= attempts; i++) {
+    const r = d.exec("gh", ["api", "-X", "GET", path]);
+    if (r.status === 0) {
+      try {
+        return { state: "observed", why: "read succeeded", body: JSON.parse(r.stdout) };
+      } catch {
+        return { state: "unknown", why: "unparseable response" };
+      }
+    }
+    last = classifyGhFailure(r.stderr ?? "");
+    if (last.state === "denied" || last.why.startsWith("HTTP 4")) return last;
+    if (i < attempts) await d.sleep(2000 * i);
+  }
+  return last;
+}
 
 /** @param {Deps} d */
 export async function cmdPreflight(d) {
   const rows = [];
   let blocking = false;
-  const check = (/** @type {string} */ name, /** @type {boolean} */ ok, /** @type {string} */ detail, required = true) => {
-    rows.push(`| ${name} | ${ok ? "ok" : required ? "MISSING" : "missing (optional)"} | ${detail} |`);
-    if (!ok && required) blocking = true;
+  let unresolved = false;
+  /**
+   * @param {string} name
+   * @param {"ok"|"observed"|"inferred"|"denied"|"missing"|"unknown"} state
+   * @param {string} detail
+   * @param {{required?: boolean}} [o] a required row blocks when denied/missing and
+   *   leaves the run unresolved (exit 2) when unknown.
+   */
+  const row = (name, state, detail, { required = false } = {}) => {
+    rows.push(`| ${name} | ${state} | ${redact(detail)} |`);
+    if (!required) return;
+    if (state === "denied" || state === "missing") blocking = true;
+    if (state === "unknown") unresolved = true;
   };
+
   const git = d.exec("git", ["remote", "get-url", "origin"]);
-  check("git checkout of zudolab/zudo-doc", git.status === 0 && /zudolab\/zudo-doc(\.git)?$/.test(git.stdout.trim()), git.stdout.trim() || git.stderr.trim());
+  const gitOk = git.status === 0 && /zudolab\/zudo-doc(\.git)?$/.test(git.stdout.trim());
+  row("git checkout of zudolab/zudo-doc", gitOk ? "ok" : "missing", git.stdout.trim() || git.stderr.trim().split("\n")[0] || "no origin", { required: true });
   const node = d.exec("node", ["--version"]).stdout.trim();
-  check("Node >= 24", Number(/^v(\d+)/.exec(node)?.[1] ?? 0) >= 24, node);
+  row("Node >= 24", Number(/^v(\d+)/.exec(node)?.[1] ?? 0) >= 24 ? "ok" : "missing", node || "node not found", { required: true });
   const unzip = d.exec("unzip", ["-v"]);
-  check("unzip", unzip.status === 0, "extracts the A2 diagnostics artifact");
+  row("unzip", unzip.status === 0 ? "ok" : "missing", "extracts the A2 diagnostics artifact", { required: true });
+  // `gh auth status` is a hint only: it can reject a credential that the API still accepts
+  // (e.g. one injected by a proxy), so the reads below decide.
   const auth = d.exec("gh", ["auth", "status"]);
-  check("gh authenticated", auth.status === 0, auth.status === 0 ? "gh can call the GitHub API" : (auth.stderr || auth.stdout).trim().split("\n")[0] ?? "");
-  const repo = auth.status === 0 ? await ghJson(d, `repos/${REPO}`).catch(() => null) : null;
-  const perms = repo?.permissions ?? {};
-  check("read: runs, jobs, logs, artifacts", Boolean(repo), "A2 + main workflow evidence");
-  check("write: contents (tags, releases)", Boolean(perms.push || perms.maintain || perms.admin), "tag and release steps", false);
-  check("write: actions (workflow_dispatch)", Boolean(perms.push || perms.maintain || perms.admin), "explicit initiation/resume; same role as contents write", false);
+  row("gh auth status", auth.status === 0 ? "ok" : "unknown", auth.status === 0 ? "gh reports a credential" : `gh reports no usable credential (${(auth.stderr || auth.stdout).trim().split("\n")[0] ?? ""}); the API reads below decide`);
+
+  const repo = await ghProbe(d, `repos/${REPO}`);
+  row("read: repository metadata", repo.state, repo.why, { required: true });
+  /** @type {Record<string, boolean>|undefined} */
+  const perms = repo.state === "observed" && repo.body?.permissions && typeof repo.body.permissions === "object" ? repo.body.permissions : undefined;
+
+  const commits = await ghProbe(d, `repos/${REPO}/commits?per_page=1`);
+  row("read: commits", commits.state, commits.why, { required: true });
+
+  const runs = await ghProbe(d, `repos/${REPO}/actions/runs?per_page=1`);
+  row("read: workflow runs (metadata)", runs.state, runs.why, { required: true });
+  const sample = runs.state === "observed" ? runs.body?.workflow_runs?.[0] : undefined;
+  if (sample?.id) {
+    const jobs = await ghProbe(d, `repos/${REPO}/actions/runs/${sample.id}/jobs?per_page=1`);
+    row("read: workflow jobs (metadata)", jobs.state, `${jobs.why}; sample run ${sample.id}`, { required: true });
+  } else {
+    row("read: workflow jobs (metadata)", "unknown", runs.state === "observed" ? "no sample run to read" : "runs read did not succeed");
+  }
+
+  const artifacts = await ghProbe(d, `repos/${REPO}/actions/artifacts?per_page=1`);
+  row("read: artifact list (metadata)", artifacts.state, `${artifacts.why}; a list is not a download`, { required: true });
+  row("read: job logs", "unknown", "not exercised by preflight; `a2-evidence` reads it and stops with exit 2 if unavailable");
+  row("read: artifact download", "unknown", "not exercised by preflight; `a2-evidence` downloads and digest-checks it");
+
+  const role = perms === undefined ? undefined : Boolean(perms.push || perms.maintain || perms.admin);
+  const roleDetail =
+    role === undefined
+      ? "role metadata unavailable; capability not established"
+      : role
+        ? "account role allows it; this credential's scope is not verified until the step runs"
+        : "account role lacks push/maintain/admin";
+  const writeState = role === undefined ? "unknown" : role ? "inferred" : "missing";
+  row("write: contents (tags, releases)", writeState, `${roleDetail} (tag, releases)`);
+  row("write: actions (workflow_dispatch)", writeState, `${roleDetail} (initiation/resume)`);
+
   const reg = await registryGet("/create-zudo-doc", { fetchImpl: d.fetchImpl, attempts: 2, sleep: d.sleep });
-  check("npm registry read", reg.state === "ok", `public reads only (${reg.state})`);
+  row("npm registry read", reg.state === "ok" ? "observed" : "unknown", `public read of create-zudo-doc (${reg.state})`, { required: true });
   rows.push(`| npm credential | not used | npm writes happen only in publish-*.yml via OIDC (npm ${NPM_CLI_PIN.version}) |`);
+
   d.log(["| capability | state | detail |", "|---|---|---|", ...rows].join("\n"));
-  if (blocking) d.log("Preflight: required capabilities are missing — stop here.");
-  else if (!(perms.push || perms.maintain || perms.admin)) d.log("Preflight: read-only session. Evidence and status work; tag/release/publish need a write-capable identity.");
-  return blocking ? 1 : 0;
+  if (blocking) {
+    d.log("Preflight: a required capability is missing or denied — stop here.");
+    return 1;
+  }
+  if (unresolved) {
+    d.log("Preflight: a required read could not be established (unknown, not a denial) — retry later.");
+    return 2;
+  }
+  if (role === false) d.log("Preflight: read-only session. Evidence and status work; tag/release/publish need a write-capable identity.");
+  else if (role === undefined) d.log("Preflight: write capability unknown. Evidence and status work; confirm a write-capable identity before tag/release/publish.");
+  d.log("Preflight: the nonpublishing checks above succeeded. This does not establish tag/release authorization, workflow_dispatch success or npm OIDC publication.");
+  return 0;
 }
 
 // ── A2 evidence ──────────────────────────────────────────────────────────────
