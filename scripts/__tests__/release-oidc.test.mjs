@@ -313,6 +313,204 @@ describe("a2-evidence CLI", () => {
   });
 });
 
+describe("release preflight capability report", () => {
+  const SECRET = "ghs_abcdefghijklmnopqrstuvwxyz0123456789";
+  const ok200 = (body) => ({ status: 0, stdout: JSON.stringify(body), stderr: "" });
+  const fail = (stderr) => ({ status: 1, stdout: "", stderr });
+  const READS = {
+    repo: "repos/zudolab/zudo-doc",
+    commits: "repos/zudolab/zudo-doc/commits?per_page=1",
+    runs: "repos/zudolab/zudo-doc/actions/runs?per_page=1",
+    jobs: "repos/zudolab/zudo-doc/actions/runs/77/jobs?per_page=1",
+    artifacts: "repos/zudolab/zudo-doc/actions/artifacts?per_page=1",
+  };
+  const goodApi = {
+    [READS.repo]: () => ok200({ full_name: "zudolab/zudo-doc", permissions: { admin: false, maintain: false, push: false, pull: true } }),
+    [READS.commits]: () => ok200([{ sha: SHA }]),
+    [READS.runs]: () => ok200({ total_count: 1, workflow_runs: [{ id: 77 }] }),
+    [READS.jobs]: () => ok200({ total_count: 1, jobs: [{ id: 5 }] }),
+    [READS.artifacts]: () => ok200({ total_count: 0, artifacts: [] }),
+  };
+
+  function preflight({ api = {}, auth = ok(""), remote = ok("https://github.com/zudolab/zudo-doc.git"), registry = "ok" } = {}) {
+    const logs = [];
+    const execCalls = [];
+    const fetchCalls = [];
+    const routes = { ...goodApi, ...api };
+    const deps = {
+      exec: (cmd, args) => {
+        execCalls.push({ cmd, args });
+        const line = [cmd, ...args].join(" ");
+        if (line === "git remote get-url origin") return remote;
+        if (line === "node --version") return ok("v24.11.0");
+        if (line === "unzip -v") return ok("UnZip 6.00");
+        if (line === "gh auth status") return auth;
+        if (cmd === "gh" && args[0] === "api") {
+          const route = routes[args[args.length - 1]];
+          if (!route) throw new Error(`unexpected gh api ${line}`);
+          return route();
+        }
+        throw new Error(`unexpected exec ${line}`);
+      },
+      fetchImpl: async (url, init) => {
+        fetchCalls.push({ url, method: init?.method ?? "GET" });
+        if (registry === "ok") return jsonResponse(200, { name: "create-zudo-doc", versions: {}, "dist-tags": {} });
+        if (registry === "absent") return jsonResponse(404, {});
+        return jsonResponse(503, {});
+      },
+      sleep: noSleep,
+      log: (s) => logs.push(s),
+      env: { GH_TOKEN: SECRET },
+    };
+    return {
+      run: () => releaseMain(["preflight"], deps),
+      out: () => logs.join("\n"),
+      row: (name) => logs.join("\n").split("\n").find((l) => l.startsWith(`| ${name} |`)) ?? "",
+      execCalls,
+      fetchCalls,
+    };
+  }
+
+  it("does not report Actions access from a repository-metadata read alone", async () => {
+    const p = preflight({ api: { [READS.runs]: () => fail("gh: Resource not accessible by integration (HTTP 403)") } });
+    expect(await p.run()).toBe(1);
+    expect(p.row("read: repository metadata")).toContain("| observed |");
+    expect(p.row("read: workflow runs (metadata)")).toContain("| denied | HTTP 403");
+    expect(p.row("read: workflow jobs (metadata)")).toContain("| unknown |");
+    expect(p.out()).not.toMatch(/runs, jobs, logs, artifacts/);
+    expect(p.out()).toMatch(/missing or denied — stop here/);
+  });
+
+  it("keeps writes unverified even when the role has push/maintain/admin", async () => {
+    const p = preflight({ api: { [READS.repo]: () => ok200({ permissions: { admin: true, maintain: true, push: true, pull: true } }) } });
+    expect(await p.run()).toBe(0);
+    for (const name of ["write: contents (tags, releases)", "write: actions (workflow_dispatch)"]) {
+      expect(p.row(name)).toContain("| inferred |");
+      expect(p.row(name)).toMatch(/not verified/);
+      expect(p.row(name)).not.toMatch(/\| (ok|observed) \|/);
+    }
+    expect(p.out()).toMatch(/does not establish tag\/release authorization, workflow_dispatch success or npm OIDC publication/);
+    expect(p.out()).not.toMatch(/read-only session/);
+  });
+
+  it("treats missing role metadata as unknown, not as no permission", async () => {
+    const p = preflight({ api: { [READS.repo]: () => ok200({ full_name: "zudolab/zudo-doc" }) } });
+    expect(await p.run()).toBe(0);
+    expect(p.row("write: contents (tags, releases)")).toContain("| unknown | role metadata unavailable");
+    expect(p.row("write: actions (workflow_dispatch)")).toContain("| unknown |");
+    expect(p.out()).toMatch(/write capability unknown/);
+    expect(p.out()).not.toMatch(/read-only session/);
+  });
+
+  it("reports each advertised read independently", async () => {
+    const p = preflight({
+      api: {
+        [READS.commits]: () => ok200([]),
+        [READS.jobs]: () => fail("gh: Must have admin rights to Repository. (HTTP 403)"),
+        [READS.artifacts]: () => ok200({ total_count: 2, artifacts: [{ id: 1, archive_download_url: "https://signed.example/download?sig=SECRETSIG" }] }),
+      },
+    });
+    expect(await p.run()).toBe(1);
+    expect(p.row("read: commits")).toContain("| observed |");
+    expect(p.row("read: workflow runs (metadata)")).toContain("| observed |");
+    expect(p.row("read: workflow jobs (metadata)")).toContain("| denied | HTTP 403; sample run 77");
+    expect(p.row("read: artifact list (metadata)")).toContain("| observed |");
+    expect(p.row("read: artifact list (metadata)")).toMatch(/not a download/);
+    expect(p.row("read: artifact download")).toContain("| unknown | not exercised");
+    expect(p.row("read: job logs")).toContain("| unknown | not exercised");
+    expect(p.out()).not.toMatch(/SECRETSIG|signed\.example/);
+  });
+
+  it("never turns a missing sample, a 404, a rate limit or a transport failure into a denial", async () => {
+    const noSample = preflight({ api: { [READS.runs]: () => ok200({ total_count: 0, workflow_runs: [] }) } });
+    expect(await noSample.run()).toBe(0);
+    expect(noSample.row("read: workflow jobs (metadata)")).toContain("| unknown | no sample run to read");
+
+    const cases = [
+      ["gh: Not Found (HTTP 404)", /\| unknown \| HTTP 404 \(absent or not visible/],
+      ["gh: API rate limit exceeded for installation ID 1. (HTTP 403)", /\| unknown \| rate limited/],
+      ["gh: You have exceeded a secondary rate limit (HTTP 429)", /\| unknown \| rate limited/],
+      ["gh: Server Error (HTTP 502)", /\| unknown \| HTTP 502/],
+      ['Get "https://api.github.com/x": dial tcp: lookup api.github.com: no such host', /\| unknown \| transport failure/],
+    ];
+    for (const [stderr, expected] of cases) {
+      const p = preflight({ api: { [READS.artifacts]: () => fail(stderr) } });
+      expect(await p.run()).toBe(2);
+      expect(p.row("read: artifact list (metadata)")).toMatch(expected);
+      expect(p.out()).not.toMatch(/\| denied \|/);
+      expect(p.out()).toMatch(/could not be established \(unknown, not a denial\)/);
+    }
+    const npmDown = preflight({ registry: "down" });
+    expect(await npmDown.run()).toBe(2);
+    expect(npmDown.row("npm registry read")).toContain("| unknown |");
+  });
+
+  it("passes a usable read-only session and says what it does not establish", async () => {
+    const p = preflight();
+    expect(await p.run()).toBe(0);
+    expect(p.row("write: contents (tags, releases)")).toContain("| missing | account role lacks push/maintain/admin");
+    expect(p.out()).toMatch(/read-only session\. Evidence and status work/);
+    expect(p.out()).toMatch(/nonpublishing checks above succeeded/);
+  });
+
+  it("fails on a definite missing prerequisite", async () => {
+    for (const remote of ["https://github.com/someone/fork.git", "https://github.com/notzudolab/zudo-doc.git"]) {
+      const p = preflight({ remote: ok(remote) });
+      expect(await p.run()).toBe(1);
+      expect(p.row("git checkout of zudolab/zudo-doc")).toContain("| missing |");
+    }
+    const noCredential = preflight({ api: Object.fromEntries(Object.values(READS).map((r) => [r, () => fail("To get started with GitHub CLI, please run:  gh auth login")])) });
+    expect(await noCredential.run()).toBe(1);
+    expect(noCredential.row("read: repository metadata")).toContain("| missing | gh has no credential");
+    const npmAbsent = preflight({ registry: "absent" });
+    expect(await npmAbsent.run()).toBe(1);
+    expect(npmAbsent.row("npm registry read")).toContain("| missing |");
+  });
+
+  it("retries one unparseable body before reporting it unknown", async () => {
+    let n = 0;
+    const p = preflight({ api: { [READS.commits]: () => (n++ === 0 ? ok("<html>proxy error</html>") : ok200([{ sha: SHA }])) } });
+    expect(await p.run()).toBe(0);
+    expect(p.row("read: commits")).toContain("| observed |");
+    expect(n).toBe(2);
+  });
+
+  it("lets the API reads, not `gh auth status`, decide GitHub access", async () => {
+    const authFails = fail("github.com\n  X Failed to log in to github.com using token (GH_TOKEN)");
+    const usable = preflight({ auth: authFails });
+    expect(await usable.run()).toBe(0);
+    expect(usable.row("gh auth status")).toContain("| unknown | gh reports no usable credential (X Failed to log in");
+    expect(usable.row("read: workflow runs (metadata)")).toContain("| observed |");
+
+    const unauthenticated = preflight({ auth: authFails, api: Object.fromEntries(Object.values(READS).map((r) => [r, () => fail("gh: Bad credentials (HTTP 401)")])) });
+    expect(await unauthenticated.run()).toBe(1);
+    expect(unauthenticated.row("read: repository metadata")).toContain("| denied | HTTP 401");
+  });
+
+  it("issues only read-only requests and discloses no credential on any path", async () => {
+    const leaky = `https://x-access-token:${SECRET}@github.com/zudolab/zudo-doc.git`;
+    const variants = [
+      preflight({ remote: ok(leaky) }),
+      preflight({ auth: fail(`github.com: token ${SECRET} is invalid; Authorization: Bearer ${SECRET}`) }),
+      preflight({ api: { [READS.repo]: () => fail(`gh: Bad credentials (HTTP 401) token ${SECRET}`) } }),
+      preflight({ api: { [READS.runs]: () => fail("gh: Server Error (HTTP 500)") }, registry: "down" }),
+      preflight({ api: { [READS.repo]: () => ok200({ permissions: { admin: true } }) } }),
+    ];
+    for (const p of variants) {
+      await p.run();
+      expect(p.out()).not.toContain(SECRET);
+      expect(p.out()).not.toMatch(/Bearer\s+\S{8,}|Authorization:\s*\S{8,}/i);
+      for (const { cmd, args } of p.execCalls) {
+        const line = [cmd, ...args].join(" ");
+        if (cmd === "gh" && args[0] === "api") expect(args.slice(0, 3)).toEqual(["api", "-X", "GET"]);
+        expect(line).not.toMatch(/\b(publish|dist-tag|workflow run|release (create|edit|delete)|tag -a|push)\b|-X (POST|PATCH|PUT|DELETE)|--method/);
+        expect(cmd).not.toMatch(/^(npm|pnpm)$/);
+      }
+      for (const f of p.fetchCalls) expect(f.method).toBe("GET");
+    }
+  });
+});
+
 describe("accepted integration binding", () => {
   const a2 = { a2: { testedTree: TREE } };
   const wf = [{ path: ".github/workflows/main-deploy.yml", applicability: "always" }, { path: ".github/workflows/pr-checks.yml", applicability: "no" }];

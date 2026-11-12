@@ -99,15 +99,34 @@ node scripts/release/release.mjs preflight
 ```
 
 Tools: Node 24 (`.nvmrc`), Corepack/pnpm, `git`, `gh`, `unzip`. `preflight` prints a
-capability table and stops on a missing requirement:
+capability table. It makes only bounded read-only requests (no tag, release, dispatch or
+other mutation to test a permission), and each row states how it was established:
 
-| Capability | Needed for | Typical source |
+| State | Meaning |
+|---|---|
+| `ok` / `observed` | a local tool check passed, or the read was actually exercised and succeeded |
+| `inferred` | taken from the account's repository role (`permissions.push`/`maintain`/`admin`); this does not prove what the active credential may do |
+| `missing` / `denied` | confirmed absent, or the API refused the read (HTTP 401/403 that is not a rate limit) |
+| `unknown` | not established: ambiguous 404, rate limit, transport or 5xx failure, no sample to read, missing role metadata, or not exercised |
+
+| Capability | How preflight establishes it | Needed for |
 |---|---|---|
-| GitHub read (runs, jobs, logs, artifacts, commits) | A2 + main-workflow evidence, `status` | any authenticated `gh` |
-| GitHub contents write | `tag`, `releases`, publishing a draft release | maintainer `gh auth login`, or the session's GitHub integration |
-| GitHub actions write | `workflow_dispatch` (initiation fallback, resume) | same identity as contents write |
-| npm registry read | registry state, provenance | public, unauthenticated |
+| git checkout, Node ≥ 24, `unzip` | local checks | every step |
+| `gh auth status` | hint only; a proxy-injected credential can fail it while the API works, so the reads below decide | — |
+| GitHub read: repository metadata, commits, workflow runs, workflow jobs (of one sample run), artifact list | one GET each | A2 + main-workflow evidence, `status` |
+| GitHub read: job logs, artifact download | **not exercised**; `a2-evidence` performs them and stops if they fail | A2 evidence |
+| GitHub contents write | role inference only | `tag`, `releases`, publishing a draft release |
+| GitHub actions write | role inference only | `workflow_dispatch` (initiation fallback, resume) |
+| npm registry read | one public GET | registry state, provenance |
 | npm write | **never needed locally** | only the publish workflows, through OIDC |
+
+Exit codes: `1` when a required check is `missing` or `denied`; `2` when a required read is
+`unknown` (retry later; it is not a denial); `0` otherwise, including a usable read-only
+session. The jobs read is required only when a sample run exists to read it from. Exit `0` means only that the reported nonpublishing checks succeeded. It does not
+establish tag or release authorization, `workflow_dispatch` success, or npm OIDC
+publication; those are proven only when their steps run. Write capabilities therefore
+always stay `inferred`, `missing` or `unknown`, never `ok`. The report never prints
+credentials, authorization headers, signed download URLs or log contents.
 
 A personal access token is not part of the default setup. If a session (for example a
 Codex Cloud environment) has no write-capable GitHub identity, run the read-only steps
@@ -308,13 +327,15 @@ Only the owner changes npm or GitHub security settings. Configure one GitHub Act
 publisher per package on npmjs.com (package → Settings → Trusted publishing). Every field is
 case-sensitive and exact. The npm scope `@takazudo` does not change the GitHub owner.
 
-| npm package | Organization or user | Repository | Workflow filename | Environment name | Allow npm dist-tag |
-|---|---|---|---|---|---|
-| `@takazudo/zudo-doc-history-server` | `zudolab` | `zudo-doc` | `publish-zudo-doc-history-server.yml` | _(empty)_ | enabled — channel repair and stale-`next` maintenance |
-| `@takazudo/zudo-doc` | `zudolab` | `zudo-doc` | `publish-zudo-doc.yml` | _(empty)_ | enabled — channel repair and stale-`next` maintenance |
-| `create-zudo-doc` | `zudolab` | `zudo-doc` | `publish-create-zudo-doc.yml` | _(empty)_ | enabled — channel repair and stale-`next` maintenance |
+| npm package | Organization or user | Repository | Workflow filename | Environment name | Allow npm publish (direct publishing) | Allow npm dist-tag |
+|---|---|---|---|---|---|---|
+| `@takazudo/zudo-doc-history-server` | `zudolab` | `zudo-doc` | `publish-zudo-doc-history-server.yml` | _(empty)_ | enabled | enabled — channel repair and stale-`next` maintenance |
+| `@takazudo/zudo-doc` | `zudolab` | `zudo-doc` | `publish-zudo-doc.yml` | _(empty)_ | enabled | enabled — channel repair and stale-`next` maintenance |
+| `create-zudo-doc` | `zudolab` | `zudo-doc` | `publish-create-zudo-doc.yml` | _(empty)_ | enabled | enabled — channel repair and stale-`next` maintenance |
 
 Direct publishing (`npm publish`) is required for all three; staged publishing is not used.
+The npm CLI that the publish step pins (see "Publish workflows" above) supports both
+operations through OIDC. See <https://docs.npmjs.com/trusted-publishers/>.
 Each package's `repository.url` is `git+https://github.com/zudolab/zudo-doc.git`.
 The workflows use no GitHub Environment, so the Environment field stays empty. If one is
 added later, the field must match it exactly.
@@ -572,9 +593,10 @@ that is a signal something genuinely changed — investigate rather than bumping
 ## First-party peer floor (publish-lag)
 
 `packages/zudo-doc/package.json` declares `@takazudo/zudo-doc-history-server` as a
-**peerDependency** with a caret floor (today `^7.0.0`, raised in the 7.0.0 major-bump
-release commit under rule 4 below; see the
-[6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md)).
+**peerDependency** with a caret floor. The current value is whatever that file declares
+(read it there rather than from this document); it moves only under the rules below,
+normally in a major-bump release commit under rule 4. For a worked historical example, see
+the [6.0.0 publication record](docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
 
 **This section is the single contract for that floor.** `scripts/check-pin-parity.mjs`
 and `.claude/skills/l-make-release/SKILL.md` reference it rather than restating it — if
@@ -594,7 +616,7 @@ they ever disagree with what follows, this section wins and the other two are th
    with the root version (rule 3's cross-major clause) and the approved baseline (rule
    5). That is the same in-flight-version window `scaffold.ts` already occupies on every
    release (`scripts/run-b4push.sh` step 19, `B4PUSH_SKIP_PIN_PUBLISHED`). The window
-   closes when the 6a publishes (`zudo-doc-history-server`, `zudo-doc`) land on npm, and
+   closes when step 9 (**Publish**) has landed `zudo-doc-history-server` and `zudo-doc` on npm, and
    the publish order guarantees it closes before the only gate that compares the floor
    against the registry — the scaffold pin freshness safeguard in `publish-create-zudo-doc.yml` — runs. Outside a
    major bump the floor never names an unpublished version. The raise is a hand edit in
@@ -619,7 +641,7 @@ workflows pass. The real constraint is a different gate: `check:scaffold-pin-fre
 first-party peer-range rule (#4065) is red while the floor names a version the registry's
 `latest` does not satisfy. It runs in the release script's pre-bump preflight — where the
 floor it sees is still the old one — and in the scaffold pin freshness safeguard in `publish-create-zudo-doc.yml`,
-which by the mandated publish order runs after the 6a publishes have landed. Neither ever
+which by the mandated publish order runs only after step 9 has landed those two. Neither ever
 looks inside the window. The release script (`scripts/release-create-zudo-doc.sh`)
 deliberately does not touch the floor.
 
@@ -629,8 +651,8 @@ Because rule 2 holds, the distance between the floor and the root version **grow
 every release and may be arbitrarily large**. Historical example from the 5.x line: the floor
 was `^5.17.2` against root `5.25.0` — eight minors — and that was the contract working, not
 drift. A same-major caret floor keeps admitting the root version however far behind it sits:
-`^5.17.2` was satisfied by a `5.25.0` install, and today's `^7.0.0` will keep admitting every
-later 7.x release.
+`^5.17.2` was satisfied by a `5.25.0` install. Likewise, whatever `^<major>.0.0` floor is
+current keeps admitting every later release of that major.
 
 **Do not chase the advisory — the loop does not converge.** Raising the floor to match the
 just-published version clears the note, but the next release moves the version past it again
@@ -782,8 +804,8 @@ At a major bump the history-server range is raised to the in-flight major in the
 commit (see "First-party peer floor (publish-lag)", rule 4) and is therefore
 `peer-range-excludes-latest` until `@takazudo/zudo-doc-history-server@<new major>` is on
 `latest`. The publish-time freshness safeguard runs after that publish by the mandated order, so it passes; if it
-fails with this finding on a major, the 6a publishes have not landed yet — publish them
-and re-run, do not touch the range.
+fails with this finding on a major, step 9 has not yet landed `zudo-doc-history-server` and
+`zudo-doc` — publish them first and re-run, do not touch the range.
 
 **Prerelease pins read the `next` dist-tag, not `latest`.** A pin carrying a
 `-prerelease` suffix (e.g. `0.2.0-next.9`) is compared against the registry's
