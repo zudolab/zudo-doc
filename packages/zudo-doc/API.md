@@ -528,6 +528,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `mermaid` | `boolean` | Enable Mermaid diagram rendering |
 | `transclude` | `boolean` | Enable `:::include` transclusion of other Markdown/MDX files; defaults to `false` |
 | `noindex` | `boolean` | Set `noindex` on all pages |
+| `contentSignals?` | `ContentSignalsConfig \| false` | [Content Signals](https://contentsignals.org) published as a `Content-Signal:` line in the `robots.txt` `User-agent: *` group, kept when `noindex` is set. `ContentSignalsConfig` is `{ search?, aiInput?, aiTrain? }`; each boolean renders as `search`, `ai-input` or `ai-train` `=yes`/`=no`, and an omitted key declares nothing. `false` (the default) or `{}` publishes no line. A non-object, an unknown key or a non-boolean value throws a `TypeError` at config resolution. |
 | `editUrl` | `string \| false` | Base URL for "Edit this page" links |
 | `githubUrl` | `string \| false` | GitHub repo URL for the GitHub link |
 | `siteUrl` | `string` | Canonical site URL (for sitemap, OG) |

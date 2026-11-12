@@ -293,6 +293,7 @@ describe("Settings public field set snapshot", () => {
         "mermaid",
         "transclude",
         "noindex",
+        "contentSignals",
         "editUrl",
         "githubUrl",
         "siteUrl",
