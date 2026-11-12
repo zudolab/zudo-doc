@@ -583,3 +583,90 @@ export function verifyIntegration(input) {
   }
   return { ok: errors.length === 0, errors, record: { integration, integrationTree, integrationParents: input.integrationParents, a2TestedTree: testedTree, mainWorkflows: records } };
 }
+
+// ── Actions-path admission (RELEASE.md, "Actions release path") ───────────────
+
+export const ACTIONS_RELEASE_WORKFLOW = "release-actions.yml";
+const DIGEST_RE = /^sha256:[0-9a-f]{64}$/;
+
+/** @param {unknown} v */
+export function isFullSha(v) {
+  return typeof v === "string" && SHA_RE.test(v);
+}
+
+/**
+ * Validate the fixed inputs of an Actions-path admission. They are claims to be
+ * checked, never evidence: `compareAdmission` re-derives every one of them.
+ * @param {Record<string, string|undefined>} o
+ */
+export function validateAdmissionInputs(o) {
+  const errors = [];
+  if (!parseSemver(o.version ?? "")) errors.push(`version '${o.version}' is not semver`);
+  for (const k of ["integration", "candidate", "base"]) if (!isFullSha(o[k])) errors.push(`--${k} must be a full 40-hex SHA (never main/HEAD/a branch)`);
+  for (const k of ["pr", "run", "attempt", "artifact-id"]) if (!/^[1-9]\d*$/.test(o[k] ?? "")) errors.push(`--${k} must be a positive integer`);
+  if (!DIGEST_RE.test(o["artifact-digest"] ?? "")) errors.push("--artifact-digest must be sha256:<64 hex>");
+  return errors;
+}
+
+/**
+ * Cross-check the declared release inputs against the records re-derived from
+ * GitHub in this job (`a2-evidence.json`, `integration.json`). Any difference
+ * blocks: a frozen candidate or an in-progress release is never moved to another
+ * SHA, run, attempt or artifact.
+ * @param {{declared: Record<string,string>, a2: any, integration: any}} input
+ */
+export function compareAdmission({ declared, a2, integration }) {
+  const errors = [];
+  const eq = (/** @type {string} */ what, /** @type {unknown} */ observed, /** @type {unknown} */ expected) => {
+    if (String(observed) !== String(expected)) errors.push(`${what}: observed ${observed ?? "(none)"} != declared ${expected}`);
+  };
+  if (!a2?.ok) errors.push("A2 evidence re-derived in this job is not verified");
+  if (!integration?.ok) errors.push("integration binding re-derived in this job is not verified");
+  eq("PR number", a2?.prNumber, declared.pr);
+  eq("PR Checks run", a2?.run?.id, declared.run);
+  eq("run attempt", a2?.run?.attempt, declared.attempt);
+  eq("candidate head", a2?.candidate, declared.candidate);
+  eq("run head_sha", a2?.run?.headSha, declared.candidate);
+  eq("base", a2?.base, declared.base);
+  eq("A2 artifact id", a2?.a2?.artifact?.id, declared["artifact-id"]);
+  eq("A2 artifact digest (GitHub)", a2?.a2?.artifact?.digest, declared["artifact-digest"]);
+  eq("A2 artifact digest (downloaded bytes)", a2?.artifactDownload?.sha256, declared["artifact-digest"]);
+  eq("accepted integration", integration?.integration, declared.integration);
+  if (integration && a2?.a2?.testedTree !== integration.integrationTree) {
+    errors.push(`integration tree ${integration.integrationTree} != A2-tested tree ${a2?.a2?.testedTree}`);
+  }
+  if (integration && integration.prNumber !== undefined) eq("integration PR", integration.prNumber, declared.pr);
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * Decide what to do with one release tag. Same SHA → resume (kept), absent →
+ * create, anything else → refuse (tags are never moved).
+ * @param {{tag: string, existing: string|null, integration: string}} input
+ */
+export function decideTag({ tag, existing, integration }) {
+  if (!existing) return { action: /** @type {const} */ ("create"), tag };
+  if (existing === integration) return { action: /** @type {const} */ ("keep"), tag };
+  return {
+    action: /** @type {const} */ ("refuse"),
+    tag,
+    reason: `${tag} already targets ${existing}, not ${integration}. Tags are never moved and a release is never re-pointed: return to fresh A2 evidence and integration approval for a corrected candidate.`,
+  };
+}
+
+/**
+ * Pick the publish run that belongs to exactly this workflow, tag and SHA.
+ * The runs listing is filtered by workflow id and head_sha server-side; this
+ * re-checks every field instead of trusting the filter.
+ * @param {{workflow: string}} pkg @param {string} tag @param {string} sha @param {any[]} runs
+ */
+export function matchingPublishRuns(pkg, tag, sha, runs) {
+  return runs.filter(
+    (r) =>
+      r.head_branch === tag &&
+      r.head_sha === sha &&
+      (r.path === undefined || r.path === `.github/workflows/${pkg.workflow}`) &&
+      (r.event === undefined || r.event === "release" || r.event === "workflow_dispatch") &&
+      r.conclusion !== "skipped",
+  );
+}
