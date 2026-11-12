@@ -30,7 +30,7 @@ This is a source-level removal. Package versions that were already published bef
 
 When a project that used either mode upgrades to a release without Tauri support, remove the old native pieces by hand:
 
-1. **Generator selections:** drop `tauri` and `tauriDev` from saved JSON presets or programmatic `features` arrays, and drop `--tauri` / `--tauri-dev` from scripted `create-zudo-doc` commands. Enabling them is now an error. The disabling forms (`--no-tauri`, `--no-tauri-dev`, `--tauri=false`, `--tauri-dev=false`) are still accepted and do nothing. See [create-zudo-doc](../reference/create-zudo-doc.mdx#features).
+1. **Generator selections:** drop `tauri` and `tauriDev` from saved JSON presets or programmatic `features` arrays, and drop `--tauri` / `--tauri-dev` from scripted `create-zudo-doc` commands. Enabling them is now an error. The disabling forms (`--no-tauri`, `--no-tauri-dev`, `--tauri=false`, `--tauri-dev=false`) are still accepted and do nothing. See [create-zudo-doc](../reference/create-zudo-doc.mdx#options-features).
 2. **Config:** remove the `findInPage` field from the `zudoDoc({ ... })` call in `zfb.config.ts` (or from your settings object).
 3. **Imports:** remove any direct import of `@takazudo/zudo-doc/find-in-page`. That export no longer exists.
 4. **App files and scripts:** delete the `src-tauri/` and `src-tauri-dev/` directories, and remove the `dev:tauri`, `dev:tauri-dev`, `build:tauri`, and `build:tauri-dev` scripts from `package.json`, along with any helper scripts that only served them.
