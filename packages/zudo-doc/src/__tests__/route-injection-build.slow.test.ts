@@ -1444,6 +1444,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // Reversing those two identities makes each raw page byte-identical; no
   // stylesheet, pack-map, protocol, prose or structural differences remain.
   // Evidence and release blockers: docs/findings/zfb-6.0.1-a2-causal-review.md.
+  // 2026-11-12 re-baseline (Tauri / find-in-page retirement, #4758): main
+  // 4bba02eb and candidate captures differ only in native build identity
+  // (5524bd9db4476f35 -> eb8122cb68fcc5b3; 1/2/4 attributes) and the
+  // bauhaus/beacon/eink pack cache-busters (1.0.1 -> 1.0.2); the helper's
+  // residual diff is empty. Raw bytes additionally change only the styles
+  // and islands entry hashes. Evidence: docs/findings/4758-a2-rebaseline/.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);
