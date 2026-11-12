@@ -468,8 +468,10 @@ describe("retired Tauri flags", () => {
     expect(args).not.toHaveProperty("tauriDev");
   });
 
-  it("ignores a --tauri token after the -- terminator", () => {
-    expect(parseArgs(["--", "--tauri"]).retiredFlagError).toBeUndefined();
+  it("rejects a --tauri token after a -- terminator (feature flags there still count)", () => {
+    expect(parseArgs(["--", "--tauri"]).retiredFlagError).toMatch(/retired/);
+    expect(parseArgs(["dest", "--", "--tauri-dev=true"]).retiredFlagError).toMatch(/retired/);
+    expect(parseArgs(["--", "--no-tauri"]).retiredFlagError).toBeUndefined();
   });
 
   it("no longer registers either Tauri feature or advertises its flags", () => {

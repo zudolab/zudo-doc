@@ -88,8 +88,9 @@ export interface CliArgs {
  */
 export function findRetiredFlagError(argv: string[]): string | null {
   const rejected: string[] = [];
+  // No `--` terminator handling: wasPassed() also honours feature flags after
+  // `--`, so a `-- --tauri` passthrough must be rejected too.
   for (const token of argv) {
-    if (token === "--") break;
     for (const { cliFlag } of RETIRED_FEATURES) {
       const isNegative =
         token === `--no-${cliFlag}` || token === `--${cliFlag}=false`;
