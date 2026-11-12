@@ -626,6 +626,8 @@ export const deletionMatrix: readonly DeletionMatrixRow[] = [
       excludePathPatterns: [
         ...negativeTestExclusions,
         "^packages/zudo-doc/src/doc-body-end-islands/__tests__/body-end-islands\\.test\\.tsx$",
+        // Real-filesystem proof that retired Tauri inputs emit no findInPage.
+        "^packages/create-zudo-doc/src/__tests__/retired-tauri\\.test\\.ts$",
       ],
     },
   },
