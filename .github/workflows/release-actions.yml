@@ -152,6 +152,8 @@ jobs:
             ${{ env.RELEASE_EVIDENCE }}/*.json
             ${{ env.RELEASE_EVIDENCE }}/*.zip
           if-no-files-found: warn
+          # upload-artifact v4+ skips dot-directories such as .release-evidence unless asked.
+          include-hidden-files: true
           overwrite: true
 
   tags:
@@ -264,6 +266,8 @@ jobs:
           name: release-evidence-publication
           path: ${{ env.RELEASE_EVIDENCE }}/publication.json
           if-no-files-found: warn
+          # upload-artifact v4+ skips dot-directories such as .release-evidence unless asked.
+          include-hidden-files: true
           overwrite: true
 
   finalize:
