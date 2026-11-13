@@ -38,6 +38,7 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
     outDir,
     base,
     siteUrl,
+    trailingSlash,
     siteName,
     siteDescription,
     defaultLocaleDir,
@@ -69,6 +70,7 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
     locale: null,
     base,
     siteUrl,
+    trailingSlash: trailingSlash === true,
     ...(agentExport === true
       ? { agentExportLocale: defaultLocale ?? "en" }
       : {}),
@@ -103,6 +105,7 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
       locale: code,
       base,
       siteUrl,
+      trailingSlash: trailingSlash === true,
       ...(agentExport === true ? { agentExportLocale: code } : {}),
     });
     const localeDir = join(outDir, code);

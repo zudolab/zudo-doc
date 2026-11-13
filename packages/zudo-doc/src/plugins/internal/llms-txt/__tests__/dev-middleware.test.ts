@@ -127,6 +127,30 @@ describe("llms dev middleware asset parity", () => {
     );
   });
 
+  it("serves the same trailing-slash URLs as emitLlmsTxt (#4783)", async () => {
+    const data = fixture();
+    const options = {
+      projectRoot: data.root,
+      base: "/site/",
+      siteName: "Example Docs",
+      siteDescription: "Example description",
+      defaultLocaleDir: data.docsDir,
+      siteUrl: "https://example.com/",
+      trailingSlash: true,
+      locales: [{ code: "ja", dir: data.jaDir }],
+      assetScan: data.assetScan,
+    };
+    emitLlmsTxt({ ...options, outDir: data.outDir });
+    const middleware = createLlmsTxtDevMiddleware(options);
+    for (const path of ["llms.txt", "llms-full.txt", "ja/llms.txt", "ja/llms-full.txt"]) {
+      const emitted = readFileSync(join(data.outDir, path), "utf8");
+      expect(await request(middleware, `/site/${path}`)).toBe(emitted);
+      expect(emitted, path).not.toMatch(/\/docs\/[^\s)]*[^/\s)]\)/);
+    }
+    expect(readFileSync(join(data.outDir, "llms.txt"), "utf8")).toContain("(https://example.com/site/docs/intro/)");
+    expect(readFileSync(join(data.outDir, "ja/llms.txt"), "utf8")).toContain("(https://example.com/site/ja/docs/intro/)");
+  });
+
   it("keeps opt-in Markdown and MCP links in sync with emitted files", async () => {
     const data = fixture();
     const buildOptions = {

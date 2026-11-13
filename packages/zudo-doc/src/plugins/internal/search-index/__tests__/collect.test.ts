@@ -55,6 +55,30 @@ function assetConfig(
   };
 }
 
+describe("collectSearchEntries trailingSlash (#4783)", () => {
+  it("follows trailingSlash for default and locale entries without changing ids", () => {
+    const jaDir = join(docsDir, "ja");
+    mkdirSync(jaDir, { recursive: true });
+    writeFileSync(join(jaDir, "page.mdx"), '---\ntitle: "ページ"\n---\n\nこんにちは。\n');
+    const docsOnly = join(docsDir, "en");
+    mkdirSync(docsOnly, { recursive: true });
+    writeFileSync(join(docsOnly, "intro.mdx"), '---\ntitle: "Intro"\n---\n\nHello.\n');
+
+    const collect = (trailingSlash?: boolean) =>
+      collectSearchEntries({ docsDir: docsOnly, locales: { ja: { dir: jaDir } }, base: "/site/", ...(trailingSlash === undefined ? {} : { trailingSlash }) })
+        .map(({ id, url }) => ({ id, url }));
+    expect(collect(true)).toEqual([
+      { id: "intro", url: "/site/docs/intro/" },
+      { id: "ja/page", url: "/site/ja/docs/page/" },
+    ]);
+    expect(collect(false)).toEqual([
+      { id: "intro", url: "/site/docs/intro" },
+      { id: "ja/page", url: "/site/ja/docs/page" },
+    ]);
+    expect(collect()).toEqual(collect(false));
+  });
+});
+
 describe("collectSearchEntries frontmatter slug override", () => {
   it("uses the filesystem slug when no override is declared", () => {
     writeDoc("guides/intro.mdx", 'title: "Intro"', "Hello.");

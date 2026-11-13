@@ -42,7 +42,9 @@ slashes, and wraps the result in `/<joined>/`. It is used by:
 
 - `pages/sitemap.xml.tsx` — generates `<loc>` entries.
 - Any zfb `paths()` export that maps collection slugs to route paths.
-- Integration-level URL emitters (llms.txt, claude-resources, etc.).
+- Integration-level URL emitters (claude-resources, etc.).
+
+The text corpora (`llms.txt`, `llms-full.txt`, the browser search index and the agent export, including MCP results) instead follow the `trailingSlash` setting, the same as the built routes, so their URLs end with `/` exactly when the pages do.
 
 A secondary helper `normalizePathname()` is available for cases where a
 pathname arrives from external data and may or may not already carry a trailing

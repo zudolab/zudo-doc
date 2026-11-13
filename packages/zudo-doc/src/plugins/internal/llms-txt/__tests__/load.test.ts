@@ -62,6 +62,31 @@ describe("loadDocEntries frontmatter slug override", () => {
   });
 });
 
+describe("loadDocEntries trailingSlash (#4783)", () => {
+  it("emits served slash URLs for every slug shape when trailingSlash is true", () => {
+    writeDoc("index.mdx", 'title: "Home"', "Root.");
+    writeDoc("guides/index.mdx", 'title: "Guides"', "Category.");
+    writeDoc("guides/intro.mdx", 'title: "Intro"', "Hello.");
+    writeDoc("moved.mdx", 'title: "Moved"\nslug: elsewhere/page', "Override.");
+
+    const urls = (locale: string | null, base: string, siteUrl?: string) =>
+      loadDocEntries({ contentDir, locale, base, siteUrl, trailingSlash: true }).map((e) => e.url).sort();
+    expect(urls(null, "/")).toEqual(["/docs/", "/docs/elsewhere/page/", "/docs/guides/", "/docs/guides/intro/"]);
+    expect(urls("ja", "/manual/", "https://example.com/")).toEqual([
+      "https://example.com/manual/ja/docs/",
+      "https://example.com/manual/ja/docs/elsewhere/page/",
+      "https://example.com/manual/ja/docs/guides/",
+      "https://example.com/manual/ja/docs/guides/intro/",
+    ]);
+  });
+
+  it("keeps slash-less URLs when trailingSlash is false", () => {
+    writeDoc("guides/intro.mdx", 'title: "Intro"', "Hello.");
+    const entries = loadDocEntries({ contentDir, locale: "ja", base: "/manual/", trailingSlash: false });
+    expect(entries[0]?.url).toBe("/manual/ja/docs/guides/intro");
+  });
+});
+
 describe("loadDocEntries JSX comment stripping (zudo-doc#2175)", () => {
   it("does not let a leading JSX comment become the fallback description", () => {
     writeDoc(

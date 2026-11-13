@@ -55,8 +55,8 @@ The index file lists each documentation page with its title, description, and UR
 
 ## Docs
 
-- [Introduction](/docs/getting-started/introduction): Learn what the project is and how it works.
-- [Configuration](/docs/guides/configuration): Global settings and configuration reference.
+- [Introduction](/docs/getting-started/introduction/): Learn what the project is and how it works.
+- [Configuration](/docs/guides/configuration/): Global settings and configuration reference.
 ```
 
 ### llms-full.txt (Full Content)
@@ -100,6 +100,8 @@ When locales are configured, zudo-doc generates separate llms.txt files for each
 - **Japanese:** `/ja/llms.txt` and `/ja/llms-full.txt`
 
 Each locale's files contain only the pages from that locale's content directory. URLs in each file use the appropriate locale prefix.
+
+Page URLs follow the `trailingSlash` setting, the same as the built routes: with `trailingSlash: true` (as in the example above) they end with `/`, and with the default `false` they do not. Either way, each listed URL is the page itself rather than a redirect to it.
 
 ## HTML Discovery
 

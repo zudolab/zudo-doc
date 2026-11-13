@@ -167,6 +167,44 @@ describe("agent export", () => {
     expect(serialized).not.toContain("index.mdx");
   });
 
+  it("cites trailing-slash URLs everywhere when trailingSlash is true, keeping page IDs (#4783)", () => {
+    const root = mkdtempSync(join(tmpdir(), "agent-slash-"));
+    const en = join(root, "en"); const ja = join(root, "ja");
+    mkdirSync(en); mkdirSync(ja);
+    writeFileSync(join(en, "index.mdx"), "---\ntitle: Home\n---\n[Guide](./guide.mdx#setup)");
+    mkdirSync(join(en, "reference"));
+    writeFileSync(join(en, "reference", "page.mdx"), "---\ntitle: Ref\n---\n[Up](../other/target)");
+    writeFileSync(join(en, "guide.mdx"), "---\ntitle: Guide\n---\n# Setup");
+    writeFileSync(join(ja, "page.mdx"), "---\ntitle: ページ\nslug: custom\n---\n本文");
+    const base = { base: "/manual/", siteUrl: "https://example.test", siteName: "Docs", defaultLocale: "en", defaultLocaleDir: en, locales: [{ code: "ja", dir: ja }] };
+    const slash = projectAgentCorpus({ ...base, trailingSlash: true });
+    const plain = projectAgentCorpus({ ...base, trailingSlash: false });
+    expect(projectAgentCorpus(base)).toEqual(plain);
+    expect(slash.manifest.documents.map(doc => doc.url).sort()).toEqual([
+      "https://example.test/manual/docs/",
+      "https://example.test/manual/docs/guide/",
+      "https://example.test/manual/docs/reference/page/",
+      "https://example.test/manual/ja/docs/custom/",
+    ]);
+    expect(plain.manifest.documents.map(doc => doc.url).sort()).toEqual([
+      "https://example.test/manual/docs/",
+      "https://example.test/manual/docs/guide",
+      "https://example.test/manual/docs/reference/page",
+      "https://example.test/manual/ja/docs/custom",
+    ]);
+    expect(slash.manifest.items.every(item => item.url.endsWith("/"))).toBe(true);
+    expect(slash.index.items.every(item => item.url.endsWith("/"))).toBe(true);
+    for (const raw of slash.items.values()) expect((JSON.parse(raw) as { url: string }).url.endsWith("/")).toBe(true);
+    expect(slash.manifest.documents.map(doc => doc.id)).toEqual(plain.manifest.documents.map(doc => doc.id));
+    expect(slash.manifest.fingerprint).not.toBe(plain.manifest.fingerprint);
+    const home = slash.manifest.documents.find(doc => doc.title === "Home")!;
+    expect(slash.pages.get(home.key)).toBe("[Guide](https://example.test/manual/docs/guide/#setup)");
+    // Unresolved relative links resolve as the author wrote them against the source directory, not one level deeper.
+    const ref = slash.manifest.documents.find(doc => doc.title === "Ref")!;
+    expect(ref.url).toBe("https://example.test/manual/docs/reference/page/");
+    expect(slash.pages.get(ref.key)).toBe("[Up](https://example.test/manual/docs/other/target)");
+  });
+
   it("resolves source-file links using locale and target slug overrides", () => {
     const root = mkdtempSync(join(tmpdir(), "agent-links-"));
     writeFileSync(join(root, "source.mdx"), '---\ntitle: Source\nslug: moved/source\n---\n[Target](./target.mdx#section)\n[Reference][target]\n[target]: ./target.mdx');
