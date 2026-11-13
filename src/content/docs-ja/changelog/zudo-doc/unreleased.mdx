@@ -1,21 +1,5 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1158
+sidebar_position: 1159
 ---
-
-### 破壊的変更
-
-- 11.0.0 で削除した `findInPage` キーが設定に残っている場合、`zudoDoc()` はそれを無視せず `TypeError` を投げるようになりました。メッセージがキーの削除を案内します。`findInPage` を含まない設定には影響しません。(#4763)
-
-### 機能
-
-- 複数のロケールに実際のコンテンツがあるページは、canonical リンクの後に `<link rel="alternate" hreflang>` で互いにリンクするようになりました。自身への参照と、デフォルトロケールのページを指す `x-default` も含みます。サイトマップにも同じ対応が `xhtml:link` の代替リンクとして載ります。対象はホームページと最新版のドキュメントページで、フォールバックのみのページ、バージョン付きページ、タグページは対応付けません。`siteUrl` がない場合や単一ロケールのサイトでは何も変わりません。`@takazudo/zudo-doc/route-enumerators` に `getDocLocaleAlternates` と `getHomeLocaleAlternates` を追加し、サイトマップのエントリに省略可能な `alternates` フィールドを追加しました。(#4787)
-
-### バグ修正
-
-- サイトマップの `<lastmod>` は、すべての URL にビルド日を入れる代わりに、各ドキュメントページのドキュメント履歴にある最終更新日を使うようになりました。ページの「更新日」表示と同じ日付です。日付が分からないルート（ホームとロケールのトップ、タグページ、アセットページ、バージョン付きページ、および `docHistory` が無効な場合やドキュメント履歴の生成を省略した場合の全ページ）には `<lastmod>` を出力しません。`@takazudo/zudo-doc/route-enumerators` に `enumerateSitemapEntries` を追加しました。`enumerateAllRoutes` は変わりません。(#4784)
-- `llms.txt`、`llms-full.txt`、ブラウザー検索インデックス（`search-index.json`）、エージェント向けエクスポート（マニフェスト、項目、検索インデックス）、MCPの`search`/`fetch`の結果に含まれるページURLが、ビルドされるルートと同じく`trailingSlash`設定に従うようになりました。`trailingSlash: true`では末尾が`/`になり、リダイレクトするURLを引用しなくなります。`trailingSlash: false`の出力は変わりません。スキーマとエージェントのページIDは変わりませんが、`trailingSlash: true`のサイトでは`url`の値、`llms.txt`のバイト列、エージェント向けコーパスのフィンガープリントが変わります。(#4783)
-- MCPの`search`結果のタイトルで、複数に分割されたページの分割番号を一度だけ示すようになりました。たとえば`Read-only MCP server (part 1/2) (en · part 1/2)`ではなく`Read-only MCP server (en · part 1/2)`になります。保存される項目のタイトルと`fetch`の結果は変わりません。(#4783)
-- `siteUrl`に`http:`や`https:`のスキームがない場合（例: `docs.example.com:8443`）に、`/mcp`が不透明な`Origin: null`を許可しなくなりました。許可されるオリジンを追加するのは`http(s)`の`siteUrl`だけです。`Origin`のないリクエストと、エンドポイント自身のオリジンからのリクエストの扱いは変わりません。(#4783)
-- エージェント向けエクスポート（`/agent/v1/`のページ、項目、検索インデックス）で、注記、`<Details>`、`<TabItem>`を`**Note: タイトル**`のような太字のラベルと本文に変換し、`<CategoryNav>`、`<CategoryTreeNav>`、`<SiteTreeNav>`、`<DocCardNav>`、`<NoteTrayIndex>`を同じ言語で書き出されたページへのMarkdownリンク一覧として出力するようになりました。これらのページには`unsupportedDynamicContent`が付かなくなります。それ以外のコンポーネントや、propsがリテラルではないコンポーネントは、引き続きプレースホルダーになり、`[Dynamic content unavailable in text export: MathBlock]`のようにコンポーネント名を示します。フラグも残ります。これらのコンポーネントを使うページでは、項目のテキストとコーパスのフィンガープリントが変わります。`llms-full.txt`は変わりません。(#4786)
