@@ -5,10 +5,13 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 import net from "node:net";
+import http from "node:http";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { scaffold } from "../scaffold.js";
+import { FEATURES } from "../constants.js";
 import type { UserChoices } from "../prompts.js";
 import { installScaffoldedDeps, overrideWithLocalZudoDoc, runOrThrow } from "./slow-build-helpers.js";
 
@@ -27,7 +30,7 @@ let referencePromise: Promise<string> | undefined;
 let adoptionZudoDocTarball: string;
 const dir = (name: string) => path.join(root, name);
 
-async function build(name: string, features: string[], defaultLang = "en", additionalLangs: string[] = [], base = ""): Promise<string> {
+async function build(name: string, features: string[], defaultLang = "en", additionalLangs: string[] = [], base = "", { flatPublic = false }: { flatPublic?: boolean } = {}): Promise<string> {
   await scaffold(choices(name, features, defaultLang, additionalLangs));
   const project = dir(name);
   if (base) {
@@ -36,12 +39,32 @@ async function build(name: string, features: string[], defaultLang = "en", addit
     expect(config).toContain("zudoDoc({");
     await fs.writeFile(configPath, config.replace("zudoDoc({", `zudoDoc({\n    base: "${base}",`));
   }
+  if (flatPublic) {
+    // copyPublicWithBase is a zfb engine option, not a zudoDoc() setting:
+    // spread the zudoDoc() result and set it beside it, as the guide shows.
+    const configPath = path.join(project, "zfb.config.ts");
+    const config = await fs.readFile(configPath, "utf8");
+    expect(config).toMatch(/defineConfig\(\n  zudoDoc\(\{[\s\S]*\n  \}\),\n\);\n$/);
+    await fs.writeFile(configPath, config
+      .replace("defineConfig(\n  zudoDoc({", "defineConfig({\n  ...zudoDoc({")
+      .replace(/\n  \}\),\n\);\n$/, "\n  }),\n  copyPublicWithBase: false,\n});\n"));
+  }
   if (features.includes("agentExport")) {
     const docs = path.join(project, "src/content/docs");
     await fs.outputFile(path.join(docs, "agent-proof.mdx"), `---\ntitle: Agent Proof\n---\n\nThe generated consumer contains the violet platypus marker.\n\n## Example\n\nUse \`<Widget />\` literally. [Source link](./agent-proof.mdx#example).\n`);
     for (const [flag, value] of [["draft", "true"], ["unlisted", "true"], ["search_exclude", "true"]]) {
       await fs.outputFile(path.join(docs, `excluded-${flag}.mdx`), `---\ntitle: Excluded ${flag}\n${flag}: ${value}\n---\n\nsecret-${flag}-marker\n`);
     }
+    // A non-routed category header and a page exercising the preserved
+    // Markdown constructs (table, image, fenced code, unsupported component).
+    await fs.outputFile(path.join(docs, "agent-category/index.mdx"), "---\ntitle: Agent Category\ncategory_no_page: true\n---\n\nsecret-category_no_page-marker\n");
+    await fs.outputFile(path.join(docs, "agent-category/agent-rich.mdx"), [
+      "---", "title: Agent Rich", "---", "",
+      "| Key | Value |", "| --- | --- |", "| amber | `a\\|b` |", "",
+      "![Diagram](https://example.com/diagram.png)", "",
+      "```tsx title=\"example.tsx\"", "<Widget prop=\"kept\" />", "```", "",
+      "<Details title=\"More\">Folded detail text.</Details>", "",
+    ].join("\n"));
   }
   // This project is already outside the repository workspace. Let pnpm read
   // its own pnpm-workspace.yaml, including the approved binary build scripts.
@@ -160,17 +183,128 @@ async function assertLocalAssets(origin: string, base: string, proof: any): Prom
   }
 }
 
+// A deliberately plain static file server: no rewrites, no negotiation, no
+// framework headers. The operator owns media types; this one maps `.md` to
+// `text/markdown; charset=utf-8` the way the guide asks a host to.
+const STATIC_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8", ".md": "text/markdown; charset=utf-8", ".json": "application/json",
+  ".txt": "text/plain; charset=utf-8", ".js": "text/javascript", ".css": "text/css",
+};
+let staticServer: http.Server | undefined;
+async function startStaticHost(root: string, mount: string): Promise<string> {
+  staticServer = http.createServer(async (req, res) => {
+    const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://host").pathname);
+    if (mount && pathname !== mount && !pathname.startsWith(`${mount}/`)) { res.writeHead(404).end(); return; }
+    let file = path.join(root, pathname.slice(mount.length));
+    if (!file.startsWith(root)) { res.writeHead(404).end(); return; }
+    if ((await fs.pathExists(file)) && (await fs.stat(file)).isDirectory()) {
+      if (!pathname.endsWith("/")) { res.writeHead(301, { location: `${pathname}/` }).end(); return; }
+      file = path.join(file, "index.html");
+    }
+    if (!(await fs.pathExists(file))) { res.writeHead(404, { "content-type": "text/plain" }).end("Not Found"); return; }
+    res.writeHead(200, { "content-type": STATIC_TYPES[path.extname(file)] ?? "application/octet-stream" });
+    res.end(await fs.readFile(file));
+  });
+  await new Promise<void>((resolve) => staticServer!.listen(0, "127.0.0.1", resolve));
+  const address = staticServer.address();
+  if (!address || typeof address === "string") throw new Error("No static host port");
+  return `http://127.0.0.1:${address.port}`;
+}
+async function stopStaticHost(): Promise<void> {
+  if (!staticServer) return;
+  await new Promise<void>((resolve) => staticServer!.close(() => resolve()));
+  staticServer = undefined;
+}
+
+async function htmlFiles(directory: string): Promise<string[]> {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map((entry) => {
+    const full = path.join(directory, entry.name);
+    return entry.isDirectory() ? htmlFiles(full) : Promise.resolve(entry.name.endsWith(".html") ? [full] : []);
+  }));
+  return nested.flat();
+}
+
+// Every URL an agent can discover (page alternates, llms.txt, manifest) must
+// fetch the generated artifact from a host that knows nothing about zudo-doc.
+async function assertPortableStaticHost(project: string, base: string): Promise<void> {
+  const dist = path.join(project, "dist");
+  const origin = await startStaticHost(dist, base);
+  try {
+    const get = async (url: string, init?: RequestInit) => {
+      const response = await fetch(new URL(new URL(url, origin).pathname, origin), init);
+      expect(response.status, url).toBe(200);
+      return response;
+    };
+    const alternates = new Map<string, string>();
+    for (const file of await htmlFiles(dist)) {
+      for (const tag of (await fs.readFile(file, "utf8")).match(/<link\b[^>]*>/g) ?? []) {
+        if (!/\brel=["']?alternate\b/.test(tag) || !/\btype=["']?text\/markdown\b/.test(tag)) continue;
+        alternates.set(tag.match(/\bhref=["']?([^"'\s>]+)/)![1]!, path.relative(dist, file));
+      }
+    }
+    const manifest = await (await get(`${base}/agent/v1/manifest.json`)).json();
+    expect(alternates.size).toBe(manifest.documents.length);
+    const markdownUrls = new Set(manifest.documents.map((document: any) => new URL(document.markdownUrl, origin).pathname));
+    for (const href of alternates.keys()) {
+      expect(href.startsWith(`${base}/agent/v1/pages/`), href).toBe(true);
+      expect(markdownUrls.has(href), href).toBe(true);
+      const response = await get(href);
+      // The media type comes from this host's own table, not from zudo-doc;
+      // the decoded text proves the UTF-8 bytes (Japanese included) survive.
+      expect(response.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+      expect(await response.text()).toBe(await fs.readFile(path.join(dist, href.slice(base.length)), "utf8"));
+    }
+    const linked = new Set<string>();
+    for (const llms of [`${base}/llms.txt`, `${base}/ja/llms.txt`]) {
+      for (const match of (await (await get(llms)).text()).matchAll(/\]\(([^)\s]+\.md)\)/g)) linked.add(new URL(match[1]!, origin).pathname);
+    }
+    expect([...linked].sort()).toEqual([...markdownUrls].sort());
+    const index = await get(manifest.searchIndex.url);
+    expect(createHash("sha256").update(await index.text()).digest("hex")).toBe(manifest.searchIndex.sha256);
+    for (const item of manifest.items) {
+      const body = await (await get(item.artifactUrl)).text();
+      expect(createHash("sha256").update(body).digest("hex")).toBe(item.sha256);
+    }
+    for (const document of manifest.documents) {
+      const page = await fetch(new URL(`${new URL(document.url, origin).pathname}/`, origin), { headers: { accept: "text/markdown" } });
+      // The export lives at separate .md URLs, so the human URL is a plain
+      // index.html that the host serves the same way for any Accept header.
+      expect(page.status, document.url).toBe(200);
+      expect(page.headers.get("content-type")).toBe("text/html; charset=utf-8");
+      expect(page.headers.get("vary")).toBeNull();
+    }
+    // zudo-doc emits no host routing or header rules that could negotiate.
+    for (const hostFile of ["_headers", "_redirects", "_worker.js"]) expect(await fs.pathExists(path.join(dist, hostFile))).toBe(false);
+    expect(manifest.documents.some((document: any) => document.locale === "ja")).toBe(true);
+    const proof = manifest.documents.find((document: any) => document.title === "Agent Rich");
+    const rich = await (await get(proof.markdownUrl)).text();
+    expect(rich).toContain("| amber | `a\\|b` |");
+    expect(rich).toContain("![Diagram](https://example.com/diagram.png)");
+    expect(rich).toContain('```tsx title="example.tsx"\n<Widget prop="kept" />\n```');
+    expect(rich).toContain("[Dynamic content unavailable in text export]");
+    expect(rich).toContain("Folded detail text.");
+    expect(manifest.items.find((item: any) => item.pageId === proof.id)).toBeDefined();
+    const corpus = JSON.stringify(manifest) + (await (await get(manifest.searchIndex.url)).text());
+    for (const secret of [project, "src/content", ".mdx", "secret-", "Agent Category"]) expect(corpus).not.toContain(secret);
+  } finally {
+    await stopStaticHost();
+  }
+}
+
 beforeAll(async () => {
   originalCwd = process.cwd();
   root = await fs.mkdtemp(path.join(os.tmpdir(), "zudo-agent-consumers-"));
   process.chdir(root);
   await build("static-en", ["agentExport", "llmsTxt"], "en", ["ja"]);
   await build("static-ja", ["agentExport", "llmsTxt"], "ja");
+  await build("static-handbook", ["agentExport", "llmsTxt"], "en", ["ja"], "/handbook", { flatPublic: true });
   await build("mcp-manual", ["agentExport", "llmsTxt", "mcp"], "en", ["ja"], "/manual");
 }, 20 * 60 * 1000);
 
 afterAll(async () => {
   await stopWorker();
+  await stopStaticHost();
   process.chdir(originalCwd);
   if (root) await fs.remove(root);
 });
@@ -196,6 +330,29 @@ describe("packed generated agent consumers", () => {
     expect(proofText).toContain("`<Widget />`");
     expect(proofText).toContain("[Source link](/docs/agent-proof#example)");
     expect(await fs.readFile(path.join(project, "dist/llms.txt"), "utf8")).toContain("agent");
+  });
+
+  it("serves every discovered Markdown URL from a generic static host at the root base", async () => {
+    await assertPortableStaticHost(dir("static-en"), "");
+  });
+
+  it("serves a non-root base from a generic static host when dist/ is uploaded under the base", async () => {
+    const project = dir("static-handbook");
+    // copyPublicWithBase: false keeps public files and the export beside the flat HTML.
+    expect(await fs.pathExists(path.join(project, "dist/handbook"))).toBe(false);
+    const { manifest } = await artifacts(project);
+    expect(manifest.site.base).toBe("/handbook");
+    expect(manifest.searchIndex.url).toBe("/handbook/agent/v1/search-index.json");
+    await assertPortableStaticHost(project, "/handbook");
+  });
+
+  it("leaves the export off in a default scaffold", async () => {
+    const defaults = FEATURES.filter((feature) => feature.default).map((feature) => feature.value);
+    expect(defaults).not.toContain("agentExport");
+    await scaffold(choices("static-default", defaults, "en", ["ja"]));
+    const config = await fs.readFile(path.join(dir("static-default"), "zfb.config.ts"), "utf8");
+    expect(config).not.toContain("agentExport");
+    expect(config).not.toContain("mcp");
   });
 
   it("uses the actual JA default locale for IDs and canonical routes", async () => {
