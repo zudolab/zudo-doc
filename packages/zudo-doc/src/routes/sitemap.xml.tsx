@@ -1,12 +1,17 @@
 // Package route entrypoint: /sitemap.xml — package-owned equivalent of
 // pages/sitemap.xml.tsx (epic Package-First Finale #2356, A1 #2361).
 //
-// URL enumeration is delegated to `enumerateAllRoutes` (reconstructed in
+// URL enumeration is delegated to `enumerateSitemapEntries` (reconstructed in
 // `_context` from `@takazudo/zudo-doc/route-enumerators`) so the sitemap cannot
 // drift from the actual routes the page entrypoints build. Dormant unless
 // `settings.packageOwnedRoutes` is on (Decision 6 precedence still applies).
+//
+// `lastmod` comes from the same doc-history manifest the visible "Updated"
+// label reads (`chromeBindings.docHistoryMeta`, #4784); a route with no known
+// date omits `<lastmod>` rather than claiming the build date.
 
-import { settings, enumerateAllRoutes } from "./_context.js";
+import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
+import { settings, enumerateSitemapEntries } from "./_context.js";
 
 export const frontmatter = { title: "Sitemap" };
 export const contentType = "application/xml";
@@ -38,17 +43,19 @@ export default function Sitemap(): string {
 </urlset>`;
   }
 
-  const routeMap = enumerateAllRoutes();
+  const entries = enumerateSitemapEntries({
+    docHistoryMeta: settings.docHistory ? chromeBindings.docHistoryMeta : undefined,
+  });
   const siteUrlBase = (settings.siteUrl ?? "").replace(/\/$/, "");
 
-  const urlEntries = [...routeMap.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(
-      ([url, lastmod]) => `  <url>
-    <loc>${escapeXml(siteUrlBase + url)}</loc>
-    <lastmod>${lastmod}</lastmod>
-  </url>`,
-    )
+  const urlEntries = entries
+    .sort((a, b) => a.url.localeCompare(b.url))
+    .map(({ url, lastmod }) => {
+      const lastmodLine = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : "";
+      return `  <url>
+    <loc>${escapeXml(siteUrlBase + url)}</loc>${lastmodLine}
+  </url>`;
+    })
     .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
