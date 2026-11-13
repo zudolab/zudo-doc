@@ -1,6 +1,8 @@
 # Dependency audits
 
-Current adoption checkpoint (2026-11-06): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
+Current released state: the three lockstep packages are 11.0.0 on npm `latest` with the ZFB 6.0.1 family (peers `^6.0.1`), zdtp 0.9.7, MCP SDK 1.32.2, root and generated-MCP Wrangler 4.161.0 and history-server peer floor `^11.0.0`; the root `CLAUDE.md` keeps the verified statement.
+
+Historical adoption checkpoint (2026-11-06, superseded): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
 
 Tauri desktop support is retired at source level (2026-11-12, zudolab/zudo-doc#4758): the `src-tauri/` and `src-tauri-dev/` applications and the generator's `tauri`/`tauriDev` templates are gone, so dependency audits no longer cover Rust or Cargo. Rust findings in the dated audits below are historical.
 
