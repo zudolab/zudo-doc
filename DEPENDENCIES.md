@@ -1,6 +1,8 @@
 # Dependency audits
 
-Current adoption checkpoint (2026-11-06): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
+Current released state: the three lockstep packages are 11.0.0 on npm `latest` with the ZFB 6.0.1 family (peers `^6.0.1`), zdtp 0.9.7, MCP SDK 1.32.2, root and generated-MCP Wrangler 4.161.0 and history-server peer floor `^11.0.0`; the root `CLAUDE.md` keeps the verified statement.
+
+Historical adoption checkpoint (2026-11-06, superseded): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
 
 Tauri desktop support is retired at source level (2026-11-12, zudolab/zudo-doc#4758): the `src-tauri/` and `src-tauri-dev/` applications and the generator's `tauri`/`tauriDev` templates are gone, so dependency audits no longer cover Rust or Cargo. Rust findings in the dated audits below are historical.
 
@@ -213,7 +215,9 @@ timeouts; retrying with `pnpm test:packages --maxWorkers=2` passed, as did the
 plugin-resolution check. No test assertions or timeouts were changed.
 Manual interactive smoke was skipped; browser E2E is outside this local suite.
 
-### Current migration dependency contract
+### Migration dependency contract (historical)
+
+The current released tuple (11.0.0: ZFB 6.0.1 family with peers `^6.0.1`, zdtp 0.9.7, MCP SDK 1.32.2, root and generated-MCP Wrangler 4.161.0, history-server peer floor `^11.0.0`, Node 24 minimum) is recorded at the top of the root `CLAUDE.md`. The paragraphs below are pre-11.0.0 receipts.
 
 Release 8.1.2 shipped the ZFB 5.1.4 family (peers `^5.1.4`; 5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641, released in 8.1.0; 5.1.3 by #4646, released in 8.1.1; 5.1.4 by #4656), zdtp 0.8.7, MCP SDK 1.32.2, and history-server peer floor `^8.0.0`; 8.1.3 kept that tuple; the unreleased workspace moves to ZFB 5.1.5 (peers `^5.1.5`) and zdtp 0.9.0. Node.js 24 remains the minimum. The publication records below describe earlier releases.
 
