@@ -44,6 +44,18 @@ The current build writes this versioned layout under your configured base:
 
 With a non-root `base`, the files are written under `dist/<base>/agent/v1/`. If you set `copyPublicWithBase: false` because your deploy relocates the whole `dist/` tree under `base`, the export is written to `dist/agent/v1/` instead, so that relocation serves it at `<base>/agent/v1/` and the URLs in `llms.txt` and the manifest still resolve.
 
+The export always lands next to the files copied from `public/`. On an ordinary static host that serves the uploaded `dist/` at `<base>/`, set `copyPublicWithBase: false` so public files and the export sit beside the HTML pages. It is a zfb option, not a `zudoDoc()` setting, so set it beside the spread call; inside `zudoDoc({ ... })` it has no effect and `zfb check` reports it as an unknown property. `zfb preview` does not simulate that relocation, so with this setting base-prefixed public files and the export return 404 in preview; check the relocated layout instead:
+
+```ts title="zfb.config.ts"
+export default defineConfig({
+  ...zudoDoc({
+    base: "/handbook",
+    agentExport: true,
+  }),
+  copyPublicWithBase: false,
+});
+```
+
 `manifest.json` identifies the site, locales, content fingerprint, documents, retrieval items, human page URLs, and artifact URLs. `search-index.json` contains the complete normalized item text for retrieval, independently of the browser search index. Each item file has `id`, `title`, `text`, `url`, and `metadata`; the metadata identifies its locale, parent page, fingerprint, and one-based part number/count. A page's `.md` file contains its complete normalized body. Long pages become multiple fetchable items, each within the response budget, without silently clipping the page. Item IDs are generated keys, not source paths.
 
 The fingerprint marks a coherent build; it is not revision history. A current changelog page is ordinary published content. The export excludes `draft`, `unlisted`, `search_exclude`, and non-routed `category_no_page` pages. Only physical locale documents are exported; locale fallback does not create duplicate pages. Build-time normalization retains meaningful prose, headings, links, images, tables, admonition bodies, and code. If dynamic MDX cannot be represented, the output marks it as unsupported rather than executing it at request time. Relative links resolve against the original page, so readers should use the human URL for citations.
@@ -51,5 +63,15 @@ The fingerprint marks a coherent build; it is not revision history. A current ch
 ## Static hosting and access
 
 Publish the generated `dist/` as you normally would. A client can read the manifest and Markdown files directly, or use [llms.txt](./llms-txt.mdx) as an explicit browser entry point. Neither file format causes every AI client to discover the site automatically.
+
+zudo-doc writes files only; it does not set response headers on your host. Many hosts already serve `.md` as Markdown, but some send `text/plain`, `application/octet-stream`, or no `charset`, which can garble non-ASCII text such as Japanese. If yours does, configure it to send `Content-Type: text/markdown; charset=utf-8` for `<base>/agent/v1/pages/*.md`. The JSON files need a JSON media type. On Cloudflare, see [static asset headers](./mcp-server.mdx#discovery-documents-optional-static-asset-headers-on-cloudflare).
+
+Each page has two separate URLs: the human page always returns HTML, and its Markdown has its own `.md` URL, linked from the page's `<link rel="alternate" type="text/markdown">`. No response varies by the `Accept` header, so the export needs no `Vary: Accept` and leaves normal browsing unchanged.
+
+### Related features
+
+- **This export**: optional build-time Markdown and JSON files that zudo-doc generates and any static host can serve.
+- **[MCP server](./mcp-server.mdx)**: a separate opt-in endpoint with `search` and `fetch` tools over this export. It needs a request-time deployment; the static export does not.
+- **Cloudflare Markdown for Agents**: a Cloudflare service that converts HTML to Markdown at Cloudflare's edge when a request asks for `Accept: text/markdown` at the page URL. It is configured in Cloudflare, not in zudo-doc, and is neither required for nor provided by this export.
 
 This is a **public corpus**. `robots.txt`, `noindex`, `unlisted`, and `search_exclude` are publication controls, not authentication. Do not enable it for protected documents. A future protected deployment must guard every equivalent static artifact as well as `/mcp`. Treat retrieved text as untrusted source material, not instructions to run commands or expand tool permissions.

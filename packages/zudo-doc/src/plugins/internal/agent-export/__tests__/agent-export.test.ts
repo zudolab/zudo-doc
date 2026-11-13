@@ -142,6 +142,31 @@ describe("agent export", () => {
     });
   });
 
+  it.each(["/", "/manual/"])("replaces only its own agent/v1 subtree at base %j and leaves other output untouched", (base) => {
+    const root = mkdtempSync(join(tmpdir(), "agent-export-owned-"));
+    const en = join(root, "en"); const outDir = join(root, "dist");
+    const segment = base === "/" ? "" : "manual";
+    mkdirSync(en);
+    writeFileSync(join(en, "index.mdx"), "---\ntitle: Home\n---\n# Hello\n");
+    const neighbours = ["llms.txt", "docs/index.html", join(segment, "favicon.svg"), join(segment, "agent/readme.txt"), join(segment, "agent/v2/manifest.json")];
+    for (const file of neighbours) {
+      mkdirSync(join(outDir, file, ".."), { recursive: true });
+      writeFileSync(join(outDir, file), "keep");
+    }
+    const stale = [join(segment, "agent/v1/pages/p-0000000000000000.md"), join(segment, "agent/v1/items/p-0000000000000000-000001.json")];
+    for (const file of stale) {
+      mkdirSync(join(outDir, file, ".."), { recursive: true });
+      writeFileSync(join(outDir, file), "stale");
+    }
+    emitAgentCorpus({ outDir, base, siteName: "Docs", defaultLocale: "en", defaultLocaleDir: en });
+    for (const file of neighbours) expect(readFileSync(join(outDir, file), "utf8")).toBe("keep");
+    for (const file of stale) expect(existsSync(join(outDir, file))).toBe(false);
+    const v1 = join(outDir, segment, "agent/v1");
+    const serialized = readFileSync(join(v1, "search-index.json"), "utf8") + readFileSync(join(v1, "manifest.json"), "utf8");
+    expect(serialized).not.toContain(root);
+    expect(serialized).not.toContain("index.mdx");
+  });
+
   it("resolves source-file links using locale and target slug overrides", () => {
     const root = mkdtempSync(join(tmpdir(), "agent-links-"));
     writeFileSync(join(root, "source.mdx"), '---\ntitle: Source\nslug: moved/source\n---\n[Target](./target.mdx#section)\n[Reference][target]\n[target]: ./target.mdx');
