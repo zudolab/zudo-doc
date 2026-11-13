@@ -571,3 +571,38 @@ describe("HeadWithDefaults — og:image resolution", () => {
     expect(out).toContain('<meta property="og:image" content="https://example.com/img/page.png">');
   });
 });
+
+describe("HeadWithDefaults — hreflang locale alternates (#4787)", () => {
+  it("emits one alternate per locale right after the canonical link", () => {
+    const ctx = makeFakeChromeContext({});
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    const out = render(
+      <HeadWithDefaults
+        title="Test"
+        canonical="https://example.com/docs/a/"
+        localeAlternates={[
+          { hreflang: "en", href: "https://example.com/docs/a/" },
+          { hreflang: "ja", href: "https://example.com/ja/docs/a/" },
+          { hreflang: "x-default", href: "https://example.com/docs/a/" },
+        ]}
+      />,
+    );
+    expect(out).toContain(
+      '<link rel="canonical" href="https://example.com/docs/a/">' +
+        '<link rel="alternate" hreflang="en" href="https://example.com/docs/a/">' +
+        '<link rel="alternate" hreflang="ja" href="https://example.com/ja/docs/a/">' +
+        '<link rel="alternate" hreflang="x-default" href="https://example.com/docs/a/">',
+    );
+  });
+
+  it("emits nothing when the prop is omitted or empty", () => {
+    const ctx = makeFakeChromeContext({});
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    const omitted = render(<HeadWithDefaults title="Test" canonical="https://example.com/" />);
+    const empty = render(
+      <HeadWithDefaults title="Test" canonical="https://example.com/" localeAlternates={[]} />,
+    );
+    expect(omitted).not.toContain("hreflang");
+    expect(empty).toBe(omitted);
+  });
+});

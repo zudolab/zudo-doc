@@ -88,11 +88,26 @@ export interface SitemapEntriesOptions {
   docHistoryMeta?: DocHistoryDateManifest | null;
 }
 
+/**
+ * One locale variant of a page, for `hreflang` alternates. `url` is the
+ * base-prefixed path (callers make it absolute with `siteUrl`). `hreflang` is
+ * the locale code (the same value as the page's `<html lang>`) or `x-default`.
+ */
+export interface LocaleAlternate {
+  hreflang: string;
+  url: string;
+}
+
 /** One sitemap URL with its last-modified date, when one is known. */
 export interface SitemapEntry {
   url: string;
   /** `YYYY-MM-DD` (UTC), or absent when the page has no known date. */
   lastmod?: string;
+  /**
+   * Locale variants of this page, including itself and `x-default`. Present
+   * only for pages that exist as real content in more than one locale.
+   */
+  alternates?: LocaleAlternate[];
 }
 
 /**
@@ -236,6 +251,21 @@ export interface RouteEnumeratorsAPI {
    * pages missing from the manifest) carry no `lastmod`.
    */
   enumerateSitemapEntries: (options?: SitemapEntriesOptions) => SitemapEntry[];
+
+  /**
+   * `hreflang` alternates for a latest (unversioned) doc page. Non-empty only
+   * when the page in `locale` is real content (its own locale file, not an
+   * EN fallback or auto-index) and at least one other locale also has real
+   * content at the same slug. Lists every such locale, then `x-default` (the
+   * default locale's URL) when the default locale is one of them.
+   */
+  getDocLocaleAlternates: (slug: string, locale: string) => LocaleAlternate[];
+
+  /**
+   * `hreflang` alternates for the home pages: every configured locale's home,
+   * then `x-default`. Empty for single-locale sites.
+   */
+  getHomeLocaleAlternates: () => LocaleAlternate[];
 }
 
 // ---------------------------------------------------------------------------
@@ -325,8 +355,8 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
    */
   function enumerateKeyedDocsRoutes(
     locale: string,
-  ): Array<{ url: string; historyKey: string }> {
-    const entries: Array<{ url: string; historyKey: string }> = [];
+  ): Array<{ url: string; historyKey: string; slug: string; autoIndex: boolean }> {
+    const entries: Array<{ url: string; historyKey: string; slug: string; autoIndex: boolean }> = [];
     const seen = new Set<string>();
     const isDefault = locale === defaultLocale;
 
@@ -339,7 +369,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
     );
     const tree = buildNavTree(navDocs, locale, categoryMeta);
 
-    function push(slug: string, isFallback: boolean): void {
+    function push(slug: string, isFallback: boolean, autoIndex: boolean): void {
       const url = docsUrl(slug, locale);
       if (seen.has(url)) return;
       seen.add(url);
@@ -347,18 +377,20 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
       entries.push({
         url,
         historyKey: isDefault || isFallback ? historySlug : `${locale}/${historySlug}`,
+        slug,
+        autoIndex,
       });
     }
 
     for (const doc of allDocs) {
       if (doc.data.category_no_page === true) continue;
       const slug = doc.data.slug ?? toRouteSlug(doc.slug);
-      push(slug, !isDefault && !localeSlugSet.has(slug));
+      push(slug, !isDefault && !localeSlugSet.has(slug), false);
     }
     // Auto-index routes render with isFallback=false (site-schema
     // doc-route-entries), so their lookup uses the locale-prefixed key.
     for (const node of collectAutoIndexNodes(tree)) {
-      push(node.slug, false);
+      push(node.slug, false, true);
     }
 
     return entries;
@@ -366,6 +398,72 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
 
   function enumerateDocsRoutes(locale: string): string[] {
     return enumerateKeyedDocsRoutes(locale).map((entry) => entry.url);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Locale alternates (hreflang)
+  // ---------------------------------------------------------------------------
+
+  // Slugs with real content per locale, memoized on the identity-stable nav
+  // source array so one build computes each set once.
+  const realSlugCache = new WeakMap<object, Set<string>>();
+
+  /** Slugs routed in `locale` from that locale's own source files. */
+  function realContentSlugs(locale: string): Set<string> {
+    const source = resolveNavSource(locale, undefined, {
+      applyDefaultLocaleOnlyFilter: true,
+      keepUnlisted: true,
+    });
+    const cached = realSlugCache.get(source.docs);
+    if (cached) return cached;
+    const isDefault = locale === defaultLocale;
+    const slugs = new Set<string>();
+    for (const doc of source.docs) {
+      if (doc.data.category_no_page === true) continue;
+      const slug = doc.data.slug ?? toRouteSlug(doc.slug);
+      if (!isDefault) {
+        // A non-default route only counts when it renders the locale's own
+        // file; default-locale-only paths resolve to the default URL anyway.
+        if (!source.localeSlugSet.has(slug)) continue;
+        if (isDefaultLocaleOnlyPath(`/docs/${slug}`)) continue;
+      }
+      slugs.add(slug);
+    }
+    realSlugCache.set(source.docs, slugs);
+    return slugs;
+  }
+
+  function getDocLocaleAlternates(slug: string, locale: string): LocaleAlternate[] {
+    const localeKeys = getLocaleKeys();
+    if (localeKeys.length === 0) return [];
+    if (!realContentSlugs(locale).has(slug)) return [];
+    const candidates = [defaultLocale, ...localeKeys.filter((code) => code !== defaultLocale)];
+    const alternates: LocaleAlternate[] = [];
+    for (const code of candidates) {
+      if (realContentSlugs(code).has(slug)) {
+        alternates.push({ hreflang: code, url: docsUrl(slug, code) });
+      }
+    }
+    if (alternates.length < 2) return [];
+    if (alternates[0]?.hreflang === defaultLocale) {
+      alternates.push({ hreflang: "x-default", url: alternates[0].url });
+    }
+    return alternates;
+  }
+
+  function homeUrl(locale: string): string {
+    return locale === defaultLocale ? withBase("/") : withBase(`/${locale}`);
+  }
+
+  function getHomeLocaleAlternates(): LocaleAlternate[] {
+    const localeKeys = getLocaleKeys().filter((code) => code !== defaultLocale);
+    if (localeKeys.length === 0) return [];
+    const alternates: LocaleAlternate[] = [
+      { hreflang: defaultLocale, url: homeUrl(defaultLocale) },
+      ...localeKeys.map((code) => ({ hreflang: code, url: homeUrl(code) })),
+    ];
+    alternates.push({ hreflang: "x-default", url: homeUrl(defaultLocale) });
+    return alternates;
   }
 
   // ---------------------------------------------------------------------------
@@ -525,25 +623,35 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
    * latest (unversioned) doc pages; the doc-history manifest covers the
    * latest content dirs only, so versioned pages never get one.
    */
-  function collectAllRoutes(): Array<{ url: string; historyKey?: string }> {
+  type CollectedRoute = { url: string; historyKey?: string; alternates?: LocaleAlternate[] };
+
+  function collectAllRoutes(): CollectedRoute[] {
     const seen = new Set<string>();
-    const routes: Array<{ url: string; historyKey?: string }> = [];
+    const routes: CollectedRoute[] = [];
     const localeKeys = getLocaleKeys();
     const versions = getVersions();
+    const homeAlternates = getHomeLocaleAlternates();
 
-    function add(url: string, historyKey?: string): void {
+    function add(url: string, historyKey?: string, alternates?: LocaleAlternate[]): void {
       if (seen.has(url)) return;
       seen.add(url);
-      routes.push(historyKey === undefined ? { url } : { url, historyKey });
+      const route: CollectedRoute = { url };
+      if (historyKey !== undefined) route.historyKey = historyKey;
+      if (alternates !== undefined && alternates.length > 0) route.alternates = alternates;
+      routes.push(route);
+    }
+
+    function addDocs(locale: string): void {
+      for (const { url, historyKey, slug, autoIndex } of enumerateKeyedDocsRoutes(locale)) {
+        add(url, historyKey, autoIndex ? undefined : getDocLocaleAlternates(slug, locale));
+      }
     }
 
     // Site root
-    add(withBase("/"));
+    add(withBase("/"), undefined, homeAlternates);
 
     // Default locale docs
-    for (const { url, historyKey } of enumerateKeyedDocsRoutes(defaultLocale)) {
-      add(url, historyKey);
-    }
+    addDocs(defaultLocale);
 
     // Default locale tags
     for (const url of enumerateTagsRoutes(defaultLocale)) {
@@ -557,11 +665,9 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
 
     // Non-default locales
     for (const locale of localeKeys) {
-      add(withBase(`/${locale}`));
+      add(withBase(`/${locale}`), undefined, homeAlternates);
 
-      for (const { url, historyKey } of enumerateKeyedDocsRoutes(locale)) {
-        add(url, historyKey);
-      }
+      addDocs(locale);
 
       for (const url of enumerateTagsRoutes(locale)) {
         add(url);
@@ -608,11 +714,15 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
 
   function enumerateSitemapEntries(options: SitemapEntriesOptions = {}): SitemapEntry[] {
     const meta = options.docHistoryMeta ?? {};
-    return collectAllRoutes().map(({ url, historyKey }) => {
-      if (historyKey === undefined || !Object.hasOwn(meta, historyKey)) return { url };
-      const entry = meta[historyKey] as DocHistoryDateEntry | null | undefined;
-      const lastmod = toSitemapDate(entry?.updatedDate);
-      return lastmod === undefined ? { url } : { url, lastmod };
+    return collectAllRoutes().map(({ url, historyKey, alternates }) => {
+      const sitemapEntry: SitemapEntry = { url };
+      if (historyKey !== undefined && Object.hasOwn(meta, historyKey)) {
+        const entry = meta[historyKey] as DocHistoryDateEntry | null | undefined;
+        const lastmod = toSitemapDate(entry?.updatedDate);
+        if (lastmod !== undefined) sitemapEntry.lastmod = lastmod;
+      }
+      if (alternates !== undefined) sitemapEntry.alternates = alternates;
+      return sitemapEntry;
     });
   }
 
@@ -623,5 +733,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
     enumerateVersionedRoutes,
     enumerateAllRoutes,
     enumerateSitemapEntries,
+    getDocLocaleAlternates,
+    getHomeLocaleAlternates,
   };
 }

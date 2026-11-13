@@ -550,6 +550,44 @@ describe("createHomePageView — canonical URL", () => {
     render(<HomePageView {...makeProps()} />);
     expect(latestHead().canonical).toBeUndefined();
   });
+
+  it("passes absolute hreflang alternates for every locale home (#4787)", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: {
+        absoluteUrl,
+        getHomeLocaleAlternates: () => [
+          { hreflang: "en", url: "/manual/" },
+          { hreflang: "ja", url: "/manual/ja/" },
+          { hreflang: "x-default", url: "/manual/" },
+        ],
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    render(<HomePageView {...makeProps({ locale: "ja" })} />);
+    expect(latestHead().localeAlternates).toEqual([
+      { hreflang: "en", href: "https://docs.example/manual/" },
+      { hreflang: "ja", href: "https://docs.example/manual/ja/" },
+      { hreflang: "x-default", href: "https://docs.example/manual/" },
+    ]);
+  });
+
+  it("passes no hreflang alternates for a single-locale site or without a siteUrl", () => {
+    const SingleLocale = createHomePageView(makeFakeChromeContext({ overrides: { absoluteUrl } }));
+    render(<SingleLocale {...makeProps()} />);
+    expect(latestHead().localeAlternates).toBeUndefined();
+    const ctx = makeFakeChromeContext({
+      overrides: {
+        getHomeLocaleAlternates: () => [
+          { hreflang: "en", url: "/" },
+          { hreflang: "ja", url: "/ja/" },
+          { hreflang: "x-default", url: "/" },
+        ],
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    render(<HomePageView {...makeProps()} />);
+    expect(latestHead().localeAlternates).toBeUndefined();
+  });
 });
 
 describe("createHomePageView — SiteTreeNav island", () => {

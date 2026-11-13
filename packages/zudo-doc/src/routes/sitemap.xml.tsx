@@ -48,18 +48,35 @@ export default function Sitemap(): string {
   });
   const siteUrlBase = (settings.siteUrl ?? "").replace(/\/$/, "");
 
+  // hreflang alternates need absolute URLs, so they require siteUrl. The
+  // xhtml namespace is declared only when some entry carries one, keeping
+  // single-locale output byte-identical (#4787).
+  const withAlternates = siteUrlBase !== "" && entries.some((e) => e.alternates);
+
   const urlEntries = entries
     .sort((a, b) => a.url.localeCompare(b.url))
-    .map(({ url, lastmod }) => {
+    .map(({ url, lastmod, alternates }) => {
       const lastmodLine = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : "";
+      const alternateLines = withAlternates && alternates
+        ? alternates
+            .map(
+              (a) =>
+                `\n    <xhtml:link rel="alternate" hreflang="${escapeXml(a.hreflang)}" href="${escapeXml(siteUrlBase + a.url)}"/>`,
+            )
+            .join("")
+        : "";
       return `  <url>
-    <loc>${escapeXml(siteUrlBase + url)}</loc>${lastmodLine}
+    <loc>${escapeXml(siteUrlBase + url)}</loc>${lastmodLine}${alternateLines}
   </url>`;
     })
     .join("\n");
 
+  const urlsetOpen = withAlternates
+    ? '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+    : '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlsetOpen}
 ${urlEntries}
 </urlset>
 `;
