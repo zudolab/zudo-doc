@@ -130,8 +130,11 @@ function world(over = {}) {
     return run;
   };
   const finishRun = (run) => {
+    // `s.runOutcome(run)` can model a run that fails after (or before) its publish step.
+    const outcome = s.runOutcome?.(run) ?? { conclusion: "success", published: true };
     run.status = "completed";
-    run.conclusion = "success";
+    run.conclusion = outcome.conclusion;
+    if (!outcome.published) return;
     const version = run.head_branch.slice(run.pkg.tagPrefix.length);
     const entry = s.npm[run.pkg.name];
     entry.versions[version] ??= { sha: run.head_sha, run: run.id };
@@ -623,6 +626,36 @@ describe("publish --initiation dispatch", () => {
     expect(dispatches(w)).toEqual([]);
     const pub = JSON.parse(readFileSync(join(w.dir, "publication.json"), "utf8"));
     expect(Object.values(pub.packages).map((p) => p.freshPublication)).toEqual([false, false, false]);
+  });
+
+  // #4785: in 11.0.0 the zudo-doc publish run failed only because its finalize
+  // step timed out on npm visibility; the dispatcher stopped although npm had it.
+  it("re-observes the registry after a run that failed past its publish step, and continues", async () => {
+    const w = await tagged();
+    w.s.runOutcome = (run) => (run.pkg === ZUDO && !w.s.zudoFailedOnce ? ((w.s.zudoFailedOnce = true), { conclusion: "failure", published: true }) : { conclusion: "success", published: true });
+    expect(await releaseMain(pubArgs(w), w.deps)).toBe(0);
+    expect(dispatches(w).filter((c) => c.includes(ZUDO.workflow))).toHaveLength(1);
+    expect(w.logs.join()).toMatch(/concluded failure, but @takazudo\/zudo-doc@11\.0\.0 is on npm with provenance from/);
+    const pub = JSON.parse(readFileSync(join(w.dir, "publication.json"), "utf8"));
+    expect(Object.values(pub.packages).map((p) => p.state)).toEqual(Array(3).fill("complete"));
+    expect(pub.packages["zudo-doc"]).toMatchObject({ freshPublication: true, runs: [{ conclusion: "failure" }] });
+  });
+
+  it("still stops on a failed run when the version is not on npm, and never republishes blindly", async () => {
+    const w = await tagged();
+    w.s.runOutcome = (run) => (run.pkg === ZUDO ? { conclusion: "failure", published: false } : { conclusion: "success", published: true });
+    expect(await releaseMain(pubArgs(w), w.deps)).toBe(1);
+    expect(w.logs.join()).toMatch(/publish-zudo-doc\.yml run \d+ concluded failure .*resumes from the registry state/);
+    expect(dispatches(w).filter((c) => c.includes(ZUDO.workflow))).toHaveLength(1);
+    expect(dispatches(w).filter((c) => c.includes(CREATE.workflow))).toEqual([]);
+  });
+
+  it("does not continue past a cancelled run even when the version is visible", async () => {
+    const w = await tagged();
+    w.s.runOutcome = (run) => (run.pkg === ZUDO ? { conclusion: "cancelled", published: true } : { conclusion: "success", published: true });
+    expect(await releaseMain(pubArgs(w), w.deps)).toBe(1);
+    expect(w.logs.join()).toMatch(/concluded cancelled/);
+    expect(dispatches(w).filter((c) => c.includes(CREATE.workflow))).toEqual([]);
   });
 
   it("stops on registry uncertainty without dispatching", async () => {
