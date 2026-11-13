@@ -730,6 +730,15 @@ describe("release-actions.yml contract", () => {
     expect(job("finalize")).toMatch(/- name: Read back\n(?: {8}.*\n)*? {8}shell: bash\n/);
   });
 
+  it("uploads the dot-directory evidence with hidden files included", () => {
+    const uploads = y.split(/\n(?= {6}- name: )/).filter((step) => step.includes("actions/upload-artifact@"));
+    expect(uploads).toHaveLength(2);
+    for (const step of uploads) {
+      expect(step).toContain("${{ env.RELEASE_EVIDENCE }}");
+      expect(step).toMatch(/\n {10}include-hidden-files: true\n/);
+    }
+  });
+
   it("separates read-only admission, contents write and actions write", () => {
     expect(job("admit")).toMatch(/permissions:\n {6}contents: read\n {6}actions: read\n {6}pull-requests: read\n/);
     expect(job("tags")).toMatch(/permissions:\n {6}contents: write\n {4}steps:/);
