@@ -64,6 +64,14 @@ async function build(name: string, features: string[], defaultLang = "en", addit
       "![Diagram](https://example.com/diagram.png)", "",
       "```tsx title=\"example.tsx\"", "<Widget prop=\"kept\" />", "```", "",
       "<Details title=\"More\">Folded detail text.</Details>", "",
+      "<Note title=\"Heads up\">Admonition body.</Note>", "",
+      "<CategoryNav category={\"agent-\" + \"category\"} />", "",
+    ].join("\n"));
+    // Navigation tags render as link lists drawn from the published set only.
+    await fs.outputFile(path.join(docs, "agent-nav.mdx"), [
+      "---", "title: Agent Nav", "---", "",
+      "<CategoryNav category=\"agent-category\" />", "",
+      "<DocCardNav docs={[\"agent-proof\", \"excluded-draft\"]} />", "",
     ].join("\n"));
   }
   // This project is already outside the repository workspace. Let pnpm read
@@ -282,8 +290,18 @@ async function assertPortableStaticHost(project: string, base: string): Promise<
     expect(rich).toContain("| amber | `a\\|b` |");
     expect(rich).toContain("![Diagram](https://example.com/diagram.png)");
     expect(rich).toContain('```tsx title="example.tsx"\n<Widget prop="kept" />\n```');
-    expect(rich).toContain("[Dynamic content unavailable in text export]");
-    expect(rich).toContain("Folded detail text.");
+    expect(rich).toContain("**Details: More**\n\nFolded detail text.");
+    expect(rich).toContain("**Note: Heads up**\n\nAdmonition body.");
+    expect(rich).toContain("[Dynamic content unavailable in text export: CategoryNav]");
+    const richItem = manifest.items.find((item: any) => item.pageId === proof.id);
+    expect(JSON.parse(await (await get(richItem.artifactUrl)).text()).metadata.unsupportedDynamicContent).toBe(true);
+    const navDoc = manifest.documents.find((document: any) => document.title === "Agent Nav");
+    const nav = await (await get(navDoc.markdownUrl)).text();
+    const richUrl = manifest.documents.find((document: any) => document.title === "Agent Rich").url;
+    const proofUrl = manifest.documents.find((document: any) => document.title === "Agent Proof").url;
+    expect(nav).toBe(`- [Agent Rich](${richUrl})\n\n- [Agent Proof](${proofUrl})`);
+    const navItem = manifest.items.find((item: any) => item.pageId === navDoc.id);
+    expect(JSON.parse(await (await get(navItem.artifactUrl)).text()).metadata.unsupportedDynamicContent).toBeUndefined();
     expect(manifest.items.find((item: any) => item.pageId === proof.id)).toBeDefined();
     const corpus = JSON.stringify(manifest) + (await (await get(manifest.searchIndex.url)).text());
     for (const secret of [project, "src/content", ".mdx", "secret-", "Agent Category"]) expect(corpus).not.toContain(secret);

@@ -15,14 +15,9 @@
 // stays presentation-agnostic.
 import type { Child } from "@takazudo/zfb/zudo-react";
 
-export type AdmonitionVariant =
-  | "note"
-  | "tip"
-  | "info"
-  | "warning"
-  | "danger"
-  | "caution"
-  | "important";
+import { admonitionComponentName, type AdmonitionVariant } from "../mdx-components/vocabulary.js";
+
+export type { AdmonitionVariant };
 
 export interface AdmonitionProps {
   /** Custom title; falls back to the capitalized variant name (e.g. "Note"). */
@@ -36,7 +31,7 @@ export interface AdmonitionProps {
  * no `title` — matching the Astro reference where every callout shows a title.
  */
 export function makeAdmonition(variant: AdmonitionVariant) {
-  const defaultTitle = variant.charAt(0).toUpperCase() + variant.slice(1);
+  const defaultTitle = admonitionComponentName(variant);
   return function Admonition({ title, children }: AdmonitionProps): Child {
     const heading = title && title.length > 0 ? title : defaultTitle;
     return (

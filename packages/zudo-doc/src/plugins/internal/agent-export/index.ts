@@ -6,7 +6,9 @@ import { agentItemKey, agentPageKey } from "../../../agent-docs/identity.js";
 import { AGENT_MAX_ITEMS, AGENT_MAX_MANIFEST_BYTES, AGENT_MAX_SEARCH_INDEX_BYTES } from "../../../agent-docs/limits.js";
 import type { AgentItem, AgentManifest, AgentSearchIndex } from "../../../agent-docs/types.js";
 import { collectMdFiles, isExcluded, parseMarkdownFile, slugToUrl, stripMarkdown } from "../../../md-utils/index.js";
+import { loadCategoryMeta } from "../../../sidebar-tree/category-meta.js";
 import { chunkAgentText } from "./chunk.js";
+import { createAgentComponentRenderer } from "./components.js";
 import { normalizeAgentMarkdown } from "./normalize.js";
 
 export interface AgentExportOptions {
@@ -19,6 +21,8 @@ export interface AgentExportOptions {
   defaultLocale: string;
   defaultLocaleDir: string;
   locales?: Array<{ code: string; dir: string }>;
+  /** Top-level category slugs left out of `<SiteTreeNav />` link lists, as in the rendered page. */
+  siteTreeNavIgnore?: string[];
 }
 
 const hash = (value: string | Buffer): string => createHash("sha256").update(value).digest("hex");
@@ -38,9 +42,15 @@ function artifactUrl(options: AgentExportOptions, path: string): string {
 export function projectAgentCorpus(options: AgentExportOptions): { manifest: AgentManifest; index: AgentSearchIndex; pages: Map<string, string>; items: Map<string, string> } {
   const roots = [{ code: options.defaultLocale, dir: options.defaultLocaleDir, default: true }, ...(options.locales ?? []).map(({ code, dir }) => ({ code, dir, default: false }))];
   const seen = new Set<string>();
-  const sources = roots.flatMap((root) => collectMdFiles(resolve(root.dir)).flatMap(({ filePath, slug: fileSlug }) => {
-    const parsed = parseMarkdownFile(filePath);
-    if (!parsed || isExcluded(parsed.data)) return [];
+  const parsedRoots = roots.map((root) => ({
+    root,
+    files: collectMdFiles(resolve(root.dir)).flatMap(({ filePath, slug: fileSlug }) => {
+      const parsed = parseMarkdownFile(filePath);
+      return parsed ? [{ filePath, fileSlug, parsed }] : [];
+    }),
+  }));
+  const sources = parsedRoots.flatMap(({ root, files }) => files.flatMap(({ filePath, fileSlug, parsed }) => {
+    if (isExcluded(parsed.data)) return [];
     const slug = parsed.data.slug ?? fileSlug;
     const locale = root.default ? null : root.code;
     const url = slugToUrl(slug, locale, options.base, options.siteUrl, options.trailingSlash === true);
@@ -48,6 +58,17 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
     const linkBase = slugToUrl(slug, locale, options.base, options.siteUrl);
     return [{ root, filePath, parsed, slug, url, linkBase }];
   }));
+  const renderers = new Map(parsedRoots.map(({ root, files }) => [root.code, createAgentComponentRenderer({
+    locale: root.code,
+    entries: files.map(({ fileSlug, parsed }) => ({ slug: fileSlug, data: parsed.data })),
+    categoryMeta: loadCategoryMeta(resolve(root.dir)),
+    published: new Map(sources.filter((source) => source.root === root).map(({ slug, url, parsed }) => [slug, {
+      url,
+      title: parsed.data.title ?? slug,
+      ...(typeof parsed.data.description === "string" ? { description: parsed.data.description } : {}),
+    }])),
+    ...(options.siteTreeNavIgnore ? { siteTreeNavIgnore: options.siteTreeNavIgnore } : {}),
+  })]));
   const sourceUrls = new Map(sources.map(source => [source.filePath, source.url]));
   const documents = sources.map(({ root, filePath, parsed, slug, url, linkBase }) => {
     const id = agentPageKey(root.code, slug);
@@ -63,7 +84,7 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
         const page = sourceUrls.get(fileURLToPath(source));
         return page === undefined ? undefined : page + source.search + source.hash;
       } catch { return undefined; }
-    });
+    }, renderers.get(root.code)!(slug));
     const title = parsed.data.title ?? slug;
     const description = parsed.data.description ?? stripMarkdown(parsed.content).split("\n").find(Boolean) ?? "";
     const metadata = {
