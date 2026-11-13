@@ -1,19 +1,5 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1063
+sidebar_position: 1064
 ---
-
-### 破壊的変更
-
-- `tauri` と `tauriDev` フィーチャーを削除しました。ジェネレーターは `src-tauri/`、`src-tauri-dev/`、Tauri 用スクリプト、`findInPage: true` を生成しなくなります。メジャーリリースが必要です。公開済みのバージョンでは引き続き選択できます。後片付けの手順は「廃止された Tauri デスクトップモード」ガイドにあります。(#4758)
-- `--tauri` と `--tauri-dev`（`=true` などの有効化する値を含む）は、ファイルを書き込む前に明確なエラーで失敗します。`tauri` や `tauriDev` を含む JSON プリセットやプログラマティック API の `features` 配列は、書き込み前に拒否されます。(#4758)
-- `--no-tauri`、`--no-tauri-dev`、`--tauri=false`、`--tauri-dev=false` は、案内されない no-op として引き続き受け付けられるため、以前にエクスポートしたコマンドもそのまま動作します。新しい出力にこれらが含まれることはありません。(#4758)
-
-### 機能
-
-- 新しい `--content-signals <list>` フラグ（`search=yes,ai-input=yes,ai-train=no` のような `robots.txt` の書式）と、対応する `contentSignals` プリセット JSON フィールドおよびプログラム API オプション（真偽値のオブジェクト）で、生成するプロジェクトの `contentSignals` を設定できるようになりました。不正な名前、値、重複、空の項目、プリセットの形はファイルを書き込む前にエラーになります。指定しなければ何も出力しません。(#4767)
-
-### その他の変更
-
-- 生成するプロジェクトは ZDTP 0.9.7 を、MCP スキャフォールドは Wrangler 4.161.0 をピン留めします。

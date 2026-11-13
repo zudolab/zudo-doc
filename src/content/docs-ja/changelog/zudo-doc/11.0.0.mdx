@@ -1,0 +1,33 @@
+---
+title: 11.0.0
+description: 11.0.0のリリースノート。
+sidebar_position: 1157
+---
+
+リリース日: 2026-11-13
+
+### 破壊的変更
+
+- Tauri デスクトップアプリのサポートを、Tauri 専用のページ内検索機能とあわせて廃止しました。公開済みのバージョンにはこの機能が残っています。後片付けの手順は「廃止された Tauri デスクトップモード」ガイドにあります。(#4758)
+- `findInPage` 設定を `ZudoDocConfig`、`Settings`、デフォルト値から削除しました。設定から `findInPage` を削除してください。(#4758)
+- `@takazudo/zudo-doc/find-in-page` エクスポートと、body-end の `FindInPageInit` アイランドを削除しました。このサブパスの直接インポートと、`BodyEndIslands` の上書きで手動マウントしている `FindInPageInit` を削除してください。Cmd/Ctrl+F はブラウザ自身の検索に戻ります。(#4758)
+- `.find-match` と `.find-match-active` のスタイル、および Beacon と E-Ink テーマパックのネイティブ検索バー向けの上書きを削除しました。検索のマッチしたキーワードの色、warning と accent のトークン、Bauhaus の検索トークン設定は変わりません。(#4758)
+- `@takazudo/zudo-doc-history-server` の peer 下限が `^10.0.0` から `^11.0.0` に上がりました。ドキュメント履歴を有効にするプロジェクトは history-server 11.x が必要です。
+
+### 機能
+
+- 新しい省略可能な設定 `home.image`（`{ src, alt?, width?, height?, darkSrc? }`）で、単色のロゴマスクの代わりに、ロゴと同じボックスへフルカラー画像をホームのヒーローに表示できるようになりました。`darkSrc` はカラーモードに応じた CSS によってダークモードで表示され、追加のスクリプトは不要です。パスはルート絶対のサイトパスである必要があり、外部 URL や不正な値は設定解決の時点で `TypeError` になります。`home.image` を設定しない場合の出力は変わりません。(#4750)
+- 新しい `home.imageLayout`（`"logo"`、`"large"`、`"banner"`、`"backdrop"`）で、`home.image` により広い場所を与えられるようになりました。横に幅 560px のボックス、タイトル上の全幅バナー、または読みやすいパネルの背後に敷く背景画像を選べます。デフォルトの `"logo"` では現在の出力のままです。(#4751)
+- 新しいエクスポート `@takazudo/zudo-doc/home-hero`：`HomeHero` でホームのヒーローをプレーンな props から描画でき、ホームのルート以外でも同じヒーローをプレビューできます。(#4753)
+- ロケールごと・ページごとのSNSプレビュー画像：`locales.<code>.ogImage`（または`false`）と`og_image`フロントマターで`metaTags.ogImage`を上書きできます。(#4752)
+- 新しい`cover`フロントマターで、ホームページのサイトインデックスにあるトップレベルセクションのカードに1200×630のカバー画像を表示できます。(#4754)
+- `mcp: true` のとき、Worker は `<base>/mcp/server-card` で MCP Server Card（SEP-2127）を配信し、`base` が `/` の場合はそのカードをサイト名で掲載した AI Catalog を `/.well-known/ai-catalog.json` で配信するようになりました。どちらも CORS、キャッシュ、ETag による再検証に対応した読み取り専用の JSON です。ルートの base では全ページが `<link rel="ai-catalog">` でカタログへリンクし、`llms.txt` の MCP セクションにもカードが載ります。`@takazudo/zudo-doc/mcp` は既存のエクスポートを保ったまま、`buildMcpServerCard`、`buildAiCatalog`、ディスカバリー URL のヘルパー、メディアタイプとパスの定数を追加でエクスポートします。`/mcp` のツールと上限は変わりません。(#4769)
+- 新しい省略可能な設定 `contentSignals`（`{ search?, aiInput?, aiTrain? } | false`、デフォルト `false`）で、[Content Signals](https://contentsignals.org) を `robots.txt` の `User-agent: *` グループに `Content-Signal` 行として出力できるようになりました。`true` は `yes`、`false` は `no` として出力され、省略したキーは意向を示さず、`noindex` のときもこの行は残ります。未知のキーや真偽値でない値は、設定解決の時点で `TypeError` になります。`@takazudo/zudo-doc/robots` から `renderContentSignal` と `CONTENT_SIGNAL_KEYS` もエクスポートします。`contentSignals` を設定しない場合の出力は変わりません。(#4767)
+- ホームページのナビゲーション用の部品を追加しました。`WideSectionHeading`（MDX タグ。`@takazudo/zudo-doc/content` からもエクスポート）、カテゴリーの説明と文書数を表示する `SiteTreeNav variant="described"`、サーバーで描画する `DocCardNav`（`@takazudo/zudo-doc/doc-card-nav`、MDX タグ）、`DocCardGrid layout="auto"` です。任意の `home.sections` 設定で、サイトツリー1つと最大1つのカードセクションを任意の順でホームページに配置でき、見出しと説明は言語ごとに上書きできます。`home.sections` がなければホームページは変わりません。(#4771)
+
+### バグ修正
+
+- `siteUrl` が設定されている場合、ホームページと各ロケールのホームページがサイトマップと同じ URL で canonical リンクと `og:url` を出力するようになりました。(#4767)
+- 設定済みのデフォルト以外のロケールのページは、`llms.txt` の alternate リンクでデフォルトロケールのインデックスではなく、そのロケールの `/<locale>/llms.txt` を指すようになりました。(#4767)
+- `siteUrl` が `http:` または `https:` の URL でない場合（スキームのない `docs.example.com:8443` など）でも、MCP ハンドラーがすべての `/mcp` リクエストで失敗しなくなりました。その場合、引用 URL にはリクエストのオリジンを使います。Server Card と AI Catalog が示すオリジンと同じです。(#4769)
+- `SiteTreeNav` のツリー線が項目と正しくつながるようになりました。レールは最初の枝から始まり、シェブロンは子のレール上に置かれ、最後のレールはその枝で終わります。サイドバーの接続線は変わりません。(#4771)
