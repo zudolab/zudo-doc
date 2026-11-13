@@ -3,3 +3,7 @@ title: Unreleased
 description: 次のリリースに向けた変更。
 sidebar_position: 1158
 ---
+
+### 破壊的変更
+
+- 11.0.0 で削除した `findInPage` キーが設定に残っている場合、`zudoDoc()` はそれを無視せず `TypeError` を投げるようになりました。メッセージがキーの削除を案内します。`findInPage` を含まない設定には影響しません。(#4763)
