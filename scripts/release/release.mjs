@@ -676,6 +676,9 @@ async function waitForNewRun(d, pkg, tag, sha, known, timeoutMs) {
   }
 }
 
+/** Registry probes after a failed publish run before `publish` stops (about 2 minutes at the 15 s poll). */
+const REOBSERVE_ATTEMPTS = 8;
+
 /** Poll the registry after a successful run: absence right after success is propagation, not a reason to publish again. */
 async function awaitVisible(/** @type {Deps} */ d, /** @type {(typeof PACKAGES)[number]} */ pkg, /** @type {string} */ version, /** @type {string} */ sha, attempts = 20) {
   let s = await npmState(d, pkg, version, sha);
@@ -813,7 +816,14 @@ export async function cmdPublish(d, o) {
       entry.runs.push({ id: done.id, attempt: done.run_attempt, event: done.event, initiation, url: done.html_url, conclusion: done.conclusion });
       save();
       if (done.conclusion !== "success") {
-        throw new ReleaseError(`${pkg.workflow} run ${done.id} concluded ${done.conclusion} (${done.html_url}). Inspect it; \`publish\` resumes from the registry state.`);
+        const failed = new ReleaseError(`${pkg.workflow} run ${done.id} concluded ${done.conclusion} (${done.html_url}). Inspect it; \`publish\` resumes from the registry state.`);
+        // A run can fail after its publish step succeeded (11.0.0: finalize timed
+        // out on npm visibility, #4785). Re-observe the registry before stopping;
+        // continue only for this exact version with provenance from this SHA.
+        if (done.conclusion !== "failure") throw failed;
+        const seen = await awaitVisible(d, pkg, version, sha, REOBSERVE_ATTEMPTS);
+        if (seen.state !== "present" || seen.verdict?.verdict !== "matches") throw failed;
+        d.log(`${pkg.workflow} run ${done.id} concluded failure, but ${pkg.name}@${version} is on npm with provenance from ${sha}; re-checking the registry state instead of stopping`);
       }
       afterSuccessfulRun = true;
     }
