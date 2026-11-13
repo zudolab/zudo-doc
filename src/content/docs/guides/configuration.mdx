@@ -489,6 +489,8 @@ Serving nothing is deliberate. An empty `<urlset>` at a well-known URL is not a 
 
 The gate lives in the package's route injection (`packageOwnedRoutes`, on by default). A project that hand-wires its own `pages/sitemap.xml.tsx` sits outside it and keeps whatever that page returns — and if that page re-exports the package entrypoint while `sitemap` is `false`, the build warns and still writes the empty `<urlset>`.
 
+A document page's `<lastmod>` comes from its document history, the same date as its "Updated" label. When no date is known, for example with [`docHistory`](#site-settings-dochistory) off, the entry has no `<lastmod>`. The [SEO guide](./seo.mdx#sitemap) lists the cases.
+
 See also the [SEO guide](./seo.mdx) for how `metaTags` and `sitemap` combine into a complete social-share + search-indexing setup.
 
 ### onBrokenMarkdownLinks
