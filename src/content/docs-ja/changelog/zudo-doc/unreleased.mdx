@@ -3,3 +3,9 @@ title: Unreleased
 description: 次のリリースに向けた変更。
 sidebar_position: 1158
 ---
+
+### バグ修正
+
+- `llms.txt`、`llms-full.txt`、ブラウザー検索インデックス（`search-index.json`）、エージェント向けエクスポート（マニフェスト、項目、検索インデックス）、MCPの`search`/`fetch`の結果に含まれるページURLが、ビルドされるルートと同じく`trailingSlash`設定に従うようになりました。`trailingSlash: true`では末尾が`/`になり、リダイレクトするURLを引用しなくなります。`trailingSlash: false`の出力は変わりません。スキーマとエージェントのページIDは変わりませんが、`trailingSlash: true`のサイトでは`url`の値、`llms.txt`のバイト列、エージェント向けコーパスのフィンガープリントが変わります。(#4783)
+- MCPの`search`結果のタイトルで、複数に分割されたページの分割番号を一度だけ示すようになりました。たとえば`Read-only MCP server (part 1/2) (en · part 1/2)`ではなく`Read-only MCP server (en · part 1/2)`になります。保存される項目のタイトルと`fetch`の結果は変わりません。(#4783)
+- `siteUrl`に`http:`や`https:`のスキームがない場合（例: `docs.example.com:8443`）に、`/mcp`が不透明な`Origin: null`を許可しなくなりました。許可されるオリジンを追加するのは`http(s)`の`siteUrl`だけです。`Origin`のないリクエストと、エンドポイント自身のオリジンからのリクエストの扱いは変わりません。(#4783)

@@ -33,7 +33,7 @@ pnpm deploy
 
 ## Verify and connect
 
-With `pnpm preview:worker` running, check that `<base>/agent/v1/manifest.json` loads and use an MCP client against `<base>/mcp`. The endpoint uses stateless Streamable HTTP POST. A production GET or HEAD request returns 405 with `Allow: POST, OPTIONS`; the showcase's preview entry may return an asset 404 for GET or HEAD. OPTIONS returns the CORS preflight response. A missing `Origin` is accepted for server-to-server clients; a present, unapproved origin is rejected.
+With `pnpm preview:worker` running, check that `<base>/agent/v1/manifest.json` loads and use an MCP client against `<base>/mcp`. The endpoint uses stateless Streamable HTTP POST. A production GET or HEAD request returns 405 with `Allow: POST, OPTIONS`; the showcase's preview entry may return an asset 404 for GET or HEAD. OPTIONS returns the CORS preflight response. A missing `Origin` is accepted for server-to-server clients; a present, unapproved origin is rejected. The approved origins are the request's own origin and, when `siteUrl` is an `http:` or `https:` URL, its origin. A scheme-less `siteUrl` such as `docs.example.com:8443` approves nothing extra, so `Origin: null` (a sandboxed iframe or `file:` page) is rejected.
 
 For ChatGPT or another remote MCP client, add a custom MCP integration with your deployed HTTPS URL, for example `https://docs.example.com/mcp` (or `https://docs.example.com/manual/mcp` when `base` is `/manual`). The exact connection controls depend on the client. After connecting, discover the tools, call `search` for a specific term, call `fetch` with one returned ID, and check that an answer cites the returned human page URL. A real ChatGPT account connection has not been verified by the repository's local tests; perform that check after your deployment. The tested legacy path is 2024-11-05 protocol messages over stateless POST. SSE-first clients and resumable sessions are not supported.
 
@@ -42,7 +42,7 @@ For ChatGPT or another remote MCP client, add a custom MCP integration with your
 | `search` | `{query: string}` | Up to 10 ranked `{id,title,url}` results; empty matches return `[]` |
 | `fetch` | `{id: string}` from a current search result | Complete selected `{id,title,text,url,metadata}` item, or a clear not-found tool result |
 
-The human `url` is suitable for citations. Long pages have multiple item IDs; fetch each relevant part or open the complete per-page Markdown file. Tools return structured data and equivalent JSON text, and advertise read-only, idempotent, non-destructive behavior. No ask-AI, write, history, or publishing tool is exposed. Search uses the complete agent corpus, including text beyond the browser search index's default 3,000-character page excerpt and Japanese text.
+The human `url` is suitable for citations; it follows the `trailingSlash` setting, so it opens the page without a redirect. Long pages have multiple item IDs; fetch each relevant part or open the complete per-page Markdown file. A search result names the part once among its qualifiers, for example `Read-only MCP server (en · part 1/2)`; the fetched item keeps its stored title, `Read-only MCP server (part 1/2)`. Tools return structured data and equivalent JSON text, and advertise read-only, idempotent, non-destructive behavior. No ask-AI, write, history, or publishing tool is exposed. Search uses the complete agent corpus, including text beyond the browser search index's default 3,000-character page excerpt and Japanese text.
 
 ## Discovery documents
 
