@@ -220,7 +220,7 @@ describe("sitemap entries (#4784)", () => {
   it.each([
     ["no options", undefined],
     ["a null manifest", { docHistoryMeta: null }],
-    ["an empty manifest (SKIP_DOC_HISTORY=1)", { docHistoryMeta: {} }],
+    ["an empty manifest (history generation skipped)", { docHistoryMeta: {} }],
   ])("omits every lastmod with %s", (_label, options) => {
     const entries = makeDocsContext().enumerateSitemapEntries(options);
 
