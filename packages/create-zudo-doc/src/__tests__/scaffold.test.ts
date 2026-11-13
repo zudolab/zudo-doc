@@ -2002,7 +2002,7 @@ describe("scaffold — generated package.json", () => {
       ROOT_ZFB_PINS["@takazudo/zfb-adapter-cloudflare"],
     );
     expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBe("1.32.2");
-    expect(pkg.devDependencies.wrangler).toBe("4.160.0");
+    expect(pkg.devDependencies.wrangler).toBe("4.161.0");
     const workspace = await fs.readFile(path.join(project, "pnpm-workspace.yaml"), "utf8");
     expect(workspace).toContain("onlyBuiltDependencies:\n  - esbuild\n  - workerd\n  - sharp\n");
     expect(workspace).toContain("allowBuilds:\n  esbuild: true\n  workerd: true\n  sharp: true\n");
@@ -2182,7 +2182,7 @@ describe("scaffold — generated package.json", () => {
       features: ["designTokenPanel"],
     });
     const pkg = await fs.readJson(projectPath("test-doc-dtp", "package.json"));
-    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.9.4");
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBe("0.9.7");
     // zdtp 0.9.0 has no Preact dependency, and the project does not declare one.
     expect(pkg.dependencies["preact"]).toBeUndefined();
   });
