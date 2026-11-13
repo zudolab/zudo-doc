@@ -42,7 +42,7 @@ import {
  *   exec: (cmd: string, args: string[], opts?: {cwd?: string, inherit?: boolean, env?: NodeJS.ProcessEnv}) => ExecResult,
  *   fetchImpl?: typeof fetch, sleep?: (ms: number) => Promise<unknown>, env: NodeJS.ProcessEnv,
  *   readFile: (p: string) => string, log: (s: string) => void, now: () => number, cwd: string,
- *   pollAttempts?: number, pollDelayMs?: number,
+ *   pollAttempts?: number, pollDelayMs?: number, visibilityAttempts?: number,
  * }} Deps
  */
 
@@ -302,9 +302,16 @@ export function cmdPublish(d, o) {
   return 0;
 }
 
-/** @param {Deps} d @param {() => Promise<{done: boolean, unknown?: boolean, value?: any}>} probe */
-async function poll(d, probe) {
-  const attempts = d.pollAttempts ?? 12;
+/**
+ * Post-publish visibility wait: 48 probes 10 s apart (~8 minutes). npm says a
+ * fresh version "may take a few minutes to become available"; 12 probes (~2
+ * minutes) timed out during the 11.0.0 release (#4785). A timeout is still
+ * UNKNOWN (exit 2), never "absent", and re-running resumes.
+ */
+export const FINALIZE_VISIBILITY_ATTEMPTS = 48;
+
+/** @param {Deps} d @param {() => Promise<{done: boolean, unknown?: boolean, value?: any}>} probe @param {number} [attempts] */
+async function poll(d, probe, attempts = d.pollAttempts ?? 12) {
   const delay = d.pollDelayMs ?? 10_000;
   const sleep = d.sleep ?? ((/** @type {number} */ ms) => new Promise((r) => setTimeout(r, ms)));
   let last;
@@ -323,17 +330,18 @@ export async function cmdFinalize(d, o) {
   const mode = String(o.mode ?? "publish");
   const head = must(d, "git", ["rev-parse", "HEAD"]);
 
+  const visibilityAttempts = d.visibilityAttempts ?? d.pollAttempts ?? FINALIZE_VISIBILITY_ATTEMPTS;
   const seen = await poll(d, async () => {
     const r = await lookupVersion(pkg.name, version, registryOpts(d));
     return { done: r.state === "present", unknown: r.state === "unknown", value: r };
-  });
+  }, visibilityAttempts);
   if (!seen?.done) {
     throw Object.assign(new ReleaseError(`${pkg.name}@${version} is not visible on the registry after the bounded wait — state UNKNOWN, not absent. Re-run to resume.`), { exitCode: 2 });
   }
   const prov = await poll(d, async () => {
     const p = await readProvenance(pkg.name, version, registryOpts(d));
     return { done: p.state === "ok", value: p };
-  });
+  }, visibilityAttempts);
   const verdict = evaluateExistingVersion({ pkg, version, provenance: prov?.value, expectedSha: head, expectedTag: tag });
   if (verdict.verdict !== "matches") {
     throw Object.assign(new ReleaseError(`Provenance of ${pkg.name}@${version} does not prove this source: ${verdict.reasons.join("; ")}`), { exitCode: verdict.verdict === "mismatch" ? 1 : 2 });

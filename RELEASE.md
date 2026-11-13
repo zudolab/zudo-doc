@@ -348,6 +348,37 @@ integration records, diagnostics zip) and `release-evidence-publication`
 (`publication.json`) are the evidence to attach to the release PR or tracking issue. Mocked
 tests and dry runs of this path are not evidence of a real tag, dispatch or publication.
 
+#### Incident: a successful publish whose finalize timed out (11.0.0)
+
+During the 11.0.0 release (zudolab/zudo-doc#4785), publish run
+[43369440706](https://github.com/zudolab/zudo-doc/actions/runs/43369440706) published
+`@takazudo/zudo-doc@11.0.0` through OIDC at 05:05:15Z, and npm printed that the package
+may take a few minutes to become available. "Finalize and verify registry state" then
+stopped at 05:07:08Z with "not visible on the registry after the bounded wait — state
+UNKNOWN" (it polled 12 times, 10 seconds apart). That failed the publish run, so the
+dispatcher in release run
+[43368938652](https://github.com/zudolab/zudo-doc/actions/runs/43368938652) stopped before
+`create-zudo-doc`. Dispatching **Release (Actions path)** again with the same inputs
+([43370020527](https://github.com/zudolab/zudo-doc/actions/runs/43370020527)) verified
+both published packages as pre-existing versions, published `create-zudo-doc`, and
+finalized the drafts.
+
+Two changes followed. Finalize now waits about 8 minutes (above). And when a publish run
+concludes `failure`, `release.mjs publish` re-reads the registry for about 2 minutes
+before stopping: if the exact version is present with provenance from this integration,
+tag and workflow, it records the failed run and continues as if the run had succeeded
+(finalized → next package; channel still pending → one more dispatch, whose guard only
+resumes finalization). Any other failed run, a cancelled or timed-out run, or a version
+that is absent, unproven or unknown still stops the run; nothing is republished.
+
+**Resume step if it happens again.** Do not publish anything by hand. Dispatch
+**Release (Actions path)** again with the same inputs and `stage: publish` (or re-run
+`node scripts/release/release.mjs publish --version <version> --evidence "$EVIDENCE"`
+locally). The registry readback classifies each package: complete versions are verified
+and skipped, a version that is present but not finalized gets a finalize-only run, and
+the remaining packages publish in order. If the version is still not visible, wait a few
+minutes and dispatch again; an unknown state never turns into "absent".
+
 ---
 
 ## Publish workflows (OIDC trusted publishing)
@@ -391,11 +422,13 @@ use no stored npm credential. They share one shape:
   token endpoint is missing; there is no token fallback. On failure it keeps npm's
   original error and prints the expected trusted-publisher fields. A publish is never
   retried blindly: re-running the workflow lets the guard classify what happened.
-- **Finalize** (publish and resume). Polls, with bounds, until the exact version is
-  visible. It then requires provenance from this commit and workflow, and confirms the
-  channel (`latest` for `X.Y.Z`, `next` for a prerelease). A lagging channel is set
-  through OIDC `npm dist-tag add`. A channel held by a newer version is never moved
-  backward. A version still not visible is *unknown* (exit 2), not absent.
+- **Finalize** (publish and resume). Polls until the exact version is visible, for up to
+  48 probes 10 seconds apart (about 8 minutes, `FINALIZE_VISIBILITY_ATTEMPTS` in
+  `scripts/release/publish-step.mjs`), and waits the same bound for its provenance. It
+  then requires provenance from this commit and workflow, and confirms the channel
+  (`latest` for `X.Y.Z`, `next` for a prerelease). A lagging channel is set through OIDC
+  `npm dist-tag add`. A channel held by a newer version is never moved backward. A
+  version still not visible is *unknown* (exit 2), not absent.
 - **`next` maintenance** (stable only, isolated with `continue-on-error`). It reads
   dist-tags and removes `next` only when it points at a prerelease older than the
   released version; a newer preview is kept. It re-reads immediately before removing

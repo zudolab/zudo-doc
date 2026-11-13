@@ -22,7 +22,7 @@ import {
   verifyA2Evidence,
   verifyIntegration,
 } from "../release/lib.mjs";
-import { main as stepMain } from "../release/publish-step.mjs";
+import { FINALIZE_VISIBILITY_ATTEMPTS, main as stepMain } from "../release/publish-step.mjs";
 import { main as releaseMain } from "../release/release.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -674,6 +674,34 @@ describe("publish-step finalize and next maintenance", () => {
   it("reports a not-yet-visible version as unknown (exit 2), not absent", async () => {
     const registry = fakeRegistry({ "@takazudo/zudo-doc": { versions: {}, tags: {} } });
     expect(await stepMain(["finalize", "--package", "zudo-doc", "--tag", "zudo-doc-v10.0.4"], stepDeps({ registry }).deps)).toBe(2);
+  });
+
+  // #4785: 11.0.0's finalize gave up after 12 probes (~2 min) while npm was
+  // still propagating a successful publish.
+  it("waits several minutes for a freshly published version before finalizing", async () => {
+    const reg = { "@takazudo/zudo-doc": { versions: { "10.0.4": { sha: SHA } }, tags: { latest: "10.0.4" }, staleReads: 30 } };
+    const { deps, execCalls } = stepDeps({ registry: fakeRegistry(reg) });
+    delete deps.pollAttempts;
+    delete deps.pollDelayMs;
+    const slept = [];
+    deps.sleep = async (ms) => void slept.push(ms);
+    expect(FINALIZE_VISIBILITY_ATTEMPTS * 10_000).toBeGreaterThanOrEqual(5 * 60_000);
+    expect(await stepMain(["finalize", "--package", "zudo-doc", "--tag", "zudo-doc-v10.0.4"], deps)).toBe(0);
+    expect(slept.slice(0, 30)).toEqual(Array(30).fill(10_000));
+    expect(writesIn(execCalls)).toEqual([]);
+  });
+
+  it("times out as UNKNOWN (exit 2) after the full visibility wait, without any write", async () => {
+    const registry = fakeRegistry({ "@takazudo/zudo-doc": { versions: {}, tags: { latest: "10.0.3" } } });
+    const { deps, logs, execCalls } = stepDeps({ registry });
+    delete deps.pollAttempts;
+    const slept = [];
+    deps.sleep = async (ms) => void slept.push(ms);
+    expect(await stepMain(["finalize", "--package", "zudo-doc", "--tag", "zudo-doc-v10.0.4"], deps)).toBe(2);
+    expect(slept).toHaveLength(FINALIZE_VISIBILITY_ATTEMPTS - 1);
+    expect(registry.calls.filter((u) => u.endsWith("/10.0.4"))).toHaveLength(FINALIZE_VISIBILITY_ATTEMPTS);
+    expect(logs.join("\n")).toMatch(/state UNKNOWN, not absent\. Re-run to resume/);
+    expect(writesIn(execCalls)).toEqual([]);
   });
 
   it("removes only a stale next and records the outcome", async () => {
