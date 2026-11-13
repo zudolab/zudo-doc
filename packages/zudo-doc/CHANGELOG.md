@@ -6,12 +6,15 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [11.0.0] - 2026-11-13
+
 ### Breaking Changes
 
-- Tauri desktop app support is retired, together with the Tauri-only find-in-page feature. This needs a major release. Versions already published keep the feature. The "Retired Tauri Desktop Modes" guide lists the clean-up steps. (#4758)
+- Tauri desktop app support is retired, together with the Tauri-only find-in-page feature. Versions already published keep the feature. The "Retired Tauri Desktop Modes" guide lists the clean-up steps. (#4758)
 - The `findInPage` setting is removed from `ZudoDocConfig`, `Settings` and the defaults. Remove `findInPage` from your config. (#4758)
 - The `@takazudo/zudo-doc/find-in-page` export and the `FindInPageInit` body-end island are removed. Remove direct imports of that subpath and any manual `FindInPageInit` mount in a `BodyEndIslands` override. Cmd/Ctrl+F is the browser's own find again. (#4758)
 - The `.find-match` and `.find-match-active` styles, and the Beacon and E-Ink theme pack overrides for the native find bar, are removed. Matched-keyword search colours, the warning and accent tokens, and the Bauhaus search token settings are unchanged. (#4758)
+- The `@takazudo/zudo-doc-history-server` peer floor moves from `^10.0.0` to `^11.0.0`. Projects that enable document history need history-server 11.x.
 
 ### Features
 
@@ -22,12 +25,14 @@ The format is based on Keep a Changelog, and release notes are generated from th
 - New `cover` frontmatter field shows a 1200×630 cover image on a top-level section's card in the home page site index. (#4754)
 - With `mcp: true`, the Worker serves an MCP Server Card (SEP-2127) at `<base>/mcp/server-card` and, when `base` is `/`, an AI Catalog at `/.well-known/ai-catalog.json` that lists the card under the site name. Both are read-only JSON with CORS, caching and ETag revalidation. At a root base every page links the catalog with `<link rel="ai-catalog">`, and the `llms.txt` MCP section lists the card. `@takazudo/zudo-doc/mcp` keeps its existing exports and adds `buildMcpServerCard`, `buildAiCatalog`, the discovery URL helpers, and the media-type and path constants. The `/mcp` tools and their limits are unchanged. (#4769)
 - New optional setting `contentSignals` (`{ search?, aiInput?, aiTrain? } | false`, default `false`) publishes [Content Signals](https://contentsignals.org) as a `Content-Signal` line in the `User-agent: *` group of `robots.txt`. `true` publishes `yes`, `false` publishes `no`, an omitted key expresses no preference, and the line stays under `noindex`. An unknown key or a non-boolean value is a `TypeError` at config resolution. `@takazudo/zudo-doc/robots` also exports `renderContentSignal` and `CONTENT_SIGNAL_KEYS`. Output is unchanged while `contentSignals` is unset. (#4767)
+- Homepage navigation building blocks: `WideSectionHeading` (an MDX tag, also exported from `@takazudo/zudo-doc/content`), `SiteTreeNav variant="described"` with category descriptions and document counts, the server-rendered `DocCardNav` (`@takazudo/zudo-doc/doc-card-nav`, an MDX tag) and `DocCardGrid layout="auto"`. The optional `home.sections` setting composes one site tree and at most one card section on the home page, in either order, with per-locale heading and description overrides. Without `home.sections` the home page is unchanged. (#4771)
 
 ### Bug Fixes
 
 - The home page and each locale home page emit a canonical link and `og:url` when `siteUrl` is set, using the same URL as the sitemap. (#4767)
 - Pages in a configured non-default locale point their `llms.txt` alternate link at that locale's `/<locale>/llms.txt` instead of the default-locale index. (#4767)
 - The MCP handler no longer fails every `/mcp` request when `siteUrl` is not an `http:` or `https:` URL (for example `docs.example.com:8443` without a scheme). Its citation URLs then use the request origin, the same origin the Server Card and AI Catalog advertise. (#4769)
+- `SiteTreeNav` tree lines now meet their items: the rail starts at the first branch, chevrons sit on the child rail, and the last rail ends at its branch. Sidebar connectors are unchanged. (#4771)
 
 ## [10.0.3] - 2026-11-11
 
