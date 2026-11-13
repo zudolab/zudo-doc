@@ -1,6 +1,6 @@
 # @takazudo/zudo-doc
 
-Current adoption checkpoint (2026-11-10): the unreleased workspace and generated scaffolds use the published ZFB 6.0.1 family; package peer floors are `^6.0.1`. ZFB 6 bundles natively with Rolldown, including TypeScript config and plugins; removed bundler selectors must stay unset. MCP scaffolds pin Wrangler 4.161.0; that pin is not applied to every Cloudflare project. `@cloudflare/workers-types` 5.20261110.1 is the workspace devDependency, not a generated-project pin. Adapter-mode `zfb preview` treats Wrangler 4.85.0 as a minimum, and a newer version proceeds. ZDTP is 0.9.7 and Node 24 remains the minimum. The history-server peer floor is `^11.0.0` under the minimum-supported-version contract in `RELEASE.md`. A subsequent `create-zudo-doc` release is needed to deliver the generated pins downstream; earlier version receipts below remain historical.
+Current released state (verified 2026-11-13 against the package manifests, `pnpm-lock.yaml` and npm): `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` are 11.0.0 on npm `latest`, released 2026-11-13. The workspace and the published 11.0.0 packages use the ZFB 6.0.1 family; package peer floors are `^6.0.1`, and `create-zudo-doc` 11.0.0 scaffolds pin `@takazudo/zfb` 6.0.1 and `@takazudo/zudo-doc` `^11.0.0`. ZFB 6 bundles natively with Rolldown, including TypeScript config and plugins; removed bundler selectors must stay unset. MCP scaffolds pin Wrangler 4.161.0, the same exact version as the root devDependency; that pin is not applied to every Cloudflare project. `@cloudflare/workers-types` 5.20261110.1 is the workspace devDependency, not a generated-project pin. Adapter-mode `zfb preview` treats Wrangler 4.85.0 as a minimum, and a newer version proceeds. ZDTP is 0.9.7 (workspace pin and design-token-panel scaffold pin), MCP SDK is 1.32.2, and Node 24 remains the minimum. The history-server peer floor is `^11.0.0` under the minimum-supported-version contract in `RELEASE.md`. Changes merged after 11.0.0 are listed in the `unreleased.mdx` changelog pages until the next owner-run release. Earlier version receipts below are historical.
 
 Shared layout + content-rendering package consumed by both this repo's showcase
 (`workspace:*`) and every project scaffolded by `create-zudo-doc` (published npm).
@@ -309,12 +309,12 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 ## Shipped CSS artifacts and Wind manifest
 
-Release 8.0.0 shipped ZFB 5.0.1 (peers `^5.0.1`), MCP SDK 1.32.2, and history-server peer floor `^8.0.0`. Node.js 24 remains the minimum.
+Historical (superseded by the 11.0.0 state at the top of this file): release 8.0.0 shipped ZFB 5.0.1 (peers `^5.0.1`), MCP SDK 1.32.2, and history-server peer floor `^8.0.0`. Node.js 24 remains the minimum.
 
-The current engine tuple is workspace zfb family **5.2.2**, peers **^5.2.2** (released in 9.1.3; 9.1.2 shipped 5.2.0).
-The three lockstep packages are **9.1.3 on npm `latest`**, requiring ZFB 5.2.2.
-The history-server peer floor is
-`^8.0.0` (raised in the 8.0.0 major). The original 6.0.0 migration evidence is in the
+At 9.1.3 the engine tuple was workspace zfb family 5.2.2, peers ^5.2.2 (9.1.2 shipped 5.2.0),
+and the three lockstep packages were 9.1.3 on npm `latest`, requiring ZFB 5.2.2.
+The history-server peer floor was then
+`^8.0.0` (raised in the 8.0.0 major); 11.0.0 raised it to `^11.0.0`. The original 6.0.0 migration evidence is in the
 [6.0.0 publication record](../../docs/findings/4430-zfb3-migration/release-6.0.0/README.md).
 Upstream zfb #4097 is resolved; its strict published
 4.3.1 consumer control passed 3/3 with no skips or retries in the

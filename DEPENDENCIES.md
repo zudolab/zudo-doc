@@ -213,7 +213,9 @@ timeouts; retrying with `pnpm test:packages --maxWorkers=2` passed, as did the
 plugin-resolution check. No test assertions or timeouts were changed.
 Manual interactive smoke was skipped; browser E2E is outside this local suite.
 
-### Current migration dependency contract
+### Migration dependency contract (historical)
+
+The current released tuple (11.0.0: ZFB 6.0.1 family with peers `^6.0.1`, zdtp 0.9.7, MCP SDK 1.32.2, root and generated-MCP Wrangler 4.161.0, history-server peer floor `^11.0.0`, Node 24 minimum) is recorded at the top of the root `CLAUDE.md`. The paragraphs below are pre-11.0.0 receipts.
 
 Release 8.1.2 shipped the ZFB 5.1.4 family (peers `^5.1.4`; 5.1.0 by #4627, 5.1.1 by #4640, 5.1.2 by #4641, released in 8.1.0; 5.1.3 by #4646, released in 8.1.1; 5.1.4 by #4656), zdtp 0.8.7, MCP SDK 1.32.2, and history-server peer floor `^8.0.0`; 8.1.3 kept that tuple; the unreleased workspace moves to ZFB 5.1.5 (peers `^5.1.5`) and zdtp 0.9.0. Node.js 24 remains the minimum. The publication records below describe earlier releases.
 
