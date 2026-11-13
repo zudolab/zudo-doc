@@ -23,8 +23,8 @@ importers:
         specifier: 1.32.2
         version: 1.32.2(zod@4.6.7)
       '@takazudo/zdtp':
-        specifier: 0.9.4
-        version: 0.9.4(@takazudo/zfb@6.0.1)
+        specifier: 0.9.7
+        version: 0.9.7(@takazudo/zfb@6.0.1)
       '@takazudo/zfb':
         specifier: 6.0.1
         version: 6.0.1
@@ -114,8 +114,8 @@ importers:
         specifier: 5.1.0
         version: 5.1.0(@types/node@26.6.6)(happy-dom@21.0.4)(jsdom@30.0.1(@noble/hashes@2.3.0))(msw@2.12.12(@types/node@26.6.6)(typescript@7.0.2))(vite@8.3.7(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
       wrangler:
-        specifier: 4.160.0
-        version: 4.160.0(@cloudflare/workers-types@5.20261110.1)(@types/node@26.6.6)
+        specifier: 4.161.0
+        version: 4.161.0(@cloudflare/workers-types@5.20261110.1)(@types/node@26.6.6)
 
   packages/create-zudo-doc:
     dependencies:
@@ -185,8 +185,8 @@ importers:
         specifier: 5.1.0
         version: 5.1.0(@types/node@26.6.6)(happy-dom@21.0.4)(jsdom@30.0.1(@noble/hashes@2.3.0))(msw@2.12.12(@types/node@26.6.6)(typescript@7.0.2))(vite@8.3.7(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
       wrangler:
-        specifier: ^4.160.0
-        version: 4.160.0(@cloudflare/workers-types@5.20261110.1)(@types/node@26.6.6)
+        specifier: ^4.161.0
+        version: 4.161.0(@cloudflare/workers-types@5.20261110.1)(@types/node@26.6.6)
 
   packages/zudo-doc:
     dependencies:
@@ -1281,8 +1281,8 @@ packages:
       '@takazudo/zfb':
         optional: true
 
-  '@takazudo/zdtp@0.9.4':
-    resolution: {integrity: sha512-dLrGmE7tqaHlmI4wN21KSjU6Qh45UO6pb9rh8uBYM3xyMyOuW7M9jJECD95Fq3kDfHU0kY3G9n7MJONKQNILBg==}
+  '@takazudo/zdtp@0.9.7':
+    resolution: {integrity: sha512-IhqTinduZIYHneyxqVTjvtkqAMxEJYk9FuuiNYZKqldH73cOdZ88lPOuKJeTMvyorMN6A1YAcO3SSHvTiMiVqQ==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -2366,6 +2366,15 @@ packages:
       kerberos:
         optional: true
 
+  miniflare@5.20261110.2-beta:
+    resolution: {integrity: sha512-vzUwcal5OtR/1nr5cmjCbZSrsR3QRA1cDnRUDVgET17HeDkdpQNG2QxeIkuHFLyszjdBqme59w8Nrrj4FkuFsQ==}
+    engines: {node: '>=22.12.0'}
+    peerDependencies:
+      kerberos: ^2.0.0
+    peerDependenciesMeta:
+      kerberos:
+        optional: true
+
   minimatch@10.2.6:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
     engines: {node: 18 || 20 || >=22}
@@ -2716,6 +2725,7 @@ packages:
 
   tldts-core@7.4.20:
     resolution: {integrity: sha512-C630TWXZCZmLq0F2bW4QqwnaaxCQ/svpAqvJwnC4JvgEM5ohhBnGsEzTLSOXcN+xjz+kEaHS5uoWIw2klnqd0A==}
+    deprecated: Partial release, see https://github.com/remusao/tldts/issues/2735. Use >=7.4.22.
 
   tldts@7.4.19:
     resolution: {integrity: sha512-48dH6aSpQnpbzDUc4vIQZ1VjB8tkK+e8c1yx05/SZK+rkssgjEOlxDd/yU8/a4vGYQ9vRgJr9dwMq9TJ0b3X2Q==}
@@ -2961,6 +2971,16 @@ packages:
 
   wrangler@4.160.0:
     resolution: {integrity: sha512-nwzmpu7Hd5Csax02twpCNRAloC+kduXKw9rjfq+oEuo8RnjWRaahSV+qk+p0w88EgafMcDE0XnZRSfOM3lKEKg==}
+    engines: {node: '>=22.12.0'}
+    hasBin: true
+    peerDependencies:
+      '@cloudflare/workers-types': ^5.20261110.1
+    peerDependenciesMeta:
+      '@cloudflare/workers-types':
+        optional: true
+
+  wrangler@4.161.0:
+    resolution: {integrity: sha512-yOHZUYEq9AP7vutWmkCADzCKAH9ynfvZdoKJRIGTzkiailf9/L+jhT7WRb+9p6jRDtuBXVFtCzLo7kGAcGw+pA==}
     engines: {node: '>=22.12.0'}
     hasBin: true
     peerDependencies:
@@ -3800,7 +3820,7 @@ snapshots:
     optionalDependencies:
       '@takazudo/zfb': 6.0.1
 
-  '@takazudo/zdtp@0.9.4(@takazudo/zfb@6.0.1)':
+  '@takazudo/zdtp@0.9.7(@takazudo/zfb@6.0.1)':
     dependencies:
       '@tailwindcss/browser': 4.3.2
       culori: 4.0.2
@@ -4945,6 +4965,19 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  miniflare@5.20261110.2-beta(@types/node@26.6.6):
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      sharp: 0.35.5(@types/node@26.6.6)
+      undici: 7.30.1
+      workerd: 1.20261110.1
+      ws: 8.21.0
+      youch: 4.1.0-beta.10
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - utf-8-validate
+
   minimatch@10.2.6:
     dependencies:
       brace-expansion: 5.0.12
@@ -5608,6 +5641,26 @@ snapshots:
       blake3-wasm: 2.1.5
       esbuild: 0.28.2
       miniflare: 5.20261110.0-beta(@types/node@26.6.6)
+      path-to-regexp: 6.3.0
+      unenv: 2.0.0-rc.24
+      workerd: 1.20261110.1
+    optionalDependencies:
+      '@cloudflare/workers-types': 5.20261110.1
+      fsevents: 2.3.3
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - kerberos
+      - utf-8-validate
+
+  wrangler@4.161.0(@cloudflare/workers-types@5.20261110.1)(@types/node@26.6.6):
+    dependencies:
+      '@cloudflare/kv-asset-handler': 0.5.0
+      '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20261110.1)
+      '@cspotcode/source-map-support': 0.8.1
+      blake3-wasm: 2.1.5
+      esbuild: 0.28.2
+      miniflare: 5.20261110.2-beta(@types/node@26.6.6)
       path-to-regexp: 6.3.0
       unenv: 2.0.0-rc.24
       workerd: 1.20261110.1

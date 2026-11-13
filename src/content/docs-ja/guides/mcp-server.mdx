@@ -106,10 +106,10 @@ cp -n "$MCP_REFERENCE/scripts/stage-cloudflare-base.mjs" scripts/stage-cloudflar
 
 ```bash
 pnpm add @modelcontextprotocol/sdk@1.32.2 @takazudo/zfb-adapter-cloudflare@5.2.2
-pnpm add -D wrangler@4.160.0
+pnpm add -D wrangler@4.161.0
 ```
 
-Wrangler 4.160.0 は MCP スキャフォールド専用のピンです。MCP を有効にしない Cloudflare プロジェクトには入りません。`@cloudflare/workers-types` 5.20261110.1 はこのリポジトリのワークスペース devDependency であり、生成される `package.json` に書き込まれるピンではありません。アダプターモードの `zfb preview` は Wrangler 4.85.0 を下限として扱い、それより新しい版はテスト済みベースラインを上回るとログして続行します。
+Wrangler 4.161.0 は MCP スキャフォールド専用のピンです。MCP を有効にしない Cloudflare プロジェクトには入りません。`@cloudflare/workers-types` 5.20261110.1 はこのリポジトリのワークスペース devDependency であり、生成される `package.json` に書き込まれるピンではありません。アダプターモードの `zfb preview` は Wrangler 4.85.0 を下限として扱い、それより新しい版はテスト済みベースラインを上回るとログして続行します。
 
 アダプターはプロジェクトが対応するzfbバージョンに合わせます。既存の`zudoDoc({ ... })`内で、他の設定を維持して次のフィールドを有効にします。
 

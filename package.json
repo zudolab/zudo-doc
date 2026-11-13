@@ -110,7 +110,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@takazudo/zdtp": "0.9.4",
+    "@takazudo/zdtp": "0.9.7",
     "@takazudo/zfb": "6.0.1",
     "@takazudo/zfb-adapter-cloudflare": "6.0.1",
     "@takazudo/zfb-md-wasm": "6.0.1",
@@ -142,6 +142,6 @@
     "typescript": "^7.0.2",
     "vite": "8.3.7",
     "vitest": "5.1.0",
-    "wrangler": "4.160.0"
+    "wrangler": "4.161.0"
   }
 }

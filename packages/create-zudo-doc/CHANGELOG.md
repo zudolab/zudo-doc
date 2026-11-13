@@ -16,6 +16,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 - New `--content-signals <list>` flag, written in the `robots.txt` syntax (`search=yes,ai-input=yes,ai-train=no`), and the matching `contentSignals` preset JSON field and programmatic API option (an object of booleans) set the generated project's `contentSignals`. Invalid names, values, duplicates, empty entries and preset shapes are rejected before any files are written. Without them nothing is emitted. (#4767)
 
+### Other Changes
+
+- Generated projects pin ZDTP 0.9.7, and MCP scaffolds pin Wrangler 4.161.0.
+
 ## [10.0.3] - 2026-11-11
 
 - No package-specific changes.
