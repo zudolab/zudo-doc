@@ -59,6 +59,7 @@ function buildEntries(
   locale: string | null,
   base: string,
   maxBodyLength: number,
+  trailingSlash: boolean,
 ): SearchIndexEntry[] {
   const absDir = resolve(contentDir);
   const files = collectMdFiles(absDir);
@@ -80,7 +81,7 @@ function buildEntries(
       id,
       title: data.title ?? slug,
       body: truncateBody(stripMarkdown(content), maxBodyLength),
-      url: slugToUrl(slug, locale, base),
+      url: slugToUrl(slug, locale, base, undefined, trailingSlash),
       description: data.description ?? "",
     });
   }
@@ -137,13 +138,14 @@ export function collectSearchEntries(
   const maxBodyLength = config.maxBodyLength ?? MAX_BODY_LENGTH;
 
   const base = config.base ?? "";
+  const trailingSlash = config.trailingSlash === true;
   const entries: SearchIndexEntry[] = [];
 
-  entries.push(...buildEntries(config.docsDir, null, base, maxBodyLength));
+  entries.push(...buildEntries(config.docsDir, null, base, maxBodyLength, trailingSlash));
 
   if (config.locales) {
     for (const [code, locale] of Object.entries(config.locales)) {
-      entries.push(...buildEntries(locale.dir, code, base, maxBodyLength));
+      entries.push(...buildEntries(locale.dir, code, base, maxBodyLength, trailingSlash));
     }
   }
 

@@ -45,7 +45,7 @@ export {
  * traversal order — same as the legacy emitter).
  */
 export function loadDocEntries(options: LlmsTxtLoadOptions): LlmsDocEntry[] {
-  const { contentDir, locale, base, siteUrl, agentExportLocale } = options;
+  const { contentDir, locale, base, siteUrl, trailingSlash, agentExportLocale } = options;
   const absDir = resolve(contentDir);
   const files = collectMdFiles(absDir);
   const entries: LlmsDocEntry[] = [];
@@ -71,7 +71,7 @@ export function loadDocEntries(options: LlmsTxtLoadOptions): LlmsDocEntry[] {
     const entry: LlmsDocEntry = {
       title: data.title ?? slug,
       description,
-      url: slugToUrl(slug, locale, base, siteUrl),
+      url: slugToUrl(slug, locale, base, siteUrl, trailingSlash === true),
       content: stripImportsAndJsx(content),
       sidebarPosition: data.sidebar_position,
     };

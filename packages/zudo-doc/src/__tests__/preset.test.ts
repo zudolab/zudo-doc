@@ -494,6 +494,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
+      trailingSlash: true,
       assetScan: {
         assetViewer: true,
         assetViewerIndexing: false,
@@ -515,6 +516,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       siteDescription: "Documentation base framework.",
       base: "/",
       siteUrl: "https://zudo-doc.takazudomodular.com",
+      trailingSlash: true,
       defaultLocale: "en",
       agentExport: false,
       mcp: false,
@@ -579,7 +581,22 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     });
     expect(agentExport?.options).toMatchObject({
       defaultLocale: "ja",
+      trailingSlash: true,
     });
+  });
+
+  it("threads trailingSlash into every corpus URL producer (#4783)", () => {
+    for (const trailingSlash of [true, false]) {
+      const result = zudoDocPreset({
+        settings: { ...fixtureSettings, trailingSlash, llmsTxt: true, agentExport: true },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      });
+      for (const name of ["search-index", "llms-txt", "agent-export"]) {
+        const plugin = result.plugins.find((entry) => entry.name === `@takazudo/zudo-doc/plugins/${name}`);
+        expect(plugin?.options, `${name} trailingSlash=${trailingSlash}`).toMatchObject({ trailingSlash });
+      }
+    }
   });
 
   it("shares the serialized asset-scan projection with search and llms", () => {

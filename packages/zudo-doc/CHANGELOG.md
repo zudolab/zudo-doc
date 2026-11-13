@@ -13,6 +13,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Bug Fixes
 
 - The sitemap's `<lastmod>` is now each document page's last-updated date from document history, the same date as its "Updated" label, instead of the build date on every URL. Routes with no known date (home and locale roots, tag, asset and versioned pages, or any page while `docHistory` is off or document history generation is skipped) have no `<lastmod>`. `@takazudo/zudo-doc/route-enumerators` adds `enumerateSitemapEntries`; `enumerateAllRoutes` is unchanged. (#4784)
+- Page URLs in `llms.txt`, `llms-full.txt`, the browser search index (`search-index.json`), the agent export (manifest, items, search index) and MCP `search`/`fetch` results now follow the `trailingSlash` setting, the same as the built routes. With `trailingSlash: true` they end with `/` and no longer cite a URL that redirects; with `trailingSlash: false` output is unchanged. The schemas are unchanged and agent page IDs stay the same, but the `url` values, the `llms.txt` bytes and the agent corpus fingerprint change for sites with `trailingSlash: true`. (#4783)
+- MCP `search` result titles name the part of a multi-part page once, for example `Read-only MCP server (en · part 1/2)` instead of `Read-only MCP server (part 1/2) (en · part 1/2)`. Stored item titles and `fetch` results are unchanged. (#4783)
+- `/mcp` no longer approves the opaque `Origin: null` when `siteUrl` has no `http:` or `https:` scheme (for example `docs.example.com:8443`). Only an `http(s)` `siteUrl` adds an approved origin; requests without `Origin` and requests from the endpoint's own origin behave as before. (#4783)
 
 ## [11.0.0] - 2026-11-13
 

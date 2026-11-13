@@ -140,6 +140,24 @@ describe("MCP handler", () => {
       expect((await response.json()).result.structuredContent.url, siteUrl).toBe(url);
     }
   });
+  it("never allows the opaque Origin: null for a scheme-less siteUrl (#4783)", async () => {
+    const { files } = fixture();
+    const read = async (path: string) => files.has(path) ? new Response(files.get(path)) : new Response(null, { status: 404 });
+    const options = { jsonrpc: "2.0", id: 7, method: "tools/list", params: {} };
+    for (const siteUrl of ["docs.example.org:8443", "docs.example.org", "not a url"]) {
+      const handler = createMcpHandler({ base: "/manual", siteUrl, read });
+      expect((await handler(post(options, { origin: "null" }))).status, siteUrl).toBe(403);
+      const own = await handler(post(options, { origin: "https://docs.example" }));
+      expect(own.status, siteUrl).toBe(200);
+      expect(own.headers.get("access-control-allow-origin"), siteUrl).toBe("https://docs.example");
+      expect((await handler(post(options))).status, siteUrl).toBe(200);
+    }
+    const valid = createMcpHandler({ base: "/manual", siteUrl: "https://docs.example.org:8443/", read });
+    const site = await valid(post(options, { origin: "https://docs.example.org:8443" }));
+    expect(site.status).toBe(200);
+    expect(site.headers.get("access-control-allow-origin")).toBe("https://docs.example.org:8443");
+    expect((await valid(post(options, { origin: "null" }))).status).toBe(403);
+  });
   it("enforces methods, origin, body and corpus failures", async () => {
     const { files, manifest, handler } = fixture();
     expect((await handler(new Request(endpoint, { method: "GET" }))).status).toBe(405);

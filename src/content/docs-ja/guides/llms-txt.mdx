@@ -55,8 +55,8 @@ llmsTxt: false,
 
 ## Docs
 
-- [Introduction](/docs/getting-started/introduction): Learn what the project is and how it works.
-- [Configuration](/docs/guides/configuration): Global settings and configuration reference.
+- [Introduction](/docs/getting-started/introduction/): Learn what the project is and how it works.
+- [Configuration](/docs/guides/configuration/): Global settings and configuration reference.
 ```
 
 ### llms-full.txt（全文）
@@ -100,6 +100,8 @@ search_exclude: true
 - **日本語：** `/ja/llms.txt`と`/ja/llms-full.txt`
 
 各ロケールのファイルには、そのロケールのコンテンツディレクトリのページのみが含まれます。各ファイル内のURLには適切なロケールプレフィックスが使用されます。
+
+ページのURLは、ビルドされるルートと同じく`trailingSlash`設定に従います。`trailingSlash: true`（上の例）では末尾が`/`になり、既定の`false`では付きません。どちらの場合も、記載されるURLはリダイレクト先ではなくページそのものです。
 
 ## HTMLによる検出
 

@@ -47,6 +47,8 @@ export interface SearchIndexConfig {
   locales?: Record<string, SearchIndexLocaleConfig>;
   /** Site base path (e.g. `""`, `"/docs"`); trailing slash is normalised away. */
   base?: string;
+  /** Append `/` to page URLs, matching the route layer's `trailingSlash` setting. Omitted means `false`. */
+  trailingSlash?: boolean;
   /** Runtime project root for asset scans; injected by the zfb plugin wrapper, never serialized in the preset. */
   projectRoot?: string;
   /** Shared asset-viewer projection; consumed by the asset indexing wave. */

@@ -204,6 +204,11 @@ export function collectMdFiles(
  * qualified URL is produced (matching the legacy llms-txt emitter's
  * `slugToUrl(slug, locale, true)` call site exactly).
  *
+ * `trailingSlash` mirrors the route layer's rule (`applyTrailingSlash` in
+ * `plugins/routes.ts`): when true, a slash is appended unless the path
+ * already ends with one, so the emitted URL is the served page rather than
+ * a redirect to it. Omitted means `false` (slash-less output).
+ *
  * Callers must pass the EFFECTIVE slug (`data.slug ?? filesystem slug`) —
  * the frontmatter override is resolved at the call site, not here.
  */
@@ -212,11 +217,13 @@ export function slugToUrl(
   locale: string | null,
   base: string,
   siteUrl?: string,
+  trailingSlash = false,
 ): string {
   const trimmedBase = base.replace(/\/$/, "");
-  const path = locale
+  const rawPath = locale
     ? `${trimmedBase}/${locale}/docs/${slug}`
     : `${trimmedBase}/docs/${slug}`;
+  const path = trailingSlash && !rawPath.endsWith("/") ? `${rawPath}/` : rawPath;
   if (siteUrl) {
     return `${siteUrl.replace(/\/$/, "")}${path}`;
   }
