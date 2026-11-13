@@ -135,3 +135,104 @@ describe("asset route enumeration", () => {
     ]);
   });
 });
+
+describe("sitemap entries (#4784)", () => {
+  function doc(slug: string, data: Record<string, unknown> = {}) {
+    return { slug, data: { title: slug, ...data } };
+  }
+
+  const collections: Record<string, ReturnType<typeof doc>[]> = {
+    docs: [doc("index"), doc("guides/intro"), doc("guides/fallback-only"), doc("guides/undated")],
+    "docs-ja": [doc("guides/intro")],
+    "docs-v-1.0": [doc("guides/intro")],
+  };
+
+  function makeDocsContext(settingsOverrides: Partial<Settings> = {}) {
+    return createRouteContext(
+      {
+        settings: {
+          ...DEFAULT_SETTINGS,
+          base: "/",
+          trailingSlash: true,
+          defaultLocale: "en",
+          locales: { ja: { label: "JA", dir: "src/content/docs-ja" } },
+          docTags: false,
+          ...settingsOverrides,
+        },
+        translations: {},
+        tagVocabulary: [],
+        colorSchemes: null,
+        themePackRegistry: null,
+        assetManifest: null,
+      },
+      {
+        stableDocs: (name: string) => (collections[name] ?? []) as never,
+      },
+    );
+  }
+
+  const meta = {
+    index: { updatedDate: "2026-01-02T10:00:00Z" },
+    "guides/intro": { updatedDate: "2026-03-04T23:30:00-05:00" },
+    "guides/fallback-only": { updatedDate: "2025-12-31" },
+    "ja/guides/intro": { updatedDate: "2026-05-06T08:00:00+09:00" },
+    "guides/undated": { updatedDate: "not a date" },
+  };
+
+  function lastmods(entries: Array<{ url: string; lastmod?: string }>) {
+    return Object.fromEntries(entries.map((e) => [e.url, e.lastmod ?? null]));
+  }
+
+  it("dates latest doc pages from the manifest the visible Updated label reads", () => {
+    const byUrl = lastmods(makeDocsContext().enumerateSitemapEntries({ docHistoryMeta: meta }));
+
+    expect(byUrl["/docs/"]).toBe("2026-01-02");
+    // Non-UTC offsets resolve to the UTC calendar day, as formatDate shows it.
+    expect(byUrl["/docs/guides/intro/"]).toBe("2026-03-05");
+    expect(byUrl["/docs/guides/fallback-only/"]).toBe("2025-12-31");
+    // A translated page uses its own locale file's history ...
+    expect(byUrl["/ja/docs/guides/intro/"]).toBe("2026-05-05");
+    // ... and an EN-fallback page uses the default-locale source it renders.
+    expect(byUrl["/ja/docs/guides/fallback-only/"]).toBe("2025-12-31");
+  });
+
+  it("omits lastmod when no date is known", () => {
+    const byUrl = lastmods(makeDocsContext().enumerateSitemapEntries({ docHistoryMeta: meta }));
+
+    // Unparseable manifest date.
+    expect(byUrl["/docs/guides/undated/"]).toBeNull();
+    // Non-document routes.
+    expect(byUrl["/"]).toBeNull();
+    expect(byUrl["/ja/"]).toBeNull();
+  });
+
+  it("never dates versioned pages from the latest-content manifest", () => {
+    const context = makeDocsContext({
+      versions: [{ slug: "1.0", label: "1.0", docsDir: "src/content/docs-v1" }],
+    } as Partial<Settings>);
+    const entries = context.enumerateSitemapEntries({ docHistoryMeta: meta });
+    const versioned = entries.filter((e) => e.url.includes("/v/1.0/"));
+
+    expect(versioned.length).toBeGreaterThan(0);
+    for (const entry of versioned) expect(entry.lastmod).toBeUndefined();
+  });
+
+  it.each([
+    ["no options", undefined],
+    ["a null manifest", { docHistoryMeta: null }],
+    ["an empty manifest (history generation skipped)", { docHistoryMeta: {} }],
+  ])("omits every lastmod with %s", (_label, options) => {
+    const entries = makeDocsContext().enumerateSitemapEntries(options);
+
+    expect(entries.length).toBeGreaterThan(0);
+    for (const entry of entries) expect(entry).not.toHaveProperty("lastmod");
+  });
+
+  it("lists exactly the enumerateAllRoutes URLs in the same order", () => {
+    const context = makeDocsContext();
+
+    expect(context.enumerateSitemapEntries({ docHistoryMeta: meta }).map((e) => e.url)).toEqual([
+      ...context.enumerateAllRoutes().keys(),
+    ]);
+  });
+});

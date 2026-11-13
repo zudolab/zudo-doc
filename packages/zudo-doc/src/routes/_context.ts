@@ -81,6 +81,7 @@ export const {
   enumerateTagsRoutes,
   enumerateVersionedRoutes,
   enumerateAllRoutes,
+  enumerateSitemapEntries,
   buildNavTree,
   groupSatelliteNodes,
   findNode,
