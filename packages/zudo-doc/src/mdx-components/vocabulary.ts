@@ -1,7 +1,13 @@
 // Node-free, JSX-free component vocabulary shared by the MDX component map and
 // the agent text export, so both agree on which tags wrap ordinary Markdown.
 
+import type { DirectiveSpec } from "@takazudo/zfb/config";
 import { defaultDirectiveVocabulary } from "../directive-vocabulary-defaults/index.js";
+
+/** The JSX component a directive vocabulary entry resolves to. */
+export function directiveComponentName(spec: DirectiveSpec): string {
+  return typeof spec === "string" ? spec : spec.component;
+}
 
 /** Admonition variants, in registration order. */
 export const ADMONITION_VARIANTS = ["note", "tip", "info", "warning", "danger", "important", "caution"] as const;
@@ -19,7 +25,7 @@ export const ADMONITION_COMPONENTS: ReadonlyMap<string, AdmonitionVariant> = new
 );
 
 /** The collapsible the `:::details` directive resolves to. Its default title is "Details". */
-export const DETAILS_COMPONENT = defaultDirectiveVocabulary.details ?? "Details";
+export const DETAILS_COMPONENT: string = defaultDirectiveVocabulary.details ? directiveComponentName(defaultDirectiveVocabulary.details) : "Details";
 
 /** Tab containers whose body is ordinary Markdown. */
 export const TAB_GROUP_COMPONENTS = ["Tabs", "CodeGroup"] as const;

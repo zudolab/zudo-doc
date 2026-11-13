@@ -7,6 +7,7 @@ import { defaultDirectiveVocabulary } from "../../../../directive-vocabulary-def
 import {
   ADMONITION_COMPONENTS,
   DETAILS_COMPONENT,
+  directiveComponentName,
   NAV_COMPONENTS,
   TAB_GROUP_COMPONENTS,
   TAB_ITEM_COMPONENT,
@@ -44,7 +45,7 @@ describe("agent export component vocabulary", () => {
     const known = new Set<string>([
       ...ADMONITION_COMPONENTS.keys(), DETAILS_COMPONENT, TAB_ITEM_COMPONENT, ...TAB_GROUP_COMPONENTS, ...NAV_COMPONENTS,
     ]);
-    for (const name of Object.values(defaultDirectiveVocabulary)) expect(known.has(name), name).toBe(true);
+    for (const spec of Object.values(defaultDirectiveVocabulary)) expect(known.has(directiveComponentName(spec)), directiveComponentName(spec)).toBe(true);
     const registered = Object.keys(createMdxComponents({
       settings: { base: "/", imageEnlarge: false, assetViewerDir: "media", assetViewerRoutePrefix: "view" },
       locale: "en",
