@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- The sitemap's `<lastmod>` is now each document page's last-updated date from document history, the same date as its "Updated" label, instead of the build date on every URL. Routes with no known date (home and locale roots, tag, asset and versioned pages, or any page while `docHistory` is off or `SKIP_DOC_HISTORY=1` is set) have no `<lastmod>`. `@takazudo/zudo-doc/route-enumerators` adds `enumerateSitemapEntries`; `enumerateAllRoutes` is unchanged. (#4784)
+
 ## [11.0.0] - 2026-11-13
 
 ### Breaking Changes

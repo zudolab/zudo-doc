@@ -3,3 +3,7 @@ title: Unreleased
 description: 次のリリースに向けた変更。
 sidebar_position: 1158
 ---
+
+### バグ修正
+
+- サイトマップの `<lastmod>` は、すべての URL にビルド日を入れる代わりに、各ドキュメントページのドキュメント履歴にある最終更新日を使うようになりました。ページの「更新日」表示と同じ日付です。日付が分からないルート（ホームとロケールのトップ、タグページ、アセットページ、バージョン付きページ、および `docHistory` が無効な場合や `SKIP_DOC_HISTORY=1` を設定した場合の全ページ）には `<lastmod>` を出力しません。`@takazudo/zudo-doc/route-enumerators` に `enumerateSitemapEntries` を追加しました。`enumerateAllRoutes` は変わりません。(#4784)

@@ -100,7 +100,7 @@ export default defineConfig(
 );
 ```
 
-各エントリは（`siteUrl` から組み立てられた）絶対的な `<loc>` と `<lastmod>` の日付を持ち、安定した出力になるようソートされます。このルートはパッケージ所有のエントリポイント `@takazudo/zudo-doc/routes/sitemap.xml` によって配信されます。`siteUrl` と `sitemap` の両方が設定され（かつサイトが noindex になっていない）場合、生成される `robots.txt` には設定した `base` を含む `Sitemap:` 行が自動的に追加されます。たとえば `base: "/doc"` と `siteUrl: "https://example.com"` の場合は `Sitemap: https://example.com/doc/sitemap.xml` となります。[`sitemap` リファレンス](./configuration.mdx#アイデンティティと-url-sitemap)を参照してください。
+各エントリは（`siteUrl` から組み立てられた）絶対的な `<loc>` を持ち、安定した出力になるようソートされます。ドキュメントページには `<lastmod>` も付きます。値はそのページの最新コミットの日付（UTC）で、ページの「更新日」表示と同じ日付です。日付が分からないページにはビルド日を入れず、`<lastmod>` を出力しません。ホームとロケールのトップ、タグページ、アセットページ、バージョン付きページ、そして `docHistory` が無効な場合や `SKIP_DOC_HISTORY=1` でビルドした場合の全ページがこれに当たります。このルートはパッケージ所有のエントリポイント `@takazudo/zudo-doc/routes/sitemap.xml` によって配信されます。`siteUrl` と `sitemap` の両方が設定され（かつサイトが noindex になっていない）場合、生成される `robots.txt` には設定した `base` を含む `Sitemap:` 行が自動的に追加されます。たとえば `base: "/doc"` と `siteUrl: "https://example.com"` の場合は `Sitemap: https://example.com/doc/sitemap.xml` となります。[`sitemap` リファレンス](./configuration.mdx#アイデンティティと-url-sitemap)を参照してください。
 
 ### base 配下でのデプロイとオリジンルートの `robots.txt`
 

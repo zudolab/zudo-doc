@@ -11,7 +11,8 @@
 // Each enumerator returns absolute paths (with settings.base prefix and
 // trailing slash applied) as expected by the sitemap and page modules.
 // `enumerateAllRoutes()` composes the others and returns a deduped
-// Map<url, lastmod> that the sitemap renderer wraps directly.
+// Map<url, buildDate>; `enumerateSitemapEntries()` walks the same routes and
+// attaches each page's doc-history `updatedDate` (or no date) for the sitemap.
 //
 // Design principles (unchanged):
 //   - Draft pages are always excluded (never built).
@@ -26,6 +27,7 @@ import type { Settings } from "../settings.js";
 import { assetViewerHref } from "../asset-path/index.js";
 import type { AssetManifest } from "../route-context-payload/types.js";
 import { mergeLocaleDocs } from "../locale-merge/index.js";
+import { toHistorySlug } from "../slug/index.js";
 
 export type { DocPageEntry, DocNavNode, NavSourceDocs };
 
@@ -59,6 +61,50 @@ export interface VersionConfigForEnum {
 export interface TagInfoForEnum {
   tag: string;
   count: number;
+}
+
+// ---------------------------------------------------------------------------
+// Sitemap entry shapes
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal doc-history manifest entry read by {@link RouteEnumeratorsAPI.enumerateSitemapEntries}
+ * — a structural subset of `.zfb/doc-history-meta.json` values.
+ */
+export interface DocHistoryDateEntry {
+  /** ISO date or git `%aI` timestamp of the page's most recent commit. */
+  updatedDate?: string;
+}
+
+/** Doc-history manifest keyed like the visible Created/Updated block. */
+export type DocHistoryDateManifest = Readonly<Record<string, unknown>>;
+
+/** Options for {@link RouteEnumeratorsAPI.enumerateSitemapEntries}. */
+export interface SitemapEntriesOptions {
+  /**
+   * The build's doc-history manifest. Absent, `null`, or `{}` means no page
+   * has a known date, so every entry omits `lastmod`.
+   */
+  docHistoryMeta?: DocHistoryDateManifest | null;
+}
+
+/** One sitemap URL with its last-modified date, when one is known. */
+export interface SitemapEntry {
+  url: string;
+  /** `YYYY-MM-DD` (UTC), or absent when the page has no known date. */
+  lastmod?: string;
+}
+
+/**
+ * Reduce a manifest date to the UTC calendar day, the same day the visible
+ * "Updated" label shows (`formatDate` renders in UTC). Unparseable → undefined.
+ */
+function toSitemapDate(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(value)) return undefined;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? undefined : new Date(time).toISOString().slice(0, 10);
 }
 
 // ---------------------------------------------------------------------------
@@ -173,12 +219,23 @@ export interface RouteEnumeratorsAPI {
   ) => string[];
 
   /**
-   * Compose all route enumerators into a deduped Map<url, lastmod>.
+   * Compose all route enumerators into a deduped Map<url, buildDate>.
    *
    * Covers site root, default-locale docs + tags, per-locale docs + tags,
-   * asset-viewer routes, versioned EN docs, and versioned locale docs.
+   * asset-viewer routes, versioned EN docs, and versioned locale docs. Every
+   * value is the current build date; the sitemap uses
+   * {@link RouteEnumeratorsAPI.enumerateSitemapEntries} instead.
    */
   enumerateAllRoutes: () => Map<string, string>;
+
+  /**
+   * The same deduped route set as `enumerateAllRoutes()`, in the same order,
+   * with each latest (unversioned) doc page's `lastmod` taken from the
+   * doc-history manifest — the date the page's visible "Updated" label shows.
+   * Routes with no known date (site roots, tags, assets, versioned pages,
+   * pages missing from the manifest) carry no `lastmod`.
+   */
+  enumerateSitemapEntries: (options?: SitemapEntriesOptions) => SitemapEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -260,27 +317,55 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   // enumerateDocsRoutes
   // ---------------------------------------------------------------------------
 
-  function enumerateDocsRoutes(locale: string): string[] {
-    const urls: string[] = [];
+  /**
+   * Doc URLs for a locale, each paired with the doc-history manifest key the
+   * page's visible Created/Updated block looks up (`DocMetainfoArea`): bare
+   * slug for the default locale and EN-fallback pages, `<locale>/<slug>` for
+   * pages whose source is the locale's own file.
+   */
+  function enumerateKeyedDocsRoutes(
+    locale: string,
+  ): Array<{ url: string; historyKey: string }> {
+    const entries: Array<{ url: string; historyKey: string }> = [];
+    const seen = new Set<string>();
+    const isDefault = locale === defaultLocale;
 
     // Identity-stable nav source — same instances the doc routes use, so the
     // nav-tree fast-path applies here too (#1902).
-    const { docs: allDocs, navDocs, categoryMeta } = resolveNavSource(
+    const { docs: allDocs, navDocs, categoryMeta, localeSlugSet } = resolveNavSource(
       locale,
       undefined,
       { applyDefaultLocaleOnlyFilter: true, keepUnlisted: true },
     );
     const tree = buildNavTree(navDocs, locale, categoryMeta);
 
-    for (const doc of allDocs) {
-      if (doc.data.category_no_page === true) continue;
-      urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.slug), locale));
-    }
-    for (const node of collectAutoIndexNodes(tree)) {
-      urls.push(docsUrl(node.slug, locale));
+    function push(slug: string, isFallback: boolean): void {
+      const url = docsUrl(slug, locale);
+      if (seen.has(url)) return;
+      seen.add(url);
+      const historySlug = toHistorySlug(slug);
+      entries.push({
+        url,
+        historyKey: isDefault || isFallback ? historySlug : `${locale}/${historySlug}`,
+      });
     }
 
-    return [...new Set(urls)];
+    for (const doc of allDocs) {
+      if (doc.data.category_no_page === true) continue;
+      const slug = doc.data.slug ?? toRouteSlug(doc.slug);
+      push(slug, !isDefault && !localeSlugSet.has(slug));
+    }
+    // Auto-index routes render with isFallback=false (site-schema
+    // doc-route-entries), so their lookup uses the locale-prefixed key.
+    for (const node of collectAutoIndexNodes(tree)) {
+      push(node.slug, false);
+    }
+
+    return entries;
+  }
+
+  function enumerateDocsRoutes(locale: string): string[] {
+    return enumerateKeyedDocsRoutes(locale).map((entry) => entry.url);
   }
 
   // ---------------------------------------------------------------------------
@@ -435,24 +520,29 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   // enumerateAllRoutes
   // ---------------------------------------------------------------------------
 
-  function enumerateAllRoutes(): Map<string, string> {
-    const today = new Date().toISOString().split("T")[0] ?? "";
-    const routes = new Map<string, string>();
+  /**
+   * Walk every route once, in sitemap order. `historyKey` is set only for
+   * latest (unversioned) doc pages; the doc-history manifest covers the
+   * latest content dirs only, so versioned pages never get one.
+   */
+  function collectAllRoutes(): Array<{ url: string; historyKey?: string }> {
+    const seen = new Set<string>();
+    const routes: Array<{ url: string; historyKey?: string }> = [];
     const localeKeys = getLocaleKeys();
     const versions = getVersions();
 
-    function add(url: string): void {
-      if (!routes.has(url)) {
-        routes.set(url, today);
-      }
+    function add(url: string, historyKey?: string): void {
+      if (seen.has(url)) return;
+      seen.add(url);
+      routes.push(historyKey === undefined ? { url } : { url, historyKey });
     }
 
     // Site root
     add(withBase("/"));
 
     // Default locale docs
-    for (const url of enumerateDocsRoutes(defaultLocale)) {
-      add(url);
+    for (const { url, historyKey } of enumerateKeyedDocsRoutes(defaultLocale)) {
+      add(url, historyKey);
     }
 
     // Default locale tags
@@ -469,8 +559,8 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
     for (const locale of localeKeys) {
       add(withBase(`/${locale}`));
 
-      for (const url of enumerateDocsRoutes(locale)) {
-        add(url);
+      for (const { url, historyKey } of enumerateKeyedDocsRoutes(locale)) {
+        add(url, historyKey);
       }
 
       for (const url of enumerateTagsRoutes(locale)) {
@@ -507,11 +597,31 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
     return routes;
   }
 
+  function enumerateAllRoutes(): Map<string, string> {
+    const today = new Date().toISOString().split("T")[0] ?? "";
+    return new Map(collectAllRoutes().map(({ url }) => [url, today]));
+  }
+
+  // ---------------------------------------------------------------------------
+  // enumerateSitemapEntries
+  // ---------------------------------------------------------------------------
+
+  function enumerateSitemapEntries(options: SitemapEntriesOptions = {}): SitemapEntry[] {
+    const meta = options.docHistoryMeta ?? {};
+    return collectAllRoutes().map(({ url, historyKey }) => {
+      if (historyKey === undefined || !Object.hasOwn(meta, historyKey)) return { url };
+      const entry = meta[historyKey] as DocHistoryDateEntry | null | undefined;
+      const lastmod = toSitemapDate(entry?.updatedDate);
+      return lastmod === undefined ? { url } : { url, lastmod };
+    });
+  }
+
   return {
     enumerateDocsRoutes,
     enumerateTagsRoutes,
     enumerateAssetRoutes,
     enumerateVersionedRoutes,
     enumerateAllRoutes,
+    enumerateSitemapEntries,
   };
 }
