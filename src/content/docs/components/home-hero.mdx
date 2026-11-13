@@ -1,0 +1,396 @@
+---
+title: HomeHero
+description: The identity block at the top of the home page — logo or full-colour picture, site name, tagline and links — with its four picture placements and six complete home page arrangements.
+sidebar_position: 6.5
+---
+
+## Overview
+
+`HomeHero` is the identity block at the top of the package home page, on `/` and on each locale home such as `/ja/`. It shows, in order:
+
+- the logo, or a full-colour picture set with `home.image`;
+- the site name as the page's `h1`;
+- the short tagline from `siteDescription` (or `locales.<code>.description` on a locale home);
+- a links row: the first [header navigation](../guides/header-navigation.mdx) item, the GitHub link when `githubUrl` is set, and any `homeExtras` items, separated by `/`.
+
+You configure it through the `home` settings in `zfb.config.ts`. This page shows what each choice looks like; the [configuration guide](../guides/configuration.mdx#home-page-home) remains the full field reference.
+
+<Info>
+
+The framed examples on this page are the real `HomeHero` component, rendered with this site's example artwork and a placeholder site name. They are pictures of the hero, not working navigation, so their links are not interactive. Switch between light and dark mode to see the `darkSrc` picture take over. On the home page the hero has a band up to 60rem wide; when an example's frame is narrower than the `large` placement needs, that example stacks the way the hero does on a narrow screen.
+
+</Info>
+
+## Logo or picture
+
+By default the hero draws the [`logo`](../guides/configuration.mdx#identity-and-urls-logo): `"auto"` generates a mark from the site name, a path is drawn as a one-colour CSS mask that follows the theme, and `false` draws nothing. Because it is a mask, a colourful logo file turns into a silhouette:
+
+<HomeHeroExample picture={false} />
+
+Set `home.image` when you want a real picture in its own colours. The picture replaces the logo in the hero only; the header and every other place that uses `logo` keep it.
+
+```ts
+home: {
+  image: {
+    src: "/img/hero.svg",
+    darkSrc: "/img/hero-dark.svg",
+    width: 1200,
+    height: 630,
+  },
+},
+```
+
+Every placement reserves the picture's 1200:630 box before the picture loads, so the hero never shifts. A 1200 × 630 picture fits each box exactly.
+
+## Picture placements
+
+`home.imageLayout` decides how much room the picture gets. It has no effect without `home.image`.
+
+### logo
+
+The default. The picture takes the logo's box: 320 CSS px wide beside the title on wide screens. `object-fit: contain` keeps the whole picture visible.
+
+<HomeHeroExample layout="logo" />
+
+Choose it for a coloured emblem or mark that should sit where a logo would, at the same size.
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "logo",
+},
+```
+
+### large
+
+A 560 CSS px box beside the title on wide screens, so the picture carries more of the page while the title stays next to it. The whole picture stays visible.
+
+<HomeHeroExample layout="large" />
+
+Choose it for an illustration that is part of the site's identity, when the title, tagline and links should still sit beside it.
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "large",
+},
+```
+
+### banner
+
+The picture spans the full width of the hero, above a centred title, tagline and links row. The whole picture stays visible.
+
+<HomeHeroExample layout="banner" />
+
+Choose it for wide artwork, or a screenshot that readers should see whole and as large as possible.
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "banner",
+},
+```
+
+### backdrop
+
+The picture fills the hero behind the centred copy. It is cropped to cover the 1200:630 area (`object-fit: cover`), and the title, tagline and links sit on a panel of the page background at 92% opacity, up to 40rem wide, so they stay readable over any picture.
+
+<HomeHeroExample layout="backdrop" />
+
+Choose it for atmospheric artwork that sets a mood. Keep important detail away from the centre and the edges: the panel covers the middle, and the crop can trim the sides on narrow screens.
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "backdrop",
+},
+```
+
+## Settings
+
+| Setting | Type | Purpose |
+|---|---|---|
+| `home.image.src` | `string` | Required. Root-absolute site path to the picture, usually a file in `public/`. The site `base` is prefixed for you. |
+| `home.image.alt` | `string` | Alternative text. Defaults to `""`. See [Alternative text](#alternative-text). |
+| `home.image.width`, `home.image.height` | `number` | Intrinsic size in pixels, as positive integers. Give both or neither. |
+| `home.image.darkSrc` | `string` | Root-absolute site path shown instead of `src` in dark mode. |
+| `home.imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | Placement of the picture. Defaults to `"logo"`. Ignored without `home.image`. |
+
+The other `home` fields (`introMarkdown`, `sitemapHeading`, `sections`, `wide`) and their defaults are in the [configuration guide](../guides/configuration.mdx#home-page-home).
+
+## Dark mode
+
+With `darkSrc`, the hero contains both pictures. CSS shows the one that matches the `data-theme` attribute on `<html>`, which the colour-mode script sets before the first paint, so there is no flash and no script chooses between them. Both pictures load lazily, so the hidden one is not downloaded. Without a `data-theme` attribute (`colorMode: false`, or scripting turned off), the `src` picture shows.
+
+Without `darkSrc`, a single picture is used in both modes. Give it a background that works on light and dark pages, or provide a `darkSrc`.
+
+## Paths and validation
+
+`src` and `darkSrc` must be root-absolute site paths: a single leading `/`, such as `/img/hero.svg`. External URLs, protocol-relative `//` paths, `data:` URLs, backslashes and control characters are rejected, which keeps the picture compatible with a strict `img-src 'self'` content security policy.
+
+The settings are checked when the config loads. An invalid value throws a `TypeError` that names the field, for example:
+
+| Mistake | Error |
+|---|---|
+| `imageLayout: "full"` | `Invalid home.imageLayout "full": must be one of "logo", "large", "banner", "backdrop".` |
+| `image: "/img/hero.svg"` | `Invalid home.image "/img/hero.svg": omit it, or pass an object { src: "/img/hero.png" }.` |
+| `image: { src: "/img/a.svg", dark: "/img/b.svg" }` | `Invalid home.image: unknown key "dark". Allowed keys: src, alt, width, height, darkSrc.` |
+| `src: "https://example.com/hero.png"` (or a missing `src`) | `Invalid home.image.src …: must be a root-absolute site path such as "/img/hero.png" (no external URL, no "//", no backslash or control character).` The same check applies to `darkSrc`. |
+| `alt: 42` | `Invalid home.image.alt 42: must be a string.` |
+| `width: 1200` without `height` | `Invalid home.image: width and height must be given together, or both omitted.` |
+| `width: 0` or `width: 12.5` | `Invalid home.image.width …: must be a positive integer (pixels).` |
+
+`imageLayout` is checked even when `image` is not set.
+
+## Alternative text
+
+The site name is printed right beside the picture, so `alt` defaults to `""` and screen readers skip the picture. Leave it empty when the picture is decoration or repeats the site name. Set `alt` when the picture shows something the title does not say, such as a product screenshot, and describe that content rather than repeating the site name.
+
+The `backdrop` placement always treats its picture as decorative: it renders `alt=""` and ignores any `alt` you set, because the copy panel covers the picture. Do not put information that readers need into a backdrop picture.
+
+## Narrow screens
+
+- **`logo` and `large`** sit beside the title from the `lg` breakpoint (1024px viewport width). Below it the picture stacks above a centred title, and the box shrinks to the available width.
+- **`banner`** keeps the full width and the 1200:630 ratio at every size.
+- **`backdrop`** keeps the 1200:630 ratio while the copy fits. When the title, tagline and links need more height, the hero grows taller instead of clipping them, and the picture keeps covering the whole hero.
+
+The hero and any introduction are capped at a 60rem band in the centre of the page.
+
+## Rendering the hero elsewhere
+
+The home route renders the hero for you. To show the same hero somewhere else, for example a settings preview, a theme gallery or a CMS screen, import `HomeHero` from `@takazudo/zudo-doc/home-hero`. It is a server component that takes plain props and needs no route data or doc layout.
+
+```tsx
+import { HomeHero, assertValidHomeImage } from "@takazudo/zudo-doc/home-hero";
+
+const image = {
+  src: "/img/hero.svg",
+  darkSrc: "/img/hero-dark.svg",
+  width: 1200,
+  height: 630,
+};
+
+// HomeHero does not validate its props; check them the same way the config does.
+assertValidHomeImage({ home: { image, imageLayout: "banner" } });
+
+export function HomePreview() {
+  return (
+    <HomeHero
+      siteName="My Docs"
+      description="A short guide to our project."
+      image={image}
+      imageLayout="banner"
+      base="/"
+      links={[<a href="/docs/getting-started/">Get started</a>]}
+    />
+  );
+}
+```
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `siteName` | `string` | (required) | Printed as the hero `h1`. |
+| `description` | `string` | — | Tagline under the title, printed as-is. |
+| `logo` | `string \| false` | `"auto"` | Same values as the `logo` setting. |
+| `image` | `HomeImageConfig` | — | Same shape as `home.image`; replaces the logo when set. |
+| `imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | `"logo"` | Same values as `home.imageLayout`. Ignored without `image`. |
+| `base` | `string` | `"/"` | Site base, prefixed to `logo` and `image` paths. |
+| `links` | `Child[]` | `[]` | Links-row items, rendered in order with `/` between them. |
+| `logoHref` | `(path: string) => string` | Prefixes `base` | Resolves a `logo` path to its URL. |
+
+The hero needs the package styles: load `@takazudo/zudo-doc/compiled.css`, or the `theme.css`, `content.css`, `page-loading.css` and `features.css` imports a project's `global.css` already has. For `darkSrc`, the page must set `data-theme="light"` or `data-theme="dark"` on `<html>`. The module also exports `assertValidHomeImage` and `isRootAbsoluteSitePath` so a preview can reject the same values the config rejects.
+
+## Home page arrangements
+
+The hero is one part of the home page. These six complete configurations combine it with the other home settings: [`home.sections`](../guides/configuration.mdx#home-page-home-composed-navigation-sections) for the "Start here" cards and the site index, the [described variant](./site-tree-nav.mdx#described-variant) of the site index, and [category covers](./site-tree-nav.mdx#category-covers). Copy one into `zfb.config.ts`, then replace the site name, picture paths and document slugs with your own. Every `docs` entry must be the slug of a published page in your site.
+
+### Classic
+
+The logo, then the full site index. This is what a fresh project gets: no `home` settings are needed.
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    logo: "/img/logo.svg",
+  }),
+);
+```
+
+### Picture and index
+
+A large picture beside the title, then the full site index.
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "large",
+    },
+  }),
+);
+```
+
+### Guided start
+
+A banner picture, a "Start here" set of document cards, then the site index.
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "banner",
+      sections: [
+        {
+          type: "doc-cards",
+          heading: "Start here",
+          docs: [
+            "getting-started/introduction",
+            "getting-started/installation",
+            "guides/configuration",
+          ],
+        },
+        { type: "site-tree" },
+      ],
+    },
+  }),
+);
+```
+
+### Catalogue
+
+A large picture beside the title, then the described site index across the wide layout, with a cover picture on each top-level section's card.
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      wide: true,
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "large",
+      sections: [{ type: "site-tree", variant: "described" }],
+    },
+  }),
+);
+```
+
+The covers come from each top-level section's `index.mdx`:
+
+```mdx title="src/content/docs/guides/index.mdx"
+---
+title: Guides
+description: Step-by-step guides for common tasks.
+sidebar_position: 2
+cover: /img/covers/guides.png
+---
+```
+
+### Poster
+
+A backdrop picture behind the title, a "Start here" set of document cards, then the described site index.
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "backdrop",
+      sections: [
+        {
+          type: "doc-cards",
+          heading: "Start here",
+          description: "New here? These pages get you running.",
+          docs: [
+            "getting-started/introduction",
+            "getting-started/installation",
+            "guides/configuration",
+          ],
+        },
+        { type: "site-tree", variant: "described" },
+      ],
+    },
+  }),
+);
+```
+
+### Index first
+
+The site index on top for readers who already know what they want, with the "Start here" cards below it.
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      sections: [
+        { type: "site-tree", heading: "All documentation" },
+        {
+          type: "doc-cards",
+          heading: "Start here",
+          docs: [
+            "getting-started/introduction",
+            "getting-started/installation",
+            "guides/configuration",
+          ],
+        },
+      ],
+    },
+  }),
+);
+```
+
+`home.sections` takes exactly one `site-tree` section and at most one `doc-cards` section, in either order. To give a section a different heading on a locale home, add `locales: { ja: { heading: "…" } }` to it; the locale code must be one your site configures.
+
+## Source
+
+`HomeHero` ships from `@takazudo/zudo-doc/home-hero`. Within this repository its source is `packages/zudo-doc/src/home-hero/index.tsx`, and the picture styles are the "Home hero image" block of `packages/zudo-doc/src/features.css`.

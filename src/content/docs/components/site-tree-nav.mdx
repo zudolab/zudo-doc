@@ -90,6 +90,26 @@ When the tree has a single category and its box is at least 48.75rem wide, the c
 
 <SiteTreeNav variant="described" idPrefix="described-demo" />
 
+## Category covers
+
+A top-level section can show a picture on its card in the home page site index. Add the [`cover`](../guides/frontmatter.mdx#fields-cover) frontmatter field to that section's `index.mdx`:
+
+```mdx title="src/content/docs/guides/index.mdx"
+---
+title: Guides
+sidebar_position: 2
+cover: /img/covers/guides.png
+---
+```
+
+- **Where it shows.** Only on the package home pages (`/` and each locale home), in the site index of both the classic sitemap block and a [`home.sections`](../guides/configuration.mdx#home-page-home-composed-navigation-sections) `site-tree` section. The `<SiteTreeNav />` and `<SiteTreeNavDemo />` tags in a document, like the examples on this page, do not show covers.
+- **Which cards.** Only top-level sections. A `cover` deeper in the tree, such as on a nested category's `index.mdx`, is ignored. A section hidden by `siteTreeNavIgnore` or moved to the secondary row by `siteTreeNavSecondary` has no card, so its cover does not show either. Cards without a cover look as they always do.
+- **The picture.** It sits at the top of the card, flush with the card border, in a 1200:630 box that is reserved before the picture loads. It is cropped to fill that box (`object-fit: cover`), so a 1200 × 630 picture shows whole. It loads lazily and is decorative (`alt=""`), because the section title is printed right below it.
+- **Path.** A root-absolute site path, usually a file in `public/`; the site `base` is prefixed for you. External URLs, `//` paths, backslashes and control characters fail frontmatter validation at build time.
+- **Default and described variants.** The cover is the same in both: the first thing in the card, above the section title. In the described variant the description and document count follow below the title as usual, and when a lone section splits into a summary column and a tree column, the cover stays above both columns, across the full card width.
+
+The raw island at `@takazudo/zudo-doc/site-tree-nav-island` takes the picture from a `coverHref` field on a top-level node of `tree`: a ready-to-use URL that the package home page builds from `cover` and `base`. For complete home page configurations that use covers, see the [Catalogue arrangement](./home-hero.mdx#home-page-arrangements-catalogue).
+
 ## Features
 
 - **Responsive grid layout** — uses `repeat(auto-fill, minmax(min(18rem, 100%), 1fr))` to adapt from single-column on mobile to multi-column on wider screens

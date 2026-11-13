@@ -92,6 +92,8 @@ zudoDoc({
 
 どのレイアウトでも読み込み前に画像のボックスを確保し、`darkSrc` も同じように働きます。それ以外の値は設定解決の時点で `TypeError` になります。
 
+[HomeHero](../components/home-hero.mdx) コンポーネントのページでは各レイアウトの実際の描画を確認でき、その[ホームページの構成例](../components/home-hero.mdx#ホームページの構成例)には、画像と `sections`、カテゴリのカバー画像を組み合わせた 6 つの完全なホーム設定があります。
+
 ホームのルート以外（設定画面のプレビューなど）で同じヒーローを表示するには、`@takazudo/zudo-doc/home-hero` の `HomeHero` をプレーンな props（`siteName`、`description`、`logo`、`image`、`imageLayout`、`base`、`links`）で描画します。パッケージのスタイルシート（`@takazudo/zudo-doc/compiled.css` など）が必要で、`darkSrc` を使う場合は `html[data-theme]` 属性も必要です。描画前に設定を検査できるよう、このモジュールは `assertValidHomeImage` も再エクスポートしています。
 
 #### Markdown 中心の例

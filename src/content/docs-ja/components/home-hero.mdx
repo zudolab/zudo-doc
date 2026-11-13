@@ -1,0 +1,396 @@
+---
+title: HomeHero
+description: ホームページ最上部のアイデンティティ部分（ロゴまたはフルカラー画像、サイト名、タグライン、リンク）と、4 種類の画像配置、6 つのホームページ構成例。
+sidebar_position: 6.5
+---
+
+## 概要
+
+`HomeHero` は、パッケージのホームページ（`/` と、`/ja/` のような各ロケールのホーム）の最上部にあるアイデンティティ部分です。上から順に次のものを表示します。
+
+- ロゴ、または `home.image` で指定したフルカラー画像
+- ページの `h1` としてのサイト名
+- `siteDescription`（ロケールのホームでは `locales.<code>.description`）による短いタグライン
+- リンク行：[ヘッダーナビゲーション](../guides/header-navigation.mdx)の最初の項目、`githubUrl` を設定したときの GitHub リンク、`homeExtras` の項目を `/` で区切って並べたもの
+
+設定は `zfb.config.ts` の `home` で行います。このページでは各選択肢の見た目を示します。すべてのフィールドの説明は引き続き[設定ガイド](../guides/configuration.mdx#ホームページ-home)にあります。
+
+<Info>
+
+このページの枠で囲んだ例は、本物の `HomeHero` コンポーネントを、このサイトの例示用アートワークと仮のサイト名で描画したものです。ヒーローの見本であって実際のナビゲーションではないため、リンクは操作できません。ライトモードとダークモードを切り替えると、`darkSrc` の画像に切り替わる様子を確認できます。ホームページのヒーローは最大 60rem 幅の帯に収まります。例の枠が `large` 配置に必要な幅より狭いときは、狭い画面でのヒーローと同じように縦に積んで表示します。
+
+</Info>
+
+## ロゴか画像か
+
+既定では、ヒーローは [`logo`](../guides/configuration.mdx#アイデンティティと-url-logo) を描画します。`"auto"` はサイト名からマークを生成し、パスを指定するとテーマに合わせて色が変わる単色の CSS マスクとして描画し、`false` では何も描画しません。マスクなので、カラフルなロゴファイルもシルエットになります。
+
+<HomeHeroExample picture={false} />
+
+画像を本来の色のまま表示したいときは `home.image` を設定します。画像がロゴの代わりになるのはヒーローの中だけで、ヘッダーなど `logo` を使うほかの場所ではロゴのままです。
+
+```ts
+home: {
+  image: {
+    src: "/img/hero.svg",
+    darkSrc: "/img/hero-dark.svg",
+    width: 1200,
+    height: 630,
+  },
+},
+```
+
+どの配置でも、画像の読み込み前に 1200:630 のボックスを確保するので、ヒーローの位置がずれることはありません。1200 × 630 の画像はどのボックスにもぴったり収まります。
+
+## 画像の配置
+
+`home.imageLayout` で、画像にどれだけの広さを与えるかを決めます。`home.image` がなければ効果はありません。
+
+### logo
+
+既定値です。画像はロゴと同じボックスに入ります。幅の広い画面ではタイトルの横に幅 320 CSS px で表示されます。`object-fit: contain` により画像全体が見えます。
+
+<HomeHeroExample layout="logo" />
+
+ロゴの位置に同じ大きさで置きたい、色付きのエンブレムやマークに向いています。
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "logo",
+},
+```
+
+### large
+
+幅の広い画面では、タイトルの横に幅 560 CSS px のボックスで表示されます。タイトルを横に置いたまま、画像にページの多くを任せられます。画像全体が見えます。
+
+<HomeHeroExample layout="large" />
+
+サイトのアイデンティティの一部となるイラストで、タイトル、タグライン、リンクを画像の横に並べたいときに向いています。
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "large",
+},
+```
+
+### banner
+
+画像がヒーローの全幅に広がり、その下にタイトル、タグライン、リンク行が中央揃えで続きます。画像全体が見えます。
+
+<HomeHeroExample layout="banner" />
+
+横長のアートワークや、読者にできるだけ大きく全体を見てほしいスクリーンショットに向いています。
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "banner",
+},
+```
+
+### backdrop
+
+画像が中央揃えの文字の背後でヒーロー全体を埋めます。1200:630 の領域を覆うように切り抜かれ（`object-fit: cover`）、タイトル、タグライン、リンクは、ページ背景色を 92% の不透明度で敷いた最大 40rem 幅のパネルに載るので、どんな画像の上でも読みやすく保たれます。
+
+<HomeHeroExample layout="backdrop" />
+
+雰囲気を演出するアートワークに向いています。大事な部分は中央と端から離して配置してください。中央はパネルに隠れ、狭い画面では切り抜きで両端が削られることがあります。
+
+```ts
+home: {
+  image: { src: "/img/hero.svg", width: 1200, height: 630 },
+  imageLayout: "backdrop",
+},
+```
+
+## 設定
+
+| 設定 | 型 | 用途 |
+|---|---|---|
+| `home.image.src` | `string` | 必須。画像へのルートからの絶対パスで、通常は `public/` 内のファイルです。サイトの `base` は自動で前に付きます。 |
+| `home.image.alt` | `string` | 代替テキスト。デフォルトは `""` です。[代替テキスト](#代替テキスト)を参照してください。 |
+| `home.image.width`, `home.image.height` | `number` | 画像本来のピクセルサイズ（正の整数）。両方指定するか、両方省略します。 |
+| `home.image.darkSrc` | `string` | ダークモードで `src` の代わりに表示する画像の、ルートからの絶対パス。 |
+| `home.imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | 画像の配置。デフォルトは `"logo"`。`home.image` がなければ無視されます。 |
+
+`home` のほかのフィールド（`introMarkdown`、`sitemapHeading`、`sections`、`wide`）とそのデフォルト値は[設定ガイド](../guides/configuration.mdx#ホームページ-home)にあります。
+
+## ダークモード
+
+`darkSrc` を指定すると、ヒーローには両方の画像が入ります。`<html>` の `data-theme` 属性に合う方を CSS が表示します。この属性はカラーモードのスクリプトが最初の描画より前に設定するため、ちらつきはなく、どちらを表示するかをスクリプトで選ぶこともありません。両方の画像は遅延読み込みされるので、非表示の方はダウンロードされません。`data-theme` 属性がない場合（`colorMode: false`、またはスクリプト無効時）は `src` の画像が表示されます。
+
+`darkSrc` がなければ、両方のモードで 1 枚の画像を使います。ライトとダークのどちらのページにもなじむ背景にするか、`darkSrc` を用意してください。
+
+## パスと検証
+
+`src` と `darkSrc` は、`/img/hero.svg` のように 1 つの `/` で始まる、ルートからの絶対パスでなければなりません。外部 URL、プロトコル相対の `//` パス、`data:` URL、バックスラッシュ、制御文字は拒否されるため、厳格な `img-src 'self'` のコンテンツセキュリティポリシーとも両立します。
+
+設定は読み込み時に検査されます。不正な値はフィールド名を示す `TypeError` になります。例：
+
+| 誤り | エラー |
+|---|---|
+| `imageLayout: "full"` | `Invalid home.imageLayout "full": must be one of "logo", "large", "banner", "backdrop".` |
+| `image: "/img/hero.svg"` | `Invalid home.image "/img/hero.svg": omit it, or pass an object { src: "/img/hero.png" }.` |
+| `image: { src: "/img/a.svg", dark: "/img/b.svg" }` | `Invalid home.image: unknown key "dark". Allowed keys: src, alt, width, height, darkSrc.` |
+| `src: "https://example.com/hero.png"`（または `src` の欠落） | `Invalid home.image.src …: must be a root-absolute site path such as "/img/hero.png" (no external URL, no "//", no backslash or control character).` `darkSrc` にも同じ検査が適用されます。 |
+| `alt: 42` | `Invalid home.image.alt 42: must be a string.` |
+| `height` なしの `width: 1200` | `Invalid home.image: width and height must be given together, or both omitted.` |
+| `width: 0` や `width: 12.5` | `Invalid home.image.width …: must be a positive integer (pixels).` |
+
+`imageLayout` は `image` を設定していなくても検査されます。
+
+## 代替テキスト
+
+画像のすぐ横にサイト名が表示されるため、`alt` のデフォルトは `""` で、スクリーンリーダーは画像を読み飛ばします。画像が装飾であったり、サイト名を繰り返すだけであったりする場合は空のままにしてください。製品のスクリーンショットのように、タイトルが伝えていない内容を画像が示すときは `alt` を設定し、サイト名を繰り返すのではなく、その内容を説明してください。
+
+`backdrop` 配置では、画像は常に装飾として扱われます。文字のパネルが画像を覆うため、指定した `alt` は無視されて `alt=""` で描画されます。読者に必要な情報を backdrop の画像に入れないでください。
+
+## 狭い画面
+
+- **`logo` と `large`** は、`lg` ブレークポイント（ビューポート幅 1024px）以上でタイトルの横に並びます。それより狭いと画像が中央揃えのタイトルの上に積まれ、ボックスは使える幅まで縮みます。
+- **`banner`** はどのサイズでも全幅と 1200:630 の比率を保ちます。
+- **`backdrop`** は文字が収まる間は 1200:630 の比率を保ちます。タイトル、タグライン、リンクにより多くの高さが必要になると、文字を切り取らずにヒーローが縦に伸び、画像はヒーロー全体を覆い続けます。
+
+ヒーローと紹介文は、ページ中央の 60rem 幅の帯に収まります。
+
+## ほかの場所でヒーローを描画する
+
+ヒーローはホームのルートが描画します。設定画面のプレビュー、テーマギャラリー、CMS の画面など、ほかの場所で同じヒーローを表示するには、`@takazudo/zudo-doc/home-hero` から `HomeHero` をインポートします。プレーンな props を受け取るサーバーコンポーネントで、ルートのデータやドキュメントレイアウトは必要ありません。
+
+```tsx
+import { HomeHero, assertValidHomeImage } from "@takazudo/zudo-doc/home-hero";
+
+const image = {
+  src: "/img/hero.svg",
+  darkSrc: "/img/hero-dark.svg",
+  width: 1200,
+  height: 630,
+};
+
+// HomeHero does not validate its props; check them the same way the config does.
+assertValidHomeImage({ home: { image, imageLayout: "banner" } });
+
+export function HomePreview() {
+  return (
+    <HomeHero
+      siteName="My Docs"
+      description="A short guide to our project."
+      image={image}
+      imageLayout="banner"
+      base="/"
+      links={[<a href="/docs/getting-started/">Get started</a>]}
+    />
+  );
+}
+```
+
+| Prop | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `siteName` | `string` | （必須） | ヒーローの `h1` として表示します。 |
+| `description` | `string` | — | タイトルの下のタグライン。そのまま表示します。 |
+| `logo` | `string \| false` | `"auto"` | `logo` 設定と同じ値。 |
+| `image` | `HomeImageConfig` | — | `home.image` と同じ形。指定するとロゴの代わりになります。 |
+| `imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | `"logo"` | `home.imageLayout` と同じ値。`image` がなければ無視されます。 |
+| `base` | `string` | `"/"` | サイトの base。`logo` と `image` のパスの前に付きます。 |
+| `links` | `Child[]` | `[]` | リンク行の項目。順番どおりに `/` で区切って表示します。 |
+| `logoHref` | `(path: string) => string` | `base` を前に付ける | `logo` のパスを URL に変換します。 |
+
+ヒーローにはパッケージのスタイルが必要です。`@takazudo/zudo-doc/compiled.css` を読み込むか、プロジェクトの `global.css` にすでにある `theme.css`、`content.css`、`page-loading.css`、`features.css` のインポートを使ってください。`darkSrc` を使う場合は、ページの `<html>` に `data-theme="light"` または `data-theme="dark"` を設定する必要があります。このモジュールは `assertValidHomeImage` と `isRootAbsoluteSitePath` もエクスポートしているので、プレビューでも設定と同じ値を拒否できます。
+
+## ホームページの構成例
+
+ヒーローはホームページの一部です。次の 6 つの完全な設定は、ヒーローをほかのホーム設定と組み合わせたものです。「Start here」のカードとサイトインデックスには [`home.sections`](../guides/configuration.mdx#ホームページ-home-ナビゲーションセクションの構成)、サイトインデックスの[説明付きのバリエーション](./site-tree-nav.mdx#説明付きのバリエーション)、そして[カテゴリのカバー画像](./site-tree-nav.mdx#カテゴリのカバー画像)を使います。いずれかを `zfb.config.ts` にコピーし、サイト名、画像のパス、文書のスラッグを自分のものに置き換えてください。`docs` の各項目は、サイトで公開されているページのスラッグでなければなりません。
+
+### クラシック
+
+ロゴのあとにサイトインデックス全体が続きます。新規プロジェクトはこの形で、`home` の設定は不要です。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    logo: "/img/logo.svg",
+  }),
+);
+```
+
+### 画像とインデックス
+
+タイトルの横に大きな画像、そのあとにサイトインデックス全体が続きます。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "large",
+    },
+  }),
+);
+```
+
+### ガイド付きスタート
+
+バナー画像、「Start here」の文書カード、そのあとにサイトインデックスが続きます。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "banner",
+      sections: [
+        {
+          type: "doc-cards",
+          heading: "Start here",
+          docs: [
+            "getting-started/introduction",
+            "getting-started/installation",
+            "guides/configuration",
+          ],
+        },
+        { type: "site-tree" },
+      ],
+    },
+  }),
+);
+```
+
+### カタログ
+
+タイトルの横に大きな画像、そのあとに広いレイアウトで説明付きのサイトインデックスが続き、各トップレベルセクションのカードにカバー画像が付きます。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      wide: true,
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "large",
+      sections: [{ type: "site-tree", variant: "described" }],
+    },
+  }),
+);
+```
+
+カバー画像は、各トップレベルセクションの `index.mdx` で指定します。
+
+```mdx title="src/content/docs/guides/index.mdx"
+---
+title: Guides
+description: Step-by-step guides for common tasks.
+sidebar_position: 2
+cover: /img/covers/guides.png
+---
+```
+
+### ポスター
+
+タイトルの背後に backdrop 画像、「Start here」の文書カード、そのあとに説明付きのサイトインデックスが続きます。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      image: {
+        src: "/img/hero.svg",
+        darkSrc: "/img/hero-dark.svg",
+        width: 1200,
+        height: 630,
+      },
+      imageLayout: "backdrop",
+      sections: [
+        {
+          type: "doc-cards",
+          heading: "Start here",
+          description: "New here? These pages get you running.",
+          docs: [
+            "getting-started/introduction",
+            "getting-started/installation",
+            "guides/configuration",
+          ],
+        },
+        { type: "site-tree", variant: "described" },
+      ],
+    },
+  }),
+);
+```
+
+### インデックス優先
+
+目的が決まっている読者のためにサイトインデックスを上に置き、その下に「Start here」のカードを置きます。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteDescription: "A short guide to our project.",
+    home: {
+      sections: [
+        { type: "site-tree", heading: "All documentation" },
+        {
+          type: "doc-cards",
+          heading: "Start here",
+          docs: [
+            "getting-started/introduction",
+            "getting-started/installation",
+            "guides/configuration",
+          ],
+        },
+      ],
+    },
+  }),
+);
+```
+
+`home.sections` には `site-tree` セクションをちょうど 1 つと、`doc-cards` セクションを 1 つまで、どちらの順でも入れられます。ロケールのホームでセクションの見出しを変えるには、そのセクションに `locales: { ja: { heading: "…" } }` を加えます。ロケールコードはサイトで設定しているものでなければなりません。
+
+## ソース
+
+`HomeHero` は `@takazudo/zudo-doc/home-hero` から提供されます。このリポジトリでのソースは `packages/zudo-doc/src/home-hero/index.tsx` で、画像のスタイルは `packages/zudo-doc/src/features.css` の「Home hero image」ブロックです。
