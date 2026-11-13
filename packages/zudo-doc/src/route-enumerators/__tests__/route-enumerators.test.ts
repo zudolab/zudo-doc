@@ -236,3 +236,106 @@ describe("sitemap entries (#4784)", () => {
     ]);
   });
 });
+
+describe("locale alternates (#4787)", () => {
+  function doc(slug: string, data: Record<string, unknown> = {}) {
+    return { slug, data: { title: slug, ...data } };
+  }
+
+  const collections: Record<string, ReturnType<typeof doc>[]> = {
+    docs: [
+      doc("guides/paired"),
+      doc("guides/en-only"),
+      doc("guides/header", { category_no_page: true }),
+      doc("private/notes"),
+    ],
+    "docs-ja": [
+      doc("guides/paired"),
+      doc("guides/ja-only"),
+      doc("guides/header", { category_no_page: true }),
+      doc("private/notes"),
+    ],
+  };
+
+  function makeContext(settingsOverrides: Partial<Settings> = {}) {
+    return createRouteContext(
+      {
+        settings: {
+          ...DEFAULT_SETTINGS,
+          base: "/",
+          trailingSlash: true,
+          defaultLocale: "en",
+          locales: { ja: { label: "JA", dir: "src/content/docs-ja" } },
+          docTags: false,
+          ...settingsOverrides,
+        },
+        translations: {},
+        tagVocabulary: [],
+        colorSchemes: null,
+        themePackRegistry: null,
+        assetManifest: null,
+      },
+      { stableDocs: (name: string) => (collections[name] ?? []) as never },
+    );
+  }
+
+  const paired = [
+    { hreflang: "en", url: "/docs/guides/paired/" },
+    { hreflang: "ja", url: "/ja/docs/guides/paired/" },
+    { hreflang: "x-default", url: "/docs/guides/paired/" },
+  ];
+
+  it("pairs a page that is real content in both locales, from either side", () => {
+    const context = makeContext();
+    expect(context.getDocLocaleAlternates("guides/paired", "en")).toEqual(paired);
+    expect(context.getDocLocaleAlternates("guides/paired", "ja")).toEqual(paired);
+  });
+
+  it("leaves unpaired and fallback pages without alternates", () => {
+    const context = makeContext();
+    // English only: its /ja/ route is a fallback, so neither side pairs.
+    expect(context.getDocLocaleAlternates("guides/en-only", "en")).toEqual([]);
+    expect(context.getDocLocaleAlternates("guides/en-only", "ja")).toEqual([]);
+    // Japanese only: no English page to pair with.
+    expect(context.getDocLocaleAlternates("guides/ja-only", "ja")).toEqual([]);
+    // No-page category headers are not routes.
+    expect(context.getDocLocaleAlternates("guides/header", "en")).toEqual([]);
+  });
+
+  it("does not pair default-locale-only paths", () => {
+    const context = makeContext({ defaultLocaleOnlyPrefixes: ["/docs/private/"] });
+    expect(context.getDocLocaleAlternates("private/notes", "en")).toEqual([]);
+  });
+
+  it("pairs every locale home with x-default", () => {
+    expect(makeContext().getHomeLocaleAlternates()).toEqual([
+      { hreflang: "en", url: "/" },
+      { hreflang: "ja", url: "/ja/" },
+      { hreflang: "x-default", url: "/" },
+    ]);
+  });
+
+  it("emits nothing for a single-locale site", () => {
+    const context = makeContext({ locales: {} });
+    expect(context.getDocLocaleAlternates("guides/paired", "en")).toEqual([]);
+    expect(context.getHomeLocaleAlternates()).toEqual([]);
+    for (const entry of context.enumerateSitemapEntries()) {
+      expect(entry).not.toHaveProperty("alternates");
+    }
+  });
+
+  it("attaches alternates to the matching sitemap entries only", () => {
+    const byUrl = new Map(
+      makeContext()
+        .enumerateSitemapEntries()
+        .map((entry) => [entry.url, entry.alternates]),
+    );
+    expect(byUrl.get("/docs/guides/paired/")).toEqual(paired);
+    expect(byUrl.get("/ja/docs/guides/paired/")).toEqual(paired);
+    expect(byUrl.get("/docs/guides/en-only/")).toBeUndefined();
+    expect(byUrl.get("/ja/docs/guides/en-only/")).toBeUndefined();
+    expect(byUrl.get("/ja/docs/guides/ja-only/")).toBeUndefined();
+    expect(byUrl.get("/")).toHaveLength(3);
+    expect(byUrl.get("/ja/")).toHaveLength(3);
+  });
+});

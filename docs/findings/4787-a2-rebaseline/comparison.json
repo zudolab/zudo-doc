@@ -1,0 +1,214 @@
+{
+  "status": "EXACT_NORMALIZED_CAPTURE_EQUALITY",
+  "identityVerification": "OBSERVED_ONLY_UNVERIFIED_FRESHNESS",
+  "acceptance": "No build, CI, reference update or release approval; strict A2 remains authoritative.",
+  "sources": {
+    "baseline": {
+      "sha": "ef0a3d38055e8b269999453f8607763bc94f5125",
+      "tree": "46a2d44975323a5c2c8ee034d15c7c8b967b9e56"
+    },
+    "candidate": {
+      "sha": "5719f66b6e5d066636824d444c4f66bd864a7109",
+      "tree": "189213c5075d520c0d859963bd602e605c5823db"
+    },
+    "reference": {
+      "sha": "a2e94e89d16b6872318a43bad243feadff9337fe",
+      "tree": "a017a41271a2c8aa819893a797ed1d731d793354"
+    }
+  },
+  "baselineReferenceTreeEqual": false,
+  "normalizerSha256": "0c769b0c4c2e86ac950dcafc0a5866d9740ac68a90796f3cc7b4b3d3203a3b82",
+  "captureManifestSha256": [
+    "ba04becc2a02f34810e8ba4e5d1e2118754dc0dc5a34a08de416d437d8fadc0d",
+    "1ceaf32fe3873041faadf321e0da2edfdf3771c52b46b71e8125634455175512"
+  ],
+  "sourcePackVersions": {
+    "baseline": {
+      "academia": "1.0.3",
+      "bauhaus": "1.0.2",
+      "beacon": "1.0.2",
+      "blueprint": "1.0.2",
+      "botanica": "1.0.1",
+      "broadsheet": "1.0.3",
+      "brutalist": "1.0.4",
+      "classic": "1.0.0",
+      "drift": "1.0.2",
+      "eink": "1.0.2",
+      "fjord": "1.0.2",
+      "foundry": "1.0.2",
+      "futura-editorial": "1.0.2",
+      "graphite": "1.0.0",
+      "hearth": "1.0.4",
+      "hollow": "1.0.2",
+      "ledger": "1.0.2",
+      "manuscript": "1.0.2",
+      "matcha": "1.0.3",
+      "nocturne": "1.0.3",
+      "observatory": "1.0.4",
+      "onyx": "1.0.4",
+      "phosphor": "1.0.2",
+      "quiet-slate": "1.0.0",
+      "riso": "1.0.1",
+      "sakura": "1.0.2",
+      "scandi": "1.0.1",
+      "solar": "1.0.2",
+      "sumi": "1.0.4",
+      "swissgrid": "1.0.2",
+      "tidepool": "1.0.0",
+      "timberline": "1.0.2",
+      "warm-mineral": "1.0.0",
+      "washi": "1.0.4"
+    },
+    "candidate": {
+      "academia": "1.0.3",
+      "bauhaus": "1.0.2",
+      "beacon": "1.0.2",
+      "blueprint": "1.0.2",
+      "botanica": "1.0.1",
+      "broadsheet": "1.0.3",
+      "brutalist": "1.0.4",
+      "classic": "1.0.0",
+      "drift": "1.0.2",
+      "eink": "1.0.2",
+      "fjord": "1.0.2",
+      "foundry": "1.0.2",
+      "futura-editorial": "1.0.2",
+      "graphite": "1.0.0",
+      "hearth": "1.0.4",
+      "hollow": "1.0.2",
+      "ledger": "1.0.2",
+      "manuscript": "1.0.2",
+      "matcha": "1.0.3",
+      "nocturne": "1.0.3",
+      "observatory": "1.0.4",
+      "onyx": "1.0.4",
+      "phosphor": "1.0.2",
+      "quiet-slate": "1.0.0",
+      "riso": "1.0.1",
+      "sakura": "1.0.2",
+      "scandi": "1.0.1",
+      "solar": "1.0.2",
+      "sumi": "1.0.4",
+      "swissgrid": "1.0.2",
+      "tidepool": "1.0.0",
+      "timberline": "1.0.2",
+      "warm-mineral": "1.0.0",
+      "washi": "1.0.4"
+    }
+  },
+  "changedStylesheets": [],
+  "pages": [
+    {
+      "page": "404.html",
+      "rawEqual": true,
+      "normalizedEqual": true,
+      "residualEqual": true,
+      "baselineRawSha256": "82d7c5854c0527b33a12eca82fb67ca6bf64ab9110c2d0872b27a6070f7f85d7",
+      "candidateRawSha256": "82d7c5854c0527b33a12eca82fb67ca6bf64ab9110c2d0872b27a6070f7f85d7",
+      "baselineFingerprint": "1954e429d7f01041aa925440e9cc8929b883f32bcccb3551e734bf7c6f98fce6",
+      "candidateFingerprint": "1954e429d7f01041aa925440e9cc8929b883f32bcccb3551e734bf7c6f98fce6",
+      "baselineIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "ae326bf97d1ffaa3"
+        }
+      ],
+      "candidateIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "ae326bf97d1ffaa3"
+        }
+      ]
+    },
+    {
+      "page": "docs/getting-started/index.html",
+      "rawEqual": true,
+      "normalizedEqual": true,
+      "residualEqual": true,
+      "baselineRawSha256": "c7969bbe38162522b01fab0077e72226a5a306e008c582db523b101435b8df10",
+      "candidateRawSha256": "c7969bbe38162522b01fab0077e72226a5a306e008c582db523b101435b8df10",
+      "baselineFingerprint": "e53e77082ef0bd55caed3dd23a4974784c62ee5164adcf25b24bb614e3c46421",
+      "candidateFingerprint": "e53e77082ef0bd55caed3dd23a4974784c62ee5164adcf25b24bb614e3c46421",
+      "baselineIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "ae326bf97d1ffaa3"
+        }
+      ],
+      "candidateIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "ae326bf97d1ffaa3"
+        }
+      ]
+    },
+    {
+      "page": "docs/getting-started/coverage/index.html",
+      "rawEqual": true,
+      "normalizedEqual": true,
+      "residualEqual": true,
+      "baselineRawSha256": "ea57ab16f7f37d8161cb6034ffa7af1058c77593426b20032070f8f5060f0a6e",
+      "candidateRawSha256": "ea57ab16f7f37d8161cb6034ffa7af1058c77593426b20032070f8f5060f0a6e",
+      "baselineFingerprint": "9d56b64cda83ae46649ca66234ff6289b05fc2c2119c2b0360c6654f4edc536b",
+      "candidateFingerprint": "9d56b64cda83ae46649ca66234ff6289b05fc2c2119c2b0360c6654f4edc536b",
+      "baselineIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "MobileToc",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "Toc",
+          "observedBuild": "ae326bf97d1ffaa3"
+        }
+      ],
+      "candidateIslands": [
+        {
+          "tag": "div",
+          "component": "SidebarToggle",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "SidebarTree",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "MobileToc",
+          "observedBuild": "ae326bf97d1ffaa3"
+        },
+        {
+          "tag": "div",
+          "component": "Toc",
+          "observedBuild": "ae326bf97d1ffaa3"
+        }
+      ]
+    }
+  ]
+}
