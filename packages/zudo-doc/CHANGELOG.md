@@ -6,9 +6,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [12.0.0] - 2026-11-13
+
 ### Breaking Changes
 
 - `zudoDoc()` now throws a `TypeError` when the settings still contain `findInPage`, the key that 11.0.0 removed, instead of ignoring it. The message tells you to remove the key. Configs without `findInPage` are unaffected. (#4763)
+- The `@takazudo/zudo-doc-history-server` peer floor moves from `^11.0.0` to `^12.0.0`. Projects that enable document history need history-server 12.x.
 
 ### Features
 

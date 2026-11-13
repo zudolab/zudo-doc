@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [12.0.0] - 2026-11-13
+
+### Breaking Changes
+
+- A fresh scaffold pins `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^12.0.0`.
+
 ## [11.0.0] - 2026-11-13
 
 ### Breaking Changes
