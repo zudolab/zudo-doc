@@ -111,6 +111,8 @@ export interface LlmsTxtLoadOptions {
    * empty, URLs are returned path-only for projects that omit `siteUrl`.
    */
   siteUrl?: string;
+  /** Append `/` to page URLs, matching the route layer's `trailingSlash` setting. Omitted means `false`. */
+  trailingSlash?: boolean;
   /** Actual locale code used by the agent export page identity, including for the default locale. */
   agentExportLocale?: string;
 }
@@ -126,6 +128,8 @@ export interface LlmsTxtEmitOptions extends LlmsTxtSiteMeta {
   base: string;
   /** Optional absolute site URL; see {@link LlmsTxtLoadOptions}. */
   siteUrl?: string;
+  /** Append `/` to page URLs, matching the route layer's `trailingSlash` setting. Omitted means `false`. */
+  trailingSlash?: boolean;
   /** Actual default locale code; needed to match agent-export page IDs. */
   defaultLocale?: string;
   /** Link slim-index docs to agent-export Markdown artifacts when enabled. */

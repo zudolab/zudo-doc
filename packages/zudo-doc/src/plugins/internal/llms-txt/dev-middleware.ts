@@ -57,6 +57,8 @@ export interface LlmsTxtDevMiddlewareOptions extends LlmsTxtSiteMeta {
   base: string;
   /** Optional absolute site URL; see `LlmsTxtLoadOptions.siteUrl`. */
   siteUrl?: string;
+  /** Append `/` to page URLs, matching the route layer's `trailingSlash` setting. Omitted means `false`. */
+  trailingSlash?: boolean;
   /** Actual default locale code; needed to match agent-export page IDs. */
   defaultLocale?: string;
   /** Link slim-index docs to agent-export Markdown artifacts when enabled. */
@@ -154,6 +156,7 @@ export function createLlmsTxtDevMiddleware(
         locale: match.locale,
         base,
         siteUrl,
+        trailingSlash: options.trailingSlash === true,
         ...(options.agentExport === true
           ? { agentExportLocale: match.locale ?? options.defaultLocale ?? "en" }
           : {}),

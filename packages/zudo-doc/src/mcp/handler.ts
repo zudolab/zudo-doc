@@ -44,8 +44,8 @@ export function createMcpHandler(options: McpHandlerOptions) {
   return async (request: Request): Promise<Response> => {
     const requestOrigin = new URL(request.url).origin;
     const origin = request.headers.get("origin");
-    const allowed = new Set([requestOrigin]);
-    if (options.siteUrl) { try { allowed.add(new URL(options.siteUrl).origin); } catch { /* invalid config cannot grant an origin */ } }
+    // Only an http(s) siteUrl contributes an origin; a scheme-less or invalid value falls back to the request origin.
+    const allowed = new Set([requestOrigin, mcpPublicOrigin(options.siteUrl, request.url)]);
     const cors = origin && allowed.has(origin) ? origin : undefined;
     const finish = (response: Response): Response => {
       const headers = new Headers(response.headers);

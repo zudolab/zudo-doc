@@ -61,6 +61,15 @@ describe("agent full-text search", () => {
     expect(searchAgentIndex(index, "認証")).toMatchObject({ ok: true, results: [{ title: "設定 (ja · 認証)" }] });
     const parts = buildAgentSearchIndex([item("p", "Large", "needle", "en", { part: 2, partCount: 3 })]);
     expect(searchAgentIndex(parts, "needle")).toMatchObject({ ok: true, results: [{ title: "Large (en · part 2/3)" }] });
+    // Stored item titles carry their own part label (agent-export); show it once (#4783).
+    const labelled = buildAgentSearchIndex([
+      item("q", "Read-only MCP server (part 1/2)", "needle", "en", { part: 1, partCount: 2 }),
+      item("r", "Read-only MCP server (part 2/2)", "other", "en", { part: 2, partCount: 2 }),
+    ]);
+    expect(searchAgentIndex(labelled, "needle")).toMatchObject({ ok: true, results: [{ title: "Read-only MCP server (en · part 1/2)" }] });
+    // A title that merely ends in a different part label is left intact.
+    const literal = buildAgentSearchIndex([item("s", "Notes (part 9/9)", "needle", "en", { part: 1, partCount: 2 })]);
+    expect(searchAgentIndex(literal, "needle")).toMatchObject({ ok: true, results: [{ title: "Notes (part 9/9) (en · part 1/2)" }] });
     const sameLocale = buildAgentSearchIndex([item("x", "Guide", "needle"), item("y", "Guide", "needle")]);
     expect(searchAgentIndex(sameLocale, "needle")).toMatchObject({
       ok: true, results: [{ title: "Guide (en · x)" }, { title: "Guide (en · y)" }],

@@ -104,6 +104,25 @@ describe("md-utils slugToUrl", () => {
       "https://example.com/docs/guides/intro",
     );
   });
+
+  it("appends the route layer's trailing slash when trailingSlash is true (#4783)", () => {
+    expect(slugToUrl("guides/intro", null, "", undefined, true)).toBe("/docs/guides/intro/");
+    expect(slugToUrl("guides/intro", "ja", "/base/", undefined, true)).toBe(
+      "/base/ja/docs/guides/intro/",
+    );
+    expect(slugToUrl("guides/intro", null, "/", "https://example.com/", true)).toBe(
+      "https://example.com/docs/guides/intro/",
+    );
+    // Root index (empty slug) already ends with a slash; never doubled.
+    expect(slugToUrl("", null, "/base/", undefined, true)).toBe("/base/docs/");
+    expect(slugToUrl("", "ja", "/", undefined, true)).toBe("/ja/docs/");
+  });
+
+  it("keeps slash-less output when trailingSlash is false or omitted", () => {
+    expect(slugToUrl("guides/intro", null, "/base/", undefined, false)).toBe("/base/docs/guides/intro");
+    expect(slugToUrl("guides/intro", "ja", "")).toBe("/ja/docs/guides/intro");
+    expect(slugToUrl("", null, "", undefined, false)).toBe("/docs/");
+  });
 });
 
 describe("md-utils stripMarkdown directives and inline code (zudo-doc#4647)", () => {

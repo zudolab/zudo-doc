@@ -42,11 +42,16 @@ export function buildAgentSearchIndex(source: AgentSearchIndex | readonly AgentI
 
 function displayTitle(item: AgentItem, duplicateTitle: boolean, duplicateQualifier: boolean): string {
   const { locale, section, part, partCount } = item.metadata;
+  const partLabel = `part ${part}/${partCount}`;
+  // Stored multi-part item titles already end in ` (part N/M)`; the qualifier
+  // list below carries the label, so show it once.
+  const suffix = ` (${partLabel})`;
+  const title = partCount > 1 && item.title.endsWith(suffix) ? item.title.slice(0, -suffix.length) : item.title;
   const qualifiers = [locale];
-  if (section && section !== item.title) qualifiers.push(section);
-  if (partCount > 1) qualifiers.push(`part ${part}/${partCount}`);
+  if (section && section !== title) qualifiers.push(section);
+  if (partCount > 1) qualifiers.push(partLabel);
   if (duplicateQualifier) qualifiers.push(item.id);
-  return duplicateTitle || qualifiers.length > 1 ? `${item.title} (${qualifiers.join(" · ")})` : item.title;
+  return duplicateTitle || qualifiers.length > 1 ? `${title} (${qualifiers.join(" · ")})` : title;
 }
 
 /** Returns a validation result for bad queries and [] for valid queries with no matches. */

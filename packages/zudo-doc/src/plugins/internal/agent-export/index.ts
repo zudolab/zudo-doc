@@ -13,6 +13,8 @@ export interface AgentExportOptions {
   outDir?: string;
   base: string;
   siteUrl?: string;
+  /** Append `/` to page URLs, matching the route layer's `trailingSlash` setting. Omitted means `false`. */
+  trailingSlash?: boolean;
   siteName: string;
   defaultLocale: string;
   defaultLocaleDir: string;
@@ -40,15 +42,18 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
     const parsed = parseMarkdownFile(filePath);
     if (!parsed || isExcluded(parsed.data)) return [];
     const slug = parsed.data.slug ?? fileSlug;
-    const url = slugToUrl(slug, root.default ? null : root.code, options.base, options.siteUrl);
-    return [{ root, filePath, parsed, slug, url }];
+    const locale = root.default ? null : root.code;
+    const url = slugToUrl(slug, locale, options.base, options.siteUrl, options.trailingSlash === true);
+    // Relative links keep resolving against the slash-less page URL, which mirrors the source-file directory the author wrote them against.
+    const linkBase = slugToUrl(slug, locale, options.base, options.siteUrl);
+    return [{ root, filePath, parsed, slug, url, linkBase }];
   }));
   const sourceUrls = new Map(sources.map(source => [source.filePath, source.url]));
-  const documents = sources.map(({ root, filePath, parsed, slug, url }) => {
+  const documents = sources.map(({ root, filePath, parsed, slug, url, linkBase }) => {
     const id = agentPageKey(root.code, slug);
     if (seen.has(id)) throw new Error(`Duplicate agent page ID: ${id}`);
     seen.add(id);
-    const normalized = normalizeAgentMarkdown(parsed.content, url, target => {
+    const normalized = normalizeAgentMarkdown(parsed.content, linkBase, target => {
       // Source-relative MD/MDX links use the physical file, not its possibly
       // overridden route slug. Resolve only known corpus files; never read a
       // target supplied by the document or expose local paths in the feed.
