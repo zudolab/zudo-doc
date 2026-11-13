@@ -31,7 +31,7 @@ zudo-doc はネイティブのデスクトップアプリをサポートしな�
 どちらかのモードを使っていたプロジェクトを Tauri サポートのないリリースへアップグレードするときは、古いネイティブ関連の要素を手動で削除してください。
 
 1. **ジェネレーターの選択：** 保存済みの JSON プリセットやプログラマティック API の `features` 配列から `tauri` と `tauriDev` を外し、スクリプト化した `create-zudo-doc` コマンドから `--tauri` / `--tauri-dev` を外します。これらを有効にするとエラーになります。無効化する形式（`--no-tauri`、`--no-tauri-dev`、`--tauri=false`、`--tauri-dev=false`）は引き続き受け付けられ、何もしません。[create-zudo-doc](../reference/create-zudo-doc.mdx#オプション-機能)を参照してください。
-2. **設定：** `zfb.config.ts` の `zudoDoc({ ... })` 呼び出し（または設定オブジェクト）から `findInPage` フィールドを削除します。
+2. **設定：** `zfb.config.ts` の `zudoDoc({ ... })` 呼び出し（または設定オブジェクト）から `findInPage` フィールドを削除します。11.0.0 より後のリリースでは、`findInPage` キーが残っていると `zudoDoc()` がそのキーを示す `TypeError` を投げ、削除するまでビルドが止まります。
 3. **インポート：** `@takazudo/zudo-doc/find-in-page` を直接インポートしている箇所を削除します。このエクスポートはもう存在しません。
 4. **アプリのファイルとスクリプト：** `src-tauri/` と `src-tauri-dev/` ディレクトリを削除し、`package.json` から `dev:tauri`、`dev:tauri-dev`、`build:tauri`、`build:tauri-dev` スクリプトと、それらのためだけにあった補助スクリプトを削除します。
 

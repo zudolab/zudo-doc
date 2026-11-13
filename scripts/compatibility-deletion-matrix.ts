@@ -628,7 +628,30 @@ export const deletionMatrix: readonly DeletionMatrixRow[] = [
         "^packages/zudo-doc/src/doc-body-end-islands/__tests__/body-end-islands\\.test\\.tsx$",
         // Real-filesystem proof that retired Tauri inputs emit no findInPage.
         "^packages/create-zudo-doc/src/__tests__/retired-tauri\\.test\\.ts$",
+        // zudoDoc() names the key only to reject it (#4763); the rows below keep
+        // config.ts scanned for a revived field and require the guard itself.
+        "^packages/zudo-doc/src/config\\.ts$",
       ],
+    },
+  },
+  {
+    issue: 4763,
+    category: "config value",
+    removed: "findInPage field on ZudoDocConfig (the key is rejected, not declared)",
+    proof: {
+      kind: "text-absent",
+      paths: ["packages/zudo-doc/src/config.ts"],
+      terms: ["findInPage?:", "findInPage:", "FindInPageInit"],
+    },
+  },
+  {
+    issue: 4763,
+    category: "config value",
+    removed: "silent acceptance of the removed findInPage key",
+    proof: {
+      kind: "text-present",
+      paths: ["packages/zudo-doc/src/config.ts"],
+      terms: ['if ("findInPage" in user) {', "findInPage is no longer supported"],
     },
   },
   {

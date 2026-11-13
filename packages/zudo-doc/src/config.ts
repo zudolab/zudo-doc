@@ -817,6 +817,12 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     );
   }
 
+  if ("findInPage" in user) {
+    throw new TypeError(
+      "findInPage is no longer supported; the find-in-page bar was removed in 11.0.0, so remove the findInPage key from your zudoDoc() settings",
+    );
+  }
+
   // Peel the non-serializable / data overrides and shell fields off `user`
   // first so they never pollute the merged `settings` object (which is
   // JSON-serialized into the routes plugin's virtual module). `settingsOverrides`

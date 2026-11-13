@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- `zudoDoc()` now throws a `TypeError` when the settings still contain `findInPage`, the key that 11.0.0 removed, instead of ignoring it. The message tells you to remove the key. Configs without `findInPage` are unaffected. (#4763)
+
 ### Bug Fixes
 
 - The sitemap's `<lastmod>` is now each document page's last-updated date from document history, the same date as its "Updated" label, instead of the build date on every URL. Routes with no known date (home and locale roots, tag, asset and versioned pages, or any page while `docHistory` is off or document history generation is skipped) have no `<lastmod>`. `@takazudo/zudo-doc/route-enumerators` adds `enumerateSitemapEntries`; `enumerateAllRoutes` is unchanged. (#4784)
