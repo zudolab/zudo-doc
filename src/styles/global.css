@@ -93,3 +93,36 @@ html .zd-product-name {
   letter-spacing: normal;
   text-transform: none;
 }
+
+/* ======== Home hero examples (showcase docs only) ======== */
+
+/* Frames each <HomeHeroExample /> on the Home hero component page so the
+ * rendered hero reads as an example, not as part of the page. */
+.zd-home-hero-example {
+  container-type: inline-size;
+  border: 1px solid var(--color-muted);
+  padding: var(--spacing-vsp-md) var(--spacing-hsp-lg);
+  min-inline-size: 0;
+}
+
+/* The "large" hero goes side by side from the lg viewport breakpoint and
+ * assumes the home page's 60rem band. A doc column is narrower, so stack the
+ * example as the hero does on a narrow screen until the frame has the room. */
+@container (width < 54rem) {
+  .zd-home-hero-example [data-zd-home-hero-layout="large"] .zd-home-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .zd-home-hero-example [data-zd-home-hero-layout="large"] .zd-home-copy {
+    flex: none;
+  }
+
+  .zd-home-hero-example [data-zd-home-hero-layout="large"] .zd-home-links {
+    justify-content: center;
+  }
+}
+
+.zd-home-hero-example [data-zd-home-hero] {
+  margin-block-end: 0;
+}

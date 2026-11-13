@@ -92,6 +92,8 @@ Paths must start with a single `/`. External URLs, protocol-relative `//` paths,
 
 Every layout reserves the picture's box before it loads, and `darkSrc` works the same way in all of them. Any other value throws a `TypeError` at config resolution.
 
+The [HomeHero](../components/home-hero.mdx) component page shows each layout rendered, and its [Home page arrangements](../components/home-hero.mdx#home-page-arrangements) section has six complete home configurations that combine the picture with `sections` and category covers.
+
 To show the same hero outside the home route, for example in a settings preview, render `HomeHero` from `@takazudo/zudo-doc/home-hero` with plain props (`siteName`, `description`, `logo`, `image`, `imageLayout`, `base`, `links`). It needs the package stylesheets (such as `@takazudo/zudo-doc/compiled.css`) and, for `darkSrc`, an `html[data-theme]` attribute. The module also re-exports `assertValidHomeImage` to check settings before rendering.
 
 #### Markdown-first example
