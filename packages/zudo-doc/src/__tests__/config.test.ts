@@ -20,6 +20,12 @@ const invalidGithubAutolinksConfig: Parameters<typeof zudoDoc>[0] = {
 };
 void invalidGithubAutolinksConfig;
 
+const invalidFindInPageConfig: Parameters<typeof zudoDoc>[0] = {
+  // @ts-expect-error The removed findInPage setting is rejected by the config type.
+  findInPage: true,
+};
+void invalidFindInPageConfig;
+
 // The routes plugin descriptor's options carry the serializable virtual-module
 // payload. Helper to pull it out of a built config.
 function routesOptions(config: ReturnType<typeof zudoDoc>) {
@@ -158,6 +164,25 @@ describe("zudoDoc() default-merge semantics", () => {
         githubAutolinksRepo: "owner/repo",
       } as unknown as Parameters<typeof zudoDoc>[0]),
     ).toThrow(/githubAutolinksRepo is no longer supported/);
+  });
+
+  it("rejects the removed findInPage setting and tells the user to remove the key", () => {
+    for (const value of [true, false]) {
+      expect(() =>
+        zudoDoc({
+          findInPage: value,
+        } as unknown as Parameters<typeof zudoDoc>[0]),
+      ).toThrow(
+        new TypeError(
+          "findInPage is no longer supported; the find-in-page bar was removed in 11.0.0, so remove the findInPage key from your zudoDoc() settings",
+        ),
+      );
+    }
+  });
+
+  it("accepts a config without the removed findInPage key", () => {
+    expect(() => zudoDoc({ siteName: "Docs" })).not.toThrow();
+    expect(() => zudoDoc()).not.toThrow();
   });
 
   // #3244 codex review finding 2: a comma in a version slug would desync the

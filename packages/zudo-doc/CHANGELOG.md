@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- `zudoDoc()` now throws a `TypeError` when the settings still contain `findInPage`, the key that 11.0.0 removed, instead of ignoring it. The message tells you to remove the key. Configs without `findInPage` are unaffected. (#4763)
+
 ### Bug Fixes
 
 - Page URLs in `llms.txt`, `llms-full.txt`, the browser search index (`search-index.json`), the agent export (manifest, items, search index) and MCP `search`/`fetch` results now follow the `trailingSlash` setting, the same as the built routes. With `trailingSlash: true` they end with `/` and no longer cite a URL that redirects; with `trailingSlash: false` output is unchanged. The schemas are unchanged and agent page IDs stay the same, but the `url` values, the `llms.txt` bytes and the agent corpus fingerprint change for sites with `trailingSlash: true`. (#4783)

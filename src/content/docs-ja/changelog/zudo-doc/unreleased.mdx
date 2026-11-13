@@ -4,6 +4,10 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1158
 ---
 
+### 破壊的変更
+
+- 11.0.0 で削除した `findInPage` キーが設定に残っている場合、`zudoDoc()` はそれを無視せず `TypeError` を投げるようになりました。メッセージがキーの削除を案内します。`findInPage` を含まない設定には影響しません。(#4763)
+
 ### バグ修正
 
 - `llms.txt`、`llms-full.txt`、ブラウザー検索インデックス（`search-index.json`）、エージェント向けエクスポート（マニフェスト、項目、検索インデックス）、MCPの`search`/`fetch`の結果に含まれるページURLが、ビルドされるルートと同じく`trailingSlash`設定に従うようになりました。`trailingSlash: true`では末尾が`/`になり、リダイレクトするURLを引用しなくなります。`trailingSlash: false`の出力は変わりません。スキーマとエージェントのページIDは変わりませんが、`trailingSlash: true`のサイトでは`url`の値、`llms.txt`のバイト列、エージェント向けコーパスのフィンガープリントが変わります。(#4783)
