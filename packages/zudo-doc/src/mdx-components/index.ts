@@ -42,6 +42,7 @@ import { defaultComponents } from "../content/index.js";
 import { createContentLink } from "../content/content-link.js";
 import { decodeAuthoredHref, assetViewerHref } from "../asset-path/index.js";
 import { makeAdmonition } from "../content-admonition/index.js";
+import { ADMONITION_COMPONENTS } from "./vocabulary.js";
 import { CodeGroup } from "../code-group/index.js";
 import { Tabs } from "../code-syntax/index.js";
 import { TabItem } from "../tab-item/index.js";
@@ -363,13 +364,9 @@ export function createMdxComponents(
     // targets. `:::note` directives emit <Note>; `<Note title="…">` JSX is
     // also authored directly. github-alerts [!IMPORTANT]/[!CAUTION] map to
     // Important/Caution — omitting those two 500s their SSR render.
-    Note: makeAdmonition("note"),
-    Tip: makeAdmonition("tip"),
-    Info: makeAdmonition("info"),
-    Warning: makeAdmonition("warning"),
-    Danger: makeAdmonition("danger"),
-    Important: makeAdmonition("important"),
-    Caution: makeAdmonition("caution"),
+    ...Object.fromEntries(
+      [...ADMONITION_COMPONENTS].map(([name, variant]) => [name, makeAdmonition(variant)]),
+    ),
     // codeTabs Option A: zfb emits <CodeGroup tabs={[...]}> for :::code-group.
     CodeGroup: CodeGroup as unknown as AnyComponent,
     Tabs,

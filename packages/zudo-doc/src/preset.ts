@@ -167,6 +167,8 @@ export interface PresetSettings {
   agentExport?: boolean;
   /** Enable the stateless read-only MCP endpoint; requires `agentExport: true`. */
   mcp?: boolean;
+  /** Top-level categories left out of `<SiteTreeNav />`; the agent export mirrors it. */
+  siteTreeNavIgnore?: string[];
   changelogs?: PresetChangelogConfig[] | false;
   /** Metadata fields shown in the doc metadata area. */
   docMetainfoFields?: Array<"created" | "updated" | "author">;
@@ -875,6 +877,7 @@ function buildPlugins(
             defaultLocale: settings.defaultLocale ?? "en",
             defaultLocaleDir: settings.docsDir,
             locales: localeArray,
+            siteTreeNavIgnore: settings.siteTreeNavIgnore ?? [],
           },
         }]
       : []),

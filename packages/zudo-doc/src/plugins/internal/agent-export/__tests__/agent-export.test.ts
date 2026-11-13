@@ -39,7 +39,8 @@ describe("agent export", () => {
     expect(result.text).toContain('```ts\nimport Foo from "foo"\n<Foo />\n```');
     expect(result.text).toContain("![alt](https://example.test/docs/img.png)");
     expect(result.text).toContain("Keep this body");
-    expect(result.text).toContain("[Dynamic content unavailable in text export]");
+    expect(result.text).toContain("[Dynamic content unavailable in text export: Admonition]");
+    expect(result.text).toContain("[Dynamic content unavailable in text export: Foo]");
     expect(result.unsupportedDynamicContent).toBe(true);
   });
 
