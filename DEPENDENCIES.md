@@ -1,6 +1,6 @@
 # Dependency audits
 
-Current released state: the three lockstep packages are 11.0.0 on npm `latest` with the ZFB 6.0.1 family (peers `^6.0.1`), zdtp 0.9.7, MCP SDK 1.32.2, root and generated-MCP Wrangler 4.161.0 and history-server peer floor `^11.0.0`; the root `CLAUDE.md` keeps the verified statement.
+Current released state: `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` are 12.0.0 on npm `latest` and `create-zudo-doc` is still 11.0.0 (its 12.0.0 publish was refused by the stale Wrangler pin), with the ZFB 6.0.1 family (peers `^6.0.1`), zdtp 0.9.7, MCP SDK 1.32.2 and history-server peer floor `^12.0.0`; root and generated-MCP Wrangler is 4.162.0 on `main`; the root `CLAUDE.md` keeps the verified statement.
 
 Historical adoption checkpoint (2026-11-06, superseded): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
 

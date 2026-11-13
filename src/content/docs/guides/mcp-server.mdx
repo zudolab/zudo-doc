@@ -106,10 +106,10 @@ Install the MCP dependencies from the reference. For the current supported tuple
 
 ```bash
 pnpm add @modelcontextprotocol/sdk@1.32.2 @takazudo/zfb-adapter-cloudflare@5.2.2
-pnpm add -D wrangler@4.161.0
+pnpm add -D wrangler@4.162.0
 ```
 
-Wrangler 4.161.0 is the MCP scaffold pin only. A Cloudflare project that does not enable MCP does not receive it. `@cloudflare/workers-types` 5.20261110.1 is this repository's workspace devDependency, not a pin written into a generated `package.json`. Adapter-mode `zfb preview` treats Wrangler 4.85.0 as a minimum; a newer version logs that it is above the tested baseline and proceeds.
+Wrangler 4.162.0 is the MCP scaffold pin only. A Cloudflare project that does not enable MCP does not receive it. `@cloudflare/workers-types` 5.20261110.1 is this repository's workspace devDependency, not a pin written into a generated `package.json`. Adapter-mode `zfb preview` treats Wrangler 4.85.0 as a minimum; a newer version logs that it is above the tested baseline and proceeds.
 
 Match the adapter to your project's supported zfb version. Inside the existing `zudoDoc({ ... })` call, enable these fields, retaining all other settings:
 

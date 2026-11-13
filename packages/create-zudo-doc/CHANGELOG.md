@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Other Changes
+
+- MCP scaffolds pin Wrangler 4.162.0 instead of 4.161.0.
+
 ## [12.0.0] - 2026-11-13
 
 ### Breaking Changes
