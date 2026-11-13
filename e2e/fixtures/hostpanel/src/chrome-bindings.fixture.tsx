@@ -44,6 +44,7 @@ import {
 } from "../pages/lib/_body-end-islands";
 import { DetailsWrapper } from "../pages/lib/_details";
 import { PresetGeneratorFallback } from "../pages/lib/_preset-generator";
+import { HomeHeroExample } from "../pages/lib/_home-hero-example";
 import { DocHistoryBoundary as DocHistory } from "@takazudo/zudo-doc/doc-history-area";
 // SSR author + date metadata — `#doc-history-meta` is the build-time manifest
 // alias (esbuild-inlined, no fs). Static import is load-bearing for the island
@@ -131,6 +132,7 @@ const mdxExtras = {
   SmartBreak: MdxStub,
   Island: IslandWrapper,
   PresetGenerator: PresetGeneratorFallback,
+  HomeHeroExample,
   Avatar: MdxStub,
   Button: MdxStub,
   Card: MdxStub,
