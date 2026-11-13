@@ -40,6 +40,12 @@ export interface HeadWithDefaultsProps {
   canonical?: string;
   /** Page-specific alternate links, such as an exported Markdown version. */
   alternateLinks?: HeadProps["alternateLinks"];
+  /**
+   * Absolute `hreflang` alternates for this page's locale variants (including
+   * itself and `x-default`), emitted right after the canonical link. Omitted
+   * or empty emits nothing.
+   */
+  localeAlternates?: ReadonlyArray<{ hreflang: string; href: string }>;
   /** Active locale: selects `locales[locale].ogImage` when set, and a configured non-default
    * locale links its own `llms.txt`. */
   locale?: string;
@@ -278,6 +284,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
     description,
     canonical,
     alternateLinks,
+    localeAlternates,
     locale,
     ogImage,
   }: HeadWithDefaultsProps): JSX.Element {
@@ -369,6 +376,14 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
           <link key={i} {...attrs} />
         ))}
         {canonical !== undefined && <link rel="canonical" href={canonical} />}
+        {localeAlternates?.map((alternate) => (
+          <link
+            key={`hreflang:${alternate.hreflang}`}
+            rel="alternate"
+            hreflang={alternate.hreflang}
+            href={alternate.href}
+          />
+        ))}
         {alternateLinks?.map((alternate, i) => (
           <link
             key={`page-alternate:${i}`}

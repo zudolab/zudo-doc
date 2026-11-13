@@ -249,6 +249,15 @@ export function createHomePageView<S extends Settings = Settings>(
     ctx.settings as { themePack?: string },
   );
 
+  /** Absolute `hreflang` alternates shared by every locale home; none without siteUrl. */
+  function homeLocaleAlternates(): Array<{ hreflang: string; href: string }> | undefined {
+    const alternates = ctx.getHomeLocaleAlternates().flatMap(({ hreflang, url }) => {
+      const href = ctx.absoluteUrl(url);
+      return href === undefined ? [] : [{ hreflang, href }];
+    });
+    return alternates.length > 0 ? alternates : undefined;
+  }
+
   /** Site index: hero + `SiteTreeNav` grid + optional tag-count section. */
   function HomePageView({
     locale,
@@ -447,6 +456,7 @@ export function createHomePageView<S extends Settings = Settings>(
             title={settings.siteName}
             description={description}
             canonical={ctx.absoluteUrl(homePath)}
+            localeAlternates={homeLocaleAlternates()}
             locale={locale}
           />
         }

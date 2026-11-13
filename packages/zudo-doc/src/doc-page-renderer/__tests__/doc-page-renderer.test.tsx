@@ -305,3 +305,50 @@ describe("createRenderDocPage — unavailableVersions payload", () => {
     expect(vnode.props["unavailableVersions"]).toEqual(real);
   });
 });
+
+describe("createRenderDocPage — hreflang locale alternates (#4787)", () => {
+  const alternates = [
+    { hreflang: "en", url: "/docs/test-page/" },
+    { hreflang: "ja", url: "/ja/docs/test-page/" },
+    { hreflang: "x-default", url: "/docs/test-page/" },
+  ];
+
+  function render(
+    options: RenderDocPageOptions,
+    absoluteUrl: (path: string) => string | undefined = (path) => `https://example.com${path}`,
+  ) {
+    const calls: Array<[string, string]> = [];
+    const renderDocPage = createRenderDocPage(
+      makeDeps({
+        absoluteUrl,
+        getDocLocaleAlternates: (slug: string, locale: string) => {
+          calls.push([slug, locale]);
+          return alternates;
+        },
+      } as Partial<ChromeContext>),
+    );
+    const vnode = renderDocPage(makeEntryProps(), options) as Description;
+    return { localeAlternates: vnode.props["localeAlternates"], calls };
+  }
+
+  it("passes absolute alternates for a latest entry page", () => {
+    const { localeAlternates, calls } = render({ locale: "ja" });
+    expect(calls).toEqual([["test-page", "ja"]]);
+    expect(localeAlternates).toEqual([
+      { hreflang: "en", href: "https://example.com/docs/test-page/" },
+      { hreflang: "ja", href: "https://example.com/ja/docs/test-page/" },
+      { hreflang: "x-default", href: "https://example.com/docs/test-page/" },
+    ]);
+  });
+
+  it("passes nothing for a fallback page", () => {
+    const { localeAlternates, calls } = render({ locale: "ja", isFallback: true });
+    expect(localeAlternates).toBeUndefined();
+    expect(calls).toEqual([]);
+  });
+
+  it("passes nothing without siteUrl", () => {
+    const { localeAlternates } = render({ locale: "en" }, () => undefined);
+    expect(localeAlternates).toBeUndefined();
+  });
+});

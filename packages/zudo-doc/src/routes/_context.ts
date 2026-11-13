@@ -82,6 +82,8 @@ export const {
   enumerateVersionedRoutes,
   enumerateAllRoutes,
   enumerateSitemapEntries,
+  getDocLocaleAlternates,
+  getHomeLocaleAlternates,
   buildNavTree,
   groupSatelliteNodes,
   findNode,

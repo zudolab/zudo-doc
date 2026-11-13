@@ -87,6 +87,19 @@ When `true`, emits `og:site_name` set to your `siteName`, so share cards show yo
 
 Once `siteUrl` is set, every page automatically receives a `<link rel="canonical">` and an `og:url` built from `siteUrl` plus the page path. Canonical URLs tell search engines which URL is authoritative when the same content is reachable through multiple variants — for example a trailing-slash difference or a preview-deploy host. No per-page configuration is needed.
 
+## Language alternates (`hreflang`)
+
+On a site with more than one locale, set `siteUrl` and matching pages link each other. When a page exists as its own source file in more than one locale, every one of those pages gets a `<link rel="alternate" hreflang="…">` for each locale version, itself included. The value is the locale code, the same value as `<html lang>`. The list ends with `x-default`, which points at the default-locale page. The links sit right after the canonical link:
+
+```html
+<link rel="canonical" href="https://docs.example.com/ja/docs/guides/seo/">
+<link rel="alternate" hreflang="en" href="https://docs.example.com/docs/guides/seo/">
+<link rel="alternate" hreflang="ja" href="https://docs.example.com/ja/docs/guides/seo/">
+<link rel="alternate" hreflang="x-default" href="https://docs.example.com/docs/guides/seo/">
+```
+
+The home pages of all locales are paired the same way. A page that is not translated is not paired: its other-locale route only shows the default-locale text as a fallback. Versioned pages, tag pages and auto-generated category indexes get no alternates either. Without `siteUrl`, or with a single locale, nothing is added. The [sitemap](#sitemap) carries the same pairs.
+
 ## Sitemap
 
 Set `sitemap: true` to emit a `/sitemap.xml` route that lists every page on the site:
@@ -100,7 +113,7 @@ export default defineConfig(
 );
 ```
 
-Each entry carries an absolute `<loc>` (built from `siteUrl`), sorted for stable output. A document page also carries a `<lastmod>`: the UTC day of the page's most recent commit, the same date its "Updated" label shows. A page with no known date has no `<lastmod>` rather than the build date. That covers the home and locale roots, tag and asset pages, versioned pages, and every page when `docHistory` is off or the build skips document history and leaves its metadata empty. The route is served by the package-owned entrypoint `@takazudo/zudo-doc/routes/sitemap.xml`. When `siteUrl` and `sitemap` are both set (and the site is not marked noindex), the generated `robots.txt` automatically includes a `Sitemap:` line with the configured `base`. For example, with `base: "/doc"` and `siteUrl: "https://example.com"`, it reads `Sitemap: https://example.com/doc/sitemap.xml`. See the [`sitemap` reference](./configuration.mdx#identity-and-urls-sitemap).
+Each entry carries an absolute `<loc>` (built from `siteUrl`), sorted for stable output. A document page also carries a `<lastmod>`: the UTC day of the page's most recent commit, the same date its "Updated" label shows. A page with no known date has no `<lastmod>` rather than the build date. That covers the home and locale roots, tag and asset pages, versioned pages, and every page when `docHistory` is off or the build skips document history and leaves its metadata empty. On a multi-locale site, every entry that has [language alternates](#language-alternates-hreflang) also lists them as `<xhtml:link rel="alternate" hreflang="…">` elements, and the `<urlset>` then declares the `xhtml` namespace. The route is served by the package-owned entrypoint `@takazudo/zudo-doc/routes/sitemap.xml`. When `siteUrl` and `sitemap` are both set (and the site is not marked noindex), the generated `robots.txt` automatically includes a `Sitemap:` line with the configured `base`. For example, with `base: "/doc"` and `siteUrl: "https://example.com"`, it reads `Sitemap: https://example.com/doc/sitemap.xml`. See the [`sitemap` reference](./configuration.mdx#identity-and-urls-sitemap).
 
 ### Based deployments and origin-root `robots.txt`
 
@@ -161,6 +174,7 @@ After a build, spot-check the results:
 
 - Open a page's `View Source` and confirm the `og:*`, `twitter:*`, and `<link rel="canonical">` tags are present with absolute URLs.
 - Fetch `/sitemap.xml` and confirm it lists your pages with absolute `<loc>` values.
+- On a multi-locale site, confirm a translated page and its counterpart list each other with `hreflang` links.
 - Fetch `/robots.txt` and confirm the `Content-Signal` line, if you set `contentSignals`.
 - Paste a page URL into a social platform's card debugger (X, LinkedIn, Facebook) to preview the rendered share card before you announce the link.
 

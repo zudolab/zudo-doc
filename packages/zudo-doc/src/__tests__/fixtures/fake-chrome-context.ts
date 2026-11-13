@@ -122,6 +122,8 @@ export function makeFakeChromeContext(opts: FakeChromeContextOptions = {}): Chro
     enumerateVersionedRoutes: () => [],
     enumerateAllRoutes: () => new Map(),
     enumerateSitemapEntries: () => [],
+    getDocLocaleAlternates: () => [],
+    getHomeLocaleAlternates: () => [],
     // pure nav/slug helpers
     buildNavTree: () => [],
     groupSatelliteNodes: (tree: unknown) => tree,

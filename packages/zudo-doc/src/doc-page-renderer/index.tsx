@@ -119,6 +119,7 @@ export interface DocPageRendererDeps {
       type?: string;
       title?: string;
     }>;
+    localeAlternates?: ReadonlyArray<{ hreflang: string; href: string }>;
     breadcrumbs: Array<{ label: string; href?: string }>;
     prev: DocNavNode | null;
     next: DocNavNode | null;
@@ -324,6 +325,16 @@ export function createRenderDocPage<S extends Settings = Settings>(
           }]
         : undefined;
 
+    // hreflang alternates: latest entry pages only (the route-enumerator
+    // returns [] for fallback and single-locale pages); nothing without siteUrl.
+    const localeAlternates =
+      !version && props.kind === "entry" && !isFallback && canonical !== undefined
+        ? ctx.getDocLocaleAlternates(slug, locale).flatMap(({ hreflang, url }) => {
+            const href = absoluteUrl(url);
+            return href === undefined ? [] : [{ hreflang, href }];
+          })
+        : [];
+
     // Build the Content node for entry pages — uses the locale-aware components bag.
     const ContentComponent = props.kind === "entry"
       ? (props.entry.Content as (props: { components: Record<string, unknown> }) => JSX.Element)
@@ -343,6 +354,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
             : undefined
         }
         alternateLinks={agentMarkdownAlternates}
+        localeAlternates={localeAlternates.length > 0 ? localeAlternates : undefined}
         breadcrumbs={breadcrumbs}
         prev={prev}
         next={next}

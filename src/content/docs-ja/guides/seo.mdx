@@ -87,6 +87,19 @@ zudo-doc は `ogImage` とあわせて `og:image:width="1200"` と `og:image:hei
 
 `siteUrl` を設定すると、各ページには `siteUrl` とページパスから組み立てられた `<link rel="canonical">` と `og:url` が自動的に付与されます。canonical URL は、同じコンテンツが複数のバリアント（たとえば末尾スラッシュの違いやプレビューデプロイのホスト）で到達可能なときに、どの URL が正規であるかを検索エンジンに伝えます。ページごとの設定は不要です。
 
+## 言語の代替リンク（`hreflang`）
+
+複数のロケールがあるサイトでは、`siteUrl` を設定すると対応するページ同士がリンクされます。あるページが複数のロケールでそれぞれ独自のソースファイルを持つ場合、それらの各ページには、自身を含む各ロケール版への `<link rel="alternate" hreflang="…">` が付きます。値はロケールコードで、`<html lang>` と同じ値です。最後に、デフォルトロケールのページを指す `x-default` が付きます。これらのリンクは canonical リンクのすぐ後に出力されます。
+
+```html
+<link rel="canonical" href="https://docs.example.com/ja/docs/guides/seo/">
+<link rel="alternate" hreflang="en" href="https://docs.example.com/docs/guides/seo/">
+<link rel="alternate" hreflang="ja" href="https://docs.example.com/ja/docs/guides/seo/">
+<link rel="alternate" hreflang="x-default" href="https://docs.example.com/docs/guides/seo/">
+```
+
+各ロケールのホームページも同じように対応付けられます。翻訳されていないページは対応付けません。そのページの他ロケールのルートは、デフォルトロケールの本文をフォールバックとして表示するだけだからです。バージョン付きページ、タグページ、自動生成のカテゴリインデックスにも代替リンクは付きません。`siteUrl` がない場合や、ロケールが 1 つだけの場合は何も追加されません。[サイトマップ](#サイトマップ)にも同じ対応が載ります。
+
 ## サイトマップ
 
 `sitemap: true` を設定すると、サイト上のすべてのページを列挙する `/sitemap.xml` ルートが出力されます。
@@ -100,7 +113,7 @@ export default defineConfig(
 );
 ```
 
-各エントリは（`siteUrl` から組み立てられた）絶対的な `<loc>` を持ち、安定した出力になるようソートされます。ドキュメントページには `<lastmod>` も付きます。値はそのページの最新コミットの日付（UTC）で、ページの「更新日」表示と同じ日付です。日付が分からないページにはビルド日を入れず、`<lastmod>` を出力しません。ホームとロケールのトップ、タグページ、アセットページ、バージョン付きページ、そして `docHistory` が無効な場合や ドキュメント履歴の生成を省略してメタデータが空のままビルドした場合の全ページがこれに当たります。このルートはパッケージ所有のエントリポイント `@takazudo/zudo-doc/routes/sitemap.xml` によって配信されます。`siteUrl` と `sitemap` の両方が設定され（かつサイトが noindex になっていない）場合、生成される `robots.txt` には設定した `base` を含む `Sitemap:` 行が自動的に追加されます。たとえば `base: "/doc"` と `siteUrl: "https://example.com"` の場合は `Sitemap: https://example.com/doc/sitemap.xml` となります。[`sitemap` リファレンス](./configuration.mdx#アイデンティティと-url-sitemap)を参照してください。
+各エントリは（`siteUrl` から組み立てられた）絶対的な `<loc>` を持ち、安定した出力になるようソートされます。ドキュメントページには `<lastmod>` も付きます。値はそのページの最新コミットの日付（UTC）で、ページの「更新日」表示と同じ日付です。日付が分からないページにはビルド日を入れず、`<lastmod>` を出力しません。ホームとロケールのトップ、タグページ、アセットページ、バージョン付きページ、そして `docHistory` が無効な場合やドキュメント履歴の生成を省略してメタデータが空のままビルドした場合の全ページがこれに当たります。複数ロケールのサイトでは、[言語の代替リンク](#言語の代替リンク（hreflang）)を持つエントリにも同じリンクが `<xhtml:link rel="alternate" hreflang="…">` 要素として並び、そのとき `<urlset>` は `xhtml` 名前空間を宣言します。このルートはパッケージ所有のエントリポイント `@takazudo/zudo-doc/routes/sitemap.xml` によって配信されます。`siteUrl` と `sitemap` の両方が設定され（かつサイトが noindex になっていない）場合、生成される `robots.txt` には設定した `base` を含む `Sitemap:` 行が自動的に追加されます。たとえば `base: "/doc"` と `siteUrl: "https://example.com"` の場合は `Sitemap: https://example.com/doc/sitemap.xml` となります。[`sitemap` リファレンス](./configuration.mdx#アイデンティティと-url-sitemap)を参照してください。
 
 ### base 配下でのデプロイとオリジンルートの `robots.txt`
 
@@ -161,6 +174,7 @@ Content Signals は `robots.txt` 用に定義されています。Cloudflare の
 
 - ページの `View Source`（ソースを表示）を開き、`og:*`、`twitter:*`、`<link rel="canonical">` のタグが絶対 URL を伴って存在することを確認します。
 - `/sitemap.xml` を取得し、絶対的な `<loc>` の値でページが列挙されていることを確認します。
+- 複数ロケールのサイトでは、翻訳済みのページとその対応ページが `hreflang` リンクで互いを参照していることを確認します。
 - `contentSignals` を設定した場合は、`/robots.txt` を取得して `Content-Signal` 行を確認します。
 - ページの URL をソーシャルプラットフォームのカードデバッガー（X、LinkedIn、Facebook）に貼り付け、リンクを告知する前にレンダリングされるシェアカードをプレビューします。
 

@@ -30,6 +30,7 @@ const docs = [
   { slug: "index", data: { title: "Home" } },
   { slug: "guides/intro", data: { title: "Intro" } },
 ];
+const jaDocs = [{ slug: "guides/intro", data: { title: "Intro JA" } }];
 
 function useSettings(overrides: Partial<Settings>): void {
   const settings = {
@@ -52,7 +53,10 @@ function useSettings(overrides: Partial<Settings>): void {
       themePackRegistry: null,
       assetManifest: null,
     },
-    { stableDocs: (name: string) => (name === "docs" ? docs : []) as never },
+    {
+      stableDocs: (name: string) =>
+        (name === "docs" ? docs : name === "docs-ja" ? jaDocs : []) as never,
+    },
   );
   state.settings = settings as unknown as Record<string, unknown>;
   state.enumerateSitemapEntries = context.enumerateSitemapEntries as (o?: unknown) => unknown[];
@@ -116,5 +120,42 @@ describe("sitemap.xml lastmod (#4784)", () => {
       expect(block.match(/<loc>/g)).toHaveLength(1);
       expect((block.match(/<lastmod>/g) ?? []).length).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe("sitemap.xml hreflang alternates (#4787)", () => {
+  const ja = { ja: { label: "JA", dir: "src/content/docs-ja" } };
+
+  it("adds xhtml:link alternates for pages real in both locales", () => {
+    useSettings({ locales: ja } as Partial<Settings>);
+    const xml = Sitemap();
+
+    expect(xml).toContain(
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+    );
+    const alternates =
+      '\n    <xhtml:link rel="alternate" hreflang="en" href="https://example.com/docs/guides/intro/"/>' +
+      '\n    <xhtml:link rel="alternate" hreflang="ja" href="https://example.com/ja/docs/guides/intro/"/>' +
+      '\n    <xhtml:link rel="alternate" hreflang="x-default" href="https://example.com/docs/guides/intro/"/>';
+    expect(xml).toContain(`<loc>https://example.com/docs/guides/intro/</loc>${alternates}`);
+    expect(xml).toContain(`<loc>https://example.com/ja/docs/guides/intro/</loc>${alternates}`);
+    // The English-only root doc has a fallback /ja/ route, so it stays unpaired.
+    expect(xml).toContain("<loc>https://example.com/docs/</loc>\n  </url>");
+    expect(xml).toContain("<loc>https://example.com/ja/docs/</loc>\n  </url>");
+  });
+
+  it("emits no alternates and no xhtml namespace without siteUrl", () => {
+    useSettings({ locales: ja, siteUrl: "" } as Partial<Settings>);
+    const xml = Sitemap();
+
+    expect(xml).not.toContain("xhtml");
+  });
+
+  it("keeps single-locale output free of alternates", () => {
+    useSettings({});
+    const xml = Sitemap();
+
+    expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n');
+    expect(xml).not.toContain("xhtml");
   });
 });

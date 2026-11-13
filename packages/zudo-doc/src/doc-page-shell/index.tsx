@@ -90,6 +90,8 @@ export interface DocPageShellProps {
     type?: string;
     title?: string;
   }>;
+  /** Absolute `hreflang` alternates passed through to the head defaults. */
+  localeAlternates?: ReadonlyArray<{ hreflang: string; href: string }>;
   /** Pre-resolved breadcrumb trail (hrefs already remapped per route). */
   breadcrumbs: DocPageBreadcrumbItem[];
   /** Pre-resolved prev/next nav nodes (hrefs already remapped per route). */
@@ -181,6 +183,7 @@ export interface DocPageShellDeps {
     description?: string;
     canonical?: string;
     alternateLinks?: ReadonlyArray<{ rel: string; href: string; type?: string; title?: string }>;
+    localeAlternates?: ReadonlyArray<{ hreflang: string; href: string }>;
     lang?: string;
   }) => JSX.Element;
   SidebarWithDefaults: (props: {
@@ -273,6 +276,7 @@ export function createDocPageShell<S extends Settings = Settings>(
       canonical,
       ogImage,
       alternateLinks,
+      localeAlternates,
       breadcrumbs,
       prev,
       next,
@@ -364,6 +368,7 @@ export function createDocPageShell<S extends Settings = Settings>(
               description={description}
               canonical={canonical}
               alternateLinks={alternateLinks}
+              localeAlternates={localeAlternates}
               locale={locale}
               ogImage={ogImage}
             />
