@@ -11,6 +11,7 @@ import type { FaviconConfig } from "../settings.js";
 import { CONTROL_CHARS } from "../asset-path/index.js";
 import { CONTENT_SIGNAL_KEYS } from "../robots.js";
 import { isCanonicalDocSlug } from "../doc-card-nav/slug.js";
+import { assertValidCategoryListOptions, CATEGORY_LIST_OPTION_KEYS } from "../category-list/model.js";
 
 /** Structural subset of Settings used by the agent-export/MCP config guard. */
 export interface AgentDocsConsistentSubject {
@@ -292,8 +293,13 @@ export function assertValidLocaleOgImages(settings: LocaleOgImageSubject): void 
 const HOME_SECTION_KEYS: Record<string, ReadonlySet<string>> = {
   "doc-cards": new Set(["type", "heading", "description", "docs", "locales"]),
   "site-tree": new Set(["type", "heading", "description", "variant", "locales"]),
+  "category-list": new Set(["type", "heading", "description", "locales", ...CATEGORY_LIST_OPTION_KEYS]),
 };
-const HOME_SECTION_LOCALE_KEYS = new Set(["heading", "description"]);
+const HOME_SECTION_LOCALE_KEYS: Record<string, ReadonlySet<string>> = {
+  "doc-cards": new Set(["heading", "description"]),
+  "site-tree": new Set(["heading", "description"]),
+  "category-list": new Set(["heading", "description", "archiveLabel"]),
+};
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -301,8 +307,8 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * Validate `home.sections`: absent, or an array holding exactly one
- * `{ type: "site-tree" }` and at most one `{ type: "doc-cards", docs }`, in
- * either order. Every field is serializable presentation data — unknown
+ * `{ type: "site-tree" }`, at most one `{ type: "doc-cards", docs }` and any
+ * number of `{ type: "category-list", category, limit }`, in any order. Every field is serializable presentation data — unknown
  * kinds, unknown keys, non-string text, invalid variants and non-canonical
  * slugs (leading/trailing `/`, whitespace, URLs) throw a `TypeError` naming
  * the entry. Whether a slug matches a published document is checked at
@@ -328,16 +334,16 @@ export function assertValidHomeSections(
       ? new Set([settings.defaultLocale, ...(isPlainRecord(settings.locales) ? Object.keys(settings.locales) : [])])
       : undefined;
 
-  const counts = { "doc-cards": 0, "site-tree": 0 };
+  const counts = { "doc-cards": 0, "site-tree": 0, "category-list": 0 };
   value.forEach((entry, index) => {
     const at = `home.sections[${index}]`;
     if (!isPlainRecord(entry)) {
       throw new TypeError(`Invalid ${at} ${describeValue(entry)}: each section must be an object.`);
     }
     const type = entry.type;
-    if (type !== "doc-cards" && type !== "site-tree") {
+    if (type !== "doc-cards" && type !== "site-tree" && type !== "category-list") {
       throw new TypeError(
-        `Invalid ${at}.type ${describeValue(type)}: allowed section types are "doc-cards" and "site-tree".`,
+        `Invalid ${at}.type ${describeValue(type)}: allowed section types are "doc-cards", "site-tree" and "category-list".`,
       );
     }
     const allowed = HOME_SECTION_KEYS[type]!;
@@ -368,10 +374,11 @@ export function assertValidHomeSections(
         if (!isPlainRecord(text)) {
           throw new TypeError(`Invalid ${at}.locales.${code} ${describeValue(text)}: must be an object.`);
         }
+        const localeKeys = HOME_SECTION_LOCALE_KEYS[type]!;
         for (const [key, v] of Object.entries(text)) {
-          if (!HOME_SECTION_LOCALE_KEYS.has(key)) {
+          if (!localeKeys.has(key)) {
             throw new TypeError(
-              `Invalid ${at}.locales.${code}: unknown key "${key}". Allowed keys: heading, description.`,
+              `Invalid ${at}.locales.${code}: unknown key "${key}". Allowed keys: ${[...localeKeys].join(", ")}.`,
             );
           }
           if (v !== undefined && typeof v !== "string") {
@@ -394,6 +401,8 @@ export function assertValidHomeSections(
           );
         }
       });
+    } else if (type === "category-list") {
+      assertValidCategoryListOptions(entry, at, ["type", "heading", "description", "locales"]);
     } else if (entry.variant !== undefined && entry.variant !== "default" && entry.variant !== "described") {
       throw new TypeError(
         `Invalid ${at}.variant ${describeValue(entry.variant)}: must be "default" or "described".`,

@@ -154,6 +154,33 @@ describe("agent export navigation components", () => {
     expect(docs("blog/first").text).toBe("- [Second Post](/docs/blog/second)\n- [First Post](/docs/blog/first)");
   });
 
+  it("renders CategoryList with the same membership, order and limit, plus the archive link", () => {
+    const docs = corpus({
+      ...files,
+      "listing.mdx": page("Listing", [
+        '<CategoryList category="blog" limit={1} />',
+        '<CategoryList category="guides" limit={5} layout="list" showArchive={false} />',
+        '<CategoryList category="getting-started" limit={9} scope="direct" archiveLabel="All of it" showDescription={false} />',
+        '<CategoryList category="blog" limit={0} />',
+        '<CategoryList category="blog" limit={1} lead="none" showDate />',
+        '<CategoryList category="blog/first" limit={1} />',
+      ].join("\n\n"), "sidebar_position: 102\n"),
+    });
+    const doc = docs("listing");
+    expect(doc.text.split("\n\n").slice(0, 3)).toEqual([
+      "- [02. Second Post](/docs/blog/second)\n- [Blog](/docs/blog)",
+      "- [Guide Two](/docs/guides/deep/two)\n- [Guide One](/docs/guides/one)",
+      "- [Introduction](/docs/getting-started/intro)\n- [Installation](/docs/getting-started/install)\n- [All of it](/docs/getting-started)",
+    ]);
+    // An invalid limit keeps the named placeholder instead of guessing.
+    expect(doc.text).toContain("[Dynamic content unavailable in text export: CategoryList]");
+    // The undated tray leads with its whole-tray rank; lead="none" + showDate moves the date to the end.
+    expect(doc.text).toContain("- [Second Post](/docs/blog/second) (2026-02-03)\n- [Blog](/docs/blog)");
+    // A document target is not a category: nothing, never an archive link to the document.
+    expect(doc.text.split("\n\n")).toHaveLength(5);
+    for (const secret of ["Secret Draft", "Hidden Unlisted"]) expect(doc.text).not.toContain(secret);
+  });
+
   it("keeps a named placeholder and the flag when props are not static literals", () => {
     const doc = corpus(files)("dynamic");
     expect(doc).toEqual({ text: "[Dynamic content unavailable in text export: CategoryNav]", flagged: true });

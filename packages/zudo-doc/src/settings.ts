@@ -10,6 +10,7 @@
 // type-check their own `settings` object.
 
 import type { DateFormatPattern } from "./format-date/index.js";
+import type { CategoryListOptions } from "./category-list/model.js";
 
 /**
  * Tag governance enforcement level.
@@ -241,8 +242,9 @@ export interface HomeConfig {
   imageLayout?: HomeImageLayout;
   /**
    * Optional navigation recipe that replaces the legacy sitemap block: exactly
-   * one `site-tree` section and at most one `doc-cards` section, in either
-   * order. Omitted keeps the legacy home page (sitemap heading + tree).
+   * one `site-tree` section, at most one `doc-cards` section and any number of
+   * `category-list` sections, in any order. Omitted keeps the legacy home page
+   * (sitemap heading + tree).
    * See {@link HomeSection}.
    * @default undefined
    */
@@ -288,7 +290,29 @@ export interface HomeSiteTreeSection {
   locales?: Readonly<Record<string, HomeSectionLocaleText>>;
 }
 
-export type HomeSection = HomeDocCardsSection | HomeSiteTreeSection;
+/** Per-locale overrides for a `category-list` home section. */
+export interface HomeCategoryListLocaleText extends HomeSectionLocaleText {
+  archiveLabel?: string;
+}
+
+/**
+ * Documents from one category (a blog, a numbered note tray or an ordinary
+ * category) as cards or a two-column list, with a link to the full category.
+ * Repeatable. A category with no visible documents renders no section at all.
+ * See `CategoryListOptions` (`@takazudo/zudo-doc/category-list`) for every
+ * option and its default.
+ */
+export interface HomeCategoryListSection extends CategoryListOptions {
+  type: "category-list";
+  /** Section heading. Blank/omitted uses the category's own label. */
+  heading?: string;
+  /** Short plain-text line under the heading. */
+  description?: string;
+  /** Per-locale heading/description/archiveLabel overrides keyed by locale code. */
+  locales?: Readonly<Record<string, HomeCategoryListLocaleText>>;
+}
+
+export type HomeSection = HomeDocCardsSection | HomeSiteTreeSection | HomeCategoryListSection;
 
 /**
  * Full-colour home hero image (`home.image`). Rendered as a real `<img>` in

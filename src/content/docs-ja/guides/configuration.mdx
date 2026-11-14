@@ -47,7 +47,7 @@ export default defineConfig(
 | `sitemapHeading` | `string` | 既存のドキュメントツリーの上に表示するプレーンテキストの見出し。空欄なら翻訳済みのデフォルトを使用。 |
 | `image` | `HomeImageConfig` | ロゴの代わりにヒーローへ表示するフルカラー画像（省略可能）。[フルカラーのホーム画像](#ホームページ-home-フルカラーのホーム画像)を参照。デフォルトでは未設定。 |
 | `imageLayout` | `"logo" \| "large" \| "banner" \| "backdrop"` | ヒーロー内での `image` の配置。デフォルトは `"logo"`。`image` がなければ無視されます。 |
-| `sections` | `HomeSection[]` | サイトマップ部分を、セクション見出し・サイトツリー・選んだ文書カードの構成に置き換えるナビゲーション設定（省略可能）。[ナビゲーションセクションの構成](#ホームページ-home-ナビゲーションセクションの構成)を参照。デフォルトでは未設定。 |
+| `sections` | `HomeSection[]` | サイトマップ部分を、セクション見出し・サイトツリー・選んだ文書カード・カテゴリの一覧の構成に置き換えるナビゲーション設定（省略可能）。[ナビゲーションセクションの構成](#ホームページ-home-ナビゲーションセクションの構成)を参照。デフォルトでは未設定。 |
 
 短い説明と既存のメタデータ用途には `siteDescription` を使い、ロケール別の短い説明は `locales.<code>.description` で上書きします。長い紹介文には `introMarkdown` を使います。メタデータや短い説明を置き換える設定ではありません。[homeExtras / extras](../reference/host-chrome-bindings.mdx) はスラッシュ区切りのリンク行にナビゲーションを追加するためのもので、紹介文用のスロットではありません。
 
@@ -146,14 +146,15 @@ Learn the **essentials**, then explore the reference.
 
 `home.sections` を指定すると、サイトマップ部分（見出し・区切り線・ツリー）が、順序付きの短いナビゲーションセクションの並びに置き換わります。ヒーロー、紹介文、フッター、タグ、副カテゴリのリンク行はこれまでどおりの位置に残ります。`sections` を省略すると従来のサイトマップ部分のままで、新規プロジェクトもこの状態です。
 
-セクションの種類は 2 つです。
+セクションの種類は 3 つです。
 
 | 種類 | フィールド | 表示 |
 |---|---|---|
 | `site-tree` | `heading?`, `description?`, `variant?: "default" \| "described"`, `locales?` | 正規のカテゴリ → 文書ツリー。`"described"` はカテゴリと文書の説明、各カテゴリの文書数を加えます。 |
 | `doc-cards` | `heading?`, `description?`, `docs: string[]`, `locales?` | 既存の文書へのカード。正規 slug で指定した順に並びます。 |
+| `category-list` | `category`, `limit`, `layout?: "cards" \| "list"`, 表示オプション, `heading?`, `description?`, `locales?` | 1 つのカテゴリ（ブログ、番号付きのノートトレイ、通常のカテゴリ）の先頭 `limit` 件を、カードまたは 2 列の一覧で表示し、カテゴリ全体へのリンクを付けます。[CategoryList](../components/category-list.mdx) を参照してください。 |
 
-`site-tree` はちょうど 1 つ、`doc-cards` は 0〜1 つです。配列の順序がそのままページ上の順序なので、カードをツリーの前にも後にも置けます。
+`site-tree` はちょうど 1 つ、`doc-cards` は 0〜1 つです。`category-list` は何個でも置け、同じカテゴリを別のオプションで 2 回並べることもできます。配列の順序がそのままページ上の順序なので、カードをツリーの前にも後にも置けます。
 
 ```ts
 // Cards first, then the tree
@@ -185,7 +186,18 @@ home: {
 - 幅はページが決めます。カードのセクションとカテゴリが 1 つだけのツリーは最大 80rem で中央に置き、複数カテゴリのツリーはコンテンツ帯の全幅を使います。説明付きのカテゴリが 1 つだけで 48.75rem 以上の幅があるときは、概要の列とツリーの列に分かれます。
 - 設定は読み込み時に検証します。未知の種類やキー、2 つ目のツリーやカードのセクション、正規でない slug、設定にないロケールコードの `locales` は `home.sections` のエラーになります。これはナビゲーション設定でありページビルダーではないので、HTML・コンポーネント・CSS・レイアウト値は受け付けません。
 
-通常のページで同じコンポーネントを使う方法は [DocCardNav](../components/doc-card-nav.mdx) と [SiteTreeNav の `variant`](../components/site-tree-nav.mdx#説明付きのバリエーション) を参照してください。`introMarkdown` は制限付き Markdown のままで、これらのコンポーネントは書けません。
+日付付きノートトレイの新しい記事を並べる `category-list` セクションは次のように書きます。すべてのオプションと既定値は [CategoryList](../components/category-list.mdx#ホームページでの使用) のページにあります。
+
+```ts
+home: {
+  sections: [
+    { type: "category-list", category: "blog", limit: 3, showCount: true },
+    { type: "site-tree", variant: "described" },
+  ],
+},
+```
+
+通常のページで同じコンポーネントを使う方法は [DocCardNav](../components/doc-card-nav.mdx)、[CategoryList](../components/category-list.mdx)、[SiteTreeNav の `variant`](../components/site-tree-nav.mdx#説明付きのバリエーション) を参照してください。`introMarkdown` は制限付き Markdown のままで、これらのコンポーネントは書けません。
 
 #### ロケールの優先順位と紹介文なしの例
 

@@ -55,7 +55,13 @@ import { resolveSiteTreeNavCountLabels } from "../site-tree-nav/index.js";
 import { getNoteTrayItems } from "../note-tray-model/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
-import { deriveComposeMetaTitle, deriveBodyEndIslands, deriveDateFormats } from "../chrome/derive.js";
+import {
+  deriveCategoryListDeps,
+  deriveComposeMetaTitle,
+  deriveBodyEndIslands,
+  deriveDateFormats,
+} from "../chrome/derive.js";
+import { createCategoryListRenderer } from "../category-list/index.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
@@ -116,8 +122,20 @@ function sectionText(
   section: HomeSection,
   locale: string,
   field: "heading" | "description",
+): string | undefined;
+function sectionText(
+  section: Extract<HomeSection, { type: "category-list" }>,
+  locale: string,
+  field: "archiveLabel",
+): string | undefined;
+function sectionText(
+  section: HomeSection,
+  locale: string,
+  field: "heading" | "description" | "archiveLabel",
 ): string | undefined {
-  for (const value of [section.locales?.[locale]?.[field], section[field]]) {
+  const own = (section as unknown as Record<string, unknown>)[field] as string | undefined;
+  const localized = (section.locales?.[locale] as Record<string, string | undefined> | undefined)?.[field];
+  for (const value of [localized, own]) {
     if (value?.trim()) return value;
   }
   return undefined;
@@ -241,6 +259,7 @@ export function createHomePageView<S extends Settings = Settings>(
   const { Header: HeaderWithDefaults, Footer: FooterWithDefaults } =
     derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx);
+  const categoryLists = createCategoryListRenderer(deriveCategoryListDeps(ctx));
   const homeExtras = ctx.hostBindings.homeExtras;
   const homeIntros = ctx.homeIntros;
   // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
@@ -447,6 +466,38 @@ export function createHomePageView<S extends Settings = Settings>(
       );
     }
 
+    function renderCategoryListSection(
+      section: Extract<HomeSection, { type: "category-list" }>,
+      index: number,
+    ) {
+      const where = `home.sections[${index}]`;
+      const { type: _type, heading: _heading, description: _description, locales: _locales, ...options } = section;
+      const archiveLabel = sectionText(section, locale, "archiveLabel");
+      const listOptions = { ...options, ...(archiveLabel !== undefined ? { archiveLabel } : {}) };
+      const context = { lang: locale, where };
+      const resolution = categoryLists.resolve(listOptions, context);
+      // A valid but empty category (or one absent from this locale) renders no
+      // section at all: no heading, description, count or archive link.
+      if (resolution.status !== "ok" || resolution.items.length === 0) return null;
+      // Section index keeps ids unique even when two sections share a category.
+      const headingId = `zd-home-category-list-${index}-heading`;
+      const sectionDescription = sectionText(section, locale, "description");
+      return (
+        <section
+          data-zd-home-section="category-list"
+          data-zd-home-category={resolution.category.slug}
+          aria-labelledby={headingId}
+          class="mx-auto flex w-full min-w-0 max-w-[80rem] flex-col gap-vsp-md"
+        >
+          <WideSectionHeading id={headingId}>
+            {sectionText(section, locale, "heading") ?? resolution.category.label}
+          </WideSectionHeading>
+          {sectionDescription && <p class="text-muted">{sectionDescription}</p>}
+          {categoryLists.render(listOptions, context, resolution, 3)}
+        </section>
+      );
+    }
+
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(settings.siteName)}
@@ -520,10 +571,12 @@ export function createHomePageView<S extends Settings = Settings>(
           </>
         ) : (
           <div data-zd-home-sections class="mt-vsp-2xl flex flex-col gap-vsp-2xl">
-            {homeSections.map((section) =>
+            {homeSections.map((section, index) =>
               section.type === "doc-cards"
                 ? renderDocCardsSection(section)
-                : renderSiteTreeSection(section),
+                : section.type === "category-list"
+                  ? renderCategoryListSection(section, index)
+                  : renderSiteTreeSection(section),
             )}
           </div>
         )}

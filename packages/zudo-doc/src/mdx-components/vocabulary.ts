@@ -41,6 +41,7 @@ export const NAV_COMPONENTS = [
   "SiteTreeNavDemo",
   "DocCardNav",
   "NoteTrayIndex",
+  "CategoryList",
 ] as const;
 
 export type NavComponentName = (typeof NAV_COMPONENTS)[number];
