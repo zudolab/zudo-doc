@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Features
+
+- New `` component and repeatable `category-list` entry for `home.sections` list the first `limit` documents of one category, such as a blog, a numbered note tray or an ordinary category, as cards (up to three columns) or a two-column list, with an optional "See all" link to the full category. Items follow the category's own order and public navigation visibility; note trays keep their sidebar numbers and dates. Both layouts render on the server without client JavaScript. The `@takazudo/zudo-doc/category-list` subpath exports the resolver and view, and the agent export renders the component as a link list. (#4802)
+
 ## [12.0.1] - 2026-11-14
 
 - No package-specific changes.

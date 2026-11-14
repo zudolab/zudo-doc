@@ -55,6 +55,7 @@ describe("package.json exports keyset snapshot", () => {
         "./body-foot-util",
         "./breadcrumb",
         "./catalog",
+        "./category-list",
         "./category-nav",
         "./category-tree-nav",
         "./chrome",

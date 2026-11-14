@@ -1,0 +1,146 @@
+---
+title: CategoryList
+description: A server-rendered excerpt of one category, as cards or a two-column list, with a link to the full category. Built for blog posts, numbered notes and ordinary categories.
+sidebar_position: 7.6
+---
+
+## Overview
+
+`CategoryList` shows the first few documents of one category, then links to the whole category. A blog is the typical use: show the three newest posts on the homepage and let readers continue to the archive. Numbered note trays and ordinary nested categories work the same way.
+
+Two layouts render exactly the same items and metadata:
+
+- **`cards`** (the default): equal bordered cards, one column on a narrow component, two from 36rem and three from 64rem of component width. Never more than three.
+- **`list`**: a quiet two-column index of rows with separators, which becomes one column at a component width of 520px or less. Rows read left to right, then down (1, 2 / 3, 4), in both the page source and keyboard order.
+
+The columns follow the width of the component itself, not the window, so a list placed in a narrow column collapses even on a wide screen.
+
+<Info>
+
+`CategoryList` is globally available in MDX doc pages, with no import needed. The current locale and version are injected automatically. It renders no heading of its own: place it under a `##` heading. Item titles are `h3` elements; under a `###` heading, pass `titleLevel={4}`.
+
+</Info>
+
+## Live examples
+
+### Blog as cards
+
+The Blog category is a dated note tray, so each card leads with its publication date.
+
+<CategoryList category="blog" limit={3} showTags showCount titleLevel={4} />
+
+```mdx
+<CategoryList category="blog" limit={3} showTags showCount />
+```
+
+### Blog as a list
+
+<CategoryList category="blog" limit={4} layout="list" titleLevel={4} />
+
+```mdx
+<CategoryList category="blog" limit={4} layout="list" />
+```
+
+### Numbered notes
+
+Getting Started is an undated note tray. Its items lead with their category number, taken from the whole tray, so an excerpt keeps the same numbers the sidebar shows.
+
+<CategoryList category="getting-started" limit={4} layout="list" titleLevel={4} />
+
+```mdx
+<CategoryList category="getting-started" limit={4} layout="list" />
+```
+
+### An ordinary category
+
+An ordinary category has no numbers or dates in the leading slot. By default it lists every document page below it; `scope="direct"` keeps only its direct children.
+
+<CategoryList category="guides" limit={6} scope="direct" layout="list" titleLevel={4} />
+
+```mdx
+<CategoryList category="guides" limit={6} scope="direct" layout="list" />
+```
+
+### Title only
+
+Turn off descriptions and the archive link for a compact set of title cards.
+
+<CategoryList category="guides/layout-demos" limit={6} showDescription={false} showArchive={false} titleLevel={4} />
+
+```mdx
+<CategoryList category="guides/layout-demos" limit={6} showDescription={false} showArchive={false} />
+```
+
+### Extra metadata
+
+Metadata is opt-in and shared by both layouts. Here the lead is turned off, so the date moves into the metadata row next to the tags.
+
+<CategoryList category="blog" limit={2} lead="none" showDate showUpdated showTags archiveLabel="Browse the blog" titleLevel={4} />
+
+```mdx
+<CategoryList category="blog" limit={2} lead="none" showDate showUpdated showTags archiveLabel="Browse the blog" />
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `category` | `string` | — | Canonical category slug, the path after `/docs/` without slashes at either end, for example `"blog"` or `"guides/layout-demos"`. Required. |
+| `limit` | `number` | — | Maximum number of items, a positive integer. Required. |
+| `layout` | `"cards" \| "list"` | `"cards"` | Presentation only; the items never change. |
+| `scope` | `"descendants" \| "direct"` | `"descendants"` | Ordinary categories only. Note trays always list their own flat items. |
+| `lead` | `"auto" \| "none" \| "rank" \| "date"` | `"auto"` | Leading detail. `"auto"` is the date for a dated tray, the number for an undated tray, and nothing for an ordinary category. |
+| `showDescription` | `boolean` | `true` | Show the frontmatter `description` when there is one. |
+| `showDate` | `boolean` | `false` | Show the `date` in the metadata row. Skipped when the date is already the lead. |
+| `showUpdated` | `boolean` | `false` | Show the `updated` date with an "Updated" label. Skipped when it equals `date`. |
+| `showTags` | `boolean` | `false` | Show the document's tags as plain text (not links). Needs `docTags`. |
+| `showPath` | `boolean` | `false` | Show the subcategories between the listed category and the item. |
+| `showCount` | `boolean` | `false` | Show "Showing N of total" in the footer. |
+| `showArchive` | `boolean` | `true` | Show the footer link to the full category. |
+| `archiveLabel` | `string` | `"See all"` | Text of the archive link. |
+| `titleLevel` | `3 \| 4` | `3` | Heading level of item titles. |
+
+## Which documents are listed
+
+- The category is found by its exact slug. A page's frontmatter `slug` is respected, and a similar-looking slug never matches by prefix.
+- Only pages a reader can navigate to are listed: drafts, `unlisted` and `standalone` pages are left out before counting. `search_exclude` affects search and exports only, so such pages still appear.
+- The category's own landing page is never an item. Folders without an index page and generated category indexes are passed through but not listed. A subcategory with its own index page is listed once, in tree order.
+- Order is the category's own order: `sidebar_position` and `category_sort_order`, exactly as in the sidebar. There is no separate sort option; a blog shows newest first when its tray is `category_sort_order: desc`.
+- In a note tray, numbers come from the whole tray and keep their width. The first four items of a twelve-item descending tray show 12, 11, 10 and 09; they do not restart at 01. Ordinary categories never get numbers, even with `lead="rank"`.
+- `limit` applies after filtering. When there are fewer documents than the limit, only those are shown. The count in the footer is the number of listed documents before the limit.
+- Each locale lists its own translations, falling back to the default locale for untranslated pages, and an `unlisted` translation hides its fallback too. In a version, items and the archive link point into that version.
+
+## Archive link
+
+The footer link is an ordinary link to the category's own page, kept even when every item already fits, because the archive gives the full context. If the category has no page of its own (`category_no_page`), the items are still shown, the link is left out, and the build prints a `[zudo-doc]` warning. Set `showArchive={false}` to omit the link deliberately.
+
+## Errors and empty categories
+
+- An invalid option, such as a missing or non-integer `limit`, an unknown `layout` or an unknown prop, stops the build with an error naming the prop.
+- An unknown category, or a slug that points at a document rather than a category, also stops the build. In another locale or an older version, where the category may legitimately be missing, nothing is rendered instead.
+- A valid category with no visible documents renders nothing.
+
+## On the homepage
+
+The homepage intro Markdown cannot host components. Use a `category-list` entry in [`home.sections`](../guides/configuration.mdx#home-page-home-composed-navigation-sections) instead. It takes the same options plus `heading`, `description` and per-locale `locales` overrides (`heading`, `description`, `archiveLabel`). The heading defaults to the category's own title. Entries are repeatable, and when a category has nothing to show, the whole section, heading included, is left out.
+
+```ts
+home: {
+  sections: [
+    {
+      type: "category-list",
+      category: "blog",
+      limit: 3,
+      heading: "Latest posts",
+      showCount: true,
+      archiveLabel: "See all posts",
+      locales: { ja: { heading: "最新の記事", archiveLabel: "記事一覧へ" } },
+    },
+    { type: "site-tree", variant: "described" },
+  ],
+},
+```
+
+## Package API
+
+Page modules can build the same component with `createCategoryListWrapper` from `@takazudo/zudo-doc/category-list`. The subpath also exports `resolveCategoryList` (pure resolution returning items, the total and the archive URL), `CategoryListView` (presentation), `assertValidCategoryListOptions`, and the `CategoryListOptions` types.

@@ -93,6 +93,11 @@ import { createNoteTrayIndexWrapper } from "../note-tray-index/index.js";
 import { createCategoryTreeNavWrapper } from "../category-tree-nav/index.js";
 import { createSiteTreeNavWrapper } from "../site-tree-nav/index.js";
 import { createDocCardNavWrapper, type DocCardNavProps } from "../doc-card-nav/index.js";
+import {
+  createCategoryListWrapper,
+  type CategoryListDeps,
+  type CategoryListProps,
+} from "../category-list/index.js";
 import { WideSectionHeading } from "../content/wide-section-heading.js";
 import { Details } from "../details/index.js";
 import {
@@ -651,6 +656,28 @@ export function deriveInlineVersionSwitcher(
  * and a host-supplied `ctx.components` override, since the prop injection
  * happens one layer up in `createMdxComponents()`, after the wrapper choice.
  */
+/**
+ * Category-list dependencies bound to a chrome context (#4802). Shared by the
+ * `<CategoryList>` MDX binding and the `category-list` home section so both
+ * resolve through the same nav source, tag vocabulary and date formats.
+ */
+export function deriveCategoryListDeps(ctx: ChromeContext): CategoryListDeps {
+  return {
+    defaultLocale: ctx.defaultLocale,
+    docTags: ctx.settings.docTags,
+    resolveNavSource: ctx.resolveNavSource as never,
+    buildNavTree: ((docs: unknown[], locale: string, categoryMeta: Map<string, unknown>) =>
+      ctx.buildNavTree(docs as never[], locale, categoryMeta as never, (slug, loc) =>
+        ctx.docsUrl(slug, loc),
+      )) as never,
+    toRouteSlug: ctx.toRouteSlug,
+    resolveTag: (raw) => ctx.resolveTagBound(raw).canonical,
+    t: (key, locale) => ctx.t(key, locale),
+    versionedDocsUrl: ctx.versionedDocsUrl,
+    dateFormat: ctx.settings.dateFormat,
+  };
+}
+
 export function deriveMdxComponents(ctx: ChromeContext) {
   const CategoryNavWrapper =
     ctx.components.CategoryNav ??
@@ -737,6 +764,8 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     versionedDocsUrl: ctx.versionedDocsUrl,
   });
 
+  const CategoryListWrapper = createCategoryListWrapper(deriveCategoryListDeps(ctx));
+
   const assetComponentContext = {
     base: ctx.settings.base,
     assetManifest: ctx.assetManifest,
@@ -817,6 +846,9 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       // Selected-document cards resolve against this page's locale/version.
       DocCardNav: ((props: DocCardNavProps) =>
         DocCardNavWrapper({ ...props, lang, currentVersion })) as never,
+      // Category listings resolve against this page's locale/version (#4802).
+      CategoryList: ((props: CategoryListProps) =>
+        CategoryListWrapper({ ...props, lang, currentVersion })) as never,
       WideSectionHeading: WideSectionHeading as never,
       HtmlPreview: HtmlPreviewBound as never,
       Island: IslandPassthrough as never,

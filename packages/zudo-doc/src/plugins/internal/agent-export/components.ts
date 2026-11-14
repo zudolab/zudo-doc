@@ -1,4 +1,5 @@
 import { isCanonicalDocSlug } from "../../../doc-card-nav/slug.js";
+import { assertValidCategoryListOptions, resolveCategoryList, resolveCategoryListLead, type CategoryListLead, type CategoryListNode, type CategoryListScope } from "../../../category-list/model.js";
 import {
   ADMONITION_COMPONENTS,
   admonitionComponentName,
@@ -104,6 +105,25 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
   const firstUrl = (node: PublishedNode): string | undefined =>
     node.url ?? node.children.map(firstUrl).find((url) => url !== undefined);
   const list = (lines: string[]): string => lines.join("\n");
+  // CategoryList mirrors the HTML tree (no group dissolving); only pages in
+  // the export are listable, so hidden pages drop out exactly as in the HTML.
+  const toListNode = (node: SidebarNode): CategoryListNode => {
+    const page = source.published.get(node.id);
+    return {
+      slug: node.id,
+      label: node.label,
+      ...(node.description !== undefined ? { description: node.description } : {}),
+      ...(page ? { href: page.url } : {}),
+      hasPage: page !== undefined && !hidden.has(node.id),
+      ...(node.shape !== undefined ? { shape: node.shape } : {}),
+      ...(node.noteTrayDated !== undefined ? { noteTrayDated: node.noteTrayDated } : {}),
+      ...(node.date !== undefined ? { date: node.date } : {}),
+      ...(node.updated !== undefined ? { updated: node.updated } : {}),
+      ...(node.rank !== undefined ? { rank: node.rank } : {}),
+      children: node.children.map(toListNode),
+    };
+  };
+  const listTree = tree.map(toListNode);
 
   const nav = (name: string, props: NonNullable<AgentComponentTag["props"]>, currentSlug: string): string | undefined => {
     switch (name) {
@@ -140,6 +160,39 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
         if (!tray) return "";
         return list(getNoteTrayItems(tray).filter((item) => item.url !== undefined).map((item) =>
           line(item, 0, true, props.showDate === true && item.date ? ` (${item.date})` : "")));
+      }
+      case "CategoryList": {
+        // Same membership and limit as the HTML component; metadata is reduced
+        // to title, description and (for dated items) the date.
+        try {
+          assertValidCategoryListOptions(props as Record<string, unknown>, "<CategoryList>", ["titleLevel"]);
+        } catch {
+          return undefined;
+        }
+        const indexIds = new Set(source.entries
+          .filter(({ slug }) => slug === "index" || slug.endsWith("/index"))
+          .map(({ slug, data }) => (data as MdDocFrontmatter).slug ?? slug.replace(/\/?index$/, "")));
+        const resolution = resolveCategoryList(listTree, props.category as string, {
+          ...(typeof props.scope === "string" ? { scope: props.scope as CategoryListScope } : {}),
+          limit: props.limit as number,
+          isCategoryIndex: (slug) => indexIds.has(slug) || !source.published.has(slug),
+        });
+        if (resolution.status !== "ok" || resolution.items.length === 0) return "";
+        const lead = resolveCategoryListLead(
+          typeof props.lead === "string" ? (props.lead as CategoryListLead) : "auto",
+          resolution.category,
+        );
+        const withDescription = props.showDescription !== false;
+        const width = resolution.rankWidth ?? 2;
+        const lines = resolution.items.map((item) => {
+          const rank = lead === "rank" && item.rank !== undefined ? `${String(item.rank).padStart(width, "0")}. ` : "";
+          const date = item.date && (lead === "date" || props.showDate === true) ? ` (${item.date})` : "";
+          return line({ label: `${rank}${item.title}`, url: item.href, ...(item.description ? { description: item.description } : {}) }, 0, withDescription, date);
+        });
+        if (props.showArchive !== false && resolution.category.href) {
+          lines.push(line({ label: asString(props.archiveLabel)?.trim() || resolution.category.label, url: resolution.category.href }, 0, false));
+        }
+        return list(lines);
       }
       case "DocCardNav": {
         if (!Array.isArray(props.docs)) return undefined;

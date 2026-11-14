@@ -323,6 +323,63 @@ describe("assertValidHomeSections", () => {
     expect(withLocales("jp")).toThrow(/locales\.jp: unknown locale code/);
   });
 
+  describe("category-list sections (#4802)", () => {
+    const list = { type: "category-list", category: "blog", limit: 4 };
+
+    it("are repeatable, may target the same category twice, and coexist with the other kinds", () => {
+      expect(check([tree, list])).not.toThrow();
+      expect(check([list, cards, tree, { ...list, layout: "list", limit: 8 }, { ...list, category: "guides/advanced" }])).not.toThrow();
+      expect(
+        check([
+          tree,
+          {
+            ...list,
+            heading: "Latest",
+            description: "Posts.",
+            layout: "cards",
+            scope: "direct",
+            lead: "date",
+            showDescription: false,
+            showDate: true,
+            showUpdated: true,
+            showTags: true,
+            showPath: true,
+            showCount: true,
+            showArchive: true,
+            archiveLabel: "All posts",
+            locales: { ja: { heading: "最新", archiveLabel: "すべての記事" } },
+          },
+        ]),
+      ).not.toThrow();
+    });
+
+    it("do not relax the site-tree and doc-cards constraints", () => {
+      expect(check([list])).toThrow(/exactly one \{ type: "site-tree" \}.*found 0/);
+      expect(check([list, tree, tree])).toThrow(/found 2/);
+      expect(check([list, tree, cards, cards])).toThrow(/at most one \{ type: "doc-cards" \}/);
+    });
+
+    it("require a positive integer limit and a canonical category", () => {
+      expect(check([tree, { type: "category-list", category: "blog" }])).toThrow(/home\.sections\[1\]\.limit undefined: a positive integer is required/);
+      expect(check([tree, { ...list, limit: 0 }])).toThrow(/limit 0/);
+      expect(check([tree, { ...list, limit: 2.5 }])).toThrow(/limit 2\.5/);
+      expect(check([tree, { ...list, category: "/blog/" }])).toThrow(/home\.sections\[1\]\.category/);
+      expect(check([tree, { type: "category-list", limit: 3 }])).toThrow(/category undefined/);
+    });
+
+    it("reject discarded layouts, unknown options and invalid values", () => {
+      expect(check([tree, { ...list, layout: "article" }])).toThrow(/layout "article": must be "cards" or "list"/);
+      expect(check([tree, { ...list, layout: "compact" }])).toThrow(/layout "compact"/);
+      expect(check([tree, { ...list, scope: "all" }])).toThrow(/scope "all"/);
+      expect(check([tree, { ...list, lead: "number" }])).toThrow(/lead "number"/);
+      expect(check([tree, { ...list, showTags: 1 }])).toThrow(/showTags 1: must be true or false/);
+      expect(check([tree, { ...list, sort: "date" }])).toThrow(/unknown key "sort" for a "category-list"/);
+      expect(check([tree, { ...list, docs: [] }])).toThrow(/unknown key "docs"/);
+      expect(check([tree, { ...list, locales: { ja: { limit: 3 } } }])).toThrow(/unknown key "limit".*heading, description, archiveLabel/);
+      expect(check([tree, { ...cards, locales: { ja: { archiveLabel: "x" } } }])).toThrow(/unknown key "archiveLabel"/);
+    });
+  });
+
   it("rejects non-canonical document slugs", () => {
     for (const bad of ["/getting-started/introduction", "guides/", "", "https://example.com/a", "a b", 7, "a?x", "a#b", "./a", "a/../b", "a//b", "a\\b"]) {
       expect(check([tree, { ...cards, docs: [bad] }])).toThrow(/docs\[0\]/);

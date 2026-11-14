@@ -61,9 +61,10 @@ Start with the **essentials**, then explore the live examples.
 - [Configuration](docs/guides/configuration/)
 - [Markdown features](docs/markdown-features/)`,
     sitemapHeading: "",
-    // Composed navigation (cards first, then the described site tree). Swap
-    // the two entries to put the tree first. Omit `sections` for the legacy
-    // sitemap block that fresh scaffolds keep.
+    // Composed navigation (cards first, latest blog posts, then the described
+    // site tree). Sections render in array order; `category-list` entries are
+    // repeatable. Omit `sections` for the legacy sitemap block that fresh
+    // scaffolds keep.
     sections: [
       {
         type: "doc-cards",
@@ -77,6 +78,25 @@ Start with the **essentials**, then explore the live examples.
           "guides/deployment",
         ],
         locales: { ja: { heading: "まずはここから" } },
+      },
+      {
+        // Dated note tray → cards led by the publication date (#4802).
+        type: "category-list",
+        category: "blog",
+        layout: "cards",
+        limit: 3,
+        heading: "Latest posts",
+        description: "Notes from building and maintaining zudo-doc.",
+        showTags: true,
+        showCount: true,
+        archiveLabel: "See all posts",
+        locales: {
+          ja: {
+            heading: "最新の記事",
+            description: "zudo-doc の開発と運用のメモ。",
+            archiveLabel: "記事一覧へ",
+          },
+        },
       },
       {
         type: "site-tree",

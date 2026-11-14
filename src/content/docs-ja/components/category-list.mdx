@@ -1,0 +1,146 @@
+---
+title: CategoryList
+description: 1 つのカテゴリの先頭部分を、カードまたは 2 列の一覧としてサーバー側で描画し、カテゴリ全体へのリンクを付けます。ブログ記事、番号付きのノート、通常のカテゴリ向けです。
+sidebar_position: 7.6
+---
+
+## 概要
+
+`CategoryList` は 1 つのカテゴリの先頭の文書をいくつか表示し、そのカテゴリ全体へリンクします。典型的な使い方はブログです。ホームページに新しい記事を 3 件表示し、続きはアーカイブで読んでもらいます。番号付きのノートトレイや、入れ子になった通常のカテゴリでも同じように動きます。
+
+2 つのレイアウトは、まったく同じ項目とメタデータを描画します。
+
+- **`cards`**（既定）: 同じ重みの枠付きカード。コンポーネントの幅が狭いときは 1 列、36rem 以上で 2 列、64rem 以上で 3 列になり、3 列を超えることはありません。
+- **`list`**: 区切り線付きの行を並べた、控えめな 2 列の索引。コンポーネントの幅が 520px 以下になると 1 列になります。行は左から右、次に下へ（1、2 / 3、4）と並び、ページのソース順とキーボード操作の順序も同じです。
+
+列数はウィンドウではなくコンポーネント自身の幅で決まるため、狭い列に置いた一覧は広い画面でも 1 列になります。
+
+<Info>
+
+`CategoryList` は MDX の文書ページでインポートなしに使えます。現在のロケールとバージョンは自動で渡されます。自分では見出しを出力しないので、`##` 見出しの下に置いてください。項目のタイトルは `h3` 要素です。`###` 見出しの下に置くときは `titleLevel={4}` を指定します。
+
+</Info>
+
+## 実例
+
+### ブログをカードで
+
+ブログのカテゴリは日付付きのノートトレイなので、各カードの先頭に公開日が表示されます。
+
+<CategoryList category="blog" limit={3} showTags showCount titleLevel={4} />
+
+```mdx
+<CategoryList category="blog" limit={3} showTags showCount />
+```
+
+### ブログを一覧で
+
+<CategoryList category="blog" limit={4} layout="list" titleLevel={4} />
+
+```mdx
+<CategoryList category="blog" limit={4} layout="list" />
+```
+
+### 番号付きのノート
+
+「はじめに」は日付のないノートトレイです。各項目の先頭にはカテゴリ内の番号が付きます。番号はトレイ全体から決まるので、一部だけを抜き出してもサイドバーと同じ番号のままです。
+
+<CategoryList category="getting-started" limit={4} layout="list" titleLevel={4} />
+
+```mdx
+<CategoryList category="getting-started" limit={4} layout="list" />
+```
+
+### 通常のカテゴリ
+
+通常のカテゴリでは、先頭に番号も日付も表示しません。既定ではその下にあるすべての文書ページを並べ、`scope="direct"` を指定すると直下の子だけになります。
+
+<CategoryList category="guides" limit={6} scope="direct" layout="list" titleLevel={4} />
+
+```mdx
+<CategoryList category="guides" limit={6} scope="direct" layout="list" />
+```
+
+### タイトルのみ
+
+説明とアーカイブへのリンクをオフにすると、タイトルだけの小さなカードになります。
+
+<CategoryList category="guides/layout-demos" limit={6} showDescription={false} showArchive={false} titleLevel={4} />
+
+```mdx
+<CategoryList category="guides/layout-demos" limit={6} showDescription={false} showArchive={false} />
+```
+
+### メタデータを追加する
+
+メタデータは必要なものだけをオンにし、両方のレイアウトで共通です。この例では先頭の表示をオフにしているので、日付はタグと並んでメタデータの行に移ります。
+
+<CategoryList category="blog" limit={2} lead="none" showDate showUpdated showTags archiveLabel="Browse the blog" titleLevel={4} />
+
+```mdx
+<CategoryList category="blog" limit={2} lead="none" showDate showUpdated showTags archiveLabel="Browse the blog" />
+```
+
+## Props
+
+| Prop | 型 | 既定値 | 説明 |
+|------|------|---------|-------------|
+| `category` | `string` | — | 正規のカテゴリ slug。`/docs/` 以降のパスを両端のスラッシュなしで書きます（例: `"blog"`、`"guides/layout-demos"`）。必須。 |
+| `limit` | `number` | — | 表示する項目数の上限。正の整数。必須。 |
+| `layout` | `"cards" \| "list"` | `"cards"` | 見た目だけを切り替え、項目は変わりません。 |
+| `scope` | `"descendants" \| "direct"` | `"descendants"` | 通常のカテゴリ専用。ノートトレイは常にトレイ自身の平らな項目を並べます。 |
+| `lead` | `"auto" \| "none" \| "rank" \| "date"` | `"auto"` | 先頭に置く情報。`"auto"` は日付付きトレイなら日付、日付のないトレイなら番号、通常のカテゴリでは何も表示しません。 |
+| `showDescription` | `boolean` | `true` | frontmatter の `description` があれば表示します。 |
+| `showDate` | `boolean` | `false` | `date` をメタデータの行に表示します。日付がすでに先頭にあるときは表示しません。 |
+| `showUpdated` | `boolean` | `false` | `updated` を「更新」のラベル付きで表示します。`date` と同じ日なら表示しません。 |
+| `showTags` | `boolean` | `false` | 文書のタグをリンクではない文字として表示します。`docTags` が必要です。 |
+| `showPath` | `boolean` | `false` | 一覧のカテゴリと項目のあいだにあるサブカテゴリを表示します。 |
+| `showCount` | `boolean` | `false` | フッターに「N 件中 M 件を表示」を表示します。 |
+| `showArchive` | `boolean` | `true` | フッターにカテゴリ全体へのリンクを表示します。 |
+| `archiveLabel` | `string` | `"すべて見る"` | アーカイブへのリンクの文言。 |
+| `titleLevel` | `3 \| 4` | `3` | 項目タイトルの見出しレベル。 |
+
+## 一覧に入る文書
+
+- カテゴリは slug の完全一致で探します。ページの frontmatter `slug` も反映され、似た slug に前方一致することはありません。
+- 読者がナビゲーションでたどれるページだけを並べます。下書き、`unlisted`、`standalone` のページは件数を数える前に除外します。`search_exclude` は検索とエクスポートにだけ効くので、そのページは一覧に残ります。
+- カテゴリ自身のランディングページは項目になりません。index ページのないフォルダーや自動生成されたカテゴリの索引は、たどりはしますが項目にはしません。自分の index ページを持つサブカテゴリは、ツリーの順序どおりに 1 回だけ並びます。
+- 並び順はカテゴリ自身の順序、つまりサイドバーと同じ `sidebar_position` と `category_sort_order` です。別の並べ替えオプションはありません。トレイが `category_sort_order: desc` なら、ブログは新しい順に並びます。
+- ノートトレイの番号はトレイ全体から決まり、桁数も保たれます。12 項目の降順トレイの先頭 4 件は 12、11、10、09 と表示され、01 から振り直されることはありません。通常のカテゴリには、`lead="rank"` を指定しても番号は付きません。
+- `limit` は除外のあとに適用します。文書が上限より少なければ、あるものだけを表示します。フッターの件数は、上限を適用する前の一覧の対象件数です。
+- 各ロケールは自分の翻訳を並べ、翻訳のないページはデフォルトロケールで補います。`unlisted` の翻訳は、その補完も隠します。バージョンの中では、項目とアーカイブへのリンクはそのバージョンを指します。
+
+## アーカイブへのリンク
+
+フッターのリンクは、カテゴリ自身のページへの通常のリンクです。すべての項目が収まっていても、アーカイブで全体を見渡せるので残します。カテゴリ自身のページがない（`category_no_page`）場合は、項目は表示したままリンクだけを省き、ビルド時に `[zudo-doc]` の警告を出します。意図して省くときは `showArchive={false}` を指定します。
+
+## エラーと空のカテゴリ
+
+- `limit` がない・整数でない、未知の `layout`、未知の prop など、オプションが不正なときは、その prop を示すエラーでビルドが止まります。
+- 未知のカテゴリや、カテゴリではなく文書を指す slug でもビルドが止まります。カテゴリがないこともありうる別のロケールや古いバージョンでは、代わりに何も描画しません。
+- 表示できる文書のない正しいカテゴリは、何も描画しません。
+
+## ホームページでの使用
+
+ホームページの紹介文 Markdown にはコンポーネントを書けません。代わりに [`home.sections`](../guides/configuration.mdx#ホームページ-home-ナビゲーションセクションの構成) に `category-list` のエントリを置きます。オプションは同じで、さらに `heading`、`description`、ロケールごとの `locales` による上書き（`heading`、`description`、`archiveLabel`）が使えます。見出しの既定値はカテゴリ自身のタイトルです。エントリは何個でも置け、カテゴリに表示するものがないときは、見出しを含むセクション全体を出力しません。
+
+```ts
+home: {
+  sections: [
+    {
+      type: "category-list",
+      category: "blog",
+      limit: 3,
+      heading: "Latest posts",
+      showCount: true,
+      archiveLabel: "See all posts",
+      locales: { ja: { heading: "最新の記事", archiveLabel: "記事一覧へ" } },
+    },
+    { type: "site-tree", variant: "described" },
+  ],
+},
+```
+
+## パッケージ API
+
+ページモジュールでは `@takazudo/zudo-doc/category-list` の `createCategoryListWrapper` で同じコンポーネントを作れます。このサブパスは `resolveCategoryList`（項目、総数、アーカイブの URL を返す純粋な解決処理）、`CategoryListView`（表示部分）、`assertValidCategoryListOptions`、`CategoryListOptions` の型もエクスポートします。

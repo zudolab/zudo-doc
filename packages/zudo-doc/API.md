@@ -249,6 +249,7 @@ its own sidebar-tree data prep and does not receive this prop.
 | `./category-tree-nav` | Category tree navigation component |
 | `./site-tree-nav` | Site tree navigation component; its `SiteTreeNavDeps.categoryIgnore` and `initiallyCollapsedCategorySlugs` fields are optional (omitted means nothing is hidden or collapsed) |
 | `./doc-card-nav` | Server-side selected-document cards: `createDocCardNavWrapper`, `resolveDocCards`, `reportDocCardDiagnostics`, `isCanonicalDocSlug` |
+| `./category-list` | Category-driven document listing (cards / two-column list): `createCategoryListWrapper`, `createCategoryListRenderer`, `resolveCategoryList`, `CategoryListView`, `assertValidCategoryListOptions`, and the `CategoryListOptions` types. Registered as the `<CategoryList>` MDX component and the `category-list` `home.sections` type |
 | `./html-preview-wrapper` | HTML preview wrapper component |
 | `./design-token-panel-bootstrap` | Design token panel bootstrap wiring |
 

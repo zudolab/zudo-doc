@@ -530,6 +530,10 @@
       "types": "./dist/doc-card-nav/index.d.ts",
       "default": "./dist/doc-card-nav/index.js"
     },
+    "./category-list": {
+      "types": "./dist/category-list/index.d.ts",
+      "default": "./dist/category-list/index.js"
+    },
     "./routes/design-token-panel-bootstrap": {
       "types": "./dist/routes/_design-token-panel-bootstrap.d.ts",
       "default": "./dist/routes/_design-token-panel-bootstrap.js"
