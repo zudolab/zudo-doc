@@ -1103,7 +1103,7 @@ function generatePackageJson(
     // scaffolding itself; preview and deployment remain owner-controlled.
     // `@cloudflare/workers-types` stays a workspace devDependency and is not
     // written here. Adapter-mode `zfb preview` treats 4.85.0 as a minimum.
-    devDeps["wrangler"] = "4.161.0";
+    devDeps["wrangler"] = "4.162.0";
   }
 
   // search ships as @takazudo/zudo-doc's own self-contained generated
