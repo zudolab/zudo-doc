@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [12.0.1] - 2026-11-14
+
+- No package-specific changes.
+
 ## [12.0.0] - 2026-11-13
 
 ### Breaking Changes
