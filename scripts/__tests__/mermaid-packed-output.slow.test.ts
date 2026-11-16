@@ -18,24 +18,8 @@ it("installed public code-syntax export emits the patched browser import", { tim
     cwd: join(root, "packages/zudo-doc"), stdio: "pipe", timeout: 180_000,
   });
   const tarball = join(temporary, readdirSync(temporary).find((name) => name.endsWith(".tgz"))!);
-  // zdtp 0.9.7 still peers `@takazudo/zfb` at `^5.1.2 || ^6.0.0`. npm auto-installs
-  // that optional peer next to this package's `^7.0.0` peer and exits ERESOLVE.
-  // Until zdtp admits zfb 7, install the engine as a direct dependency and ignore
-  // peer ranges. The assertions still require the packed export and zfb 7's JSX
-  // runtime to resolve inside this consumer.
-  writeFileSync(join(temporary, ".npmrc"), "legacy-peer-deps=true\n");
-  writeFileSync(join(temporary, "package.json"), JSON.stringify({
-    name: "mermaid-packed-proof",
-    private: true,
-    type: "module",
-    dependencies: {
-      "@takazudo/zudo-doc": `file:${tarball}`,
-      "@takazudo/zfb": "7.0.0",
-      "@takazudo/zfb-runtime": "7.0.0",
-      "@takazudo/zfb-md-wasm": "7.0.0",
-    },
-  }));
-  execFileSync("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"], {
+  writeFileSync(join(temporary, "package.json"), JSON.stringify({ name: "mermaid-packed-proof", private: true, type: "module" }));
+  execFileSync("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], {
     cwd: temporary, stdio: "pipe", timeout: 180_000,
   });
   const hash = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");

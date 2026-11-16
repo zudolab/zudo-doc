@@ -7,6 +7,7 @@ sidebar_position: 1160
 ### Breaking Changes
 
 - ZFB 7.0.0 ファミリ（`^7.0.0`）が必須になりました。ZFB 7 は Linux arm64 向け npm の CLI と CSS 配布を停止したため、Linux arm64 の npm インストールには `@takazudo/zfb-linux-arm64-gnu` が含まれません。Linux x64、macOS、Windows の npm インストールは変わりません。Rust ビルド、GitHub Release のアーカイブ、スタンドアロン CLI は引き続き Linux arm64 をサポートします。削除されたバンドラー選択子は未設定のままにしてください。
+- デザイントークンパネルを使う場合は `@takazudo/zdtp` 0.9.8 以降が必要です。0.9.7 以前は ZFB 7 の peer を受け入れません。
 
 ### Features
 
