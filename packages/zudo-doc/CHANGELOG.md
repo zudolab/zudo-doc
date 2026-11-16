@@ -6,10 +6,13 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [13.0.0] - 2026-11-16
+
 ### Breaking Changes
 
 - Require the ZFB 7.0.0 family (`^7.0.0`). ZFB 7 suspends the Linux arm64 npm CLI and CSS distribution, so a Linux arm64 npm install no longer receives `@takazudo/zfb-linux-arm64-gnu`. Linux x64, macOS and Windows npm installs are unchanged. Rust builds, GitHub Release archives and the standalone CLI still support Linux arm64. Removed bundler selectors must stay unset.
 - A design-token panel needs `@takazudo/zdtp` 0.9.8 or newer. 0.9.7 and earlier do not accept the ZFB 7 peer.
+- The `@takazudo/zudo-doc-history-server` peer floor moves from `^12.0.0` to `^13.0.0`. Projects that enable document history need history-server 13.x.
 
 ### Features
 
