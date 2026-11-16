@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- A fresh scaffold pins `@takazudo/zfb`, `@takazudo/zfb-runtime` and `@takazudo/zfb-md-wasm`, and `@takazudo/zfb-adapter-cloudflare` on MCP projects, at 7.0.0. ZFB 7 suspends the Linux arm64 npm CLI and CSS distribution, so a Linux arm64 npm install of a new project no longer receives a native carrier. Linux x64, macOS and Windows npm installs are unchanged.
+
 ## [12.0.1] - 2026-11-14
 
 ### Other Changes

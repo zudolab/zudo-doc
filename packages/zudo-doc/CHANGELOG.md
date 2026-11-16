@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Require the ZFB 7.0.0 family (`^7.0.0`). ZFB 7 suspends the Linux arm64 npm CLI and CSS distribution, so a Linux arm64 npm install no longer receives `@takazudo/zfb-linux-arm64-gnu`. Linux x64, macOS and Windows npm installs are unchanged. Rust builds, GitHub Release archives and the standalone CLI still support Linux arm64. Removed bundler selectors must stay unset.
+
 ### Features
 
 - New `` component and repeatable `category-list` entry for `home.sections` list the first `limit` documents of one category, such as a blog, a numbered note tray or an ordinary category, as cards (up to three columns) or a two-column list, with an optional "See all" link to the full category. Items follow the category's own order and public navigation visibility; note trays keep their sidebar numbers and dates. Both layouts render on the server without client JavaScript. The `@takazudo/zudo-doc/category-list` subpath exports the resolver and view, and the agent export renders the component as a link list. (#4802)
