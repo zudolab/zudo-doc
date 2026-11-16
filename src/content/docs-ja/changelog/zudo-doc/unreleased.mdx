@@ -1,14 +1,5 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1160
+sidebar_position: 1161
 ---
-
-### Breaking Changes
-
-- ZFB 7.0.0 ファミリ（`^7.0.0`）が必須になりました。ZFB 7 は Linux arm64 向け npm の CLI と CSS 配布を停止したため、Linux arm64 の npm インストールには `@takazudo/zfb-linux-arm64-gnu` が含まれません。Linux x64、macOS、Windows の npm インストールは変わりません。Rust ビルド、GitHub Release のアーカイブ、スタンドアロン CLI は引き続き Linux arm64 をサポートします。削除されたバンドラー選択子は未設定のままにしてください。
-- デザイントークンパネルを使う場合は `@takazudo/zdtp` 0.9.8 以降が必要です。0.9.7 以前は ZFB 7 の peer を受け入れません。
-
-### Features
-
-- 新しい `<CategoryList>` コンポーネントと、`home.sections` に何個でも置ける `category-list` エントリで、ブログ、番号付きのノートトレイ、通常のカテゴリなど 1 つのカテゴリの先頭 `limit` 件を、カード（最大 3 列）または 2 列の一覧として表示し、カテゴリ全体への「すべて見る」リンクを付けられるようになりました。項目はカテゴリ自身の順序と公開ナビゲーションの表示条件に従い、ノートトレイではサイドバーと同じ番号と日付を保ちます。どちらのレイアウトもクライアント JavaScript なしでサーバー側で描画します。`@takazudo/zudo-doc/category-list` サブパスはリゾルバーと表示部分をエクスポートし、エージェント向けエクスポートではこのコンポーネントをリンクの一覧として出力します。(#4802)

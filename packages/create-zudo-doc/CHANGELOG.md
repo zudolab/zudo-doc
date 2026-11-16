@@ -6,9 +6,11 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [13.0.0] - 2026-11-16
+
 ### Breaking Changes
 
-- A fresh scaffold pins `@takazudo/zfb`, `@takazudo/zfb-runtime` and `@takazudo/zfb-md-wasm`, and `@takazudo/zfb-adapter-cloudflare` on MCP projects, at 7.0.0. ZFB 7 suspends the Linux arm64 npm CLI and CSS distribution, so a Linux arm64 npm install of a new project no longer receives a native carrier. Linux x64, macOS and Windows npm installs are unchanged.
+- A fresh scaffold pins `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^13.0.0`, and `@takazudo/zfb`, `@takazudo/zfb-runtime` and `@takazudo/zfb-md-wasm` at 7.0.0. MCP projects also pin `@takazudo/zfb-adapter-cloudflare` at 7.0.0. ZFB 7 suspends the Linux arm64 npm CLI and CSS distribution, so a Linux arm64 npm install of a new project no longer receives a native carrier. Linux x64, macOS and Windows npm installs are unchanged.
 - Design-token-panel projects pin `@takazudo/zdtp` 0.9.8, which accepts the ZFB 7 peer. MCP scaffolds pin Wrangler 4.163.0.
 
 ## [12.0.1] - 2026-11-14
