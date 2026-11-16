@@ -1713,6 +1713,10 @@ html:not([data-theme="dark"]) [data-zd-home-image="dark"] {
   font-size: var(--text-body);
 }
 
+.zd-category-list-link:is(:hover, :focus-visible) .zd-category-list-title {
+  color: var(--color-accent);
+}
+
 .zd-category-list-meta {
   display: flex;
   flex-wrap: wrap;
