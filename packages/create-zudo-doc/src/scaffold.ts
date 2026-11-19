@@ -735,9 +735,10 @@ function generatePackageJson(
   const deps: Record<string, string> = {
     // zfb engine — distributed as published native engine packages (the
     // platform package ships via an optionalDependency of
-    // @takazudo/zfb-<platform>); pinned to the exact stable 7.0.0 package
-    // family required by the zfb v7 pin. v7 suspends the Linux arm64 npm
-    // CLI/CSS carrier; Linux x64, macOS and Windows npm installs are unchanged.
+    // @takazudo/zfb-<platform>); pinned to the exact stable 7.1.0 package
+    // family. 7.1.0 publishes @takazudo/zfb-linux-arm64-gnu again, so a Linux
+    // arm64 npm install receives the CLI and CSS carrier that 7.0.0 omitted.
+    // Linux x64, macOS and Windows npm installs are unchanged.
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).
@@ -1014,9 +1015,9 @@ function generatePackageJson(
     // 2.22.1: zfb fixes dev live reload and lazy boot; md-wasm retains
     // workerd-specific parse/highlight exports while retaining browser paths.
     // No scaffold config migration is required.
-    "@takazudo/zfb": "7.0.0",
-    "@takazudo/zfb-runtime": "7.0.0",
-    "@takazudo/zfb-md-wasm": "7.0.0",
+    "@takazudo/zfb": "7.1.0",
+    "@takazudo/zfb-runtime": "7.1.0",
+    "@takazudo/zfb-md-wasm": "7.1.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -1082,7 +1083,7 @@ function generatePackageJson(
     // barebone sites remain provider-independent.
     // Keep the adapter in lockstep with the zfb family (and root pin), checked
     // by scripts/check-pin-parity.mjs.
-    deps["@takazudo/zfb-adapter-cloudflare"] = "7.0.0";
+    deps["@takazudo/zfb-adapter-cloudflare"] = "7.1.0";
     // Match @takazudo/zudo-doc's optional peer exactly. The package-owned MCP
     // route imports the SDK only when this feature is enabled.
     deps["@modelcontextprotocol/sdk"] = "1.32.2";
