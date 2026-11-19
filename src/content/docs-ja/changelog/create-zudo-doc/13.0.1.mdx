@@ -1,0 +1,13 @@
+---
+title: 13.0.1
+description: 13.0.1のリリースノート。
+sidebar_position: 1067
+---
+
+リリース日: 2026-11-19
+
+### その他の変更
+
+- 新規スキャフォールドは `@takazudo/zudo-doc` と `@takazudo/zudo-doc-history-server` を `^13.0.1` に、`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm` を 7.1.0 に固定します。MCP プロジェクトは `@takazudo/zfb-adapter-cloudflare` も 7.1.0 に固定します。7.1.0 は Linux arm64 向け npm の CLI と CSS キャリアを再び公開するため、新規プロジェクトを Linux arm64 で npm インストールすると `@takazudo/zfb-linux-arm64-gnu` が入ります。Linux x64、macOS、Windows の npm インストールは変わりません。
+- デザイントークンパネルを有効にしたプロジェクトは `@takazudo/zdtp` 0.9.9 をピン留めします。0.9.9 の zfb peer は `^5.1.2 || ^6.0.0 || ^7.0.0` のままで、zfb 7.1.0 に対してビルドされています。
+- MCP スキャフォールドは Wrangler 4.165.0 をピン留めします。

@@ -67,7 +67,7 @@ export function deriveDocSkillName(projectName: string): string {
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^13.0.0";
+export const ZUDO_DOC_PIN = "^13.0.1";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -1105,7 +1105,7 @@ function generatePackageJson(
     // scaffolding itself; preview and deployment remain owner-controlled.
     // `@cloudflare/workers-types` stays a workspace devDependency and is not
     // written here. Adapter-mode `zfb preview` treats 4.85.0 as a minimum.
-    devDeps["wrangler"] = "4.163.0";
+    devDeps["wrangler"] = "4.165.0";
   }
 
   // search ships as @takazudo/zudo-doc's own self-contained generated
@@ -1160,7 +1160,7 @@ function generatePackageJson(
     // `/exclude` at module scope from the always-bundled chrome graph; #3110
     // moved compileExclude into @takazudo/zudo-doc, so projects with both
     // docHistory and assetViewer off no longer need the package at all.
-    deps["@takazudo/zudo-doc-history-server"] = "^13.0.0";
+    deps["@takazudo/zudo-doc-history-server"] = "^13.0.1";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
