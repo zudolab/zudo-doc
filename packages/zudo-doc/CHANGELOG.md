@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [13.0.1] - 2026-11-19
+
 ### Other Changes
 
 - Require the ZFB 7.1.0 family (`^7.1.0`). 7.1.0 publishes `@takazudo/zfb-linux-arm64-gnu` again, so a Linux arm64 npm install receives the CLI and CSS carrier that 7.0.0 omitted. Linux x64, macOS and Windows npm installs are unchanged.
