@@ -1,6 +1,6 @@
 # Dependency audits
 
-Current workspace state: `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` are 13.0.0 in this tree (npm `latest` remains 12.0.1 until this release is published). This tree pins the ZFB 7.0.0 family (peers `^7.0.0`), zdtp 0.9.8, MCP SDK 1.32.2 and history-server peer floor `^13.0.0`; root and generated-MCP Wrangler is 4.163.0 on `main`; the root `CLAUDE.md` keeps the verified statement. ZFB 7 suspends the Linux arm64 npm CLI and CSS distribution.
+Current workspace state: `@takazudo/zudo-doc`, `@takazudo/zudo-doc-history-server` and `create-zudo-doc` are 13.0.0 in this tree and on npm `latest`. This tree pins the ZFB 7.1.0 family (peers `^7.1.0`), zdtp 0.9.8, MCP SDK 1.32.2 and history-server peer floor `^13.0.0`; root and generated-MCP Wrangler is 4.163.0 on `main`; the root `CLAUDE.md` keeps the verified statement. ZFB 7.1.0 publishes the Linux arm64 npm CLI and CSS carrier again; 7.0.0 omitted `@takazudo/zfb-linux-arm64-gnu`.
 
 Historical adoption checkpoint (2026-11-06, superseded): workspace and generated scaffolds use the published ZFB 5.2.2 family (runtime-only fixes over 5.2.0); package peer floors are `^5.2.2`. Generated Cloudflare projects pin Wrangler 4.158.0. Released as zudo-doc/history-server/create-zudo-doc 9.1.3; earlier version receipts below remain historical. The unreleased workspace and generated scaffolds move ZDTP to 0.9.1 (adds the `data-zdtp-version` shell marker); Node 24 remains the minimum.
 
