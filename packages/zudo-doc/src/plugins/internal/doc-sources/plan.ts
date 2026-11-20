@@ -186,8 +186,8 @@ export function buildPlan(
     if (file.kind === "asset") {
       const outputAbs = path.join(options.publicDir, ASSET_DIR, ...baseRoute.split("/"), ...file.rel.split("/"));
       claim(`asset:${path.relative(options.publicDir, outputAbs)}`, describe(file));
-      const base = `/${options.base.replace(/^\/+|\/+$/g, "")}/`.replace(/^\/\/$/, "/");
-      const url = `${base}${[ASSET_DIR, ...baseRoute.split("/"), ...file.rel.split("/")].map(encodeURIComponent).join("/")}`;
+      // Root-relative: the markdown pipeline prefixes the site base itself.
+      const url = `/${[ASSET_DIR, ...baseRoute.split("/"), ...file.rel.split("/")].map(encodeURIComponent).join("/")}`;
       assets.push({ file, outputAbs, url });
       continue;
     }

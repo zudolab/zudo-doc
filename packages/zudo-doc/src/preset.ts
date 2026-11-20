@@ -773,7 +773,6 @@ function buildPlugins(
       options: {
         sources: settings.docSources ?? [],
         docsDir: settings.docsDir,
-        base: settings.base,
         locales: localeRecord,
         defaultLocale: settings.defaultLocale,
         defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],

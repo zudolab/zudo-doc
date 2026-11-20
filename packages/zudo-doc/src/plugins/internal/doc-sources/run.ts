@@ -14,8 +14,6 @@ import { reconcile } from "./reconcile.js";
 export interface DocSourcesPluginOptions {
   sources?: unknown;
   docsDir?: string;
-  /** Site base path; prefixes copied-asset URLs. */
-  base?: string;
   locales?: Record<string, { dir: string }>;
   defaultLocale?: string;
   defaultLocaleOnlyPrefixes?: string[];
@@ -60,7 +58,6 @@ export function resolveRunOptions(
     projectRoot,
     sources: normalizeDocSources(plugin.sources, { projectRoot, homeDir: env.homeDir }),
     docsDir,
-    base: plugin.base ?? "/",
     locales,
     defaultLocale: plugin.defaultLocale ?? "en",
     defaultLocaleOnlyPrefixes: plugin.defaultLocaleOnlyPrefixes ?? [],

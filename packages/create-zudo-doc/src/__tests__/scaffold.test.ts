@@ -1212,7 +1212,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 34-file set", async () => {
+  it("all-on scaffold emits exactly the expected 35-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -1221,6 +1221,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
     });
     const files = await listFiles(projectPath("test-all-on"));
     const expected = [
+      ".codex/.gitkeep",
       ".claude/skills/zudo-doc-design-system/SKILL.md",
       ".claude/skills/zudo-doc-translate/SKILL.md",
       ".claude/skills/zudo-doc-version-bump/SKILL.md",
@@ -1436,6 +1437,20 @@ describe("scaffold — .gitignore docSources output", () => {
     ]) {
       expect(lines).toContain(line);
     }
+  });
+
+  it("seeds missing preset roots so a fresh project builds", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-doc-sources-roots",
+      features: ["claudeCodeDocs", "codexDocs"],
+    });
+    for (const rel of [".claude/.gitkeep", ".codex/.gitkeep"]) {
+      expect(await fs.pathExists(projectPath("test-doc-sources-roots", rel))).toBe(true);
+    }
+    await scaffold(baseChoices);
+    expect(await fs.pathExists(projectPath("test-doc", ".claude"))).toBe(false);
+    expect(await fs.pathExists(projectPath("test-doc", ".codex"))).toBe(false);
   });
 
   it("emits no docSources ignore block when no source is configured", async () => {

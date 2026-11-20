@@ -58,8 +58,6 @@ export interface DocSourcesRunOptions {
   sources: NormalizedSource[];
   /** Default-locale content directory (absolute). */
   docsDir: string;
-  /** Site base path (for example "/" or "/docs-site/"). */
-  base: string;
   /** Non-default locale content directories (absolute), keyed by locale. */
   locales: Record<string, string>;
   defaultLocale: string;

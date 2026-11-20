@@ -467,7 +467,6 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(byName["@takazudo/zudo-doc/plugins/doc-sources"]).toEqual({
       sources: fixtureSettings.docSources,
       docsDir: "src/content/docs",
-      base: fixtureSettings.base,
       locales: { ja: { dir: "src/content/docs-ja" } },
       defaultLocale: "en",
       defaultLocaleOnlyPrefixes: ["/docs/claude/"],

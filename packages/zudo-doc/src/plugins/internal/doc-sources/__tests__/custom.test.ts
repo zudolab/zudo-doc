@@ -138,23 +138,6 @@ describe("custom sources", () => {
     expect(warns[0]).toContain("nowhere.md");
   });
 
-  it("prefixes copied-asset URLs with the site base", () => {
-    const project = makeProject();
-    write(path.join(project.root, "kb", "index.md"), "![logo](logo.png)\n");
-    write(path.join(project.root, "kb", "logo.png"), Buffer.from([1]));
-    run(project, {
-      base: "/manual",
-      sources: [
-        {
-          id: "kb",
-          title: "KB",
-          mappings: [{ id: "m", root: "kb", include: ["*.md"], format: "markdown", assets: { include: ["*.png"] } }],
-        },
-      ],
-    });
-    expect(read(path.join(docsOf(project.root), "kb/index.mdx"))).toContain("![logo](/manual/doc-sources/kb/logo.png)");
-  });
-
   it("reports route collisions without writing anything", () => {
     const project = makeProject();
     write(path.join(project.root, "a", "intro.md"), "# A\n");

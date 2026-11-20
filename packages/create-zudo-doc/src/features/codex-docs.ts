@@ -1,3 +1,5 @@
+import fs from "fs-extra";
+import path from "path";
 import type { FeatureModule } from "../compose.js";
 
 /**
@@ -15,4 +17,13 @@ import type { FeatureModule } from "../compose.js";
 export const codexDocsFeature: FeatureModule = () => ({
   name: "codexDocs",
   injections: [],
+  // The preset root must exist at build time; seed an empty one so a fresh
+  // project builds before the user adds any agent configuration.
+  postProcess: async (targetDir) => {
+    const root = path.join(targetDir, ".codex");
+    if (!(await fs.pathExists(root))) {
+      await fs.ensureDir(root);
+      await fs.writeFile(path.join(root, ".gitkeep"), "");
+    }
+  },
 });
