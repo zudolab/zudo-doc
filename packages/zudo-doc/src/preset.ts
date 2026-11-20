@@ -36,6 +36,7 @@
 
 import { z } from "zod";
 import type { DirectiveSpec, ZfbConfig } from "@takazudo/zfb/config";
+import type { DocSourceEntry } from "./doc-sources/types.js";
 import type { ColorScheme } from "./color-scheme-utils.js";
 import type {
   ContentSignalsConfig,
@@ -80,25 +81,6 @@ export interface PresetVersionConfig {
   slug: string;
   docsDir: string;
   locales?: Record<string, { dir: string }>;
-}
-
-/** The `settings.claudeResources` block (or `false` when disabled). */
-export interface PresetClaudeResourcesConfig {
-  claudeDir: string;
-  projectRoot?: string;
-  /**
-   * Root for `CLAUDE.md` discovery; defaults to `projectRoot`. Decouples
-   * repo-wide scanning from the output base for subdirectory doc sites (#2558).
-   */
-  scanRoot?: string;
-}
-
-/** The `settings.codexResources` block (or `false` when disabled). */
-export interface PresetCodexResourcesConfig {
-  codexDir: string;
-  projectRoot?: string;
-  /** Root for `AGENTS.md` / `AGENTS.override.md` and `.agents/skills/` discovery; defaults to `projectRoot`. */
-  scanRoot?: string;
 }
 
 export interface PresetChangelogConfig {
@@ -199,8 +181,8 @@ export interface PresetSettings {
   assetViewerExclude?: string[];
   /** Per-output opt-in controls for indexing generated asset-viewer pages. */
   assetViewerIndexing?: AssetViewerIndexingConfig | false;
-  claudeResources?: PresetClaudeResourcesConfig | false;
-  codexResources?: PresetCodexResourcesConfig | false;
+  /** External document sources baked into nested routes (default `[]`). */
+  docSources?: DocSourceEntry[];
   /** Route prefixes served only from the unprefixed default locale. */
   defaultLocaleOnlyPrefixes?: string[];
   /**
@@ -642,6 +624,17 @@ export function buildMarkdownFeatures(
 // (defaults to "public") which replaces it (#2358).
 // ---------------------------------------------------------------------------
 
+/**
+ * The route-context projection of settings. `docSources` is private,
+ * build-local filesystem configuration (it may name home-directory or other
+ * absolute paths), so it never enters the route context, browser bundles or
+ * export metadata.
+ */
+function publicRouteSettings(settings: PresetSettings): Record<string, unknown> {
+  const { docSources: _private, ...rest } = settings;
+  return rest as unknown as Record<string, unknown>;
+}
+
 function buildPlugins(
   settings: PresetSettings,
   routeContext: {
@@ -751,7 +744,7 @@ function buildPlugins(
               // Serializable project settings — JSON.stringify-d verbatim into
               // the virtual module. No function-valued fields (verified in
               // src/config/settings.ts), so it round-trips losslessly.
-              settings: settings as unknown as Record<string, unknown>,
+              settings: publicRouteSettings(settings),
               translations: routeContext.translations ?? {},
               tagVocabulary: routeContext.tagVocabulary ?? [],
               colorSchemes: routeContext.colorSchemes ?? null,
@@ -771,40 +764,27 @@ function buildPlugins(
           },
         ]
       : []),
-    ...(settings.claudeResources
-      ? [
-          {
-            name: "@takazudo/zudo-doc/plugins/claude-resources",
-            options: {
-              claudeDir: settings.claudeResources.claudeDir,
-              projectRoot: settings.claudeResources.projectRoot,
-              scanRoot: settings.claudeResources.scanRoot,
-              docsDir: settings.docsDir,
-              locales: localeRecord,
-              defaultLocale: settings.defaultLocale,
-              translations: routeContext.translations,
-              defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
-            },
-          },
-        ]
-      : []),
-    ...(settings.codexResources
-      ? [
-          {
-            name: "@takazudo/zudo-doc/plugins/codex-resources",
-            options: {
-              codexDir: settings.codexResources.codexDir,
-              projectRoot: settings.codexResources.projectRoot,
-              scanRoot: settings.codexResources.scanRoot,
-              docsDir: settings.docsDir,
-              locales: localeRecord,
-              defaultLocale: settings.defaultLocale,
-              translations: routeContext.translations,
-              defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
-            },
-          },
-        ]
-      : []),
+    // Always registered: reconciliation must also run with `docSources`
+    // empty so removed or disabled sources leave no stale generated output.
+    // The options carry configuration data only; the plugin resolves paths
+    // and touches the filesystem inside Node build execution.
+    {
+      name: "@takazudo/zudo-doc/plugins/doc-sources",
+      options: {
+        sources: settings.docSources ?? [],
+        docsDir: settings.docsDir,
+        locales: localeRecord,
+        defaultLocale: settings.defaultLocale,
+        defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
+        translations: routeContext.translations ?? {},
+        excludeDirs: settings.versions
+          ? settings.versions.flatMap((version) => [
+              version.docsDir,
+              ...Object.values(version.locales ?? {}).map((locale) => locale.dir),
+            ])
+          : [],
+      },
+    },
     ...(settings.docHistory
       ? [
           {

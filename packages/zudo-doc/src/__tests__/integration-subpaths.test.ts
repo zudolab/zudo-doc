@@ -15,8 +15,7 @@ describe("current integration subpaths", () => {
         "./plugins/llms-txt",
         "./plugins/agent-export",
         "./plugins/search-index",
-        "./plugins/claude-resources",
-        "./plugins/codex-resources",
+        "./plugins/doc-sources",
         "./plugins/changelog",
         "./plugins/zdtp-loader",
         "./plugins/katex-loader",
@@ -31,6 +30,8 @@ describe("current integration subpaths", () => {
       "./integrations/llms-txt",
       "./integrations/search-index",
       "./integrations/claude-resources",
+      "./plugins/claude-resources",
+      "./plugins/codex-resources",
     ]) {
       expect(packageJson.exports).not.toHaveProperty(subpath);
     }

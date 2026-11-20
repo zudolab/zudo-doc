@@ -173,8 +173,8 @@ const ALL_FEATURES = [
   "i18n",
   "search",
   "sidebarFilter",
-  "claudeResources",
-  "codexResources",
+  "claudeCodeDocs",
+  "codexDocs",
   "claudeSkills",
   "claudeSkillsWriting",
   "designTokenPanel",
@@ -1212,7 +1212,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 34-file set", async () => {
+  it("all-on scaffold emits exactly the expected 35-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -1221,6 +1221,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
     });
     const files = await listFiles(projectPath("test-all-on"));
     const expected = [
+      ".codex/.gitkeep",
       ".claude/skills/zudo-doc-design-system/SKILL.md",
       ".claude/skills/zudo-doc-translate/SKILL.md",
       ".claude/skills/zudo-doc-version-bump/SKILL.md",
@@ -1298,6 +1299,7 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     for (const token of [
       "docHistory",
       "llmsTxt",
+      "docSources",
       "claudeResources",
       "codexResources",
       "designTokenPanel",
@@ -1361,20 +1363,25 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     expect(config).not.toContain("bundleZdtp");
   });
 
-  it("emits the codexResources field and Codex header navigation when selected", async () => {
+  it("emits the codex docSources preset entry and Codex header navigation when selected", async () => {
     await scaffold({
       ...baseChoices,
-      projectName: "test-codex-resources",
-      features: ["codexResources"],
+      projectName: "test-codex-docs",
+      features: ["codexDocs"],
     });
     const config = await fs.readFile(
-      projectPath("test-codex-resources", "zfb.config.ts"),
+      projectPath("test-codex-docs", "zfb.config.ts"),
       "utf-8",
     );
-    expect(config).toContain("codexResources: {");
-    expect(config).toContain('codexDir: ".codex"');
+    expect(config).toContain("docSources: [");
+    expect(config).toContain('id: "codex"');
+    expect(config).toContain('preset: "codex"');
+    expect(config).toContain('root: ".codex"');
+    expect(config).not.toContain("codexResources");
     expect(config).toContain('label: "Codex"');
     expect(config).toContain('path: "/docs/codex"');
+    expect(config).toContain('categoryMatch: "codex"');
+    expect(config).toContain("versioned: false");
   });
 
   it("src/content.config.ts is NOT emitted (content config lives in zfb.config.ts)", async () => {
@@ -1406,6 +1413,53 @@ describe("scaffold — package-injected routes are never emitted as project file
       ).toBe(false);
     },
   );
+});
+
+describe("scaffold — .gitignore docSources output", () => {
+  it("ignores each source mount (default + locale trees) and public/doc-sources/", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-doc-sources-ignore",
+      features: ["claudeCodeDocs", "codexDocs", "i18n"],
+    });
+    const lines = (
+      await fs.readFile(projectPath("test-doc-sources-ignore", ".gitignore"), "utf-8")
+    )
+      .split("\n")
+      .map((line) => line.trim());
+    for (const line of [
+      "# Generated docSources output",
+      "src/content/docs/claude/",
+      "src/content/docs-ja/claude/",
+      "src/content/docs/codex/",
+      "src/content/docs-ja/codex/",
+      "public/doc-sources/",
+    ]) {
+      expect(lines).toContain(line);
+    }
+  });
+
+  it("seeds missing preset roots so a fresh project builds", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-doc-sources-roots",
+      features: ["claudeCodeDocs", "codexDocs"],
+    });
+    for (const rel of [".claude/.gitkeep", ".codex/.gitkeep"]) {
+      expect(await fs.pathExists(projectPath("test-doc-sources-roots", rel))).toBe(true);
+    }
+    await scaffold(baseChoices);
+    expect(await fs.pathExists(projectPath("test-doc", ".claude"))).toBe(false);
+    expect(await fs.pathExists(projectPath("test-doc", ".codex"))).toBe(false);
+  });
+
+  it("emits no docSources ignore block when no source is configured", async () => {
+    await scaffold(baseChoices);
+    const gitignore = await fs.readFile(projectPath("test-doc", ".gitignore"), "utf-8");
+    expect(gitignore).not.toContain("docSources");
+    expect(gitignore).not.toContain("doc-sources");
+    expect(gitignore).not.toContain("src/content/docs/");
+  });
 });
 
 describe("scaffold — .gitignore base blocks", () => {
@@ -1813,6 +1867,24 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(without).toContain("zfb dev server (port 4321)");
     expect(without).not.toContain("dev:network");
     expect(without).not.toContain("Trusted networks only");
+  });
+
+  it("documents the docSources watcher in the dev commands when a source is configured", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-claudemd-doc-sources",
+      features: ["codexDocs"],
+    });
+    const content = await fs.readFile(
+      projectPath("test-claudemd-doc-sources", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(content).toContain("`zudo-doc sources watch`");
+    expect(content).toContain("pnpm dev:sources");
+    expect(content).toContain("run-parallel");
+    expect(content).not.toContain("doc-history API server");
+    expect(content).not.toContain("Trusted networks only");
+    expect(content).toContain("`/docs/codex/`");
   });
 
   it("documents the built-in MDX components the seed content uses (CategoryNav) (#2703)", async () => {
@@ -2308,9 +2380,48 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.scripts.dev).toBe("zfb dev");
     expect(pkg.scripts["dev:zfb"]).toBeUndefined();
     expect(pkg.scripts["dev:history"]).toBeUndefined();
+    expect(pkg.scripts["dev:sources"]).toBeUndefined();
     expect(pkg.scripts["dev:zfb:network"]).toBeUndefined();
     expect(pkg.scripts["dev:network"]).toBeUndefined();
     expect(pkg.devDependencies["npm-run-all2"]).toBeUndefined();
+  });
+
+  it("runs `zudo-doc sources watch` beside zfb dev when a docSources preset is selected", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-sources-dev-script",
+      features: ["claudeCodeDocs"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-sources-dev-script", "package.json"),
+    );
+    expect(pkg.scripts.dev).toBe("run-parallel dev:zfb dev:sources");
+    expect(pkg.scripts["dev:zfb"]).toBe("zfb dev");
+    expect(pkg.scripts["dev:sources"]).toBe("zudo-doc sources watch");
+    expect(pkg.scripts["dev:history"]).toBeUndefined();
+    expect(pkg.scripts["dev:zfb:network"]).toBe("zfb dev --host 0.0.0.0");
+    expect(pkg.scripts["dev:network"]).toBe(
+      "run-parallel dev:zfb:network dev:sources",
+    );
+    for (const value of Object.values(pkg.scripts as Record<string, string>)) {
+      expect(value).not.toMatch(/dev-claude-watch|dev-codex-watch/);
+    }
+  });
+
+  it("runs one sources watcher alongside the history server when both are needed", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-sources-history-dev-script",
+      features: ["docHistory", "claudeCodeDocs", "codexDocs"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-sources-history-dev-script", "package.json"),
+    );
+    expect(pkg.scripts.dev).toBe("run-parallel dev:zfb dev:history dev:sources");
+    expect(pkg.scripts["dev:network"]).toBe(
+      "run-parallel dev:zfb:network dev:history dev:sources",
+    );
+    expect(pkg.scripts["dev:sources"]).toBe("zudo-doc sources watch");
   });
 
   it("appends a derived --locale flag to dev:history when i18n is also enabled", async () => {

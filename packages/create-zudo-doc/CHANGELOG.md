@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **Breaking:** the `--[no-]claude-resources` and `--[no-]codex-resources` flags (and the `claudeResources` / `codexResources` preset feature names) are replaced by `--[no-]claude-code-docs` and `--[no-]codex-docs` (`claudeCodeDocs` / `codexDocs`), with no aliases. These features now emit `docSources` preset entries (`claude-code` and `codex`) in the generated `zfb.config.ts` instead of the removed `claudeResources` and `codexResources` settings, so their pages live below `/docs/<mount>/`. See Document Sources.
+
 ## [13.0.1] - 2026-11-19
 
 ### Other Changes

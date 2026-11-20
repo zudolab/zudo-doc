@@ -152,8 +152,8 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized images | on |
 | `--[no-]asset-viewer` | Viewer pages for files under `public/assets/` | on |
 | `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | off |
-| `--[no-]claude-resources` | Auto-generate Claude Code docs from `.claude/` | off |
-| `--[no-]codex-resources` | Auto-generate Codex docs from `.codex/` + `AGENTS.md` | off |
+| `--[no-]claude-code-docs` | Publish `.claude/` + `CLAUDE.md` under `/docs/claude/` (a `docSources` entry with the `claude-code` preset; `dev` also runs `zudo-doc sources watch`) | off |
+| `--[no-]codex-docs` | Publish `.codex/` + `AGENTS.md` under `/docs/codex/` (a `docSources` entry with the `codex` preset; `dev` also runs `zudo-doc sources watch`) | off |
 | `--[no-]claude-skills` | Ship zudo-doc Claude Code skills (design-system, translate, version-bump) | off |
 | `--[no-]design-token-panel` | Interactive panel for tweaking spacing, font, color tokens | off |
 | `--[no-]sidebar-resizer` | Draggable sidebar width handle | on |

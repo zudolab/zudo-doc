@@ -134,12 +134,20 @@ describe("editorial policy — features on", () => {
     );
   });
 
-  it("records versioning and resource-generator constraints only when enabled", async () => {
+  it("records versioning and docSources constraints only when enabled", async () => {
     const policy = await (
-      await generate({ features: ["versioning", "claudeResources"] })
+      await generate({ features: ["versioning", "claudeCodeDocs"] })
     )("AUTHORING.md");
     expect(policy).toContain("frozen snapshots, not locales");
     expect(policy).not.toContain("docs-v*");
-    expect(policy).toContain("Do not hand-edit or move those pages");
+    expect(policy).toContain("**Doc sources**");
+    expect(policy).toContain("`src/content/docs/claude/`");
+    expect(policy).not.toContain("`src/content/docs/codex/`");
+    expect(policy).toContain("never the generated pages");
+
+    const without = await (
+      await generate({ projectName: "policy-doc-plain", features: [] })
+    )("AUTHORING.md");
+    expect(without).not.toContain("**Doc sources**");
   });
 });

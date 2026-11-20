@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "./prompts.js";
 import { generateZfbConfig } from "./zfb-config-gen.js";
+import { resolveDocSources } from "./doc-sources.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import {
   AUTHORING_POLICY_FILE,
@@ -634,6 +635,24 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     gitignoreLines.push("");
   }
 
+  // docSources output: the package-owned doc-sources plugin owns each source's
+  // mount directory in every locale content tree plus its managed assets under
+  // public/doc-sources/, and rewrites them on every build and under
+  // `zudo-doc sources watch` — generated output, never source.
+  const docSources = resolveDocSources(choices.features);
+  if (docSources.length > 0) {
+    gitignoreLines.push("# Generated docSources output");
+    for (const source of docSources) {
+      gitignoreLines.push(`src/content/docs/${source.id}/`);
+      if (localePlan.i18n) {
+        for (const locale of localePlan.additionalLangs) {
+          gitignoreLines.push(`src/content/docs-${locale}/${source.id}/`);
+        }
+      }
+    }
+    gitignoreLines.push("public/doc-sources/", "");
+  }
+
   await fs.outputFile(
     path.join(targetDir, ".gitignore"),
     gitignoreLines.join("\n"),
@@ -1166,10 +1185,6 @@ function generatePackageJson(
     // dist/ — package-first migration #2321 (#2337).
   }
 
-  // claudeResources: tsx is no longer needed. The relocated package plugin
-  // (@takazudo/zudo-doc/plugins/claude-resources) imports the runner directly
-  // since the package ships compiled dist/ — package-first migration #2321 (#2337).
-
   // check:html and gen:z-index/check:z-index are DROPPED from the default
   // scaffold (locked decision, epic #2651 #2660 work item 6):
   //   - `.htmlvalidate.json` no longer ships — html-validate becomes an
@@ -1187,17 +1202,28 @@ function generatePackageJson(
     "check:images": "zudo-doc check images",
   };
 
-  if (choices.features.includes("docHistory")) {
-    // A docHistory-enabled project needs the zfb dev server AND the
-    // doc-history API server (:4322, proxied by the zfb doc-history plugin)
-    // running concurrently — otherwise the Created/Updated/Author block
-    // silently never appears in dev (#2926). `doc-history-server` is the bin
-    // shipped by the @takazudo/zudo-doc-history-server dep added above;
-    // `run-parallel` runs both. It is a bin shipped by @takazudo/zudo-doc — an
-    // unconditional dep added above — so concurrency costs this project no extra
-    // devDependency. It replaced npm-run-all2's `run-p`, which was the sole
-    // source of four advisories (shell-quote DoS; brace-expansion@2 DoS x3).
-    scripts.dev = "run-parallel dev:zfb dev:history";
+  // Dev sidecars that must run beside `zfb dev`:
+  //   - dev:history — a docHistory-enabled project needs the doc-history API
+  //     server (:4322, proxied by the zfb doc-history plugin) running
+  //     concurrently, otherwise the Created/Updated/Author block silently never
+  //     appears in dev (#2926). `doc-history-server` is the bin shipped by the
+  //     @takazudo/zudo-doc-history-server dep added above.
+  //   - dev:sources — a project with docSources entries needs
+  //     `zudo-doc sources watch` (a bin subcommand of @takazudo/zudo-doc) so
+  //     edits to `.claude/`, `.codex/`, `CLAUDE.md` or `AGENTS.md` regenerate
+  //     their pages while `zfb dev` runs; the build plugin only bakes them once.
+  // `run-parallel` runs them together. It is a bin shipped by @takazudo/zudo-doc
+  // — an unconditional dep added above — so concurrency costs this project no
+  // extra devDependency. It replaced npm-run-all2's `run-p`, which was the sole
+  // source of four advisories (shell-quote DoS; brace-expansion@2 DoS x3).
+  const devSidecars: string[] = [];
+  if (choices.features.includes("docHistory")) devSidecars.push("dev:history");
+  if (resolveDocSources(choices.features).length > 0) {
+    devSidecars.push("dev:sources");
+    scripts["dev:sources"] = "zudo-doc sources watch";
+  }
+  if (devSidecars.length > 0) {
+    scripts.dev = ["run-parallel", "dev:zfb", ...devSidecars].join(" ");
     scripts["dev:zfb"] = "zfb dev";
     // Neither runner forwards trailing args, but they differ in how loudly: run-p
     // SILENTLY ignored `pnpm dev -- --host 0.0.0.0` (verified in issue #2940),
@@ -1207,7 +1233,14 @@ function generatePackageJson(
     // instead. Only zfb binds 0.0.0.0; the history server stays loopback-only
     // and LAN clients reach it through zfb's `/doc-history/*` dev proxy.
     scripts["dev:zfb:network"] = "zfb dev --host 0.0.0.0";
-    scripts["dev:network"] = "run-parallel dev:zfb:network dev:history";
+    scripts["dev:network"] = [
+      "run-parallel",
+      "dev:zfb:network",
+      ...devSidecars,
+    ].join(" ");
+  }
+
+  if (choices.features.includes("docHistory")) {
     // Relative --content-dir/--locale paths are resolved by resolveContentPath
     // (packages/doc-history-server/src/args.ts) against INIT_CWD (falling back
     // to process.cwd()) — correct for the supported invocation (`<pm> dev` /

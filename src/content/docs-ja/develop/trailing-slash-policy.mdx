@@ -34,7 +34,7 @@ const localized = buildUrl("ja", "docs", slug); // "/ja/docs/my-slug/"
 
 - `pages/sitemap.xml.tsx` — `<loc>` エントリの生成。
 - コレクションスラッグをルートパスにマップするzfbの `paths()` エクスポート。
-- インテグレーションレベルのURL出力（claude-resourcesなど）。
+- インテグレーションレベルのURL出力（doc-sourcesなど）。
 
 テキスト向けの出力（`llms.txt`、`llms-full.txt`、ブラウザー検索インデックス、MCPの結果を含むエージェント向けエクスポート）は、ビルドされるルートと同じく`trailingSlash`設定に従います。そのため、ページのURLが`/`で終わるときにだけ、これらのURLも`/`で終わります。
 

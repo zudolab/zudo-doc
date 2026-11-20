@@ -57,8 +57,8 @@ The URL slug is derived from the filename, so kebab-case also keeps URLs clean.
 - Keep `<HtmlPreview>` and other JSX blocks identical.
 - The JA directory should mirror the EN directory tree exactly.
 - **Exception**: files with `generated: true` in frontmatter are generator-owned; do not hand-edit or translate them.
-- **Exception**: the Claude/Codex resource generators own their overview and category `index.mdx` targets in the default content directory and every configured locale directory. They generate localized indexes from `resource.*` translations, so do not create hand-written locale stubs. If an authored file already occupies a target path, the generator refuses to overwrite it; remove or rename the file and express its title, description, and labels through `ZudoDocConfig.translations`.
-- **Exception**: Claude/Codex resource detail files stay in the default content directory and use body fallback at other locale routes. Do not copy those generated detail files into locale directories.
+- **Exception**: `docSources` owns the section and index `index.mdx` targets it writes in the default content directory and every configured locale directory. It generates localized indexes from `docSources.*` translations, so do not create hand-written locale stubs. If an authored file already occupies a target path, the build refuses to overwrite it; remove or rename the file and express its title, description, and labels through `ZudoDocConfig.translations`.
+- **Exception**: `docSources` detail pages stay in the default content directory and use body fallback at other locale routes. Do not copy those generated detail files into locale directories.
 - **Exception**: pages whose paths are explicitly listed under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — do not create a JA mirror for them. The source of truth is `settings.defaultLocaleOnlyPrefixes` in `src/config/settings.ts`; this repository currently configures no such prefixes.
 
 ## Frontmatter Schema

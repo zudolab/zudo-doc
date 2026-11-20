@@ -1,0 +1,315 @@
+---
+title: Document Sources
+description: Publish files that live outside docsDir, such as Claude Code and Codex configuration or any Markdown tree, as generated documentation sections.
+sidebar_position: 8
+---
+
+## Overview
+
+The `docSources` setting bakes files from outside your content directory into ordinary documentation routes. Each entry is either a bundled **preset** (Claude Code or Codex configuration) or a **custom source** that maps any directory you choose. Every entry becomes one top-level section at `/docs/<mount>/`.
+
+The setting is optional and defaults to `[]`. With no entries nothing is generated, and any output left by an earlier configuration is removed.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    docSources: [
+      { id: "claude", preset: "claude-code", root: ".claude" },
+      { id: "codex", preset: "codex", root: ".codex" },
+    ],
+  }),
+);
+```
+
+This is the configuration of this showcase. It publishes the repository's `.claude/` and `.codex/` directories at `/docs/claude/` and `/docs/codex/`.
+
+The package plugin (`@takazudo/zudo-doc/plugins/doc-sources`) does all filesystem work at build time; `zudoDoc()` wires it in automatically. The setting itself is plain data.
+
+## Preset Entries
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Stable source identifier (letters, digits, `-`, `_`). Also the default mount |
+| `preset` | `"claude-code"` \| `"codex"` | The bundled preset to expand |
+| `root` | string | The agent configuration directory, such as `.claude` or `.codex`. It must exist |
+| `scanRoot` | string | Optional directory scanned for instruction files (and, for Codex, `.agents/skills`). Defaults to the project root |
+| `mount` | string | Optional top-level route segment. Defaults to `id` |
+
+A preset expands into ordinary mappings and runs through the same pipeline as a custom source. Sections whose directory is absent are skipped; only the preset `root` itself is required.
+
+### Claude Code preset
+
+| Section | Route | Source |
+|---------|-------|--------|
+| Instructions | `/docs/<mount>/instructions/` | Every `CLAUDE.md` below `scanRoot` |
+| Commands | `/docs/<mount>/commands/` | `<root>/commands/**/*.md` |
+| Skills | `/docs/<mount>/skills/` | `<root>/skills/*/SKILL.md` and the files beside it |
+| Agents | `/docs/<mount>/agents/` | `<root>/agents/**/*.md` |
+
+The root `CLAUDE.md` is the Instructions landing page. A nested `packages/core/CLAUDE.md` becomes `/docs/<mount>/instructions/packages/core/` and is titled by its path.
+
+### Codex preset
+
+| Section | Route | Source |
+|---------|-------|--------|
+| Instructions | `/docs/<mount>/instructions/` | Every `AGENTS.md` and `AGENTS.override.md` below `scanRoot` |
+| Config | `/docs/<mount>/config/` | `config.toml`, `config.toml.example`, and `*.config.toml` profiles in `root` |
+| Agents | `/docs/<mount>/agents/` | `<root>/agents/*.toml` |
+| Hooks | `/docs/<mount>/hooks/` | `<root>/hooks.json` and every file below `<root>/hooks/` |
+| Rules | `/docs/<mount>/rules/` | `<root>/rules/*.rules` |
+| Skills | `/docs/<mount>/skills/` | `<root>/skills/*/SKILL.md` and `<scanRoot>/.agents/skills/*/SKILL.md` |
+
+Both presets skip hidden directories, `node_modules`, `dist`, `out`, `public`, `worktrees`, `__inbox` and `test-results` during the instruction scan.
+
+A skill becomes one page at `/docs/<mount>/skills/<name>/`. It lists the skill's file structure, and other Markdown files in the skill directory (for example `references/checklist.md`) become unlisted sibling pages such as `references-checklist`, linked from the skill page.
+
+## Custom Sources
+
+A custom source publishes any directory tree through explicit mappings:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Stable source identifier. Also the default mount |
+| `title` | string | Title of the source's landing page |
+| `mount` | string | Optional top-level route segment. Defaults to `id` |
+| `mappings` | array | One or more mappings (below) |
+
+Each mapping selects files from one root:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Mapping identifier, unique within the source |
+| `root` | string | Directory to read from |
+| `include` | string[] | Glob patterns relative to `root` |
+| `exclude` | string[] | Optional glob patterns removed from `include` |
+| `to` | string | Optional route subtree below the mount, such as `"handbook"` or `"guides/ops"`. Defaults to the mount root |
+| `format` | `"markdown"` \| `"code"` \| `"skill"` | How each selected file is rendered |
+| `missing` | `"error"` \| `"skip"` | What to do when `root` does not exist. Defaults to `"error"` |
+| `assets` | `{ include, exclude? }` | Optional non-document files (images, attachments) to publish |
+
+Relative paths resolve from the project root. Absolute paths and `~/` paths also work; `~user` forms are rejected. Glob patterns must stay relative to the mapping root.
+
+The three formats:
+
+- **`markdown`** renders Markdown with its frontmatter. `title` (or `name`), the first `#` heading, or the file name becomes the page title; `description` is kept; other scalar frontmatter fields are shown as a table.
+- **`code`** shows the whole file in a highlighted code block titled by its file name. A leading comment line becomes the description.
+- **`skill`** treats each selected `SKILL.md` as a skill package, as the presets do.
+
+### Example: a sibling handbook and personal notes
+
+```ts title="zfb.config.ts"
+docSources: [
+  {
+    id: "handbook",
+    title: "Handbook",
+    mappings: [
+      { id: "all", root: "../handbook", include: ["**/*.md"], format: "markdown" },
+    ],
+  },
+  {
+    id: "notes",
+    title: "Notes",
+    mount: "my-notes",
+    mappings: [
+      { id: "notes", root: "~/notes", include: ["*.md"], to: "journal", format: "markdown" },
+    ],
+  },
+],
+```
+
+With `../handbook/README.md` and `../handbook/guides/setup.md`, and `~/notes/daily.md`, the build produces:
+
+```text
+/docs/handbook/                 ← ../handbook/README.md
+/docs/handbook/guides/          ← synthesized index
+/docs/handbook/guides/setup/    ← ../handbook/guides/setup.md
+/docs/my-notes/                 ← synthesized index
+/docs/my-notes/journal/         ← synthesized index
+/docs/my-notes/journal/daily/   ← ~/notes/daily.md
+```
+
+### Example: a Grok-style layout
+
+<Note title="Illustrative layout">
+
+The directory layout below is a synthetic example used to show how a custom mapping handles an unfamiliar tool. It is not a verified description of how Grok, or any other tool, actually stores its configuration. Check your tool's own documentation and adjust the patterns.
+
+</Note>
+
+Suppose a tool keeps a rules file, a folder of prompts and a JSON settings file in `.grok/`:
+
+```text
+.grok/
+├── GROK.md
+├── prompts/
+│   └── review.md
+└── settings.json
+```
+
+Two mappings publish the Markdown as pages and the JSON as source code:
+
+```ts title="zfb.config.ts"
+docSources: [
+  {
+    id: "grok",
+    title: "Grok",
+    mappings: [
+      {
+        id: "rules",
+        root: ".grok",
+        include: ["GROK.md", "prompts/**/*.md"],
+        to: "rules",
+        format: "markdown",
+      },
+      { id: "settings", root: ".grok", include: ["*.json"], to: "settings", format: "code" },
+    ],
+  },
+],
+```
+
+The result is `/docs/grok/rules/grok/`, `/docs/grok/rules/prompts/review/` and `/docs/grok/settings/settings-json/`, plus synthesized indexes for `/docs/grok/`, `/docs/grok/rules/`, `/docs/grok/rules/prompts/` and `/docs/grok/settings/`. A link from `GROK.md` to `prompts/review.md` is rewritten to the generated page.
+
+## Routes and Landing Pages
+
+Every page lives at `/docs/<mount>/<section>/<relative path>/`, where the section is the mapping's `to` (or a preset section) and the relative path follows the file's location below the mapping root. File and directory names are lower-cased and non-alphanumeric runs become `-`. Markdown extensions are dropped, while a `code` file keeps its extension in the slug (`settings.json` becomes `settings-json`).
+
+- In a `markdown` or `skill` mapping, `index.md`, `index.mdx` and `README.md` become the landing page of their directory.
+- Index pages are synthesized only for directories that no mapped document owns. A synthesized index lists its children with `<CategoryNav>`.
+- Two files that resolve to the same route fail the build and name both files. Rename one, or change a mapping's `to` or a source's `mount`.
+- Routes depend only on the mount, the mapping and the file's relative path. Editing content does not change them, and moving a source root keeps them as long as the relative layout stays the same.
+
+Source sections are placed at sidebar position 900 and above, in configuration order.
+
+## Header Navigation
+
+Each mount is an ordinary top-level category, so header items use `categoryMatch` with the mount:
+
+```ts title="zfb.config.ts"
+headerNav: [
+  { label: "Claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
+  { label: "Codex", path: "/docs/codex", categoryMatch: "codex", versioned: false },
+],
+```
+
+Document sources are never written into versioned snapshots, so set `versioned: false` on their header items. See [Header Navigation](./header-navigation.mdx).
+
+## Links and Assets
+
+Links between mapped files are rewritten to the generated pages, including reference-style links, images, URL-encoded names and angle-bracket destinations. Query strings and fragments are kept. A link to a directory resolves to its `README.md`, `index.md`, `index.mdx`, `SKILL.md`, `CLAUDE.md` or `AGENTS.md` when that file is mapped.
+
+Inline code and fenced code are never changed. External URLs and in-page fragments are kept as they are. A link to a file that is not mapped is replaced by its readable text, and the build prints a warning naming the target.
+
+Files selected by a mapping's `assets` are copied to `public/doc-sources/<mount>/<section>/...` and links to them point at the copy, including the site `base`.
+
+## Generated Pages
+
+Generated pages carry `generated: true` and provenance fields:
+
+```yaml
+generated: true
+doc_source: claude
+doc_source_mapping: commands
+doc_source_path: deploy.md
+```
+
+`doc_source_path` is relative to the mapping root. Generated pages show no document history and no view-source link. Absolute source paths, home directories and the private configuration never reach the rendered page or the browser payload.
+
+## Output Ownership
+
+The plugin records every file it writes in a build-local manifest at `.zfb/doc-sources/manifest.json`. Each run:
+
+- builds the complete plan first, so a failed run (a missing required root, a route collision, an invalid entry) leaves the previous output untouched;
+- writes only files whose content changed;
+- removes previously generated files that are no longer planned, as long as they are unchanged since generation;
+- never overwrites an authored file. If a planned output path already holds a file the manifest does not list, the build fails and names the file;
+- reports a hand-edited generated file. Overwriting it fails the build; a stale edited file is kept and released from ownership with a warning.
+
+Reconciliation runs even when `docSources` is `[]`, so removing an entry cleans up its output. Edit the source files, not the generated pages.
+
+## Locales
+
+Detail pages are written only to the default content directory. Other locales show them through body fallback, without the untranslated-page banner.
+
+Section and index pages are generated in every configured locale directory. Preset labels come from the `docSources.*` translation keys, which ship in English and Japanese and can be overridden through `ZudoDocConfig.translations`:
+
+```ts title="zfb.config.ts"
+translations: {
+  ja: {
+    "docSources.claudeCode.description": "チーム用 Claude Code リファレンス。",
+    "docSources.section.skills.label": "スキル集",
+  },
+},
+```
+
+Custom source titles and section labels come from the configuration (`title`, the last segment of `to`, or the directory name). Paths listed in `defaultLocaleOnlyPrefixes` are respected: no locale index is generated below them. See [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies).
+
+## Symlinks and Excluded Directories
+
+Discovery follows a symlink only when its real target lies inside one of the configured roots. To publish a shared tree reached through a symlink, configure its target as a mapping root. Broken symlinks and cycles are skipped with a warning.
+
+The content directories, `public/doc-sources/`, the build output and `.zfb/` are never scanned, even when reached through an alias, so generated output never feeds back into discovery.
+
+## Development
+
+zfb's dev server does not regenerate content files from outside sources, so run the package's watcher beside it:
+
+```bash
+zudo-doc sources watch
+```
+
+`zudo-doc` is the bin of `@takazudo/zudo-doc`. The watcher reuses the configuration the build plugin recorded and regenerates on file additions, edits, deletions and renames, new directories, and roots that appear or disappear. Runs are debounced, and a failed run keeps the previous output. In this repository `pnpm dev` starts it automatically.
+
+## Migrating from claudeResources and codexResources
+
+`docSources` replaces the former `claudeResources` and `codexResources` settings. There are no compatibility shims: the old keys are removed, and the old routes are not redirected.
+
+```ts title="zfb.config.ts"
+// Before
+claudeResources: { claudeDir: ".claude" },
+codexResources: { codexDir: ".codex" },
+
+// After
+docSources: [
+  { id: "claude", preset: "claude-code", root: ".claude" },
+  { id: "codex", preset: "codex", root: ".codex" },
+],
+```
+
+A former `scanRoot` maps to the preset's `scanRoot`. With the mounts above, the routes move as follows:
+
+| Old route | New route |
+|-----------|-----------|
+| `/docs/claude-md/…` | `/docs/claude/instructions/…` |
+| `/docs/claude-commands/…` | `/docs/claude/commands/…` |
+| `/docs/claude-skills/…` | `/docs/claude/skills/…` |
+| `/docs/claude-agents/…` | `/docs/claude/agents/…` |
+| `/docs/codex-agents-md/…` | `/docs/codex/instructions/…` |
+| `/docs/codex-config/…` | `/docs/codex/config/…` |
+| `/docs/codex-agents/…` | `/docs/codex/agents/…` |
+| `/docs/codex-hooks/…` | `/docs/codex/hooks/…` |
+| `/docs/codex-rules/…` | `/docs/codex/rules/…` |
+| `/docs/codex-skills/…` | `/docs/codex/skills/…` |
+
+Update `headerNav` items whose `categoryMatch` relied on the old `claude-*` or `codex-*` directories, and any `defaultLocaleOnlyPrefixes` entries that list old routes. Rename the old `resource.*` translation overrides to the matching `docSources.*` keys.
+
+### One-time cleanup of old generated output
+
+The old generators wrote gitignored output into the default content directory and each locale directory. The new engine does not own those files and refuses to overwrite them under `claude/` and `codex/`. Before the first build, list the old generated files for review:
+
+```bash
+for dir in src/content/docs src/content/docs-ja; do
+  for name in claude claude-agents claude-commands claude-md claude-skills \
+    codex codex-agents codex-agents-md codex-config codex-hooks codex-rules codex-skills; do
+    [ -d "$dir/$name" ] && grep -rl '^generated: true' "$dir/$name"
+  done
+done > old-generated.txt
+cat old-generated.txt
+```
+
+Adjust the directory list to your `docsDir` and locale directories. After review, delete only the listed files:
+
+```bash
+while IFS= read -r file; do rm -- "$file"; done < old-generated.txt
+```
+
+Anything still left in those directories was not marked `generated: true`; review it by hand before you remove or move it.

@@ -40,8 +40,8 @@ Run in this order (CLI flags and details are defined in `/l-generator-cli-tester
 2. **`search`** — Only search enabled
 3. **`i18n`** — Only i18n enabled
 4. **`sidebar-filter`** — Only sidebar filter enabled
-5. **`claude-resources`** — Only Claude Resources enabled
-6. **`codex-resources`** — Only Codex Resources enabled
+5. **`claude-code-docs`** — Only the Claude Code docSources preset enabled
+6. **`codex-docs`** — Only the Codex docSources preset enabled
 7. **`design-token-panel`** — Only design token panel enabled (uses `--design-token-panel` CLI flag)
 8. **`light-dark`** — Light-dark color scheme mode
 9. **`lang-ja`** — Japanese as default language
@@ -155,7 +155,7 @@ Run every pattern again from scratch to ensure fixes didn't break other patterns
 /l-generator-cli-tester search
 /l-generator-cli-tester i18n
 /l-generator-cli-tester sidebar-filter
-/l-generator-cli-tester claude-resources
+/l-generator-cli-tester claude-code-docs
 /l-generator-cli-tester design-token-panel
 /l-generator-cli-tester light-dark
 /l-generator-cli-tester lang-ja
@@ -193,7 +193,7 @@ Output a final report:
 | search             | FAIL      | PASS        | fixed  |
 | i18n               | PASS      | PASS        | ok     |
 | sidebar-filter     | PASS      | PASS        | ok     |
-| claude-resources   | FAIL      | PASS        | fixed  |
+| claude-code-docs   | FAIL      | PASS        | fixed  |
 | design-token-panel  | PASS      | PASS        | ok     |
 | light-dark         | PASS      | PASS        | ok     |
 | lang-ja            | PASS      | PASS        | ok     |
@@ -210,7 +210,7 @@ Output a final report:
 ### Fixes Applied
 
 1. `scaffold.ts`: Added missing `minisearch` dependency for search pattern
-2. `features/claude-resources.ts`: added missing import injection
+2. `features/claude-code-docs.ts`: added missing import injection
 3. `zfb-config-gen.ts`: fixed light-dark colorMode emission
 
 ### Final Status: ALL PASS

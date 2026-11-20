@@ -71,6 +71,7 @@ import type { ZfbConfig, BundleConfig, WindConfig } from "@takazudo/zfb/config";
 import type { ZodType } from "zod";
 
 import { zudoDocPreset } from "./preset.js";
+import type { DocSourceEntry } from "./doc-sources/types.js";
 import type {
   DirectiveVocabulary,
   PresetTranslations,
@@ -175,16 +176,6 @@ function withMcpMainFields(
     mainFields,
   };
 }
-
-/** The `settings.claudeResources` block (or `false` when disabled). */
-type ClaudeResourcesConfig =
-  | { claudeDir: string; projectRoot?: string; scanRoot?: string }
-  | false;
-
-/** The `settings.codexResources` block (or `false` when disabled). */
-type CodexResourcesConfig =
-  | { codexDir: string; projectRoot?: string; scanRoot?: string }
-  | false;
 
 // Keep the established config export while the plain defaults live in a
 // browser-safe leaf consumed by route-context-payload.
@@ -619,22 +610,16 @@ export interface ZudoDocConfig {
    */
   versions?: VersionConfig[] | false;
   /**
-   * Claude-resources ingestion config, or `false` to disable.
-   * @default false
+   * Files outside `docsDir` baked into nested documentation routes
+   * (`/docs/<mount>/<section>/<path>`). Each entry is a bundled preset
+   * (`{ id, preset: "claude-code" | "codex", root, scanRoot?, mount? }`) or a
+   * custom source (`{ id, title, mount?, mappings: [...] }`). Data only:
+   * relative paths resolve from the project root; absolute paths and `~/`
+   * are accepted. The package plugin does all filesystem work at build time
+   * and removes stale generated output when entries are removed.
+   * @default []
    */
-  claudeResources?: ClaudeResourcesConfig;
-  /**
-   * Codex-resources ingestion config, or `false` to disable.
-   * `codexDir` is the `.codex/` directory, resolved against `projectRoot`.
-   * `projectRoot` anchors relative paths and the output base. `scanRoot` is
-   * the repo-wide discovery root for the `AGENTS.md` / `AGENTS.override.md`
-   * walk (including its relPath base for titles/slugs) and the repo-level
-   * `.agents/skills/` root; it defaults to `projectRoot`. This lets a doc site
-   * in a repo subdirectory scan repo-wide instructions and team skills while
-   * writing into its own collection (#2558).
-   * @default false
-   */
-  codexResources?: CodexResourcesConfig;
+  docSources?: DocSourceEntry[];
   /**
    * Route prefixes served only in the default locale (never locale-prefixed).
    * @default []

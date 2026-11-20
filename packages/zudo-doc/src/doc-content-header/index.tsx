@@ -170,7 +170,9 @@ export function createDocContentHeader<S extends Settings = Settings>(
             Hidden on versioned pages — the manifest only covers latest
             content dirs, so a versioned slug would show the LATEST file's
             dates (see the `version` prop doc above). */}
-        {!version && (
+        {/* Pages baked by docSources have no meaningful git history of
+            their own (their source lives outside docsDir). */}
+        {!version && !(entry.data as Record<string, unknown>).generated && (
           <DocMetainfoArea slug={slug} locale={locale} isFallback={isFallback} />
         )}
 

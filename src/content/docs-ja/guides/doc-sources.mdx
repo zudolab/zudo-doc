@@ -1,0 +1,315 @@
+---
+title: ドキュメントソース
+description: Claude CodeやCodexの設定、任意のMarkdownツリーなど、docsDirの外にあるファイルを生成ドキュメントセクションとして公開します。
+sidebar_position: 8
+---
+
+## 概要
+
+`docSources`設定は、コンテンツディレクトリの外にあるファイルを通常のドキュメントルートとして焼き込みます。各エントリは、同梱の**プリセット**（Claude CodeまたはCodexの設定）か、任意のディレクトリをマッピングする**カスタムソース**のどちらかです。各エントリは`/docs/<mount>/`に1つのトップレベルセクションになります。
+
+この設定は任意で、デフォルトは`[]`です。エントリがなければ何も生成されず、以前の設定で残った出力は削除されます。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    docSources: [
+      { id: "claude", preset: "claude-code", root: ".claude" },
+      { id: "codex", preset: "codex", root: ".codex" },
+    ],
+  }),
+);
+```
+
+これはこのショーケースの設定です。リポジトリの`.claude/`と`.codex/`ディレクトリを`/docs/claude/`と`/docs/codex/`に公開します。
+
+ファイルシステムの処理はすべてパッケージのプラグイン（`@takazudo/zudo-doc/plugins/doc-sources`）がビルド時に行い、`zudoDoc()`が自動的に組み込みます。設定自体はプレーンなデータです。
+
+## プリセットエントリ
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `id` | string | 安定したソース識別子（英数字、`-`、`_`）。デフォルトのマウントにもなります |
+| `preset` | `"claude-code"` \| `"codex"` | 展開する同梱プリセット |
+| `root` | string | `.claude`や`.codex`などのエージェント設定ディレクトリ。存在している必要があります |
+| `scanRoot` | string | 指示ファイル（Codexでは`.agents/skills`も）を探索する任意のディレクトリ。デフォルトはプロジェクトルート |
+| `mount` | string | 任意のトップレベルルートセグメント。デフォルトは`id` |
+
+プリセットは通常のマッピングに展開され、カスタムソースと同じパイプラインで処理されます。ディレクトリが存在しないセクションはスキップされます。必須なのはプリセットの`root`自体だけです。
+
+### Claude Codeプリセット
+
+| セクション | ルート | ソース |
+|---------|-------|--------|
+| 指示ファイル | `/docs/<mount>/instructions/` | `scanRoot`配下のすべての`CLAUDE.md` |
+| コマンド | `/docs/<mount>/commands/` | `<root>/commands/**/*.md` |
+| スキル | `/docs/<mount>/skills/` | `<root>/skills/*/SKILL.md`とその隣のファイル |
+| エージェント | `/docs/<mount>/agents/` | `<root>/agents/**/*.md` |
+
+ルートの`CLAUDE.md`が指示ファイルセクションのランディングページになります。ネストした`packages/core/CLAUDE.md`は`/docs/<mount>/instructions/packages/core/`になり、パスがタイトルになります。
+
+### Codexプリセット
+
+| セクション | ルート | ソース |
+|---------|-------|--------|
+| 指示ファイル | `/docs/<mount>/instructions/` | `scanRoot`配下のすべての`AGENTS.md`と`AGENTS.override.md` |
+| 設定 | `/docs/<mount>/config/` | `root`内の`config.toml`、`config.toml.example`、`*.config.toml`プロファイル |
+| エージェント | `/docs/<mount>/agents/` | `<root>/agents/*.toml` |
+| フック | `/docs/<mount>/hooks/` | `<root>/hooks.json`と`<root>/hooks/`配下のすべてのファイル |
+| ルール | `/docs/<mount>/rules/` | `<root>/rules/*.rules` |
+| スキル | `/docs/<mount>/skills/` | `<root>/skills/*/SKILL.md`と`<scanRoot>/.agents/skills/*/SKILL.md` |
+
+どちらのプリセットも、指示ファイルの探索では隠しディレクトリ、`node_modules`、`dist`、`out`、`public`、`worktrees`、`__inbox`、`test-results`をスキップします。
+
+スキルは`/docs/<mount>/skills/<name>/`の1ページになります。このページにはスキルのファイル構成が表示され、スキルディレクトリ内の他のMarkdownファイル（たとえば`references/checklist.md`）は`references-checklist`のような非表示の兄弟ページになり、スキルページからリンクされます。
+
+## カスタムソース
+
+カスタムソースは、明示的なマッピングで任意のディレクトリツリーを公開します。
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `id` | string | 安定したソース識別子。デフォルトのマウントにもなります |
+| `title` | string | ソースのランディングページのタイトル |
+| `mount` | string | 任意のトップレベルルートセグメント。デフォルトは`id` |
+| `mappings` | array | 1つ以上のマッピング（下記） |
+
+各マッピングは1つのルートからファイルを選択します。
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `id` | string | ソース内で一意なマッピング識別子 |
+| `root` | string | 読み込むディレクトリ |
+| `include` | string[] | `root`からの相対globパターン |
+| `exclude` | string[] | `include`から除外する任意のglobパターン |
+| `to` | string | マウント配下の任意のルートサブツリー（`"handbook"`や`"guides/ops"`など）。デフォルトはマウントのルート |
+| `format` | `"markdown"` \| `"code"` \| `"skill"` | 選択した各ファイルのレンダリング方法 |
+| `missing` | `"error"` \| `"skip"` | `root`が存在しない場合の扱い。デフォルトは`"error"` |
+| `assets` | `{ include, exclude? }` | 公開する任意の非ドキュメントファイル（画像、添付ファイル） |
+
+相対パスはプロジェクトルートから解決されます。絶対パスと`~/`パスも使えます。`~user`形式は拒否されます。globパターンはマッピングのルートからの相対パスでなければなりません。
+
+3つのフォーマット：
+
+- **`markdown`** はMarkdownをフロントマターごとレンダリングします。`title`（または`name`）、最初の`#`見出し、ファイル名の順でページタイトルが決まります。`description`はそのまま使われ、その他のスカラー値のフロントマターは表として表示されます。
+- **`code`** はファイル全体を、ファイル名をタイトルとするハイライト付きコードブロックで表示します。先頭のコメント行が説明になります。
+- **`skill`** は選択した各`SKILL.md`を、プリセットと同じくスキルパッケージとして扱います。
+
+### 例：隣接するハンドブックと個人メモ
+
+```ts title="zfb.config.ts"
+docSources: [
+  {
+    id: "handbook",
+    title: "Handbook",
+    mappings: [
+      { id: "all", root: "../handbook", include: ["**/*.md"], format: "markdown" },
+    ],
+  },
+  {
+    id: "notes",
+    title: "Notes",
+    mount: "my-notes",
+    mappings: [
+      { id: "notes", root: "~/notes", include: ["*.md"], to: "journal", format: "markdown" },
+    ],
+  },
+],
+```
+
+`../handbook/README.md`、`../handbook/guides/setup.md`、`~/notes/daily.md`がある場合、ビルドは次のページを生成します。
+
+```text
+/docs/handbook/                 ← ../handbook/README.md
+/docs/handbook/guides/          ← synthesized index
+/docs/handbook/guides/setup/    ← ../handbook/guides/setup.md
+/docs/my-notes/                 ← synthesized index
+/docs/my-notes/journal/         ← synthesized index
+/docs/my-notes/journal/daily/   ← ~/notes/daily.md
+```
+
+### 例：Grok風のレイアウト
+
+<Note title="説明用のレイアウト">
+
+以下のディレクトリ構成は、見慣れないツールをカスタムマッピングでどう扱うかを示すための架空の例です。Grokやその他のツールが実際に設定をどう保存しているかを検証した説明ではありません。ツール自身のドキュメントを確認し、パターンを調整してください。
+
+</Note>
+
+あるツールが`.grok/`にルールファイル、プロンプトのフォルダ、JSON設定ファイルを置いているとします。
+
+```text
+.grok/
+├── GROK.md
+├── prompts/
+│   └── review.md
+└── settings.json
+```
+
+2つのマッピングで、Markdownをページとして、JSONをソースコードとして公開します。
+
+```ts title="zfb.config.ts"
+docSources: [
+  {
+    id: "grok",
+    title: "Grok",
+    mappings: [
+      {
+        id: "rules",
+        root: ".grok",
+        include: ["GROK.md", "prompts/**/*.md"],
+        to: "rules",
+        format: "markdown",
+      },
+      { id: "settings", root: ".grok", include: ["*.json"], to: "settings", format: "code" },
+    ],
+  },
+],
+```
+
+結果は`/docs/grok/rules/grok/`、`/docs/grok/rules/prompts/review/`、`/docs/grok/settings/settings-json/`と、`/docs/grok/`、`/docs/grok/rules/`、`/docs/grok/rules/prompts/`、`/docs/grok/settings/`の合成インデックスです。`GROK.md`から`prompts/review.md`へのリンクは生成ページへのリンクに書き換えられます。
+
+## ルートとランディングページ
+
+各ページは`/docs/<mount>/<section>/<relative path>/`に配置されます。セクションはマッピングの`to`（またはプリセットのセクション）で、相対パスはマッピングのルートからのファイルの位置に従います。ファイル名とディレクトリ名は小文字化され、英数字以外の連続は`-`になります。Markdownの拡張子は除かれますが、`code`ファイルは拡張子をスラッグに残します（`settings.json`は`settings-json`になります）。
+
+- `markdown`または`skill`マッピングでは、`index.md`、`index.mdx`、`README.md`がそのディレクトリのランディングページになります。
+- インデックスページは、マッピングされたドキュメントが所有していないディレクトリにだけ合成されます。合成インデックスは`<CategoryNav>`で子ページを一覧表示します。
+- 同じルートに解決される2つのファイルはビルドを失敗させ、両方のファイル名を表示します。どちらかの名前を変えるか、マッピングの`to`またはソースの`mount`を変更してください。
+- ルートはマウント、マッピング、ファイルの相対パスだけで決まります。内容を編集してもルートは変わらず、ソースのルートを移動しても相対的な構成が同じならルートは維持されます。
+
+ソースのセクションは、設定順にサイドバー位置900以降に配置されます。
+
+## ヘッダーナビゲーション
+
+各マウントは通常のトップレベルカテゴリなので、ヘッダー項目はマウントを`categoryMatch`に指定します。
+
+```ts title="zfb.config.ts"
+headerNav: [
+  { label: "Claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
+  { label: "Codex", path: "/docs/codex", categoryMatch: "codex", versioned: false },
+],
+```
+
+ドキュメントソースはバージョンのスナップショットには書き込まれないため、ヘッダー項目には`versioned: false`を設定してください。[ヘッダーナビゲーション](./header-navigation.mdx)を参照してください。
+
+## リンクとアセット
+
+マッピングされたファイル間のリンクは、参照スタイルのリンク、画像、URLエンコードされた名前、山括弧で囲んだリンク先も含めて、生成ページへのリンクに書き換えられます。クエリ文字列とフラグメントは保持されます。ディレクトリへのリンクは、そのディレクトリの`README.md`、`index.md`、`index.mdx`、`SKILL.md`、`CLAUDE.md`、`AGENTS.md`がマッピングされていればそれに解決されます。
+
+インラインコードとフェンスコードは変更されません。外部URLとページ内フラグメントもそのままです。マッピングされていないファイルへのリンクは読めるテキストに置き換えられ、ビルドはリンク先を示す警告を出します。
+
+マッピングの`assets`で選択したファイルは`public/doc-sources/<mount>/<section>/...`にコピーされ、そのファイルへのリンクはサイトの`base`を含めてコピー先を指します。
+
+## 生成ページ
+
+生成ページには`generated: true`と出所を示すフィールドが付きます。
+
+```yaml
+generated: true
+doc_source: claude
+doc_source_mapping: commands
+doc_source_path: deploy.md
+```
+
+`doc_source_path`はマッピングのルートからの相対パスです。生成ページにはドキュメント履歴とソース表示リンクが表示されません。ソースの絶対パス、ホームディレクトリ、非公開の設定が、レンダリングされたページやブラウザーのペイロードに含まれることはありません。
+
+## 出力の所有権
+
+プラグインは、書き込んだすべてのファイルを`.zfb/doc-sources/manifest.json`のビルドローカルなマニフェストに記録します。各実行では次のように動作します。
+
+- 最初に完全な計画を作るため、失敗した実行（必須ルートの欠如、ルートの衝突、不正なエントリ）は以前の出力に手を付けません。
+- 内容が変わったファイルだけを書き込みます。
+- 計画から外れた生成済みファイルは、生成後に変更されていなければ削除します。
+- 作成者のファイルは上書きしません。計画した出力パスにマニフェストにないファイルがあれば、ビルドは失敗してそのファイルを示します。
+- 手で編集された生成ファイルを報告します。それを上書きする場合はビルドが失敗し、古くなった編集済みファイルは警告付きで残され、所有対象から外されます。
+
+`docSources`が`[]`でも整合処理は実行されるため、エントリを削除するとその出力も片付けられます。生成ページではなくソースファイルを編集してください。
+
+## ロケール
+
+詳細ページはデフォルトのコンテンツディレクトリにだけ書き込まれます。他のロケールでは本文フォールバックで表示され、未翻訳ページのバナーは出ません。
+
+セクションとインデックスのページは、設定済みのすべてのロケールディレクトリに生成されます。プリセットのラベルは`docSources.*`翻訳キーから取られます。英語と日本語が同梱されており、`ZudoDocConfig.translations`で上書きできます。
+
+```ts title="zfb.config.ts"
+translations: {
+  ja: {
+    "docSources.claudeCode.description": "チーム用 Claude Code リファレンス。",
+    "docSources.section.skills.label": "スキル集",
+  },
+},
+```
+
+カスタムソースのタイトルとセクションラベルは設定（`title`、`to`の最後のセグメント、またはディレクトリ名）から取られます。`defaultLocaleOnlyPrefixes`に列挙したパスは尊重され、その配下にはロケールのインデックスが生成されません。[国際化](./i18n.mdx#生成ページとデフォルトロケールの本文)を参照してください。
+
+## シンボリックリンクと除外ディレクトリ
+
+探索がシンボリックリンクをたどるのは、実際のリンク先が設定済みのいずれかのルート内にある場合だけです。シンボリックリンク経由の共有ツリーを公開するには、そのリンク先をマッピングのルートとして設定してください。壊れたリンクと循環は警告付きでスキップされます。
+
+コンテンツディレクトリ、`public/doc-sources/`、ビルド出力、`.zfb/`は、別名経由で到達した場合も含めて探索されません。そのため生成出力が探索に戻ってくることはありません。
+
+## 開発
+
+zfbの開発サーバーは外部ソースからコンテンツファイルを再生成しないため、パッケージのウォッチャーを並行して実行します。
+
+```bash
+zudo-doc sources watch
+```
+
+`zudo-doc`は`@takazudo/zudo-doc`のbinです。ウォッチャーはビルドプラグインが記録した設定を再利用し、ファイルの追加・編集・削除・名前変更、新しいディレクトリ、ルートの出現や消失に応じて再生成します。実行はデバウンスされ、失敗した実行は以前の出力を残します。このリポジトリでは`pnpm dev`が自動的に起動します。
+
+## claudeResourcesとcodexResourcesからの移行
+
+`docSources`は以前の`claudeResources`と`codexResources`設定を置き換えます。互換用のシムはありません。古いキーは削除され、古いルートはリダイレクトされません。
+
+```ts title="zfb.config.ts"
+// Before
+claudeResources: { claudeDir: ".claude" },
+codexResources: { codexDir: ".codex" },
+
+// After
+docSources: [
+  { id: "claude", preset: "claude-code", root: ".claude" },
+  { id: "codex", preset: "codex", root: ".codex" },
+],
+```
+
+以前の`scanRoot`はプリセットの`scanRoot`に対応します。上記のマウントの場合、ルートは次のように移動します。
+
+| 旧ルート | 新ルート |
+|-----------|-----------|
+| `/docs/claude-md/…` | `/docs/claude/instructions/…` |
+| `/docs/claude-commands/…` | `/docs/claude/commands/…` |
+| `/docs/claude-skills/…` | `/docs/claude/skills/…` |
+| `/docs/claude-agents/…` | `/docs/claude/agents/…` |
+| `/docs/codex-agents-md/…` | `/docs/codex/instructions/…` |
+| `/docs/codex-config/…` | `/docs/codex/config/…` |
+| `/docs/codex-agents/…` | `/docs/codex/agents/…` |
+| `/docs/codex-hooks/…` | `/docs/codex/hooks/…` |
+| `/docs/codex-rules/…` | `/docs/codex/rules/…` |
+| `/docs/codex-skills/…` | `/docs/codex/skills/…` |
+
+古い`claude-*`や`codex-*`ディレクトリに依存していた`categoryMatch`を持つ`headerNav`項目と、古いルートを列挙している`defaultLocaleOnlyPrefixes`のエントリを更新してください。`resource.*`翻訳の上書きは、対応する`docSources.*`キーに名前を変えてください。
+
+### 古い生成出力の一回限りの片付け
+
+古いジェネレーターは、gitignoreされた出力をデフォルトのコンテンツディレクトリと各ロケールディレクトリに書き込んでいました。新しいエンジンはそれらのファイルを所有しておらず、`claude/`と`codex/`配下では上書きを拒否します。最初のビルドの前に、古い生成ファイルを一覧にして確認してください。
+
+```bash
+for dir in src/content/docs src/content/docs-ja; do
+  for name in claude claude-agents claude-commands claude-md claude-skills \
+    codex codex-agents codex-agents-md codex-config codex-hooks codex-rules codex-skills; do
+    [ -d "$dir/$name" ] && grep -rl '^generated: true' "$dir/$name"
+  done
+done > old-generated.txt
+cat old-generated.txt
+```
+
+ディレクトリの一覧は、自分の`docsDir`とロケールディレクトリに合わせて調整してください。確認したら、一覧にあるファイルだけを削除します。
+
+```bash
+while IFS= read -r file; do rm -- "$file"; done < old-generated.txt
+```
+
+それでもディレクトリに残っているものは`generated: true`が付いていないファイルです。削除や移動の前に手作業で確認してください。

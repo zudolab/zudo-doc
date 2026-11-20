@@ -17,8 +17,7 @@ import { describe, it, expect } from "vitest";
 import docHistory from "../plugins/doc-history.js";
 import llmsTxt from "../plugins/llms-txt.js";
 import searchIndex from "../plugins/search-index.js";
-import claudeResources from "../plugins/claude-resources.js";
-import codexResources from "../plugins/codex-resources.js";
+import docSources from "../plugins/doc-sources.js";
 import changelog from "../plugins/changelog.js";
 import imgSrcCheck from "../plugins/img-src-check.js";
 import { connectToZfbHandler } from "../plugins/connect-adapter.js";
@@ -60,24 +59,14 @@ describe("search-index plugin shape", () => {
   });
 });
 
-describe("claude-resources plugin shape", () => {
-  it("has a name string", () => {
-    expect(typeof claudeResources.name).toBe("string");
-    expect(claudeResources.name).toBe("@takazudo/zudo-doc-claude-resources");
-  });
-
-  it("has a preBuild function", () => {
-    expect(typeof claudeResources.preBuild).toBe("function");
-  });
-});
-
-describe("codex-resources plugin shape", () => {
+describe("doc-sources plugin shape", () => {
   it("has the public plugin name", () => {
-    expect(codexResources.name).toBe("@takazudo/zudo-doc-codex-resources");
+    expect(docSources.name).toBe("@takazudo/zudo-doc-doc-sources");
   });
 
-  it("has a preBuild function", () => {
-    expect(typeof codexResources.preBuild).toBe("function");
+  it("has a preBuild function only", () => {
+    expect(typeof docSources.preBuild).toBe("function");
+    expect(docSources.postBuild).toBeUndefined();
   });
 });
 

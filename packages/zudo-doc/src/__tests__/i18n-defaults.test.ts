@@ -36,10 +36,10 @@ describe("defaultTranslations", () => {
     expect(defaultTranslations.ja?.["asset.noPreview"]).toBe(
       "このファイル形式はプレビューできません。ダウンロードしてローカルで開いてください。",
     );
-    expect(defaultTranslations.en?.["resource.codex.description"]).toBe(
+    expect(defaultTranslations.en?.["docSources.codex.description"]).toBe(
       "OpenAI Codex configuration reference.",
     );
-    expect(defaultTranslations.ja?.["resource.codex.description"]).toBe(
+    expect(defaultTranslations.ja?.["docSources.codex.description"]).toBe(
       "OpenAI Codex の設定リファレンス。",
     );
     expect(defaultTranslations.en?.["asset.enlarge"]).toBe("Enlarge image");

@@ -136,6 +136,9 @@ export function createRouteContextPayload(
       : {}),
     ...(input.themePack !== undefined ? { themePack: input.themePack } : {}),
     ...input.settings,
+    // Document-source configuration is private build-time filesystem data;
+    // a browser payload never carries it.
+    docSources: [],
   };
   settings.themePack = resolveConfiguredThemePack({
     themePack: settings.themePack,

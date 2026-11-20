@@ -67,7 +67,7 @@ describe("generateZfbConfig — imports and wrapper shape", () => {
   it("does not emit inline plugin .mjs file references", () => {
     const result = generateZfbConfig({
       ...baseChoices,
-      features: ["docHistory", "llmsTxt", "claudeResources", "search"],
+      features: ["docHistory", "llmsTxt", "claudeCodeDocs", "search"],
     });
     expect(result).not.toContain("doc-history-plugin.mjs");
     expect(result).not.toContain("llms-txt-plugin.mjs");
@@ -413,49 +413,70 @@ describe("generateZfbConfig — versioning", () => {
   });
 });
 
-describe("generateZfbConfig — claudeResources", () => {
-  it("emits claudeResources and a Claude headerNav entry without default-only prefixes", () => {
+describe("generateZfbConfig — docSources (claudeCodeDocs / codexDocs)", () => {
+  it("emits one claude-code preset entry and an unversioned Claude headerNav entry", () => {
     const result = generateZfbConfig({
       ...baseChoices,
-      features: ["claudeResources"],
+      features: ["claudeCodeDocs"],
     });
-    expect(result).toContain("claudeResources: {");
-    expect(result).toContain('claudeDir: ".claude"');
+    expect(result).toMatch(
+      /docSources: \[\n\s+\{\n\s+id: "claude",\n\s+preset: "claude-code",\n\s+root: "\.claude",\n\s+\},\n\s+\]/,
+    );
+    expect(result).not.toContain('preset: "codex"');
     expect(result).not.toContain("defaultLocaleOnlyPrefixes");
-    expect(result).toContain('label: "Claude"');
-    expect(result).toContain('path: "/docs/claude"');
+    expect(result).toMatch(
+      /label: "Claude",\n\s+path: "\/docs\/claude",\n\s+categoryMatch: "claude",\n\s+versioned: false,/,
+    );
   });
 
-  it("omits claudeResources and defaultLocaleOnlyPrefixes when disabled", () => {
+  it("emits one codex preset entry and an unversioned Codex headerNav entry", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["codexDocs"],
+    });
+    expect(result).toMatch(
+      /docSources: \[\n\s+\{\n\s+id: "codex",\n\s+preset: "codex",\n\s+root: "\.codex",\n\s+\},\n\s+\]/,
+    );
+    expect(result).not.toContain('preset: "claude-code"');
+    expect(result).toMatch(
+      /label: "Codex",\n\s+path: "\/docs\/codex",\n\s+categoryMatch: "codex",\n\s+versioned: false,/,
+    );
+  });
+
+  it("puts both presets into ONE docSources array, Claude first", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["codexDocs", "claudeCodeDocs"],
+    });
+    expect(result.match(/docSources:/g)).toHaveLength(1);
+    expect(result.indexOf('preset: "claude-code"')).toBeLessThan(
+      result.indexOf('preset: "codex"'),
+    );
+  });
+
+  it("omits docSources (default []) and defaultLocaleOnlyPrefixes when disabled", () => {
     const result = generateZfbConfig(baseChoices);
+    expect(result).not.toContain("docSources");
+    expect(result).not.toContain("defaultLocaleOnlyPrefixes");
+    expect(result).not.toContain('label: "Claude"');
+    expect(result).not.toContain('label: "Codex"');
+  });
+
+  it("never emits the removed resource settings", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["claudeCodeDocs", "codexDocs"],
+    });
     expect(result).not.toContain("claudeResources");
-    expect(result).not.toContain("defaultLocaleOnlyPrefixes");
-  });
-});
-
-describe("generateZfbConfig — codexResources", () => {
-  it("emits codexResources and a Codex headerNav entry without default-only prefixes", () => {
-    const result = generateZfbConfig({
-      ...baseChoices,
-      features: ["codexResources"],
-    });
-    expect(result).toContain("codexResources: {");
-    expect(result).toContain('codexDir: ".codex"');
-    expect(result).not.toContain("defaultLocaleOnlyPrefixes");
-    expect(result).toContain('label: "Codex"');
-    expect(result).toContain('path: "/docs/codex"');
-  });
-
-  it("omits codexResources and defaultLocaleOnlyPrefixes when disabled", () => {
-    const result = generateZfbConfig(baseChoices);
     expect(result).not.toContain("codexResources");
-    expect(result).not.toContain("defaultLocaleOnlyPrefixes");
+    expect(result).not.toContain("claudeDir");
+    expect(result).not.toContain("codexDir");
   });
 
-  it("keeps both satellite nav entries before Changelog without adding prefixes", () => {
+  it("keeps both source nav entries before Changelog without adding prefixes", () => {
     const result = generateZfbConfig({
       ...baseChoices,
-      features: ["claudeResources", "codexResources", "changelog"],
+      features: ["claudeCodeDocs", "codexDocs", "changelog"],
     });
     expect(result).not.toContain("defaultLocaleOnlyPrefixes");
     const gettingStarted = result.indexOf('label: "Getting Started"');
@@ -738,8 +759,8 @@ describe("generateZfbConfig — never emits escape-hatch / shell / package-only 
         "docHistory",
         "bodyFootUtil",
         "versioning",
-        "claudeResources",
-        "codexResources",
+        "claudeCodeDocs",
+        "codexDocs",
         "footerNavGroup",
         "footerCopyright",
         "footerTaglist",

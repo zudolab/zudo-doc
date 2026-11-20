@@ -101,6 +101,6 @@ describe(".content-fallback-allowlist", () => {
     const entries = parseAllowlist(
       readFileSync(resolve(ROOT, ".content-fallback-allowlist"), "utf8"),
     );
-    expect(entries).toEqual(["docs/claude-skills/", "docs/codex-skills/"]);
+    expect(entries).toEqual(["docs/claude/skills/", "docs/codex/skills/"]);
   });
 });

@@ -539,7 +539,10 @@ const plugin = definePlugin({
 
   async setup(ctx: ZfbSetupContext) {
     const options = ctx.options as unknown as RoutesPluginOptions;
-    const settings = options.settings ?? {};
+    // `docSources` is private build-time filesystem configuration (it can
+    // name home-directory paths). It never enters the serialized route
+    // context, even when a caller bypasses the preset's own projection.
+    const { docSources: _privateDocSources, ...settings } = options.settings ?? {};
     const translations = options.translations ?? {};
     const tagVocabulary = options.tagVocabulary ?? [];
     const colorSchemes = options.colorSchemes ?? null;

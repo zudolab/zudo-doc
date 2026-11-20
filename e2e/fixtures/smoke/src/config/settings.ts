@@ -11,6 +11,7 @@ import type {
   DateFormatSetting,
   HeaderBrandConfig,
   FooterConfig,
+  DocSourceEntry,
 } from "@takazudo/zudo-doc/settings";
 import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
@@ -98,8 +99,7 @@ export const settings = {
   htmlPreview: {
     css: `.global-test { border: 3px solid rgb(255, 0, 0); }`,
   } as HtmlPreviewConfig | undefined,
-  claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
-  codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
+  docSources: [] as DocSourceEntry[],
   defaultLocaleOnlyPrefixes: [] as string[],
   // Real footer links for smoke-footer-navigation-scroll.spec.ts: a persisted
   // footer link keeps focus across the SPA swap, and the destination must

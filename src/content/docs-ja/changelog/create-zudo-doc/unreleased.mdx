@@ -3,3 +3,7 @@ title: Unreleased
 description: 次のリリースに向けた変更。
 sidebar_position: 1068
 ---
+
+### 破壊的変更
+
+- **破壊的変更:** `--[no-]claude-resources`と`--[no-]codex-resources`フラグ（およびプリセットの機能名`claudeResources`・`codexResources`）は、エイリアスなしで`--[no-]claude-code-docs`と`--[no-]codex-docs`（`claudeCodeDocs`・`codexDocs`）に置き換わりました。これらの機能は、生成する`zfb.config.ts`に、削除された`claudeResources`と`codexResources`設定の代わりに`docSources`のプリセットエントリ（`claude-code`と`codex`）を出力するようになりました。ページは`/docs/<mount>/`配下に配置されます。[ドキュメントソース](../../guides/doc-sources.mdx)を参照してください。

@@ -20,19 +20,19 @@ JA mirrors the EN directory tree exactly. Exceptions below.
 
 - Files with `generated: true` in frontmatter are generator-owned; do not hand-edit or
   translate them.
-- The Claude/Codex resource generators own their overview and category `index.mdx` targets in
-  the default content directory and every configured locale directory. They generate localized
-  indexes from the `resource.*` translations, so do not create hand-written locale stubs.
-- If an authored file already occupies one of those generator target paths, the generator
-  refuses to overwrite it; it does not silently replace the file. Remove or rename the authored
-  index, then express its title, description, and labels through `ZudoDocConfig.translations`.
-- Claude/Codex resource detail files remain in the default content directory and are exposed at
-  other locale routes through body fallback. Do not copy those generated detail files into locale
+- The `docSources` plugin (this showcase mounts `.claude/` at `claude/` and `.codex/` at
+  `codex/`) owns the section and index `index.mdx` targets under each mount in the default
+  content directory and every configured locale directory. It generates localized indexes from
+  the `docSources.*` translations, so do not create hand-written locale stubs.
+- If an authored file already occupies one of those target paths, the build fails and names the
+  file; it never silently replaces it. Remove or rename the authored file, then express its
+  title, description, and labels through `ZudoDocConfig.translations`.
+- Document-source detail files remain in the default content directory and are exposed at other
+  locale routes through body fallback. Do not copy those generated detail files into locale
   directories.
 - Paths explicitly configured under `settings.defaultLocaleOnlyPrefixes`
   (`src/config/settings.ts`) are default-locale-only by design — create no locale mirror. This
-  repository currently configures no such prefixes; the legacy resource prefixes are not
-  package or showcase defaults.
+  repository currently configures no such prefixes.
 
 ## Adding pages or changing categories
 
