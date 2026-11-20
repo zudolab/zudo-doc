@@ -92,7 +92,7 @@ Children can also have `categoryMatch`. For example, placing `categoryMatch: "co
 
 #### Sidebar Membership and Section Ownership
 
-A page belongs to the section whose `categoryMatch` equals the first segment of its slug (or to the `"!"` fallback item when none does). A `categoryMatch` also owns its dash "satellites": `categoryMatch: "claude"` owns `claude-md/`, `claude-skills/`, and the other generated `claude-*` directories, but not `claudette/`. When two values both apply, the longer one wins, so giving `foo-bar` its own `categoryMatch` keeps `foo-bar/` out of the `foo` section. That owner decides the active header item and the sidebar the page renders. Listing a page in another section's sidebar — a `type: "doc"` item or an [editorial tree](./editorial-navigation.mdx) — only adds a link there. Following that link opens the page in its owning section. Changing the owner is a separate host decision; see [Destination Ownership](./editorial-navigation.mdx#destination-ownership).
+A page belongs to the section whose `categoryMatch` equals the first segment of its slug (or to the `"!"` fallback item when none does). A `categoryMatch` also owns its dash "satellites": `categoryMatch: "foo"` owns `foo-bar/` and any other `foo-*` directory, but not `foobar/`. When two values both apply, the longer one wins, so giving `foo-bar` its own `categoryMatch` keeps `foo-bar/` out of the `foo` section. That owner decides the active header item and the sidebar the page renders. Listing a page in another section's sidebar — a `type: "doc"` item or an [editorial tree](./editorial-navigation.mdx) — only adds a link there. Following that link opens the page in its owning section. Changing the owner is a separate host decision; see [Destination Ownership](./editorial-navigation.mdx#destination-ownership).
 
 #### Dropdown Children Are Not Sidebar Children
 
@@ -128,7 +128,7 @@ Set `versioned: false` on any item that points at content with no versioned coun
 
 <Warning>
 
-If your project enables [versioning](./versioning.mdx), audit every `headerNav` item that links to unversioned content and set `versioned: false` on it. The showcase's own "Claude" and "Codex" header items (from the `claudeResources` and `codexResources` features) are textbook cases: those routes are generated only for the default `docsDir` and never exist inside an archived version directory, so both items set `versioned: false`.
+If your project enables [versioning](./versioning.mdx), audit every `headerNav` item that links to unversioned content and set `versioned: false` on it. The showcase's own "Claude" and "Codex" header items (from its [`docSources`](./doc-sources.mdx) entries) are textbook cases: those routes are generated only for the current content directories and never exist inside an archived version directory, so both items set `versioned: false`.
 
 </Warning>
 

@@ -99,7 +99,7 @@ The language switcher appears at the right edge of the header when more than one
 
 The switcher also has a CSS hover/focus fallback. With JavaScript disabled, a pointer hover or ordinary keyboard focus/Tab movement still reveals usable locale anchors. On a narrow viewport the same links appear inline in the mobile sidebar footer.
 
-Pages matched by `defaultLocaleOnlyPrefixes` intentionally collapse to one active link because no alternate-locale route exists. Generated Claude/Codex resources and asset-viewer pages are available in every configured locale by default, so their language switchers retain every locale link.
+Pages matched by `defaultLocaleOnlyPrefixes` intentionally collapse to one active link because no alternate-locale route exists. Generated document-source pages and asset-viewer pages are available in every configured locale by default, so their language switchers retain every locale link.
 
 ## UI Translation Fallback
 
@@ -151,14 +151,14 @@ The per-call `labels` prop is merged after the locale defaults, by key. Supplied
 
 The presentation-only flags are independent of translation: `showSource` and `showViewportControls` both default to `true`. Setting `showSource={false}` structurally removes the source toggle, code panel, and highlighting markup while keeping the iframe; `defaultOpen` then has no effect. Setting `showViewportControls={false}` removes the preset group but keeps the Full-width container and drag-resize affordance. Both flags may be `false` together; the iframe remains, and a title bar is shown when viewport controls are visible or a non-empty `title` is supplied. With both controls hidden and no title, the otherwise-empty bar is omitted.
 
-Generated resource overviews and category labels use the `resource.*` namespace. Asset index and viewer chrome use `asset.*`. Override either namespace through `ZudoDocConfig.translations`:
+Document-source section and index labels use the `docSources.*` namespace. Asset index and viewer chrome use `asset.*`. Override either namespace through `ZudoDocConfig.translations`:
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
     translations: {
       ja: {
-        "resource.claude.description": "チーム用 Claude Code リファレンス。",
+        "docSources.claudeCode.description": "チーム用 Claude Code リファレンス。",
         "asset.details": "ファイル情報",
       },
     },
@@ -253,11 +253,11 @@ Give such a locale a numeric pattern. A month-name pattern will not produce its 
 
 ## Generated Pages and Default-Locale Bodies
 
-Claude/Codex resource generators emit their overview and category-index pages into every configured locale directory. Asset viewer routes likewise exist at `/{locale}/${assetViewerRoutePrefix}/...`. Their title, description, navigation, breadcrumb, header, actions, and other shell labels resolve for the requested locale. The language switcher therefore links equivalent generated routes instead of collapsing to the default locale.
+[Document sources](./doc-sources.mdx) emit their section and index pages into every configured locale directory. Asset viewer routes likewise exist at `/{locale}/${assetViewerRoutePrefix}/...`. Their title, description, navigation, breadcrumb, header, actions, and other shell labels resolve for the requested locale. The language switcher therefore links equivalent generated routes instead of collapsing to the default locale.
 
-Resource **detail bodies** remain owned by the configured default locale by design. They are canonical dumps of project source, not translated documentation; their language follows the source corpus and is not necessarily English. For this repository's measured resource corpus, copying them would duplicate roughly 530 KB per additional locale on disk and duplicate the same untruncated bodies again in each `dist/{locale}/llms-full.txt`, because `plugins/internal/llms-txt/load.ts` scans locale directories directly. It would also break the fallback convention used by every other untranslated page. Locale routes render the default-locale body inside localized chrome and intentionally omit the ordinary untranslated-page banner.
+Document-source **detail pages** remain owned by the configured default locale by design. They are canonical dumps of project source, not translated documentation; their language follows the source corpus and is not necessarily English. Copying them into every locale would duplicate the same bodies on disk and again in each `dist/{locale}/llms-full.txt`, because `plugins/internal/llms-txt/load.ts` scans locale directories directly. It would also break the fallback convention used by every other untranslated page. Locale routes render the default-locale body inside localized chrome and intentionally omit the ordinary untranslated-page banner.
 
-This creates a deliberate indexing asymmetry. A locale's `llms.txt` and search entries include its localized resource overview pages, but not resource detail pages supplied through route fallback. This is consistent with other fallback pages because both generators index files physically present in that locale's content directory. Search-index storage is not the duplication concern: each page's body excerpt is capped by the configurable [`searchMaxBodyLength`](./configuration.mdx#search-searchmaxbodylength) setting (3,000 characters by default), not stored in full.
+This creates a deliberate indexing asymmetry. A locale's `llms.txt` and search entries include its localized section and index pages, but not detail pages supplied through route fallback. This is consistent with other fallback pages because both generators index files physically present in that locale's content directory. Search-index storage is not the duplication concern: each page's body excerpt is capped by the configurable [`searchMaxBodyLength`](./configuration.mdx#search-searchmaxbodylength) setting (3,000 characters by default), not stored in full.
 
 ## Default-Locale-Only Prefixes
 
@@ -268,16 +268,8 @@ export default defineConfig(
   zudoDoc({
     defaultLocaleOnlyPrefixes: [
       "/files/",
-      "/docs/claude-md/",
-      "/docs/claude-skills/",
-      "/docs/claude-agents/",
-      "/docs/claude-commands/",
-      "/docs/codex-agents-md/",
-      "/docs/codex-config/",
-      "/docs/codex-agents/",
-      "/docs/codex-hooks/",
-      "/docs/codex-rules/",
-      "/docs/codex-skills/",
+      "/docs/claude/",
+      "/docs/codex/skills/",
     ],
   }),
 );
@@ -285,19 +277,17 @@ export default defineConfig(
 
 Any page under one of these prefixes is emitted only in the primary locale. The non-primary route list omits it and the language switcher emits only the current active link. Keep prefixes trailing-slash terminated and narrow enough that they do not hide pages you intend to translate. Documentation routes are rooted at `/docs/`; the asset viewer uses `/${assetViewerRoutePrefix}/` (shown as `/files/` above).
 
-These entries are an opt-out recipe, not package defaults. Add `/${assetViewerRoutePrefix}/` to restore default-locale-only asset pages, and add whichever resource prefixes you want to restrict. Leave the top-level `/docs/claude/` and `/docs/codex/` overviews unrestricted if you still want their localized landing pages.
+These entries are an opt-out recipe, not package defaults. Add `/${assetViewerRoutePrefix}/` to restore default-locale-only asset pages. For a document source, list its mount (`/docs/claude/` above) to keep the whole source in the primary locale, or list a single section (`/docs/codex/skills/` above) to restrict only that section while the source landing page stays localized.
 
-### A resource section includes its overview prefix
+### Authored locale files inside a document source
 
-The four sub-section prefixes above are not the whole Claude section. The overview page lives under its own prefix, `/docs/claude/` — `/docs/codex/` for Codex — and a prefix list that omits it leaves the overview localized while the sub-sections are restricted.
-
-That matters at build time, not just in navigation. The overview index is locale-owned: with its prefix unlisted, the generator writes it into every configured locale directory. If an authored `src/content/docs-<locale>/claude/index.mdx` is already sitting at that target and its frontmatter lacks `generated: true`, the build stops with:
+The document-source plugin does not generate locale index pages below a listed prefix. Outside the listed prefixes, it owns each index target in every locale directory. If an authored file such as `src/content/docs-<locale>/claude/index.mdx` already sits at one of those targets, the build stops and names the file:
 
 ```text
-resource-docs: refusing to overwrite authored locale index
+docSources: "src/content/docs-ja/claude/index.mdx" already exists and was not generated by docSources. Move or remove that file, or choose another mount or "to" path.
 ```
 
-Pick one of the two shapes and apply it to the whole section:
+Pick one of the two shapes:
 
-- **Default-locale-only** — list the overview prefix alongside the sub-section prefixes, so nothing under `/docs/claude/` is generated for other locales.
-- **Localized** — leave the prefixes unlisted, and remove or rename the authored locale index so the generator can own it. Move its title, description, and labels to `ZudoDocConfig.translations`.
+- **Default-locale-only** — list the source's mount (or the affected section) in `defaultLocaleOnlyPrefixes`, so nothing below it is generated for other locales.
+- **Localized** — leave the prefix unlisted, and remove or rename the authored locale file so the plugin can own the target. Move its title, description, and labels to `ZudoDocConfig.translations` through the `docSources.*` keys.
