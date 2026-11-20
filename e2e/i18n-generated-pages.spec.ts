@@ -42,7 +42,7 @@ test.describe("i18n generated pages: static locale coverage", () => {
       ({ locale, url }) => locale === "ja" && url === "/ja/docs/claude",
     );
     expect(claude).toBeDefined();
-    expect(jaLlms).toContain(`- [Claude](${claude!.markdownUrl}):`);
+    expect(jaLlms).toContain(`- [Claude Code](${claude!.markdownUrl}):`);
     expect(jaLlms).not.toMatch(
       /\/ja\/docs\/claude\/skills\/localized-shell(?:\/|\b)/,
     );
