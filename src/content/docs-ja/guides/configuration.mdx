@@ -1188,29 +1188,20 @@ changelogs: [
 
 [Changelog ガイド](./changelog.mdx)を参照してください。
 
-### claudeResources
+### docSources
 
-Claude リソースの取り込み設定、または無効化するなら `false`。
+`docsDir`の外にあるファイルを、`/docs/<mount>/`の生成ドキュメントセクションとして焼き込みます。各エントリは同梱プリセット（`claude-code`または`codex`）か、明示的なマッピングを持つカスタムソースです。空のリストでは何も生成されず、以前のエントリが残した出力は削除されます。
 
-型: `{ claudeDir; projectRoot?; scanRoot? } | false` · デフォルト: `false`
-
-```ts
-claudeResources: { claudeDir: ".claude" },
-```
-
-[Claude Resources ガイド](./claude-resources.mdx)を参照してください。
-
-### codexResources
-
-Codexリソースの取り込み設定、または無効化するなら`false`。
-
-型: `{ codexDir; projectRoot?; scanRoot? } | false` · デフォルト: `false`
+型: `DocSourceEntry[]` · デフォルト: `[]`
 
 ```ts
-codexResources: { codexDir: ".codex" },
+docSources: [
+  { id: "claude", preset: "claude-code", root: ".claude" },
+  { id: "codex", preset: "codex", root: ".codex" },
+],
 ```
 
-[Codexリソースガイド](./codex-resources.mdx)を参照してください。
+[ドキュメントソースガイド](./doc-sources.mdx)を参照してください。
 
 ## ルーティングの継ぎ目
 

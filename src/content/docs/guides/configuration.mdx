@@ -1195,29 +1195,20 @@ changelogs: [
 
 See the [Changelog guide](./changelog.mdx).
 
-### claudeResources
+### docSources
 
-Claude-resources ingestion config, or `false` to disable.
+Files outside `docsDir` baked into generated documentation sections at `/docs/<mount>/`. Each entry is a bundled preset (`claude-code` or `codex`) or a custom source with explicit mappings. An empty list generates nothing and removes output left by earlier entries.
 
-Type: `{ claudeDir; projectRoot?; scanRoot? } | false` · Default: `false`
-
-```ts
-claudeResources: { claudeDir: ".claude" },
-```
-
-See the [Claude Resources guide](./claude-resources.mdx).
-
-### codexResources
-
-Codex-resources ingestion config, or `false` to disable.
-
-Type: `{ codexDir; projectRoot?; scanRoot? } | false` · Default: `false`
+Type: `DocSourceEntry[]` · Default: `[]`
 
 ```ts
-codexResources: { codexDir: ".codex" },
+docSources: [
+  { id: "claude", preset: "claude-code", root: ".claude" },
+  { id: "codex", preset: "codex", root: ".codex" },
+],
 ```
 
-See the [Codex Resources guide](./codex-resources.mdx).
+See the [Document Sources guide](./doc-sources.mdx).
 
 ## Routing seams
 

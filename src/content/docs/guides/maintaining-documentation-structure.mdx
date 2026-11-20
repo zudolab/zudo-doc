@@ -79,7 +79,7 @@ Do not record routine placements. Do not reorganize the same category again with
 - **`categoryMatch` is one top-level directory**, and a linked parent row stays a real category node. See [Header Navigation](./header-navigation.mdx) and [Sidebar](./sidebar.mdx).
 - **Note trays stay flat.** A [note tray](./note-tray.mdx) is a sequence such as a journal or a course. Many entries are not a reason to convert it into a topic tree; convert it only when readers need topic access that the sequence cannot give.
 - **Locale roots come from configuration.** Read `docsDir` and each `locales.<code>.dir` from `zfb.config.ts`. Version snapshots such as `docs-v1/` are not locales; do not restructure them along with current content ([Internationalization](./i18n.mdx), [Versioning](./versioning.mdx)).
-- **Generator-owned content** carries `generated: true` or is written by a resource generator such as [Claude Code Resources](./claude-resources.mdx). Reorganize its source or its settings, not the generated files.
+- **Generator-owned content** carries `generated: true` or is written by a generator such as [Document Sources](./doc-sources.mdx). Reorganize its source or its settings, not the generated files.
 - **`defaultLocaleOnlyPrefixes`** lists paths that intentionally have no locale mirror ([Default-Locale-Only Prefixes](./i18n.mdx#default-locale-only-prefixes)).
 - **`draft` and `unlisted`** pages still count when you look for duplicates: `draft` pages are excluded from the build, and `unlisted` pages are built but hidden from navigation ([Frontmatter](./frontmatter.mdx)).
 

@@ -464,7 +464,7 @@ This page would be accessible at `/docs/quickstart` instead of the default path 
 - **Required:** No
 - **Default:** `false`
 
-Marks a page as build-time auto-generated content (for example, the `claude-*` reference pages produced from `.claude/` source files). Setting `generated: true` exempts the page from the configured-locale translation rule — auto-generated pages do not require matching copies under `docs-<code>/`. The field is also a framework-managed key, so it is hidden from the frontmatter preview by default.
+Marks a page as build-time auto-generated content (for example, the [document-source](./doc-sources.mdx) pages produced from `.claude/` source files, which also carry the `doc_source`, `doc_source_mapping` and `doc_source_path` provenance keys). Setting `generated: true` exempts the page from the configured-locale translation rule — auto-generated pages do not require matching copies under `docs-<code>/`. These fields are framework-managed keys, so they are hidden from the frontmatter preview by default.
 
 ```mdx
 ---
