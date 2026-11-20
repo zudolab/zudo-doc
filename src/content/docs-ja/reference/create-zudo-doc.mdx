@@ -126,8 +126,8 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]i18n` | 旧来の多言語トグル。リストがない場合は追加ロケールを1つ推論 | オフ |
 | `--[no-]search` | 生成された `search-index.json` を使った組み込みの全文/ワードマッチ検索 | オン |
 | `--[no-]sidebar-filter` | サイドバーのリアルタイムフィルタリング | オン |
-| `--[no-]claude-resources` | Claude Code ドキュメントセクション（`claude-code` の [`docSources`](../guides/doc-sources.mdx) エントリを出力） | オフ |
-| `--[no-]codex-resources` | Codex ドキュメントセクション（`codex` の [`docSources`](../guides/doc-sources.mdx) エントリを出力） | オフ |
+| `--[no-]claude-code-docs` | Claude Code ドキュメントセクション（`claude-code` の [`docSources`](../guides/doc-sources.mdx) エントリを出力） | オフ |
+| `--[no-]codex-docs` | Codex ドキュメントセクション（`codex` の [`docSources`](../guides/doc-sources.mdx) エントリを出力） | オフ |
 | `--[no-]claude-skills` | zudo-doc-* Claude Code スキルを同梱（design-system、translate、version-bump） | オフ |
 | `--[no-]claude-skills-writing` | zudo-doc-writing スキルを同梱（AI 支援執筆向けのドキュメント執筆 + ナビゲーション構造ガイド） | オフ |
 | `--[no-]design-token-panel` | スペーシング・フォント・サイズ・カラーの各トークンを編集するタブ型パネル | オフ |
@@ -300,8 +300,8 @@ pnpm create zudo-doc my-docs \
   --scheme "Default Dark" \
   --no-i18n \
   --search \
-  --no-claude-resources \
-  --no-codex-resources \
+  --no-claude-code-docs \
+  --no-codex-docs \
   --pm pnpm \
   --install \
   --yes
