@@ -5,7 +5,8 @@
  * public @takazudo/zudo-doc/plugins/* modules delegate to.
  *
  * After the package-first migration (#2321) and cleanup (#2337), the host-side
- * plugin .mjs wrappers (doc-history, search-index, llms-txt, claude-resources)
+ * plugin .mjs wrappers (doc-history, search-index, llms-txt, and the since-removed
+ * claude-resources)
  * were deleted. Plugins now live in @takazudo/zudo-doc/plugins/* and are referenced
  * by the preset at zfb config-eval time. This repo's own plugins/connect-adapter.mjs
  * (a project-local copy of the package's connect-adapter) had zero non-test
@@ -37,9 +38,10 @@
  *   (treat missing publicDir as a no-op) which is an fs error path, not a
  *   pure transform. Testing would require a real or mocked filesystem.
  *
- * @takazudo/zudo-doc/plugins/claude-resources
- *   No pure-function surface for the plugin hooks. The escapeForMdx helper
- *   inside the package-internal graph IS a pure function — tested below.
+ * @takazudo/zudo-doc/plugins/doc-sources
+ *   No pure-function surface for the plugin hook (its engine has its own suite
+ *   under packages/zudo-doc). The escapeForMdx helper inside the
+ *   package-internal graph IS a pure function — tested below.
  */
 
 import { describe, it, expect } from "vitest";
@@ -194,14 +196,14 @@ describe("generateLlmsFullTxt", () => {
 });
 
 // ---------------------------------------------------------------------------
-// claude-resources: escapeForMdx
+// doc-sources: escapeForMdx
 // ---------------------------------------------------------------------------
 
 // escapeForMdx is an internal helper not exposed in the public package exports map.
 // We import it directly from the dist file to test the pure transform used by
-// the claude-resources plugin (which delegates to generateClaudeResourcesDocs → escapeForMdx).
+// by the doc-sources renderer for every baked markdown body.
 // @ts-ignore — bypasses the exports map restriction
-import { escapeForMdx } from "../../../packages/zudo-doc/dist/plugins/internal/resource-docs-shared/escape-for-mdx.js";
+import { escapeForMdx } from "../../../packages/zudo-doc/dist/plugins/internal/doc-sources/render/escape-for-mdx.js";
 
 describe("escapeForMdx", () => {
   it("passes HTML tags through unchanged (they are valid in MDX)", () => {

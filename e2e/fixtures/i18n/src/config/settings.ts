@@ -7,6 +7,7 @@ import type {
   MetaTagsConfig,
   DateFormatSetting,
   HeaderBrandConfig,
+  DocSourceEntry,
 } from "@takazudo/zudo-doc/settings";
 import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
@@ -98,16 +99,20 @@ const veryLongExample = "${"long-example".repeat(30)}";
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "classic" as string,
   dynamicPageTransition: true as boolean,
-  claudeResources: {
-    claudeDir: "src/content/resources/.claude",
-    projectRoot: ".",
-    scanRoot: "src/content/resources/.claude",
-  } as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
-  codexResources: {
-    codexDir: "src/content/resources/.codex",
-    projectRoot: ".",
-    scanRoot: "src/content/resources/.codex",
-  } as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
+  docSources: [
+    {
+      id: "claude",
+      preset: "claude-code",
+      root: "src/content/resources/.claude",
+      scanRoot: "src/content/resources/.claude",
+    },
+    {
+      id: "codex",
+      preset: "codex",
+      root: "src/content/resources/.codex",
+      scanRoot: "src/content/resources/.codex",
+    },
+  ] satisfies DocSourceEntry[] as DocSourceEntry[],
   // Keep one concrete default-locale-only page in the fixture so the
   // language-switcher E2E can assert that the disclosure collapses to its
   // single active link for pages without translated routes.

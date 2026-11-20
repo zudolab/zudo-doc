@@ -3,7 +3,7 @@ import { makeDistReader } from "./dist-helper";
 import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 const { readDistFile } = makeDistReader("i18n");
-const GENERATED_SKILL_ROUTE = "/ja/docs/claude-skills/localized-shell";
+const GENERATED_SKILL_ROUTE = "/ja/docs/claude/skills/localized-shell";
 const GENERATED_SKILL_PATH = `${GENERATED_SKILL_ROUTE}/`;
 const JA_ASSET_PATH = "/ja/files/locale-diagram.svg/";
 
@@ -16,12 +16,14 @@ test.use({ viewport: { width: 1280, height: 900 } });
 test.describe("i18n generated pages: static locale coverage", () => {
   test("emits localized resource overviews in every configured locale", () => {
     const jaOverview = readDistFile("ja/docs/claude/index.html");
-    expect(jaOverview).toMatch(/<h1\b[^>]*>Claude<\/h1>/);
+    expect(jaOverview).toMatch(/<h1\b[^>]*>Claude Code<\/h1>/);
     expect(jaOverview).toContain("Claude Code の設定リファレンス。");
-    expect(jaOverview).toContain(">リソース<");
+    expect(readDistFile("ja/docs/claude/skills/index.html")).toMatch(
+      /<h1\b[^>]*>スキル<\/h1>/,
+    );
 
     expect(readDistFile("de/docs/claude/index.html")).toMatch(
-      /<h1\b[^>]*>Claude<\/h1>/,
+      /<h1\b[^>]*>Claude Code<\/h1>/,
     );
     expect(readDistFile("ja/docs/codex/index.html")).toContain(
       "OpenAI Codex の設定リファレンス。",
@@ -42,7 +44,7 @@ test.describe("i18n generated pages: static locale coverage", () => {
     expect(claude).toBeDefined();
     expect(jaLlms).toContain(`- [Claude](${claude!.markdownUrl}):`);
     expect(jaLlms).not.toMatch(
-      /\/ja\/docs\/claude-skills\/localized-shell(?:\/|\b)/,
+      /\/ja\/docs\/claude\/skills\/localized-shell(?:\/|\b)/,
     );
     expect(agentManifest.documents.map(({ url }) => url)).not.toContain(
       GENERATED_SKILL_ROUTE,
@@ -89,7 +91,7 @@ test.describe("i18n generated pages: localized resource shell", () => {
 
     await waitForSidebarHydration(page);
     const sidebar = desktopSidebar(page);
-    await expect(sidebar.getByText("Claude", { exact: true })).toBeVisible();
+    await expect(sidebar.getByText("Claude Code", { exact: true })).toBeVisible();
     await expect(sidebar.getByText("スキル", { exact: true })).toBeVisible();
 
     const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
@@ -106,7 +108,7 @@ test.describe("i18n generated pages: localized resource shell", () => {
     assertNoConsoleErrors,
   }) => {
     const response = await page.goto(
-      "/ja/docs/codex-config/config-toml/",
+      "/ja/docs/codex/config/config-toml/",
       { waitUntil: "domcontentloaded" },
     );
     expect(response?.status()).toBe(200);
@@ -133,11 +135,11 @@ test.describe("i18n generated pages: localized resource shell", () => {
     );
     await expect(switcher.locator('a[lang="en"]')).toHaveAttribute(
       "href",
-      "/docs/claude-skills/localized-shell/",
+      "/docs/claude/skills/localized-shell/",
     );
     await expect(switcher.locator('a[lang="de"]')).toHaveAttribute(
       "href",
-      "/de/docs/claude-skills/localized-shell/",
+      "/de/docs/claude/skills/localized-shell/",
     );
   });
 });

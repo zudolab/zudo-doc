@@ -2,15 +2,15 @@
 # parity-build.sh — deterministic, CI-faithful build + baseline snapshot for epic #2420
 #
 # WHY THIS WRAPPER EXISTS (do NOT parity-build with a raw `pnpm build`):
-#   CI builds from a clean clone, which lacks the gitignored, dev-only generated
-#   content under src/content/docs/claude*/ (produced by `pnpm dev`'s
-#   claude-watch / `pnpm setup:doc-skill`). Those pages are NOT in the deployed
-#   site. When present locally they also inject sidebar entries into EVERY page,
+#   CI builds from a clean clone, which lacks gitignored local inputs such as
+#   the skill `pnpm setup:doc-skill` writes under .claude/skills/ (baked by
+#   docSources into src/content/docs/claude/). Those pages are NOT in the
+#   deployed site. When present locally they also inject sidebar entries into EVERY page,
 #   so a raw `pnpm build` on a dev machine produces different HTML for every
 #   route than CI does. To make parity reproducible and match CI exactly, this
 #   wrapper relocates ALL gitignored content under src/content/ out of the tree
 #   before `pnpm build`, then restores it afterward (trap-guarded, even on error).
-#   Tracked content (e.g. src/content/docs-ja/claude/) is left untouched.
+#   Tracked content is left untouched.
 #
 # Usage:
 #   scripts/parity-build.sh                       # clean build only (dist/ ready for a manual diff)
@@ -71,13 +71,13 @@ relocate_generated() {
   STASH_DIR="$(mktemp -d)"
   local line p
   # Gitignored paths under .claude/ and src/content/ are exactly what a clean CI
-  # clone lacks. The build's claudeResources and codexResources features generate
-  # /docs/claude-* and /docs/codex-* routes from their tracked inputs; a
-  # locally-generated, gitignored skill such as .claude/skills/zudo-doc-wisdom/
-  # would otherwise inject an extra route + a sidebar entry on EVERY page,
-  # diverging from CI. (Generated src/content/docs/claude*/ and
-  # src/content/docs/codex*/ are dev-watch HMR output, not the build source, but
-  # relocating them too is harmless and keeps the tree CI-clean.)
+  # clone lacks. docSources bakes /docs/claude/ and /docs/codex/ routes from
+  # their tracked inputs; a locally-generated, gitignored skill such as
+  # .claude/skills/zudo-doc-wisdom/ would otherwise inject an extra route + a
+  # sidebar entry on EVERY page, diverging from CI. The baked
+  # src/content/*/{claude,codex}/ output is NOT relocated: the build reconciles
+  # it against its ownership manifest, and restoring a pre-build copy over the
+  # freshly baked files would leave them looking hand-edited to the next build.
   # settings.local.json is this machine's Claude Code config, not build input —
   # never relocate it (would disturb the running harness).
   while IFS= read -r line; do
@@ -85,6 +85,7 @@ relocate_generated() {
     p="${p%/}"
     [[ -z "$p" ]] && continue
     [[ "$p" == *settings.local.json ]] && continue
+    [[ "$p" =~ ^src/content/[^/]+/(claude|codex)$ ]] && continue
     if [[ -e "$REPO_ROOT/$p" ]]; then
       mkdir -p "$STASH_DIR/$(dirname "$p")"
       mv "$REPO_ROOT/$p" "$STASH_DIR/$p"

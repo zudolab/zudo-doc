@@ -68,64 +68,6 @@ has_use_client() {
 DRIFTED=()
 
 # ---------------------------------------------------------------------------
-# claude-resources parity guard (#2533)
-# ---------------------------------------------------------------------------
-# Historically these four prod paths got a NORMALIZED diff (comment lines and
-# the package's Node-ESM-required ".js" relative-import extension stripped
-# from both sides) instead of a blanket allowlist exemption, so a real logic
-# drift between the template copy and the package source stayed visible.
-#
-# Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660): the
-# `claudeResources` feature's template directory
-# (templates/features/claudeResources/files/src/integrations/claude-resources/)
-# was deleted entirely — empirically verified dead (nothing imported it; the
-# package already ships the same generator/escape-helper logic behind
-# @takazudo/zudo-doc/plugins/claude-resources, and the feature is now
-# pure settings-field emission, same as most other features post package-first
-# migration). There is no template-side claude-resources file left to diff, so
-# this map is EMPTY. Kept (not deleted) as live infrastructure — should a
-# future feature need a real, Node-ESM-vs-bundler-import-extension-normalized
-# file copy again, the normalize_claude_resources_content /
-# check_pair_normalized machinery below is ready to reuse; an empty map costs
-# nothing since check_pair() only routes through it for a prod_path that is
-# actually a key here.
-declare -A CLAUDE_RESOURCES_PARITY_PATHS=()
-
-# Strips pure comment lines (// line comments and /** ... */ JSDoc blocks,
-# matched whole-line-only so no code line is touched) and drops the ".js"
-# extension from relative-import specifiers, then drops blank lines left
-# behind. Scoped to the narrow claude-resources pair set above — not a
-# general-purpose comment stripper.
-normalize_claude_resources_content() {
-  sed -E \
-    -e '\%^[[:space:]]*(//|/\*|\*)%d' \
-    -e 's#(from "\.\.?/[^"]+)\.js"#\1"#' \
-    -e "s#(from '\.\.?/[^']+)\.js'#\1'#" \
-    "$1" | sed '/^[[:space:]]*$/d'
-}
-
-check_pair_normalized() {
-  local template_file="$1"
-  local prod_path="$2"
-  local prod_file="$ROOT_DIR/${CLAUDE_RESOURCES_PARITY_PATHS[$prod_path]}"
-
-  if [[ ! -f "$prod_file" ]]; then
-    echo "  [MISSING IN PROD] $prod_path"
-    DRIFTED+=("$prod_path")
-    return
-  fi
-
-  local norm_tmpl norm_prod
-  norm_tmpl="$(normalize_claude_resources_content "$template_file")"
-  norm_prod="$(normalize_claude_resources_content "$prod_file")"
-
-  if [[ "$norm_tmpl" != "$norm_prod" ]]; then
-    echo "  [DIFF] $prod_path (claude-resources parity guard, #2533)"
-    DRIFTED+=("$prod_path")
-  fi
-}
-
-# ---------------------------------------------------------------------------
 # global.css contract guard (#2621, expanded for zfb 3 / zudo-wind by #4463)
 # ---------------------------------------------------------------------------
 # packages/create-zudo-doc/templates/base/src/styles/global.css is allowlisted
@@ -193,14 +135,6 @@ check_global_css_legacy_tokens() {
 check_pair() {
   local template_file="$1"
   local prod_path="$2" # relative to repo root
-
-  # claude-resources pairs use the normalized parity guard above instead of
-  # a raw byte diff (and are never allowlist-exempt — see .template-drift-
-  # allowlist).
-  if [[ -n "${CLAUDE_RESOURCES_PARITY_PATHS[$prod_path]+_}" ]]; then
-    check_pair_normalized "$template_file" "$prod_path"
-    return
-  fi
 
   # Skip if in allowlist
   if [[ -n "${ALLOWED[$prod_path]+_}" ]]; then

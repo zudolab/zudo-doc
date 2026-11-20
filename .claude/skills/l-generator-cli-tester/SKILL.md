@@ -28,8 +28,8 @@ Where `<pattern>` is one of the test patterns listed below.
 | `search` | Only search enabled |
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
-| `claude-resources` | Only claude resources enabled |
-| `codex-resources` | Only Codex resources enabled |
+| `claude-code-docs` | Only the Claude Code docSources preset enabled |
+| `codex-docs` | Only the Codex docSources preset enabled |
 | `design-token-panel` | Only design token panel enabled (uses --design-token-panel CLI flag) |
 | `light-dark` | Light-dark color mode |
 | `lang-ja` | Japanese as default language |
@@ -63,7 +63,7 @@ files:
 | `changelog` (scaffold.ts, not a feature module) | Adds `src/content/docs/changelog/index.mdx` (+ locale mirror if i18n is also on); `--changelog-packages` adds a landing page and one nested page per slug |
 
 Every other feature (`search`, `sidebarFilter`, `sidebarResizer`,
-`sidebarToggle`, `claudeResources`, `versioning`, `bodyFootUtil`, `llmsTxt`,
+`sidebarToggle`, `claudeCodeDocs`, `versioning`, `bodyFootUtil`, `llmsTxt`,
 `docTags`, `footerNavGroup`, `footerCopyright`, `footerTaglist`,
 `imageEnlarge`, `assetViewer`, `dynamicPageTransition`, `noindex`) changes ONLY the emitted
 `zfb.config.ts` fields (or, for `search`, the generated `package.json`
@@ -100,7 +100,7 @@ Set `REPO_ROOT` to the repository root (absolute path). Run the generator from w
 ```bash
 cd __inbox/generator-test-barebone && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-code-docs \
   --no-image-enlarge --no-dynamic-page-transition --no-footer-copyright --no-tag-governance \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
@@ -118,7 +118,7 @@ cd __inbox/generator-test-barebone && \
 ```bash
 cd __inbox/generator-test-search && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --search --no-sidebar-filter --no-i18n --no-claude-code-docs \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
@@ -127,7 +127,7 @@ cd __inbox/generator-test-search && \
 ```bash
 cd __inbox/generator-test-i18n && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --i18n --no-claude-resources \
+  --no-search --no-sidebar-filter --i18n --no-claude-code-docs \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
@@ -136,7 +136,7 @@ cd __inbox/generator-test-i18n && \
 ```bash
 cd __inbox/generator-test-sidebar-filter && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --sidebar-filter --no-i18n --no-claude-resources \
+  --no-search --sidebar-filter --no-i18n --no-claude-code-docs \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
@@ -146,21 +146,21 @@ cd __inbox/generator-test-sidebar-filter && \
 > / `--sidebar-filter` currently has zero structural effect on the generated
 > project. This test only verifies the flag does not cause a CLI error.
 
-**claude-resources:**
+**claude-code-docs:**
 
 ```bash
-cd __inbox/generator-test-claude-resources && \
+cd __inbox/generator-test-claude-code-docs && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --no-i18n --claude-resources \
+  --no-search --no-sidebar-filter --no-i18n --claude-code-docs \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
-**codex-resources:**
+**codex-docs:**
 
 ```bash
-cd __inbox/generator-test-codex-resources && \
+cd __inbox/generator-test-codex-docs && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --no-i18n --no-claude-resources --codex-resources \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-code-docs --codex-docs \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
@@ -169,7 +169,7 @@ cd __inbox/generator-test-codex-resources && \
 ```bash
 cd __inbox/generator-test-design-token-panel && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-code-docs \
   --no-image-enlarge --no-tag-governance --design-token-panel \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
@@ -179,7 +179,7 @@ cd __inbox/generator-test-design-token-panel && \
 ```bash
 cd __inbox/generator-test-light-dark && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-code-docs \
   --color-scheme-mode light-dark --light-scheme "Default Light" --dark-scheme "Default Dark" \
   --default-mode light --no-install
 ```
@@ -201,7 +201,7 @@ cd __inbox/generator-test-light-dark && \
 ```bash
 cd __inbox/generator-test-lang-ja && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-code-docs \
   --lang ja --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
@@ -228,7 +228,7 @@ Changelog header item with `core` and `cli` children that have paths but no
 ```bash
 cd __inbox/generator-test-asset-viewer && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-code-docs \
   --asset-viewer --color-scheme-mode single --scheme "Default Dark" --no-install
 mkdir -p test-project/public/assets
 printf 'export const sample = true;\n' > test-project/public/assets/sample.js
@@ -242,7 +242,7 @@ build. The viewer route is not a generated `pages/files/` stub.
 ```bash
 cd __inbox/generator-test-all-features && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --i18n --search --sidebar-filter --claude-resources --codex-resources --claude-skills \
+  --i18n --search --sidebar-filter --claude-code-docs --codex-docs --claude-skills \
   --claude-skills-writing \
   --design-token-panel --sidebar-resizer --sidebar-toggle --versioning \
   --doc-history --body-foot-util --llms-txt --skill-symlinker \
@@ -374,21 +374,21 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 |------|----------|
 | (baseline unchanged — sidebarFilter has no file footprint and no settings field) | — |
 
-**claude-resources:**
+**claude-code-docs:**
 
 | File | Expected |
 |------|----------|
-| (baseline unchanged — claudeResources has no file footprint) | — |
-| `zfb.config.ts` `claudeResources` | `{ claudeDir: ".claude" }` |
+| (baseline plus `dev:sources` script and `.gitignore` docSources block) | — |
+| `zfb.config.ts` `docSources` | `[{ id: "claude", preset: "claude-code", root: ".claude" }]` |
 | `zfb.config.ts` `defaultLocaleOnlyPrefixes` | contains the 4 `/docs/claude-*/` prefixes |
 | `zfb.config.ts` `headerNav` | contains a `{ label: "Claude", path: "/docs/claude", categoryMatch: "claude" }` entry |
 
-**codex-resources:**
+**codex-docs:**
 
 | File | Expected |
 |------|----------|
-| (baseline unchanged — codexResources has no file footprint) | — |
-| `zfb.config.ts` `codexResources` | `{ codexDir: ".codex" }` |
+| (baseline plus `dev:sources` script and `.gitignore` docSources block) | — |
+| `zfb.config.ts` `docSources` | `[{ id: "codex", preset: "codex", root: ".codex" }]` |
 | `zfb.config.ts` `defaultLocaleOnlyPrefixes` | contains the 6 `/docs/codex-*/` prefixes |
 | `zfb.config.ts` `headerNav` | contains a `{ label: "Codex", path: "/docs/codex", categoryMatch: "codex" }` entry |
 
@@ -457,7 +457,7 @@ There is no `src/config/settings.ts` to read in a fresh scaffold. Read `__inbox/
 - No `imageEnlarge` / `dynamicPageTransition` field (both explicitly set to their defaults via the CLI flags, so diff-from-defaults omits them)
 - No `tagGovernance` / `tagVocabulary` field (both off, matching defaults)
 - No `designTokenPanel` field (off, matching default)
-- No `claudeResources` field (off, matching default)
+- No `docSources` field (empty, matching default)
 
 **search:**
 
@@ -476,13 +476,13 @@ There is no `src/config/settings.ts` to read in a fresh scaffold. Read `__inbox/
   three — the generated `zfb.config.ts` additionally has `imageEnlarge: true`,
   `dynamicPageTransition: true`, and a `footer: { copyright: "..." }` field
 
-**claude-resources:**
+**claude-code-docs:**
 
-- `claudeResources: { claudeDir: ".claude" }`
+- `docSources: [{ id: "claude", preset: "claude-code", root: ".claude" }]`
 
-**codex-resources:**
+**codex-docs:**
 
-- `codexResources: { codexDir: ".codex" }`
+- `docSources: [{ id: "codex", preset: "codex", root: ".codex" }]`
 - `defaultLocaleOnlyPrefixes` contains all six `/docs/codex-*/` prefixes
 
 **design-token-panel:**
@@ -507,7 +507,7 @@ There is no `src/config/settings.ts` to read in a fresh scaffold. Read `__inbox/
 
 - `colorMode` is an object (light-dark mode, `defaultMode: "light"` — non-default, required to emit)
 - `locales` contains a `ja` entry
-- `claudeResources: { claudeDir: ".claude" }`
+- `docSources: [{ id: "claude", preset: "claude-code", root: ".claude" }]`
 - `designTokenPanel: true`
 - `docTags: true`
 - `tagGovernance: "warn"`, `tagVocabulary: true`, `tagVocabularyEntries: tagVocabulary` (raw import reference)
@@ -578,7 +578,7 @@ node $HC --url "http://localhost:14350/files/sample.js/" --screenshot viewport -
   - **i18n**: "EN / JA" language switcher in header
   - **light-dark**: theme toggle icon in header
   - **design-token-panel**: design token icon in header
-  - **claude-resources**: page renders without errors
+  - **claude-code-docs**: `/docs/claude/` renders without errors
   - **all-features**: all icons present (search, theme toggle, language switcher, color tweak)
   - **barebone**: no extra icons in header (no search, no theme toggle, no language switcher)
   - **lang-ja**: Japanese content ("ようこそ" title)
@@ -624,7 +624,7 @@ Provide a clear pass/fail report:
 ## Important Notes
 
 - Always `cd` back to the repo root between major steps (use absolute paths)
-- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, footerCopyright=true, tagGovernance=false, assetViewer=false, i18n=false, claudeResources=false, codexResources=false, designTokenPanel=false (all other features false)
+- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, footerCopyright=true, tagGovernance=false, assetViewer=false, i18n=false, claudeCodeDocs=false, codexDocs=false, designTokenPanel=false (all other features false)
 - Use `--no-install` with CLI to prevent auto-install, then install manually for better error visibility
 - `sidebarFilter` has zero structural effect in the minimal manifest (no TODO, no strip step needed — it never had a file or field to remove)
 - The dev server smoke test uses `pnpm dev` (generated projects have a single `dev` script)

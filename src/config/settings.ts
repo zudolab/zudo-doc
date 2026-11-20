@@ -17,8 +17,10 @@ export type {
   FaviconConfig,
   HeaderBrandConfig,
   DateFormatSetting,
+  DocSourceEntry,
 } from "@takazudo/zudo-doc/settings";
 import type {
+  DocSourceEntry,
   ContentSignalsConfig,
   HeaderNavItem,
   HeaderRightItem,
@@ -314,8 +316,8 @@ Start with the **essentials**, then explore the live examples.
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
-  // Generated from project CLAUDE.md / AGENTS.md files; omit these high-churn pages from history capture.
-  docHistoryExclude: ["claude-md/**", "codex-agents-md/**"],
+  // Baked by docSources from files outside docsDir; their history lives with the source files.
+  docHistoryExclude: ["claude/**", "codex/**"],
   assetViewer: true,
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
@@ -345,12 +347,10 @@ Start with the **essentials**, then explore the live examples.
       banner: "unmaintained",
     },
   ] satisfies VersionConfig[] as VersionConfig[] | false,
-  claudeResources: {
-    claudeDir: ".claude",
-  } as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
-  codexResources: {
-    codexDir: ".codex",
-  } as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
+  docSources: [
+    { id: "claude", preset: "claude-code", root: ".claude" },
+    { id: "codex", preset: "codex", root: ".codex" },
+  ] satisfies DocSourceEntry[] as DocSourceEntry[],
   defaultLocaleOnlyPrefixes: [] as string[],
   footer: {
     links: [
@@ -429,9 +429,9 @@ Start with the **essentials**, then explore the live examples.
     // prefixing — same rationale as the Claude/Codex items above.
     { label: "Assets", labelKey: "nav.assets", path: "/files", versioned: false },
     { label: "Blog", labelKey: "nav.blog", path: "/docs/blog", categoryMatch: "blog" },
-    // Claude/Codex-resources routes are generated only for the default docsDir and never
-    // exist in an archived version directory, so this item must opt out of version
-    // prefixing (#3216/#3217) — otherwise it 404s under an active `/v/{version}`.
+    // docSources sections are unversioned: they never exist in an archived version
+    // directory, so these items must opt out of version prefixing (#3216/#3217) —
+    // otherwise they 404 under an active `/v/{version}`.
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
     { label: "Codex", labelKey: "nav.codex", path: "/docs/codex", categoryMatch: "codex", versioned: false },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],

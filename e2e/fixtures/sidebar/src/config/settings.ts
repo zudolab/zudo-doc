@@ -6,6 +6,7 @@ import type {
   MetaTagsConfig,
   DateFormatSetting,
   HeaderBrandConfig,
+  DocSourceEntry,
 } from "@takazudo/zudo-doc/settings";
 import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
@@ -71,8 +72,7 @@ export const settings = {
   assetViewerExclude: [],
   assetViewerIndex: false,
   assetViewerIndexing: false,
-  claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
-  codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
+  docSources: [] as DocSourceEntry[],
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,

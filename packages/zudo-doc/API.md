@@ -370,8 +370,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./plugins/img-src-check` | Post-build validation of site-absolute raw image sources; accepts `base` and `onBroken` options |
 | `./plugins/llms-txt` | llms.txt generation zfb plugin |
 | `./plugins/search-index` | Search index zfb plugin |
-| `./plugins/claude-resources` | Claude resources generation zfb plugin |
-| `./plugins/codex-resources` | Codex resources generation zfb plugin |
+| `./plugins/doc-sources` | Document sources zfb plugin: bakes files outside `docsDir` (Claude Code / Codex presets and custom mappings) into documentation routes; always registered by `zudoDocPreset()` |
 | `./plugins/routes` | Package-owned route injection zfb plugin. Registers the serializable route context, route-only asset bodies, and host chrome bindings virtual modules, then injects the enabled doc and asset route catalog |
 
 ### Utilities
@@ -570,8 +569,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `bodyFootUtilArea` | `BodyFootUtilAreaConfig \| false` | Body footer utility area config |
 | `htmlPreview` | `HtmlPreviewConfig \| undefined` | HTML preview sandbox config |
 | `versions` | `VersionConfig[] \| false` | Multi-version config |
-| `claudeResources` | `{ claudeDir: string; projectRoot?: string; scanRoot?: string } \| false` | Claude resources generation config (`scanRoot` — CLAUDE.md discovery root, defaults to `projectRoot`; #2558) |
-| `codexResources` | `{ codexDir: string; projectRoot?: string; scanRoot?: string } \| false` | Codex resources generation config (`scanRoot` — repo-wide `AGENTS.md` / `AGENTS.override.md` and `.agents/skills/` discovery root, defaults to `projectRoot`; default `false`) |
+| `docSources` | `DocSourceEntry[]` | Document sources baked into `/docs/<mount>/<section>/…` (default `[]`). Preset entry: `{ id, preset: "claude-code" \| "codex", root, scanRoot?, mount? }`. Custom entry: `{ id, title, mount?, mappings: [{ id, root, include, exclude?, to?, format: "markdown" \| "code" \| "skill", missing?: "error" \| "skip", assets?: { include, exclude? } }] }`. Private to the build: never serialized into route context or browser payloads. Development regeneration: `zudo-doc sources watch`. |
 | `defaultLocaleOnlyPrefixes` | `string[]` | URL prefixes that only render for the default locale |
 | `footer` | `FooterConfig \| false` | Footer config |
 | `headerNav` | `HeaderNavItem[]` | Header navigation items. Each item (and child) accepts `versioned?: boolean` (default `true`) — set `false` to suppress the `/v/{version}` prefix for a target that has no versioned counterpart. |
