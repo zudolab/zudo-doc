@@ -169,9 +169,13 @@ export function generateAuthoringFile(
   lines.push(
     `- **Generated content**: pages with \`generated: true\` are generator-owned; change their source or settings, not the files [fact].`,
   );
-  if (has("claudeResources") || has("codexResources")) {
+  if (has("claudeCodeDocs") || has("codexDocs")) {
+    const mounts = [
+      ...(has("claudeCodeDocs") ? ["`src/content/docs/claude/`"] : []),
+      ...(has("codexDocs") ? ["`src/content/docs/codex/`"] : []),
+    ].join(" and ");
     lines.push(
-      `- **Resource pages**: the Claude/Codex resource generators write their own sections from \`.claude/\`, \`.codex/\`, \`CLAUDE.md\`, and \`AGENTS.md\` on every build [fact]. Do not hand-edit or move those pages.`,
+      `- **Doc sources**: each \`docSources\` entry in \`zfb.config.ts\` owns its mount directory (${mounts}, plus every locale copy) and rewrites it from \`.claude/\`, \`.codex/\`, \`CLAUDE.md\`, or \`AGENTS.md\` on every build and under \`zudo-doc sources watch\` [fact]. Edit the source files, never the generated pages.`,
     );
   }
   if (has("versioning")) {

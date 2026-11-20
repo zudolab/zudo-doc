@@ -109,8 +109,8 @@ Two Claude Code skills test the full scaffold-build-run cycle:
 | `search` | Only search enabled |
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
-| `claude-resources` | Only Claude Resources enabled |
-| `codex-resources` | Only Codex Resources enabled |
+| `claude-code-docs` | Only Claude Code docs (`docSources` `claude-code` preset) enabled |
+| `codex-docs` | Only Codex docs (`docSources` `codex` preset) enabled |
 | `design-token-panel` | Only design token panel enabled (uses `--design-token-panel` CLI flag) |
 | `light-dark` | Light-dark color scheme mode |
 | `lang-ja` | Japanese as default language |

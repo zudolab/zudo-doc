@@ -4,6 +4,7 @@ import { DEFAULT_THEME_PACK_CHOICE, effectiveOmittedThemePack } from "./constant
 import { resolveLocalePlan } from "./locale-plan.js";
 import { capitalize, getLangLabel } from "./utils.js";
 import { CONTENT_SIGNAL_FIELDS } from "./preset.js";
+import { DOC_SOURCE_NAV_LABELS, resolveDocSources } from "./doc-sources.js";
 
 /**
  * Programmatically generate the ONE `zfb.config.ts` a scaffolded project
@@ -84,8 +85,7 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   assetViewerIndex: false,
   bodyFootUtilArea: false,
   versions: false,
-  claudeResources: false,
-  codexResources: false,
+  docSources: [],
   defaultLocaleOnlyPrefixes: [],
   footer: false,
   headerNav: [],
@@ -304,16 +304,7 @@ function buildDesiredConfig(
 
   desired.versions = choices.features.includes("versioning") ? [] : false;
 
-  if (choices.features.includes("claudeResources")) {
-    desired.claudeResources = { claudeDir: ".claude" };
-  } else {
-    desired.claudeResources = false;
-  }
-  if (choices.features.includes("codexResources")) {
-    desired.codexResources = { codexDir: ".codex" };
-  } else {
-    desired.codexResources = false;
-  }
+  desired.docSources = resolveDocSources(choices.features);
 
   // ── Footer ────────────────────────────────────────────────────────────
   if (
@@ -352,21 +343,15 @@ function buildDesiredConfig(
       categoryMatch: "getting-started",
     },
   ];
-  // The "claude" categoryMatch is load-bearing beyond the header link — see
-  // the old settings-gen.ts note (preserved): getCategoryOrder() derives the
-  // satellite-grouping prefixes from headerNav.
-  if (choices.features.includes("claudeResources")) {
+  // Each docSources entry gets an unversioned header link to its mount; the
+  // categoryMatch equals the mount so the source's top-level route segment
+  // groups under its own nav scope.
+  for (const source of resolveDocSources(choices.features)) {
     headerNav.push({
-      label: "Claude",
-      path: "/docs/claude",
-      categoryMatch: "claude",
-    });
-  }
-  if (choices.features.includes("codexResources")) {
-    headerNav.push({
-      label: "Codex",
-      path: "/docs/codex",
-      categoryMatch: "codex",
+      label: DOC_SOURCE_NAV_LABELS[source.preset],
+      path: `/docs/${source.id}`,
+      categoryMatch: source.id,
+      versioned: false,
     });
   }
   if (choices.features.includes("changelog")) {
@@ -464,8 +449,7 @@ const FIELD_ORDER = [
   "assetViewerIndex",
   "bodyFootUtilArea",
   "versions",
-  "claudeResources",
-  "codexResources",
+  "docSources",
   "defaultLocaleOnlyPrefixes",
   "footer",
   "headerNav",

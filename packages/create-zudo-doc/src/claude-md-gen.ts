@@ -1,3 +1,4 @@
+import { resolveDocSources } from "./doc-sources.js";
 import type { UserChoices } from "./prompts.js";
 import type { LocalePlan } from "./locale-plan.js";
 import { resolveLocalePlan } from "./locale-plan.js";
@@ -73,16 +74,44 @@ export function generateCLAUDEFile(
   lines.push(`## Commands`);
   lines.push(``);
   const pm = choices.packageManager;
-  if (choices.features.includes("docHistory")) {
+  const hasDocHistory = choices.features.includes("docHistory");
+  const hasDocSources = resolveDocSources(choices.features).length > 0;
+  if (hasDocHistory || hasDocSources) {
+    const sidecars = [
+      ...(hasDocHistory
+        ? [
+            {
+              script: "dev:history",
+              label: "the doc-history API server (port 4322)",
+            },
+          ]
+        : []),
+      ...(hasDocSources
+        ? [
+            {
+              script: "dev:sources",
+              label:
+                "the `docSources` watcher (`zudo-doc sources watch`, regenerates source-backed pages on edit)",
+            },
+          ]
+        : []),
+    ];
+    const individually = ["dev:zfb", ...sidecars.map((s) => s.script)]
+      .map((script) => `\`${pmRunCommand(pm, script)}\``)
+      .join(" / ");
     lines.push(
-      `- \`${pmRunCommand(pm, "dev")}\` — runs the zfb dev server (port 4321) and the doc-history API server (port 4322) concurrently via \`run-parallel\` (a bin from @takazudo/zudo-doc) (\`${pmRunCommand(pm, "dev:zfb")}\` / \`${pmRunCommand(pm, "dev:history")}\` individually)`,
+      `- \`${pmRunCommand(pm, "dev")}\` — runs the zfb dev server (port 4321) and ${sidecars.map((s) => s.label).join(" and ")} concurrently via \`run-parallel\` (a bin from @takazudo/zudo-doc) (${individually} individually)`,
     );
     lines.push(
-      `- \`${pmRunCommand(pm, "dev:network")}\` — same, but zfb binds \`--host 0.0.0.0\` for LAN access (\`${pmRunCommand(pm, "dev:zfb:network")}\` individually); the doc-history server stays loopback-only and LAN clients reach it through zfb's \`/doc-history/*\` dev proxy`,
+      hasDocHistory
+        ? `- \`${pmRunCommand(pm, "dev:network")}\` — same, but zfb binds \`--host 0.0.0.0\` for LAN access (\`${pmRunCommand(pm, "dev:zfb:network")}\` individually); the doc-history server stays loopback-only and LAN clients reach it through zfb's \`/doc-history/*\` dev proxy`
+        : `- \`${pmRunCommand(pm, "dev:network")}\` — same, but zfb binds \`--host 0.0.0.0\` for LAN access (\`${pmRunCommand(pm, "dev:zfb:network")}\` individually)`,
     );
-    lines.push(
-      `- **Trusted networks only:** this also serves your git doc-history — including UNPUBLISHED local commits — to anyone on the LAN via the \`/doc-history/*\` proxy`,
-    );
+    if (hasDocHistory) {
+      lines.push(
+        `- **Trusted networks only:** this also serves your git doc-history — including UNPUBLISHED local commits — to anyone on the LAN via the \`/doc-history/*\` proxy`,
+      );
+    }
     lines.push(
       `- \`run-parallel\` does not forward trailing args — it rejects them with an error rather than silently ignoring them, so pass other zfb flags directly instead: \`${pm} run dev:zfb -- <flags>\``,
     );
@@ -235,8 +264,10 @@ export function generateCLAUDEFile(
     agentExport:
       "Generates the static agent documentation manifest, search index, and Markdown pages",
     mcp: "Adds public read-only search and fetch tools through a Cloudflare Workers MCP endpoint",
-    claudeResources: "Auto-generated docs for Claude Code resources",
-    codexResources: "Auto-generated docs for Codex resources (.codex/, AGENTS.md)",
+    claudeCodeDocs:
+      "`docSources` preset `claude-code`: `.claude/` and `CLAUDE.md` published under `/docs/claude/` (run `zudo-doc sources watch` beside `zfb dev`, wired into `dev`)",
+    codexDocs:
+      "`docSources` preset `codex`: `.codex/` and `AGENTS.md` published under `/docs/codex/` (run `zudo-doc sources watch` beside `zfb dev`, wired into `dev`)",
     changelog:
       choices.changelogPackages && choices.changelogPackages.length > 0
         ? `Changelog pages at \`/docs/changelog/<slug>\` — one per package: ${choices.changelogPackages.join(", ")}`
