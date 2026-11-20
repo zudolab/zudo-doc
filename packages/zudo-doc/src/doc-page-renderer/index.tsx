@@ -401,7 +401,10 @@ export function createRenderDocPage<S extends Settings = Settings>(
           !version &&
           opts.docHistoryContentDir !== undefined &&
           props.kind === "entry" &&
-          !(props.entry.data as Record<string, unknown>).unlisted ? (
+          !(props.entry.data as Record<string, unknown>).unlisted &&
+          // docSources pages: the history and view-source link of the derived
+          // MDX file would point at a gitignored build artifact, not the source.
+          !(props.entry.data as Record<string, unknown>).generated ? (
             <DocHistoryArea
               slug={slug}
               locale={locale}

@@ -84,6 +84,10 @@ export function buildDocsSchema(opts?: BuildDocsSchemaOptions) {
       standalone: z.boolean().optional(),
       slug: z.string().optional(),
       generated: z.boolean().optional(),
+      // Provenance written by docSources: source id, mapping id, source-relative path.
+      doc_source: z.string().optional(),
+      doc_source_mapping: z.string().optional(),
+      doc_source_path: z.string().optional(),
       // Home-grid card picture for a top-level category's index page, a root-absolute site path.
       cover: z
         .string()

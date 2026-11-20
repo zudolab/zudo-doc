@@ -24,6 +24,7 @@
 //   zudo-doc theme list          # list installed theme packs + the active one
 //   zudo-doc theme apply <slug>  # rewrite zfb.config.ts's themePack field
 //   zudo-doc check images        # fail when built HTML references a missing asset
+//   zudo-doc sources watch       # regenerate docSources output while `zfb dev` runs
 //   zudo-doc --help              # show help
 
 import minimist from "minimist";
@@ -69,6 +70,9 @@ ${pc.bold("Subcommands:")}
   theme apply <slug>   Rewrite zfb.config.ts's themePack field to <slug>.
   check images [options]
                        Fail when built HTML references a missing local asset.
+  sources watch        Regenerate docSources output when source files change.
+                       Run it beside \`zfb dev\`; it reuses the configuration
+                       the docSources build plugin recorded.
 
 ${pc.bold("Ejectable components:")}
   ${validNames}
@@ -262,6 +266,33 @@ function runCheckImages(checkArgs) {
   );
 }
 
+async function runSourcesWatch(watchArgs) {
+  if (watchArgs.length > 0) {
+    console.error(pc.red(`Unexpected argument "${watchArgs[0]}".`) + "\nUsage: zudo-doc sources watch");
+    process.exit(1);
+  }
+  const { homedir } = await import("node:os");
+  const { startDocSourcesWatcher } = await import("../dist/plugins/internal/doc-sources/watch.js");
+  const watcher = startDocSourcesWatcher({
+    projectRoot: process.cwd(),
+    homeDir: () => homedir(),
+    logger: {
+      info: (message) => console.log(pc.dim(message)),
+      warn: (message) => console.warn(pc.yellow(message)),
+      error: (message) => console.error(pc.red(message)),
+    },
+  });
+  let closing = false;
+  const shutdown = async () => {
+    if (closing) return;
+    closing = true;
+    await watcher.close();
+    process.exit(0);
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
 async function main() {
   if (argv._[0] === "check" && argv._[1] === "images" && argv["help"]) {
     printCheckImagesHelp();
@@ -279,6 +310,7 @@ async function main() {
   if (subcommand === "eject") return runEject(rest[0]);
   if (subcommand === "theme") return runTheme(rest);
   if (subcommand === "check" && rest[0] === "images") return runCheckImages(rest.slice(1));
+  if (subcommand === "sources" && rest[0] === "watch") return runSourcesWatch(rest.slice(1));
 
   console.error(
     pc.red(`Unknown subcommand "${subcommand}".`) +

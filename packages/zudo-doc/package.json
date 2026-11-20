@@ -183,13 +183,9 @@
       "types": "./dist/plugins/search-index.d.ts",
       "default": "./dist/plugins/search-index.js"
     },
-    "./plugins/claude-resources": {
-      "types": "./dist/plugins/claude-resources.d.ts",
-      "default": "./dist/plugins/claude-resources.js"
-    },
-    "./plugins/codex-resources": {
-      "types": "./dist/plugins/codex-resources.d.ts",
-      "default": "./dist/plugins/codex-resources.js"
+    "./plugins/doc-sources": {
+      "types": "./dist/plugins/doc-sources.d.ts",
+      "default": "./dist/plugins/doc-sources.js"
     },
     "./plugins/routes": {
       "types": "./dist/plugins/routes.d.ts",

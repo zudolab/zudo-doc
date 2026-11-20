@@ -10,6 +10,7 @@
 // type-check their own `settings` object.
 
 import type { DateFormatPattern } from "./format-date/index.js";
+import type { DocSourceEntry } from "./doc-sources/types.js";
 import type { CategoryListOptions } from "./category-list/model.js";
 
 /**
@@ -633,8 +634,8 @@ export interface Settings {
   bodyFootUtilArea: BodyFootUtilAreaConfig | false;
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;
-  claudeResources: { claudeDir: string; projectRoot?: string; scanRoot?: string } | false;
-  codexResources: { codexDir: string; projectRoot?: string; scanRoot?: string } | false;
+  /** Files outside `docsDir` baked into nested documentation routes. */
+  docSources: DocSourceEntry[];
   defaultLocaleOnlyPrefixes: string[];
   footer: FooterConfig | false;
   headerNav: HeaderNavItem[];
@@ -797,3 +798,14 @@ export interface Settings {
    */
   themePacks?: string[];
 }
+
+export type {
+  DocSourceAssetSelection,
+  DocSourceCustomEntry,
+  DocSourceEntry,
+  DocSourceFormat,
+  DocSourceMapping,
+  DocSourceMissingPolicy,
+  DocSourcePresetEntry,
+  DocSourcePresetName,
+} from "./doc-sources/types.js";

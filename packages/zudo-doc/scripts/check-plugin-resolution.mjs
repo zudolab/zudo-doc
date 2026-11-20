@@ -12,8 +12,7 @@ const CURRENT_PLUGINS = {
   "@takazudo/zudo-doc/plugins/doc-history": ["preBuild", "postBuild", "devMiddleware"],
   "@takazudo/zudo-doc/plugins/llms-txt": ["postBuild", "devMiddleware"],
   "@takazudo/zudo-doc/plugins/search-index": ["postBuild", "devMiddleware"],
-  "@takazudo/zudo-doc/plugins/claude-resources": ["preBuild"],
-  "@takazudo/zudo-doc/plugins/codex-resources": ["preBuild"],
+  "@takazudo/zudo-doc/plugins/doc-sources": ["preBuild"],
   "@takazudo/zudo-doc/plugins/changelog": ["postBuild"],
   "@takazudo/zudo-doc/plugins/theme-packs": ["setup", "postBuild", "devMiddleware"],
   "@takazudo/zudo-doc/plugins/img-src-check": ["postBuild"],
@@ -24,6 +23,8 @@ const REMOVED_SUBPATHS = [
   "@takazudo/zudo-doc/integrations/llms-txt",
   "@takazudo/zudo-doc/integrations/search-index",
   "@takazudo/zudo-doc/integrations/claude-resources",
+  "@takazudo/zudo-doc/plugins/claude-resources",
+  "@takazudo/zudo-doc/plugins/codex-resources",
   "@takazudo/zudo-doc/safelist",
 ];
 
@@ -66,11 +67,9 @@ process.stdout.write("[check-plugin-resolution] retained integrations/changelog 
 // catches broken internal relative imports that a shape-only load can miss.
 const projectRoot = mkdtempSync(join(tmpdir(), "zudo-doc-plugin-resolution-"));
 const docsDir = join(projectRoot, "docs");
-const claudeDir = join(projectRoot, ".claude");
 const codexDir = join(projectRoot, ".codex");
 const outDir = join(projectRoot, "dist");
 mkdirSync(docsDir, { recursive: true });
-mkdirSync(claudeDir, { recursive: true });
 mkdirSync(join(codexDir, "agents"), { recursive: true });
 writeFileSync(join(codexDir, "agents", "x.toml"), 'name = "x"\n');
 const logger = { info() {}, warn() {}, error() {} };
@@ -105,23 +104,20 @@ try {
   await searchIndex.postBuild({ projectRoot, outDir, options: searchOptions, logger });
   searchIndex.devMiddleware({ options: searchOptions, logger, register });
 
-  const claudeResources = loadedPlugins.get("@takazudo/zudo-doc/plugins/claude-resources");
-  await claudeResources.preBuild({
+  const docSources = loadedPlugins.get("@takazudo/zudo-doc/plugins/doc-sources");
+  await docSources.preBuild({
     projectRoot,
     outDir,
-    options: { claudeDir, scanRoot: claudeDir, docsDir },
+    config: {},
+    options: {
+      sources: [{ id: "codex", preset: "codex", root: ".codex" }],
+      docsDir,
+      defaultLocale: "en",
+    },
     logger,
   });
-
-  const codexResources = loadedPlugins.get("@takazudo/zudo-doc/plugins/codex-resources");
-  await codexResources.preBuild({
-    projectRoot,
-    outDir,
-    options: { codexDir, scanRoot: projectRoot, docsDir },
-    logger,
-  });
-  if (!existsSync(join(docsDir, "codex-agents/x.mdx"))) {
-    throw new Error("Codex resources lifecycle smoke output missing: docs/codex-agents/x.mdx");
+  if (!existsSync(join(docsDir, "codex/agents/x.mdx"))) {
+    throw new Error("doc-sources lifecycle smoke output missing: docs/codex/agents/x.mdx");
   }
 
   const changelogPlugin = loadedPlugins.get("@takazudo/zudo-doc/plugins/changelog");

@@ -225,9 +225,11 @@ const fixtureSettings: PresetSettings = {
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: ["drafts/**"],
-  claudeResources: { claudeDir: ".claude" },
-  codexResources: { codexDir: ".codex" },
-  defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+  docSources: [
+    { id: "claude", preset: "claude-code", root: ".claude" },
+    { id: "handbook", title: "Handbook", mappings: [{ id: "docs", root: "~/handbook", include: ["**/*.md"], format: "markdown" }] },
+  ],
+  defaultLocaleOnlyPrefixes: ["/docs/claude/"],
   packageOwnedRoutes: true,
 };
 
@@ -439,8 +441,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     const { plugins } = preset();
     expect(plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/routes",
-      "@takazudo/zudo-doc/plugins/claude-resources",
-      "@takazudo/zudo-doc/plugins/codex-resources",
+      "@takazudo/zudo-doc/plugins/doc-sources",
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/theme-packs",
@@ -453,24 +454,25 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
   });
 
 
+  it("keeps private docSources configuration out of the serialized route context", () => {
+    const routes = preset().plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/routes");
+    const routeSettings = routes?.options?.["settings"] as Record<string, unknown>;
+    expect(routeSettings).toBeDefined();
+    expect(routeSettings).not.toHaveProperty("docSources");
+    expect(JSON.stringify(routes?.options)).not.toContain("~/handbook");
+  });
+
   it("threads the right options into each plugin", () => {
     const byName = Object.fromEntries(preset().plugins.map((p) => [p.name, p.options]));
-    expect(byName["@takazudo/zudo-doc/plugins/claude-resources"]).toEqual({
-      claudeDir: ".claude",
-      projectRoot: undefined,
+    expect(byName["@takazudo/zudo-doc/plugins/doc-sources"]).toEqual({
+      sources: fixtureSettings.docSources,
       docsDir: "src/content/docs",
+      base: fixtureSettings.base,
       locales: { ja: { dir: "src/content/docs-ja" } },
       defaultLocale: "en",
-      defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
-    });
-    expect(byName["@takazudo/zudo-doc/plugins/codex-resources"]).toEqual({
-      codexDir: ".codex",
-      projectRoot: undefined,
-      scanRoot: undefined,
-      docsDir: "src/content/docs",
-      locales: { ja: { dir: "src/content/docs-ja" } },
-      defaultLocale: "en",
-      defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+      defaultLocaleOnlyPrefixes: ["/docs/claude/"],
+      translations: {},
+      excludeDirs: expect.any(Array),
     });
     expect(byName["@takazudo/zudo-doc/plugins/doc-history"]).toEqual({
       docsDir: "src/content/docs",
@@ -503,7 +505,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
         assetViewerExclude: ["drafts/**"],
         base: "/",
         locales: { ja: { dir: "src/content/docs-ja" } },
-        defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+        defaultLocaleOnlyPrefixes: ["/docs/claude/"],
       },
     });
     expect(byName["@takazudo/zudo-doc/plugins/theme-packs"]).toEqual({
@@ -530,7 +532,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
         assetViewerExclude: ["drafts/**"],
         base: "/",
         locales: { ja: { dir: "src/content/docs-ja" } },
-        defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+        defaultLocaleOnlyPrefixes: ["/docs/claude/"],
       },
     });
     expect(byName["@takazudo/zudo-doc/plugins/changelog"]).toEqual({
@@ -613,7 +615,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       assetViewerExclude: ["drafts/**"],
       base: "/",
       locales: { ja: { dir: "src/content/docs-ja" } },
-      defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+      defaultLocaleOnlyPrefixes: ["/docs/claude/"],
     });
     expect(search).not.toHaveProperty("projectRoot");
   });
@@ -703,13 +705,14 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(omittedDocHistory?.options?.["ui"]).toBe(true);
   });
 
-  it("omits optional resource plugins when their settings are falsy", () => {
+  it("omits optional plugins when their settings are falsy, but keeps doc-sources reconciliation", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, claudeResources: false, codexResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false, assetViewer: false },
+      settings: { ...fixtureSettings, docSources: [], docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false, assetViewer: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
     expect(r.plugins.map((p) => p.name)).toEqual([
+      "@takazudo/zudo-doc/plugins/doc-sources",
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/img-src-check",
