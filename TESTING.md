@@ -109,8 +109,8 @@ acceptance; those platforms require separate evidence.
 bootstrap (`packages/zudo-doc/src/transitions/persisted-focus-settle-bootstrap.ts`).
 The underlying Chromium focus-reveal behavior reproduces on 151 and 153. It did
 not reproduce on the Chromium 145 build bundled with `@playwright/test` 1.58.2.
-The workspace pin is now `@playwright/test` 1.65.0, whose bundled Chromium is
-158.0.8127.18, and the CI images in `pr-checks.yml` and `exam.yml` match that
+The workspace pin is now `@playwright/test` 1.65.1, whose bundled Chromium is
+159.0.8154.6, and the CI images in `pr-checks.yml` and `exam.yml` match that
 release. The package unit test pins the guard's layout read. To compare another
 browser, run the spec locally with `E2E_CHROMIUM_EXECUTABLE` (see `e2e/CLAUDE.md`)
 and record the version the spec attaches.

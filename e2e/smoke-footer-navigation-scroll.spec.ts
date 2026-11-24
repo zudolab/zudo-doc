@@ -5,8 +5,8 @@
  * activated footer link keeps focus across the SPA swap. zfb moves persisted
  * chrome with moveBefore(); Chromium queues a native focus
  * reveal for the moved focused subtree until the next layout on the builds
- * where this reproduced (151 and 153). @playwright/test 1.65.0 pins Chromium
- * 158.0.8127.18. The 145 build bundled with 1.58.2 did not queue the reveal.
+ * where this reproduced (151 and 153). @playwright/test 1.65.1 pins Chromium
+ * 159.0.8154.6. The 145 build bundled with 1.58.2 did not queue the reveal.
  * The router's settleLocation() scrollTo(0, 0) can skip that layout, so the reveal used to
  * land afterwards and leave the viewport at the footer. The package-owned
  * persisted-focus-settle bootstrap flushes the reveal between the DOM move and

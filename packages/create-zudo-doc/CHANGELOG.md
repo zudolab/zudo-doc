@@ -10,6 +10,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 - **Breaking:** the `--[no-]claude-resources` and `--[no-]codex-resources` flags (and the `claudeResources` / `codexResources` preset feature names) are replaced by `--[no-]claude-code-docs` and `--[no-]codex-docs` (`claudeCodeDocs` / `codexDocs`), with no aliases. These features now emit `docSources` preset entries (`claude-code` and `codex`) in the generated `zfb.config.ts` instead of the removed `claudeResources` and `codexResources` settings, so their pages live below `/docs/<mount>/`. See Document Sources.
 
+### Other Changes
+
+- A fresh scaffold pins `@takazudo/zfb`, `@takazudo/zfb-runtime` and `@takazudo/zfb-md-wasm` at 7.2.0. MCP projects also pin `@takazudo/zfb-adapter-cloudflare` at 7.2.0. 7.2.0 keeps the Linux arm64 npm CLI and CSS carrier, and updates the `url` crate to 2.5.9 for RUSTSEC-2026-0592. Production bundles and the public config surface are unchanged, so a fresh scaffold needs no config migration.
+- Design-token-panel projects stay on `@takazudo/zdtp` 0.9.9. 0.9.9's zfb peer `^5.1.2 || ^6.0.0 || ^7.0.0` already admits zfb 7.2.0.
+- MCP scaffolds pin Wrangler 4.167.0.
+
 ## [13.0.1] - 2026-11-19
 
 ### Other Changes
