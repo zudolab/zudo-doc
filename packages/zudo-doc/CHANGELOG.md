@@ -6,8 +6,11 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+## [14.0.0] - 2026-11-24
+
 ### Breaking Changes
 
+- The `@takazudo/zudo-doc-history-server` peer floor moves from `^13.0.0` to `^14.0.0`. Projects that enable document history need history-server 14.x.
 - The `claudeResources` and `codexResources` settings, and the `@takazudo/zudo-doc/plugins/claude-resources` and `plugins/codex-resources` plugins, are removed without compatibility shims. Configure the same content through `docSources` with the `claude-code` and `codex` presets. The old routes (`/docs/claude-md/…`, `/docs/claude-commands/…`, `/docs/claude-skills/…`, `/docs/claude-agents/…`, `/docs/codex-agents-md/…`, `/docs/codex-config/…`, `/docs/codex-agents/…`, `/docs/codex-hooks/…`, `/docs/codex-rules/…`, `/docs/codex-skills/…`) are not redirected; their pages now live below each source's mount, such as `/docs/claude/skills/…`. Update `headerNav` items, `defaultLocaleOnlyPrefixes` entries and inbound links, and rename `resource.*` translation overrides to the matching `docSources.*` keys. See the migration section of Document Sources.
 - One-time cleanup for existing checkouts: the old generators left gitignored output in `claude/`, `claude-agents/`, `claude-commands/`, `claude-md/`, `claude-skills/`, `codex/`, `codex-agents/`, `codex-agents-md/`, `codex-config/`, `codex-hooks/`, `codex-rules/` and `codex-skills/` under the default content directory and each locale directory. The new engine refuses to overwrite files it does not own under `claude/` and `codex/`. Before the first build, list the files in those directories whose frontmatter has `generated: true` (for example with `grep -rl '^generated: true'`), review the list, and delete only those files. Keep anything else for manual review. The guide has a ready-made snippet.
 

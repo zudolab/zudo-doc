@@ -9,6 +9,6 @@
     "check": "zfb check"
   },
   "dependencies": {
-    "@takazudo/zudo-doc": "^13.0.1"
+    "@takazudo/zudo-doc": "^14.0.0"
   }
 }

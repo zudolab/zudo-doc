@@ -1,23 +1,5 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1162
+sidebar_position: 1163
 ---
-
-### 破壊的変更
-
-- `claudeResources`と`codexResources`設定、および`@takazudo/zudo-doc/plugins/claude-resources`と`plugins/codex-resources`プラグインを、互換用のシムなしで削除しました。同じ内容は`docSources`の`claude-code`と`codex`プリセットで設定します。旧ルート（`/docs/claude-md/…`、`/docs/claude-commands/…`、`/docs/claude-skills/…`、`/docs/claude-agents/…`、`/docs/codex-agents-md/…`、`/docs/codex-config/…`、`/docs/codex-agents/…`、`/docs/codex-hooks/…`、`/docs/codex-rules/…`、`/docs/codex-skills/…`）はリダイレクトされず、ページは`/docs/claude/skills/…`のように各ソースのマウント配下に移ります。`headerNav`項目、`defaultLocaleOnlyPrefixes`のエントリ、外部からのリンクを更新し、`resource.*`翻訳の上書きは対応する`docSources.*`キーに名前を変えてください。[ドキュメントソース](../../guides/doc-sources.mdx)の移行セクションを参照してください。
-- 既存のチェックアウトでの一回限りの片付け：旧ジェネレーターは、デフォルトのコンテンツディレクトリと各ロケールディレクトリの`claude/`、`claude-agents/`、`claude-commands/`、`claude-md/`、`claude-skills/`、`codex/`、`codex-agents/`、`codex-agents-md/`、`codex-config/`、`codex-hooks/`、`codex-rules/`、`codex-skills/`にgitignoreされた出力を残しています。新しいエンジンは`claude/`と`codex/`配下で所有していないファイルの上書きを拒否します。最初のビルドの前に、これらのディレクトリでフロントマターに`generated: true`を持つファイルを（たとえば`grep -rl '^generated: true'`で）一覧にして確認し、そのファイルだけを削除してください。それ以外のファイルは手作業で確認するために残します。ガイドにそのまま使えるスニペットがあります。
-
-### 機能
-
-- 新しい任意設定`docSources`（デフォルト`[]`）は、`docsDir`の外にあるファイルを`/docs/<mount>/<section>/<path>/`の生成セクションとして公開します。エントリは同梱プリセット（`{ id, preset: "claude-code" | "codex", root, scanRoot?, mount? }`）か、明示的なマッピングを持つカスタムソース（`{ id, title, mount?, mappings }`）です。各マッピングはルート（相対、絶対、`~/`）からglobでファイルを選び、`markdown`、`code`、`skill`としてレンダリングします。`index.md`、`index.mdx`、`README.md`はディレクトリのランディングになり、インデックスはドキュメントが所有していないルートにだけ合成され、ルートの衝突はビルドを失敗させます。
-- マッピングされたファイル間のリンクは生成ページへのリンクに書き換えられます（フラグメントとクエリは保持）。マッピングされていないリンク先は読めるテキストとして残ってビルド警告になり、マッピングされたアセットは`public/doc-sources/<mount>/…`にコピーされます。生成ページには`generated: true`と、出所を示す`doc_source`、`doc_source_mapping`、`doc_source_path`が付き、ドキュメント履歴とソース表示リンクは表示されません。
-- 生成出力はビルドローカルなマニフェスト（`.zfb/doc-sources/manifest.json`）で管理されます。変更されたファイルだけが書き込まれ、古くなった未変更の出力は（`docSources`が`[]`の場合も）削除され、作成者のファイルは上書きされず、失敗した実行は以前の出力を残します。
-- 新しい`zudo-doc sources watch`コマンドは、`zfb dev`と並行してファイルやディレクトリの変更に応じてドキュメントソースの出力を再生成します。このリポジトリの以前の`dev-claude-watch`と`dev-codex-watch`スクリプトを置き換えます。
-
-### その他の変更
-
-- ZFB 7.2.0 ファミリ（`^7.2.0`）が必須になりました。7.2.0 は 7.1.0 で戻った Linux arm64 向け npm の CLI と CSS キャリアを維持し、RUSTSEC-2026-0592 に対応するため `url` クレートを 2.5.9 に更新します。残りの変更は開発サーバーの回復（末尾スラッシュのリクエスト時 SSR、失敗したコンテンツスナップショットでは直前の正常な世代を公開し続けること、失敗した再読込のあとのルート再選択）と、任意の `ZFB_DEV_PROVENANCE_TRACE` 変数です。本番バンドルと公開設定の表面は変わりません。`@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`、使う場合は `@takazudo/zfb-adapter-cloudflare` をまとめて更新してください。
-- ワークスペースは `@takazudo/zdtp` 0.9.10 を使います。peer 下限は `^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0` のままで、0.9.10 を受け入れます。0.9.10 の zfb peer は `^5.1.2 || ^6.0.0 || ^7.0.0` のままで、zfb 7.2.0 と zudo-doc 13.0.1 に対してビルドされています。
-- `@inquirer/prompts` の依存下限を `^8.7.5` から `^8.8.1` に上げました。
