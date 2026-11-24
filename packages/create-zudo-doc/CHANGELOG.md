@@ -13,7 +13,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Other Changes
 
 - A fresh scaffold pins `@takazudo/zfb`, `@takazudo/zfb-runtime` and `@takazudo/zfb-md-wasm` at 7.2.0. MCP projects also pin `@takazudo/zfb-adapter-cloudflare` at 7.2.0. 7.2.0 keeps the Linux arm64 npm CLI and CSS carrier, and updates the `url` crate to 2.5.9 for RUSTSEC-2026-0592. Production bundles and the public config surface are unchanged, so a fresh scaffold needs no config migration.
-- Design-token-panel projects stay on `@takazudo/zdtp` 0.9.9. 0.9.9's zfb peer `^5.1.2 || ^6.0.0 || ^7.0.0` already admits zfb 7.2.0.
+- Design-token-panel projects pin `@takazudo/zdtp` 0.9.10. 0.9.10 keeps the zfb peer `^5.1.2 || ^6.0.0 || ^7.0.0`, which already admits zfb 7.2.0, and builds against zfb 7.2.0 and zudo-doc 13.0.1.
 - MCP scaffolds pin Wrangler 4.167.0.
 
 ## [13.0.1] - 2026-11-19

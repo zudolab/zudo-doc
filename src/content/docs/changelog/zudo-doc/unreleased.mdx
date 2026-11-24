@@ -19,5 +19,5 @@ sidebar_position: 1162
 ### Other Changes
 
 - Require the ZFB 7.2.0 family (`^7.2.0`). 7.2.0 keeps the Linux arm64 npm CLI and CSS carrier that 7.1.0 restored, and updates the `url` crate to 2.5.9 for RUSTSEC-2026-0592. The rest of 7.2.0 is dev-server recovery (trailing-slash request-time SSR, a rejected content snapshot that keeps the last good generation, and route reselection after a failed refresh) plus the optional `ZFB_DEV_PROVENANCE_TRACE` variable. Production bundles and the public config surface are unchanged. Upgrade `@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm` and, when used, `@takazudo/zfb-adapter-cloudflare` together.
-- The workspace stays on `@takazudo/zdtp` 0.9.9. The peer floor stays `^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0`, which already admits 0.9.9. 0.9.9's zfb peer `^5.1.2 || ^6.0.0 || ^7.0.0` already admits zfb 7.2.0.
+- The workspace uses `@takazudo/zdtp` 0.9.10. The peer floor stays `^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0`, which already admits 0.9.10. 0.9.10 keeps that zfb peer (`^5.1.2 || ^6.0.0 || ^7.0.0`) and builds against zfb 7.2.0 and zudo-doc 13.0.1.
 - The `@inquirer/prompts` dependency floor moves from `^8.7.5` to `^8.8.1`.
