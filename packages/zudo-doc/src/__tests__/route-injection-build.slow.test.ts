@@ -1498,6 +1498,13 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // makes each normalized page byte-identical. Raw bytes additionally change
   // only islands-358ac9fc.js -> islands-b3c95463.js; styles-8f862a7c.css is
   // unchanged.
+  // 2026-11-24 re-baseline (14.0.0 release): local capture of this version
+  // bump against the ZFB 7.2.0 reference. Normalized pages differ only in
+  // native build identity (a4c62ff183ce18f1 -> 74d546770b7ede25; 1/2/4
+  // attributes). Normalized lengths stay 57095, 68058 and 79449. Replacing
+  // that identity makes each normalized page byte-identical. Raw bytes
+  // additionally change only islands-b3c95463.js -> islands-be4eb485.js;
+  // styles-8f862a7c.css is unchanged.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toBe(a2Reference["404.html"]);

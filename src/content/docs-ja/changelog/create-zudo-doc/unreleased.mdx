@@ -1,15 +1,5 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1068
+sidebar_position: 1069
 ---
-
-### 破壊的変更
-
-- **破壊的変更:** `--[no-]claude-resources`と`--[no-]codex-resources`フラグ（およびプリセットの機能名`claudeResources`・`codexResources`）は、エイリアスなしで`--[no-]claude-code-docs`と`--[no-]codex-docs`（`claudeCodeDocs`・`codexDocs`）に置き換わりました。これらの機能は、生成する`zfb.config.ts`に、削除された`claudeResources`と`codexResources`設定の代わりに`docSources`のプリセットエントリ（`claude-code`と`codex`）を出力するようになりました。ページは`/docs/<mount>/`配下に配置されます。[ドキュメントソース](../../guides/doc-sources.mdx)を参照してください。
-
-### その他の変更
-
-- 新規スキャフォールドは `@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm` を 7.2.0 に固定します。MCP プロジェクトは `@takazudo/zfb-adapter-cloudflare` も 7.2.0 に固定します。7.2.0 は Linux arm64 向け npm の CLI と CSS キャリアを維持し、RUSTSEC-2026-0592 に対応するため `url` クレートを 2.5.9 に更新します。本番バンドルと公開設定の表面は変わらないため、新規スキャフォールドに設定の移行は不要です。
-- デザイントークンパネルを有効にしたプロジェクトは `@takazudo/zdtp` 0.9.10 をピン留めします。0.9.10 の zfb peer は `^5.1.2 || ^6.0.0 || ^7.0.0` のままで zfb 7.2.0 を受け入れ、zfb 7.2.0 と zudo-doc 13.0.1 に対してビルドされています。
-- MCP スキャフォールドは Wrangler 4.167.0 をピン留めします。

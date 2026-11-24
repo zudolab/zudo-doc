@@ -1,23 +1,5 @@
 ---
 title: Unreleased
 description: Changes planned for the next release.
-sidebar_position: 1162
+sidebar_position: 1163
 ---
-
-### Breaking Changes
-
-- The `claudeResources` and `codexResources` settings, and the `@takazudo/zudo-doc/plugins/claude-resources` and `plugins/codex-resources` plugins, are removed without compatibility shims. Configure the same content through `docSources` with the `claude-code` and `codex` presets. The old routes (`/docs/claude-md/…`, `/docs/claude-commands/…`, `/docs/claude-skills/…`, `/docs/claude-agents/…`, `/docs/codex-agents-md/…`, `/docs/codex-config/…`, `/docs/codex-agents/…`, `/docs/codex-hooks/…`, `/docs/codex-rules/…`, `/docs/codex-skills/…`) are not redirected; their pages now live below each source's mount, such as `/docs/claude/skills/…`. Update `headerNav` items, `defaultLocaleOnlyPrefixes` entries and inbound links, and rename `resource.*` translation overrides to the matching `docSources.*` keys. See the migration section of [Document Sources](../../guides/doc-sources.mdx).
-- One-time cleanup for existing checkouts: the old generators left gitignored output in `claude/`, `claude-agents/`, `claude-commands/`, `claude-md/`, `claude-skills/`, `codex/`, `codex-agents/`, `codex-agents-md/`, `codex-config/`, `codex-hooks/`, `codex-rules/` and `codex-skills/` under the default content directory and each locale directory. The new engine refuses to overwrite files it does not own under `claude/` and `codex/`. Before the first build, list the files in those directories whose frontmatter has `generated: true` (for example with `grep -rl '^generated: true'`), review the list, and delete only those files. Keep anything else for manual review. The guide has a ready-made snippet.
-
-### Features
-
-- New optional `docSources` setting (default `[]`) publishes files from outside `docsDir` as generated sections at `/docs/<mount>/<section>/<path>/`. Entries are bundled presets (`{ id, preset: "claude-code" | "codex", root, scanRoot?, mount? }`) or custom sources with explicit mappings (`{ id, title, mount?, mappings }`), each mapping selecting files by glob from a root (relative, absolute or `~/`) and rendering them as `markdown`, `code` or `skill`. `index.md`, `index.mdx` and `README.md` become directory landings, indexes are synthesized only where no document owns the route, and route collisions fail the build.
-- Links between mapped files are rewritten to the generated pages (fragments and queries kept); unmapped targets stay readable text with a build warning, and mapped assets are copied to `public/doc-sources/<mount>/…`. Generated pages carry `generated: true` with `doc_source`, `doc_source_mapping` and `doc_source_path` provenance and show no document history or view-source link.
-- Generated output is tracked in a build-local manifest (`.zfb/doc-sources/manifest.json`): only changed files are written, stale unchanged outputs are removed (also when `docSources` is `[]`), authored files are never overwritten, and a failed run keeps the previous output.
-- New `zudo-doc sources watch` command regenerates document-source output beside `zfb dev` on file and directory changes. It replaces the repository's former `dev-claude-watch` and `dev-codex-watch` scripts.
-
-### Other Changes
-
-- Require the ZFB 7.2.0 family (`^7.2.0`). 7.2.0 keeps the Linux arm64 npm CLI and CSS carrier that 7.1.0 restored, and updates the `url` crate to 2.5.9 for RUSTSEC-2026-0592. The rest of 7.2.0 is dev-server recovery (trailing-slash request-time SSR, a rejected content snapshot that keeps the last good generation, and route reselection after a failed refresh) plus the optional `ZFB_DEV_PROVENANCE_TRACE` variable. Production bundles and the public config surface are unchanged. Upgrade `@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-md-wasm` and, when used, `@takazudo/zfb-adapter-cloudflare` together.
-- The workspace uses `@takazudo/zdtp` 0.9.10. The peer floor stays `^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0`, which already admits 0.9.10. 0.9.10 keeps that zfb peer (`^5.1.2 || ^6.0.0 || ^7.0.0`) and builds against zfb 7.2.0 and zudo-doc 13.0.1.
-- The `@inquirer/prompts` dependency floor moves from `^8.7.5` to `^8.8.1`.
