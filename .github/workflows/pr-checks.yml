@@ -886,7 +886,7 @@ jobs:
     timeout-minutes: 30
     container:
       # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
-      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
       options: --user 1001 --ipc=host
     defaults:
       run:
@@ -1104,7 +1104,7 @@ jobs:
       issues: write
     container:
       # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
-      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
       options: --user 1001 --ipc=host
     defaults:
       run:
