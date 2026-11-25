@@ -2616,6 +2616,9 @@ html[data-theme="dark"] [data-zd-home-image="light"], html:not([data-theme="dark
   bottom: 0;
   left: 0;
 }
+.bottom-0 {
+  bottom: 0;
+}
 .bottom-hsp-lg {
   bottom: var(--zw-spacing-hsp-lg);
 }

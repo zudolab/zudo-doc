@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { openMobileDrawer } from "./mobile-drawer-helpers";
+import { test, expect, type Locator } from "@playwright/test";
+import { mobileSidebar, openMobileDrawer } from "./mobile-drawer-helpers";
 import { expectNaturalFit, measureAppearanceMenu, readScrollState } from "./appearance-geometry";
 
 /**
@@ -12,6 +12,23 @@ import { expectNaturalFit, measureAppearanceMenu, readScrollState } from "./appe
  */
 
 const DOCS_PAGE = "/docs/getting-started";
+
+async function expectViewportHeight(panel: Locator) {
+  await expect.poll(() => panel.evaluate((element) => {
+    const header = document.querySelector("header[data-header]");
+    if (!header) throw new Error("Missing site header");
+    const viewport = window.visualViewport;
+    // Client rectangles use layout-viewport CSS pixels. The visual viewport's
+    // bottom in that coordinate system includes its vertical offset.
+    const viewportBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+    const rect = element.getBoundingClientRect();
+    return Math.max(
+      Math.abs(rect.top - header.getBoundingClientRect().bottom),
+      Math.abs(rect.bottom - viewportBottom),
+      Math.abs(rect.left),
+    );
+  })).toBeLessThanOrEqual(1);
+}
 
 test.describe("Mobile sidebar", () => {
   test("hamburger button is visible at mobile viewport", async ({ page }) => {
@@ -49,23 +66,80 @@ test.describe("Mobile sidebar", () => {
     await expect(sidebarPanel).toHaveClass(/translate-x-0/);
   });
 
-  test("clicking backdrop closes the sidebar", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+  for (const width of [320, 390, 440]) {
+    test(`drawer follows the visible viewport at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 568 });
+      await page.goto(DOCS_PAGE);
+      const drawer = mobileSidebar(page);
+      await openMobileDrawer(page);
+      await expectViewportHeight(drawer);
+      await expect(drawer).toHaveCSS("width", "256px");
 
-    // Open the sidebar
-    const hamburger = page.locator('button[aria-label="Open sidebar"]');
-    await hamburger.click();
-    await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
+      await page.setViewportSize({ width, height: 880 });
+      await expectViewportHeight(drawer);
+      await page.setViewportSize({ width: 880, height: width });
+      await expectViewportHeight(drawer);
 
-    // Click the backdrop overlay by dispatching a click event
-    // The backdrop is a div.fixed.inset-0.z-30 with an onClick handler
+      await page.getByRole("button", { name: "Close sidebar", exact: true }).click();
+      await expect(drawer).toHaveAttribute("inert", "");
+      await page.setViewportSize({ width, height: 568 });
+      await openMobileDrawer(page);
+      await expectViewportHeight(drawer);
+    });
+  }
+
+  test("a real click near the bottom of the backdrop closes the drawer", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(DOCS_PAGE);
+    await openMobileDrawer(page);
+
+    const viewport = page.viewportSize()!;
     const backdrop = page.locator("header div.fixed.inset-0");
-    await expect(backdrop).toBeAttached();
-    await backdrop.dispatchEvent("click");
+    const point = { x: viewport.width - 8, y: viewport.height - 8 };
+    expect(await backdrop.evaluate((node, { x, y }) => document.elementFromPoint(x, y) === node, point))
+      .toBe(true);
+    await page.mouse.click(point.x, point.y);
 
-    // Sidebar should close -- hamburger label reverts to "Open sidebar"
-    await expect(page.locator('button[aria-label="Open sidebar"]')).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open sidebar", exact: true })).toBeVisible();
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+  });
+
+  test("a short drawer scrolls internally to its last link and footer controls", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 350 });
+    await page.goto("/docs/guides");
+    await openMobileDrawer(page);
+
+    const drawer = mobileSidebar(page);
+    await expectViewportHeight(drawer);
+    const scroller = drawer.locator(":scope > div").first();
+    const lastDocLink = drawer.locator("[data-sidebar-tree-root] a").last();
+    const appearance = drawer.getByRole("button", { name: /^Appearance:/ });
+    const language = drawer.getByRole("link", { name: "JA", exact: true });
+    const pageScroll = await page.evaluate(() => window.scrollY);
+    await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+    expect(await scroller.evaluate((node) => node.scrollHeight)).toBeGreaterThan(
+      await scroller.evaluate((node) => node.clientHeight),
+    );
+
+    for (const control of [lastDocLink, appearance, language]) {
+      await control.scrollIntoViewIfNeeded();
+      await expect(control).toBeInViewport();
+    }
+    expect(await scroller.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => window.scrollY)).toBe(pageScroll);
+  });
+
+  test("desktop sidebar aligns with the header and viewport at the desktop breakpoint", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 568 });
+    await page.goto(DOCS_PAGE);
+    const sidebar = page.getByRole("complementary", { name: "Documentation sidebar" });
+    await expectViewportHeight(sidebar);
+    await expect(sidebar).toHaveCSS("width", "224px");
+    await expect(page.getByRole("button", { name: "Open sidebar", exact: true })).toBeHidden();
+
+    await page.setViewportSize({ width: 1280, height: 880 });
+    await expectViewportHeight(sidebar);
+    await expect(sidebar).toHaveCSS("width", "256px");
   });
 
   test("pressing Escape closes the sidebar and restores focus to the hamburger", async ({
@@ -269,10 +343,7 @@ test.describe("Mobile sidebar", () => {
     // Start on the guides section so we have multiple pages in the sidebar
     await page.goto("/docs/guides", { waitUntil: "load" });
 
-    // Open the sidebar
-    const hamburger = page.locator('button[aria-label="Open sidebar"]');
-    await hamburger.click();
-    await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
+    await openMobileDrawer(page);
 
     // Find a navigation link inside the mobile sidebar aside panel.
     // The sidebar shows the guides section tree which includes "Writing Docs"
@@ -288,6 +359,9 @@ test.describe("Mobile sidebar", () => {
 
     // Sidebar should be closed after navigation (via zfb:after-swap handler)
     await expect(page.locator('button[aria-label="Open sidebar"]')).toBeVisible({ timeout: 5000 });
+    await expect(mobileSidebar(page)).toHaveAttribute("inert", "");
+    await openMobileDrawer(page);
+    await expectViewportHeight(mobileSidebar(page));
   });
 
   test("closed sidebar panel is inert and unfocusable; opening clears inert", async ({ page }) => {
