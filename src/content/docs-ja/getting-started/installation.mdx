@@ -1,8 +1,46 @@
 ---
 title: インストール
-description: zudo-doc のインストールとローカル開発環境のセットアップ方法。
+description: AIエージェントとの対話、または手動でzudo-docをセットアップする方法。
 sidebar_position: 2
 ---
+
+## AIエージェントとセットアップ
+
+初めてのセットアップには、いつものAIコーディングエージェントと始める方法をおすすめします。Webの資料を読み、プロジェクトのファイルを扱えるエージェントに、下のプロンプトを貼り付けてください。用途を確認して構成を提案し、ローカルでサイトを動かすところまで案内します。
+
+自由に答えたり、「よく分からない」と伝えても大丈夫です。プロンプトは英語ですが、エージェントは希望する言語で案内し、分からない場合は確認します。
+
+```text
+Help me set up a documentation site with zudo-doc.
+
+Read https://zudo-doc.takazudomodular.com/llms.txt and follow the relevant
+installation, CLI, and configuration links. Inspect my workspace, its
+instructions, and available tools before choosing commands.
+
+Use my preferred conversation language; ask if it is unclear. Infer what you
+can from my existing files and answers. Ask only about decisions that matter
+now: the site's purpose, project name and location, languages, and essential
+features. Offer a few plain-language options with a recommendation and a short
+reason. Use interactive questions if available, otherwise a numbered list.
+Accept free-form answers or “not sure,” and group related questions.
+
+Recommend a simple starting configuration and keep ordinary defaults unless my
+needs require changes. Once the essential answers are clear, summarize the
+choices and continue through routine setup.
+
+Use the published create-zudo-doc CLI, checking its version and --help.
+Preserve existing files. Check Node.js 24+ and the package manager,
+recommending pnpm for a new project. Scaffold with non-interactive flags or a
+preset. Read the generated project instructions. Install dependencies and
+create a useful first page. Run type checking and a production build, fix
+setup errors, and explain how to open the local preview and edit my docs.
+
+Report actual verification. If you cannot run commands, provide exact commands
+and guide me through their results. Keep setup local unless I request
+publication.
+```
+
+使いたい設定が決まっている場合は、[セットアッププリセット生成](./setup-preset-generator.mdx)でプリセットやCLIコマンドを生成できます。個別のフラグは[CLIリファレンス](../reference/create-zudo-doc.mdx)を参照してください。手動でインストールする場合は、以下の手順に進んでください。
 
 ## 前提条件
 

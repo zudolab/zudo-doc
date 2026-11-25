@@ -1,8 +1,46 @@
 ---
 title: Installation
-description: How to install and set up zudo-doc for local development.
+description: Set up zudo-doc with an AI agent or follow the manual installation guide.
 sidebar_position: 2
 ---
+
+## Set Up with Your AI Agent
+
+For a first setup, we recommend starting with your AI coding agent. Paste the prompt below into an agent that can read web pages and work with your project files. It will ask about your needs, recommend a configuration, and help you get a local site running.
+
+You can answer in your own words or say “not sure.” The agent will use your preferred conversation language and ask if it is unclear.
+
+```text
+Help me set up a documentation site with zudo-doc.
+
+Read https://zudo-doc.takazudomodular.com/llms.txt and follow the relevant
+installation, CLI, and configuration links. Inspect my workspace, its
+instructions, and available tools before choosing commands.
+
+Use my preferred conversation language; ask if it is unclear. Infer what you
+can from my existing files and answers. Ask only about decisions that matter
+now: the site's purpose, project name and location, languages, and essential
+features. Offer a few plain-language options with a recommendation and a short
+reason. Use interactive questions if available, otherwise a numbered list.
+Accept free-form answers or “not sure,” and group related questions.
+
+Recommend a simple starting configuration and keep ordinary defaults unless my
+needs require changes. Once the essential answers are clear, summarize the
+choices and continue through routine setup.
+
+Use the published create-zudo-doc CLI, checking its version and --help.
+Preserve existing files. Check Node.js 24+ and the package manager,
+recommending pnpm for a new project. Scaffold with non-interactive flags or a
+preset. Read the generated project instructions. Install dependencies and
+create a useful first page. Run type checking and a production build, fix
+setup errors, and explain how to open the local preview and edit my docs.
+
+Report actual verification. If you cannot run commands, provide exact commands
+and guide me through their results. Keep setup local unless I request
+publication.
+```
+
+Already know which settings you want? Use the [Setup Preset Generator](./setup-preset-generator.mdx) to export a preset or CLI command, or see the [CLI reference](../reference/create-zudo-doc.mdx) for individual flags. To install manually, follow the guide below.
 
 ## Prerequisites
 
