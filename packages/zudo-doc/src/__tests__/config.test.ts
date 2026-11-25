@@ -542,12 +542,21 @@ describe("zudoDoc() contentSignals", () => {
 });
 
 describe("agent documentation config", () => {
-  it("defaults both opt-in settings off and carries them into resolved settings", () => {
+  it("defaults opt-in settings off and carries them into resolved settings", () => {
     expect(DEFAULT_SETTINGS.agentExport).toBe(false);
     expect(DEFAULT_SETTINGS.mcp).toBe(false);
+    expect(DEFAULT_SETTINGS.copyMarkdown).toBe(false);
     expect(routesOptions(zudoDoc({}))?.settings).toMatchObject({
       agentExport: false,
+      copyMarkdown: false,
       mcp: false,
+    });
+  });
+
+  it("carries the button default without enabling export", () => {
+    expect(routesOptions(zudoDoc({ copyMarkdown: true }))?.settings).toMatchObject({
+      agentExport: false,
+      copyMarkdown: true,
     });
   });
 
@@ -573,6 +582,8 @@ describe("agent documentation config", () => {
 
   it.each([
     ["agentExport", "enabled"],
+    ["copyMarkdown", "false"],
+    ["copyMarkdown", null],
     ["mcp", 1],
   ])("rejects unsupported runtime value for %s", (field, value) => {
     expect(() =>

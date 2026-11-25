@@ -73,6 +73,7 @@ export function buildDocsSchema(opts?: BuildDocsSchemaOptions) {
       sidebar_initial_expansion: z.enum(["collapsed", "expanded"]).optional(),
       tags: buildTagsSchema(opts),
       search_exclude: z.boolean().optional(),
+      copy_markdown: z.boolean().optional(),
       pagination_next: z.string().nullable().optional(),
       pagination_prev: z.string().nullable().optional(),
       draft: z.boolean().optional(),

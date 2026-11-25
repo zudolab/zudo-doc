@@ -55,6 +55,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tagGovernance: "off",
   tagVocabulary: false,
   agentExport: false,
+  copyMarkdown: false,
   mcp: false,
   llmsTxt: false,
   changelogs: false,

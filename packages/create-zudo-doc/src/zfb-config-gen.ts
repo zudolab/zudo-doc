@@ -68,6 +68,7 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   tagVocabulary: false,
   llmsTxt: false,
   agentExport: false,
+  copyMarkdown: false,
   mcp: false,
   cjkFriendly: false,
   designTokenPanel: false,
@@ -274,6 +275,7 @@ function buildDesiredConfig(
 
   desired.llmsTxt = choices.features.includes("llmsTxt");
   desired.agentExport = choices.features.includes("agentExport");
+  desired.copyMarkdown = DEFAULT_MIRROR.copyMarkdown;
   desired.mcp = choices.features.includes("mcp");
   if (choices.features.includes("mcp")) {
     // MCP currently has one supported remote deployment preset, Cloudflare
@@ -433,6 +435,7 @@ const FIELD_ORDER = [
   "tagVocabularyEntries",
   "llmsTxt",
   "agentExport",
+  "copyMarkdown",
   "mcp",
   "cjkFriendly",
   "designTokenPanel",

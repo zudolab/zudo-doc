@@ -199,6 +199,7 @@ Start with the **essentials**, then explore the live examples.
   tagVocabulary: true as boolean,
   llmsTxt: true,
   agentExport: true,
+  copyMarkdown: true,
   mcp: true,
   changelogs: [
     {

@@ -51,6 +51,7 @@ title: Quick Start
 | `note_tray_sidebar` | `"index" \| "year" \| "month"` | いいえ | `"index"` | ノートトレイのサイドバー表示を選択 |
 | `date` | `"YYYY-MM-DD"` | いいえ | — | ドキュメントの日付。日付付きノートトレイのアイテムでは必須 |
 | `updated` | `"YYYY-MM-DD"` | いいえ | — | どのドキュメントにも指定できる任意の更新日 |
+| `copy_markdown` | boolean | いいえ | `copyMarkdown`を継承 | このページのMarkdownコピーボタンの表示を切り替え |
 | `search_exclude` | boolean | いいえ | `false` | ページを検索インデックスから除外 |
 | `tags` | string[] | いいえ | -- | 横断的なナビゲーション用タグ |
 | `draft` | boolean | いいえ | `false` | 本番ビルドから除外（開発時は表示） |
@@ -266,6 +267,10 @@ date: "2026-08-20"
 - **必須：** No
 
 どのドキュメントにも任意の更新日を設定できます。ドキュメントヘッダーでは`date`の隣に表示され、日付を表示するノートトレイのインデックスとホームページにも表示されます。`date`がなくても単独で表示できます。サイドバーとページャーには`updated`を表示しません。
+
+### `copy_markdown`
+
+`copy_markdown: true`でこのページに**Markdown をコピー**ボタンを表示し、`copy_markdown: false`で非表示にします。省略時はサイトの`copyMarkdown`設定を継承します。どの場合も、ボタンの表示には`agentExport`が生成した対象ページのMarkdownファイルが必要です。ボタンを隠してもファイルは公開されたままです。[表示条件の表](./configuration.mdx#生成とインテグレーション-copymarkdown)を参照してください。
 
 ### `search_exclude`
 

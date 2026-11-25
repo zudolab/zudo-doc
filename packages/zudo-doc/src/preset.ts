@@ -147,6 +147,8 @@ export interface PresetSettings {
   llmsTxt?: boolean;
   /** Generate the package-owned static agent documentation feed. */
   agentExport?: boolean;
+  /** Show the Copy Markdown action on eligible document pages by default. */
+  copyMarkdown?: boolean;
   /** Enable the stateless read-only MCP endpoint; requires `agentExport: true`. */
   mcp?: boolean;
   /** Top-level categories left out of `<SiteTreeNav />`; the agent export mirrors it. */

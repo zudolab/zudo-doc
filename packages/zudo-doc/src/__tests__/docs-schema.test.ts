@@ -40,6 +40,7 @@ describe("buildDocsSchema", () => {
       sidebar_label: "Hello",
       tags: ["anything"],
       search_exclude: true,
+      copy_markdown: true,
       pagination_next: "/docs/next",
       pagination_prev: null,
       draft: false,
@@ -60,6 +61,15 @@ describe("buildDocsSchema", () => {
       updated: "2026-08-23",
     };
     expect(schema.safeParse(fixture).success).toBe(true);
+  });
+
+  it("preserves inheritance and rejects coerced Copy Markdown values", () => {
+    const schema = buildDocsSchema();
+    expect(schema.parse({ title: "Hello" }).copy_markdown).toBeUndefined();
+    expect(schema.parse({ title: "Hello", copy_markdown: false }).copy_markdown).toBe(false);
+    for (const copy_markdown of ["true", 0, null]) {
+      expect(schema.safeParse({ title: "Hello", copy_markdown }).success).toBe(false);
+    }
   });
 
   it("accepts a root-absolute og_image and rejects other values", () => {

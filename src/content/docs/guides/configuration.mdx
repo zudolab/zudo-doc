@@ -1162,6 +1162,19 @@ Default: `false`
 
 See [Agent-readable export](./agent-export.mdx).
 
+### copyMarkdown
+
+Show **Copy Markdown** in eligible article headers. Set `copyMarkdown: true` in `zudoDoc({ ... })` to opt in across the site. Each page can override it with the boolean frontmatter field `copy_markdown`.
+
+Default: `false`
+
+| Site setting | Page setting omitted | Page setting `false` | Page setting `true` |
+| --- | --- | --- | --- |
+| `false` | Hidden | Hidden | Shown |
+| `true` | Shown | Hidden | Shown |
+
+Every shown case requires an existing Markdown artifact from [agent export](./agent-export.mdx#copy-markdown-from-an-article). These settings control the button alone. Hiding it leaves the Markdown file and its discovery link published.
+
 ### mcp
 
 Add the read-only `search` and `fetch` MCP endpoint at `<base>/mcp`. Requires `agentExport: true` and a request-time deployment adapter. The initializer's `mcpDeploy: "cloudflare"` option generates the Cloudflare adapter and deployment files; `mcpDeploy` is not a `zudoDoc` setting.

@@ -8,6 +8,7 @@
 // factory receives those as injected dependencies so the logic lives in the
 // package while the host stub keeps the singleton imports.
 
+import { Island } from "@takazudo/zfb";
 import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { FrontmatterPreview, type FrontmatterCellRenderer } from "../metainfo/index.js";
@@ -19,6 +20,7 @@ import { createDocTagsArea } from "../doc-tags-area/index.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import { deriveDateFormats } from "../chrome/derive.js";
 import { formatDate } from "../format-date/index.js";
+import { CopyMarkdown, type CopyMarkdownSource } from "../copy-markdown/index.js";
 
 export type { FrontmatterCellRenderer };
 
@@ -83,6 +85,7 @@ interface DocContentHeaderProps {
    * versioned pages.
    */
   version?: string;
+  copyMarkdownSource?: CopyMarkdownSource;
 }
 
 /**
@@ -128,6 +131,7 @@ export function createDocContentHeader<S extends Settings = Settings>(
     locale,
     isFallback = false,
     version,
+    copyMarkdownSource,
   }: DocContentHeaderProps): JSX.Element {
     return (
       <>
@@ -196,6 +200,29 @@ export function createDocContentHeader<S extends Settings = Settings>(
           <p class="mb-vsp-lg text-title text-muted" data-doc-description>
             {entry.data.description}
           </p>
+        )}
+
+        {copyMarkdownSource && (
+          <Island when="load">
+            <CopyMarkdown
+              {...copyMarkdownSource}
+              title={entry.data.title}
+              {...(entry.data.description ? { description: entry.data.description } : {})}
+              labels={{
+                copyMarkdown: t("copyMarkdown.label", locale),
+                copying: t("copyMarkdown.copying", locale),
+                copied: t("copyMarkdown.copied", locale),
+                loadError: t("copyMarkdown.loadError", locale),
+                manualTitle: t("copyMarkdown.manualTitle", locale),
+                manualHint: t("copyMarkdown.manualHint", locale),
+                manualError: t("copyMarkdown.manualError", locale),
+                payload: t("copyMarkdown.payload", locale),
+                selectAll: t("copyMarkdown.selectAll", locale),
+                copy: t("copyMarkdown.copy", locale),
+                close: t("copyMarkdown.close", locale),
+              }}
+            />
+          </Island>
         )}
 
         {/* Frontmatter preview — non-system, custom keys only. Returns

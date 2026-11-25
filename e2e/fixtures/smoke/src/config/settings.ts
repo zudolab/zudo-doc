@@ -70,6 +70,7 @@ export const settings = {
   docTags: false,
   llmsTxt: true,
   agentExport: true,
+  copyMarkdown: true,
   mcp: true,
   changelogs: false as ChangelogConfig[] | false,
   math: true,

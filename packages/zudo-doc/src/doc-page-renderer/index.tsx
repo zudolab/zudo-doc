@@ -25,6 +25,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { agentPageKey } from "../agent-docs/identity.js";
 import { createDocPageShell } from "../doc-page-shell/index.js";
+import type { CopyMarkdownSource } from "../copy-markdown/index.js";
 import { createDocContentHeader } from "../doc-content-header/index.js";
 import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
 import { createDocHistoryArea } from "../doc-history-area/index.js";
@@ -159,6 +160,7 @@ export interface DocPageRendererDeps {
     locale: string;
     isFallback?: boolean;
     version?: string;
+    copyMarkdownSource?: CopyMarkdownSource;
   }) => JSX.Element;
   /**
    * The `DocMetainfoArea` component (host-side factory result).
@@ -307,7 +309,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
       ? undefined
       : `sidebar-${locale}-${navSection ?? "default"}`;
 
-    const agentMarkdownAlternates =
+    const agentMarkdownUrl =
       ctx.settings.agentExport === true &&
       !version &&
       !isFallback &&
@@ -318,12 +320,15 @@ export function createRenderDocPage<S extends Settings = Settings>(
           entryData?.search_exclude ||
           entryData?.category_no_page,
       )
-        ? [{
-            rel: "alternate",
-            type: "text/markdown",
-            href: ctx.withBase(`/agent/v1/pages/${agentPageKey(locale, slug)}.md`),
-          }]
+        ? ctx.withBase(`/agent/v1/pages/${agentPageKey(locale, slug)}.md`)
         : undefined;
+    const agentMarkdownAlternates = agentMarkdownUrl
+      ? [{ rel: "alternate", type: "text/markdown", href: agentMarkdownUrl }]
+      : undefined;
+    const copyMarkdownSource = agentMarkdownUrl && props.kind === "entry" &&
+      (props.entry.data.copy_markdown ?? ctx.settings.copyMarkdown ?? false) === true
+      ? { artifactUrl: agentMarkdownUrl, pageUrl: canonical ?? currentPath }
+      : undefined;
 
     // hreflang alternates: latest entry pages only (the route-enumerator
     // returns [] for fallback and single-locale pages); nothing without siteUrl.
@@ -389,6 +394,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
               locale={locale}
               isFallback={isFallback}
               version={version?.slug}
+              copyMarkdownSource={copyMarkdownSource}
             />
           ) : undefined
         }

@@ -80,6 +80,7 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   agentExport: true,
+  copyMarkdown: true,
   mcp: true,
   changelogs: false as ChangelogConfig[] | false,
   math: false,

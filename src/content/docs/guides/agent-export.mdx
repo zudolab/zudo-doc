@@ -31,6 +31,12 @@ Use your own public `siteUrl` for stable, absolute citation URLs. With an empty 
 
 To remove the export from an existing site, set `agentExport: false` or remove the field, then rebuild and redeploy. Remove old `/agent/v1/` files from a host that retains previously uploaded files. If `mcp: true` is also set, disable MCP first; it requires the export.
 
+## Copy Markdown from an article
+
+Set `copyMarkdown: true` alongside `agentExport: true` to offer **Copy Markdown** in eligible article headers. A page can opt in or out with `copy_markdown`. See [configuration](./configuration.mdx#generation-and-integrations-copymarkdown) for the visibility rules.
+
+The button copies the article title, canonical human-readable URL, description when present, and the complete normalized Markdown body. If automatic copying is unavailable, the dialog selects the full text for manual copying. Hiding the button leaves the static export and its discovery link available.
+
 ## Published files
 
 The current build writes this versioned layout under your configured base:
