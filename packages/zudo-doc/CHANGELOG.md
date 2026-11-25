@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+- Added an opt-in **Copy Markdown** action for exported articles, with per-page overrides and a manual-copy fallback.
+
 ## [14.0.0] - 2026-11-24
 
 ### Breaking Changes

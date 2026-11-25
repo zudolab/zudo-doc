@@ -2,14 +2,14 @@ import { test as browserTest, type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { spaClick } from "./nav-helpers";
 
-const codePage = "/docs/guides/code-blocks-test";
+const codePage = "/docs/guides/copy-markdown-test";
 const hiddenPage = "/docs/guides/frontmatter-preview-test";
 const japanesePage = "/ja/docs/router-fragment-a";
 const action = (page: Page) => page.locator("[data-zd-copy-markdown]");
 const copyButton = (page: Page) => action(page).locator("button").first();
 const artifactLink = (page: Page) => page.locator('link[rel="alternate"][type="text/markdown"]');
-const codeTitle = "# Code Blocks Test";
-const codeDescription = "A page for testing code blocks, tabs, details, and mermaid diagrams.";
+const codeTitle = "# Copy Markdown Test";
+const codeDescription = "A page for checking the complete copy payload.";
 const readClipboard = (page: Page) => page.evaluate(() => navigator.clipboard.readText());
 
 async function artifact(page: Page) {
@@ -26,6 +26,7 @@ test("copies the complete article into the real clipboard using keyboard activat
   const { body } = await artifact(page);
   expect(body).toContain("```");
   expect(body).toContain("[External code reference](https://example.com/docs/reference/)");
+  expect(body).toContain("[Dynamic content unavailable in text export: MathBlock]");
   const button = copyButton(page);
   await expect(button).toHaveText("Copy Markdown", { useInnerText: true });
   const originalWidth = (await button.boundingBox())?.width;
@@ -40,12 +41,6 @@ test("copies the complete article into the real clipboard using keyboard activat
   expect((await button.boundingBox())?.width).toBe(originalWidth);
   expect(await readClipboard(page)).toBe([codeTitle, `Source: ${new URL(codePage, page.url()).href}`, codeDescription, body].join("\n\n"));
   await expect(button).toHaveAccessibleName("Copy Markdown");
-  await page.goto("/docs/guides/math-test");
-  const { body: mathBody } = await artifact(page);
-  expect(mathBody).toContain("[Dynamic content unavailable in text export: MathBlock]");
-  await copyButton(page).click();
-  await expect(action(page).getByRole("status")).toHaveText("Copied");
-  expect(await readClipboard(page)).toMatch(/\[Dynamic content unavailable in text export: MathBlock\]/);
   await assertNoConsoleErrors();
 });
 
@@ -157,17 +152,23 @@ test("handles unavailable clipboard and closing the fallback during retry", asyn
 });
 
 test("aborts a pending article request on SPA navigation", async ({ page }) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const aborted = Promise.withResolvers<void>();
+  await page.exposeFunction("recordArtifactAbort", () => aborted.resolve());
   await page.addInitScript(() => {
     const fetchNative = window.fetch;
     window.fetch = (input, init) => {
       if (String(input).includes("/agent/v1/pages/")) {
-        init?.signal?.addEventListener("abort", () => { document.documentElement.dataset.artifactAborted = "true"; });
+        init?.signal?.addEventListener("abort", () => {
+          (window as Window & { recordArtifactAbort: () => void }).recordArtifactAbort();
+        });
       }
       return fetchNative(input, init);
     };
   });
   await page.goto(japanesePage);
   const { href, body } = await artifact(page);
+  await page.evaluate(() => navigator.clipboard.writeText("before navigation"));
   const gate = Promise.withResolvers<void>();
   await page.route(`**${href}`, async (route) => {
     await gate.promise;
@@ -178,7 +179,8 @@ test("aborts a pending article request on SPA navigation", async ({ page }) => {
   await firstRequest;
   try {
     expect(await spaClick(page, "/ja/docs/router-fragment-b")).toBe(true);
-    await expect(page.locator("html")).toHaveAttribute("data-artifact-aborted", "true");
+    await aborted.promise;
+    expect(await readClipboard(page)).toBe("before navigation");
     await expect(copyButton(page)).toHaveAccessibleName("Markdown をコピー");
     await expect(action(page).getByRole("dialog")).toBeHidden();
   } finally {

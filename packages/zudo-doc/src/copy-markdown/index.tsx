@@ -2,6 +2,7 @@
 
 import { computed, getScope, signal, type Ref } from "@takazudo/zfb/zudo-react";
 import { hydrationPending } from "../hydration-pending.js";
+import { BEFORE_SWAP_EVENT } from "../transitions/page-events.js";
 
 export interface CopyMarkdownSource {
   artifactUrl: string;
@@ -107,13 +108,15 @@ export function CopyMarkdown(props: CopyMarkdownProps) {
   };
 
   scope.onActivate(() => {
-    const onPageHide = () => {
+    const onPageLeave = () => {
       clearPageState();
       state.value = "idle";
     };
-    window.addEventListener("pagehide", onPageHide);
+    document.addEventListener(BEFORE_SWAP_EVENT, onPageLeave);
+    window.addEventListener("pagehide", onPageLeave);
     return () => {
-      window.removeEventListener("pagehide", onPageHide);
+      document.removeEventListener(BEFORE_SWAP_EVENT, onPageLeave);
+      window.removeEventListener("pagehide", onPageLeave);
       clearPageState();
     };
   });
