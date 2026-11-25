@@ -160,7 +160,7 @@ test("aborts a pending article request on SPA navigation", async ({ page }) => {
     window.fetch = (input, init) => {
       if (String(input).includes("/agent/v1/pages/")) {
         init?.signal?.addEventListener("abort", () => {
-          (window as Window & { recordArtifactAbort: () => void }).recordArtifactAbort();
+          (window as typeof window & { recordArtifactAbort: () => void }).recordArtifactAbort();
         });
       }
       return fetchNative(input, init);
