@@ -2550,6 +2550,16 @@ html[data-theme="dark"] [data-zd-home-image="light"], html:not([data-theme="dark
   }
 }
 
+[data-zd-copy-markdown][data-zd-pending] {
+  visibility: hidden;
+}
+
+@media (scripting: none) {
+  [data-zd-copy-markdown] {
+    display: none;
+  }
+}
+
 .zd-copy-markdown-dialog {
   width: min(42rem, 100% - 2rem);
   max-height: calc(100% - 2rem);

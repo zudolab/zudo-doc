@@ -37,6 +37,7 @@ test("copies the complete article into the real clipboard using keyboard activat
   await expect(button).toHaveCSS("outline-style", "solid");
   await page.keyboard.press("Enter");
   await expect(action(page).getByRole("status")).toHaveText("Copied");
+  await expect(action(page).locator("h2, h3, h4")).toHaveCount(0);
   await expect(button).toBeFocused();
   expect((await button.boundingBox())?.width).toBe(originalWidth);
   expect(await readClipboard(page)).toBe([codeTitle, `Source: ${new URL(codePage, page.url()).href}`, codeDescription, body].join("\n\n"));
@@ -212,7 +213,8 @@ test("keeps the action out of the tab order without JavaScript", async ({ browse
   try {
     const page = await context.newPage();
     await page.goto(codePage);
-    await expect(action(page)).toHaveAttribute("hidden", "");
+    await expect(action(page)).toHaveCSS("display", "none");
+    await expect(copyButton(page)).toBeDisabled();
     await expect(copyButton(page)).toBeHidden();
   } finally {
     await context.close();

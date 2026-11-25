@@ -158,8 +158,8 @@ export function CopyMarkdown(props: CopyMarkdownProps) {
   const busy = computed(() => state.value === "copying" ? "true" : undefined);
 
   return (
-    <div data-zd-copy-markdown="" hidden={pending} class="mb-vsp-lg">
-      <button ref={trigger} type="button" aria-disabled={busy} on:click={copy}
+    <div data-zd-copy-markdown="" data-zd-pending={computed(() => pending.value ? "" : undefined)} class="mb-vsp-lg">
+      <button ref={trigger} type="button" disabled={pending} aria-disabled={busy} on:click={copy}
         class={`inline-flex max-w-full items-center gap-hsp-sm ${button} ${outline}`}>
         <svg class="h-icon-sm w-icon-sm shrink-0" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -173,10 +173,10 @@ export function CopyMarkdown(props: CopyMarkdownProps) {
           <span class="col-start-1 row-start-1">{label}</span>
         </span>
       </button>
-      <p role="status" class={computed(() => state.value === "error" ? "mt-vsp-3xs text-caption text-danger" : "sr-only")}>
+      <div role="status" class={computed(() => state.value === "error" ? "mt-vsp-3xs text-caption text-danger" : "sr-only")}>
         {computed(() => state.value === "error" ? labels.loadError :
           state.value === "copying" || state.value === "copied" ? label.value : "")}
-      </p>
+      </div>
       <dialog ref={dialog} aria-label={labels.manualTitle}
         class="zd-copy-markdown-dialog m-auto overflow-auto rounded-lg border border-muted bg-surface px-hsp-lg py-vsp-xs text-fg shadow-lg"
         on:close={() => {
@@ -192,8 +192,8 @@ export function CopyMarkdown(props: CopyMarkdownProps) {
             textarea.current?.focus();
           }
         }}>
-        <h2 class="mb-vsp-3xs text-title font-semibold">{labels.manualTitle}</h2>
-        <p class="mb-vsp-xs text-small">{labels.manualHint}</p>
+        <div class="mb-vsp-3xs text-title font-semibold">{labels.manualTitle}</div>
+        <div class="mb-vsp-xs text-small">{labels.manualHint}</div>
         <textarea ref={textarea} readonly spellcheck={false} aria-label={labels.payload}
           class={`block h-[min(42vh,20rem)] w-full resize-none rounded border border-muted bg-bg p-hsp-md font-mono text-caption ${outline}`} />
         <div class="mt-vsp-xs flex flex-wrap gap-hsp-sm">
@@ -201,7 +201,7 @@ export function CopyMarkdown(props: CopyMarkdownProps) {
           <button type="button" class={`${button} ${outline}`} aria-disabled={busy} on:click={copy}>{labels.copy}</button>
           <button ref={closeButton} type="button" class={`${button} ${outline}`} on:click={() => dialog.current?.close()}>{labels.close}</button>
         </div>
-        <p role="status" class={computed(() => manualStatus.value ? "mt-vsp-3xs text-caption" : "sr-only")}>{manualStatus}</p>
+        <div role="status" class={computed(() => manualStatus.value ? "mt-vsp-3xs text-caption" : "sr-only")}>{manualStatus}</div>
       </dialog>
     </div>
   );
