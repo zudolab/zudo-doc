@@ -164,8 +164,9 @@ export function SidebarToggle({
       !open.value && "hidden",
     ),
   );
+  // Use the backdrop’s fixed viewport edge to size the drawer during toolbar changes.
   const panelClass = computed(() => `
-          fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col
+          fixed top-[3.5rem] bottom-0 left-0 z-modal w-[16rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200
           lg:hidden
           ${open.value ? "translate-x-0" : "-translate-x-full"}
