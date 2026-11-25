@@ -437,9 +437,9 @@ export interface ZudoDocConfig {
    */
   agentExport?: boolean;
   /**
-   * Show Copy Markdown by default on document pages with an agent export.
+   * Show Copy Markdown on document pages with an eligible Markdown export.
    * Frontmatter `copy_markdown` can override this setting per page.
-   * @default false
+   * @default true
    */
   copyMarkdown?: boolean;
   /**

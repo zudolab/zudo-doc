@@ -23,6 +23,7 @@ import type { DocPageBaseProps, DocNavNode, DocPageEntry } from "../doc-page-pro
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import { DEFAULT_SETTINGS } from "../settings-defaults.js";
 import { agentPageKey } from "../agent-docs/identity.js";
 import { createDocPageShell } from "../doc-page-shell/index.js";
 import type { CopyMarkdownSource } from "../copy-markdown/index.js";
@@ -325,10 +326,13 @@ export function createRenderDocPage<S extends Settings = Settings>(
     const agentMarkdownAlternates = agentMarkdownUrl
       ? [{ rel: "alternate", type: "text/markdown", href: agentMarkdownUrl }]
       : undefined;
-    const copyMarkdownSource = agentMarkdownUrl && props.kind === "entry" &&
-      (props.entry.data.copy_markdown ?? ctx.settings.copyMarkdown ?? false) === true
-      ? { artifactUrl: agentMarkdownUrl, pageUrl: canonical ?? currentPath }
-      : undefined;
+    const copyMarkdownSource =
+      agentMarkdownUrl &&
+      props.kind === "entry" &&
+      (props.entry.data.copy_markdown ?? ctx.settings.copyMarkdown ??
+        DEFAULT_SETTINGS.copyMarkdown) === true
+        ? { artifactUrl: agentMarkdownUrl, pageUrl: canonical ?? currentPath }
+        : undefined;
 
     // hreflang alternates: latest entry pages only (the route-enumerator
     // returns [] for fallback and single-locale pages); nothing without siteUrl.

@@ -68,7 +68,7 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   tagVocabulary: false,
   llmsTxt: false,
   agentExport: false,
-  copyMarkdown: false,
+  copyMarkdown: true,
   mcp: false,
   cjkFriendly: false,
   designTokenPanel: false,

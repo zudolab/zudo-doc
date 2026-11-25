@@ -149,6 +149,9 @@ describe("createRenderDocPage — agent Markdown alternate eligibility", () => {
     (page.props["contentHeaderSlot"] as Description | undefined)?.props["copyMarkdownSource"];
 
   it.each([
+    [undefined, undefined, true],
+    [undefined, false, false],
+    [undefined, true, true],
     [false, undefined, false],
     [false, false, false],
     [false, true, true],
@@ -165,12 +168,12 @@ describe("createRenderDocPage — agent Markdown alternate eligibility", () => {
   });
 
   it("ignores the page opt-in without export and omits automatic index actions", () => {
-    const ctx = makeFakeChromeContext({ settings: { agentExport: false, copyMarkdown: true } });
+    const ctx = makeFakeChromeContext({ settings: { agentExport: false } });
     const page = createRenderDocPage(ctx)(makeEntryProps({ copy_markdown: true }), opts) as Description;
     expect(copySource(page)).toBeUndefined();
     expect(page.props["alternateLinks"]).toBeUndefined();
 
-    const withExport = makeFakeChromeContext({ settings: { agentExport: true, copyMarkdown: true } });
+    const withExport = makeFakeChromeContext({ settings: { agentExport: true } });
     const index = createRenderDocPage(withExport)({
       kind: "autoIndex", autoIndex: { slug: "index", label: "Index", position: 0, hasPage: false, children: [] },
       breadcrumbs: [], prev: null, next: null, headings: [],

@@ -314,6 +314,17 @@ describe("generateZfbConfig — simple boolean feature fields", () => {
   }
 });
 
+describe("generateZfbConfig — Copy Markdown", () => {
+  it("inherits the enabled package default in an Agent Export config", () => {
+    const config = generateZfbConfig({ ...baseChoices, features: ["agentExport"] });
+
+    expect(DEFAULT_MIRROR.copyMarkdown).toBe(true);
+    expect(config).toContain("agentExport: true");
+    expect(config).not.toContain("copyMarkdown:");
+    expect(config).not.toContain("mcp:");
+  });
+});
+
 describe("generateZfbConfig — Cloudflare adapter is MCP-only", () => {
   it("emits the adapter for the Cloudflare MCP preset", () => {
     const result = generateZfbConfig({

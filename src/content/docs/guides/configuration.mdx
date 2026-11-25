@@ -1164,14 +1164,14 @@ See [Agent-readable export](./agent-export.mdx).
 
 ### copyMarkdown
 
-Show **Copy Markdown** in eligible article headers. Set `copyMarkdown: true` in `zudoDoc({ ... })` to opt in across the site. Each page can override it with the boolean frontmatter field `copy_markdown`.
+Show **Copy Markdown** by default in article headers with an eligible Markdown export. Set `copyMarkdown: false` in `zudoDoc({ ... })` to hide it sitewide. Each page can override it with the boolean frontmatter field `copy_markdown`.
 
-Default: `false`
+Default: `true`
 
 | Site setting | Page setting omitted | Page setting `false` | Page setting `true` |
 | --- | --- | --- | --- |
 | `false` | Hidden | Hidden | Shown |
-| `true` | Shown | Hidden | Shown |
+| Omitted or `true` | Shown | Hidden | Shown |
 
 Every shown case requires an existing Markdown artifact from [agent export](./agent-export.mdx#copy-markdown-from-an-article). These settings control the button alone. Hiding it leaves the Markdown file and its discovery link published.
 

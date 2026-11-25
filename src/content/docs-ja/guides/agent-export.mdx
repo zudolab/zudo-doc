@@ -33,7 +33,7 @@ export default defineConfig(
 
 ## 記事からMarkdownをコピー
 
-`agentExport: true`と合わせて`copyMarkdown: true`を設定すると、対象記事のヘッダーに**Markdown をコピー**ボタンが表示されます。ページごとに`copy_markdown`で表示を切り替えられます。詳しくは[設定ガイド](./configuration.mdx#生成とインテグレーション-copymarkdown)を参照してください。
+`agentExport: true`を設定すると、Markdownがエクスポートされている対象記事のヘッダーに**Markdown をコピー**ボタンが表示されます。サイト全体で非表示にするには`copyMarkdown: false`を設定します。ページごとに`copy_markdown`でサイト設定を上書きできます。詳しくは[設定ガイド](./configuration.mdx#生成とインテグレーション-copymarkdown)を参照してください。
 
 ボタンは記事タイトル、閲覧用の正規URL、説明文（ある場合）、正規化されたMarkdown本文の全文をコピーします。自動コピーが利用できない場合は、ダイアログで全文を選択し、手動でコピーできます。ボタンを隠しても、静的なエクスポートとその発見用リンクは引き続き利用できます。
 

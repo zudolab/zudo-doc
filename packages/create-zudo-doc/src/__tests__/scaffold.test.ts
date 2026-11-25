@@ -1299,6 +1299,9 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     for (const token of [
       "docHistory",
       "llmsTxt",
+      "agentExport:",
+      "copyMarkdown:",
+      "mcp:",
       "docSources",
       "claudeResources",
       "codexResources",
