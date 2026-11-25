@@ -51,6 +51,7 @@ title: Quick Start
 | `note_tray_sidebar` | `"index" \| "year" \| "month"` | No | `"index"` | Selects the note-tray sidebar presentation |
 | `date` | `"YYYY-MM-DD"` | No | — | Document date; required for items in a dated note tray |
 | `updated` | `"YYYY-MM-DD"` | No | — | Optional update date on any document |
+| `copy_markdown` | boolean | No | Inherits `copyMarkdown` | Show or hide the Copy Markdown button on this page |
 | `search_exclude` | boolean | No | `false` | Exclude the page from search indexing |
 | `tags` | string[] | No | -- | Tags for cross-cutting navigation |
 | `draft` | boolean | No | `false` | Exclude from production build (visible in dev) |
@@ -266,6 +267,10 @@ date: "2026-08-20"
 - **Required:** No
 
 Sets an optional update date on any document. It appears beside `date` in the document header and on dated note-tray index and home-page surfaces. It can appear by itself when `date` is absent. The sidebar and pager never show `updated`.
+
+### `copy_markdown`
+
+Set `copy_markdown: true` to show **Copy Markdown** on this page, or `copy_markdown: false` to hide it. Omit the field to inherit the site's `copyMarkdown` setting, which defaults to `true`. The button requires an eligible Markdown artifact from `agentExport` in every case. Hiding the button leaves that artifact published. See the [visibility table](./configuration.mdx#generation-and-integrations-copymarkdown).
 
 ### `search_exclude`
 

@@ -1155,6 +1155,19 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 [エージェント向けエクスポート](./agent-export.mdx)を参照してください。
 
+### copyMarkdown
+
+Markdownがエクスポートされている対象記事のヘッダーには、既定で**Markdown をコピー**ボタンが表示されます。サイト全体で非表示にするには、`zudoDoc({ ... })`に`copyMarkdown: false`を設定します。各ページでは、真偽値のフロントマター`copy_markdown`で上書きできます。
+
+デフォルト: `true`
+
+| サイト設定 | ページ設定を省略 | ページ設定が`false` | ページ設定が`true` |
+| --- | --- | --- | --- |
+| `false` | 非表示 | 非表示 | 表示 |
+| 省略または`true` | 表示 | 非表示 | 表示 |
+
+表示には、[エージェント向けエクスポート](./agent-export.mdx)が生成したMarkdownファイルが必要です。これらの設定はボタンの表示だけを制御します。非表示にしても、Markdownファイルとその発見用リンクは公開されたままです。
+
 ### mcp
 
 `<base>/mcp`に読み取り専用の`search`と`fetch` MCPエンドポイントを追加します。`agentExport: true`とリクエスト時に動作するデプロイアダプターが必要です。イニシャライザーの`mcpDeploy: "cloudflare"`はCloudflareアダプターとデプロイファイルを生成します。`mcpDeploy`は`zudoDoc`の設定ではありません。

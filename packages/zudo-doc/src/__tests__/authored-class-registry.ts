@@ -45,6 +45,7 @@ export const AUTHORED_CLASSES = new Set([
   "zd-desktop-toc-toggle",
   "zd-doc-content-band",
   "zd-enlarge-btn",
+  "zd-copy-markdown-dialog",
   "zd-enlarge-dialog-close",
   "zd-enlargeable",
   "zd-hide-details-marker",

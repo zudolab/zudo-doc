@@ -545,6 +545,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `tagVocabulary` | `boolean` | Enable tag vocabulary |
 | `llmsTxt` | `boolean` | Enable llms.txt generation |
 | `agentExport?` | `boolean` | Generate the package-owned static agent documentation feed; defaults to `false` |
+| `copyMarkdown?` | `boolean` | Show Copy Markdown on docs with an eligible export by default. Boolean frontmatter `copy_markdown` overrides it. Defaults to `true` and only affects the UI. |
 | `mcp?` | `boolean` | Enable the stateless read-only MCP endpoint; requires `agentExport: true` and defaults to `false` |
 | `math` | `boolean` | Enable KaTeX math rendering. Requires optional `katex` (`^0.18.2 || ^0.19.0`) and its local CSS; math-disabled builds succeed without it, but rendering a `<MathBlock>` throws during SSR/build |
 | `cjkFriendly` | `boolean` | Enable CJK-friendly typography |

@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+- Added **Copy Markdown** to article headers with an existing Markdown export, with site and page overrides and a manual-copy fallback.
+
 ## [14.0.0] - 2026-11-24
 
 ### Breaking Changes

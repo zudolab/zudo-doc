@@ -542,18 +542,28 @@ describe("zudoDoc() contentSignals", () => {
 });
 
 describe("agent documentation config", () => {
-  it("defaults both opt-in settings off and carries them into resolved settings", () => {
+  it("defaults Copy Markdown on while export and MCP stay off", () => {
     expect(DEFAULT_SETTINGS.agentExport).toBe(false);
     expect(DEFAULT_SETTINGS.mcp).toBe(false);
+    expect(DEFAULT_SETTINGS.copyMarkdown).toBe(true);
     expect(routesOptions(zudoDoc({}))?.settings).toMatchObject({
       agentExport: false,
+      copyMarkdown: true,
       mcp: false,
+    });
+  });
+
+  it("preserves an explicit Copy Markdown opt-out without changing export", () => {
+    expect(routesOptions(zudoDoc({ agentExport: true, copyMarkdown: false }))?.settings).toMatchObject({
+      agentExport: true,
+      copyMarkdown: false,
     });
   });
 
   it("allows static export by itself and MCP when static export is enabled", () => {
     expect(routesOptions(zudoDoc({ agentExport: true }))?.settings).toMatchObject({
       agentExport: true,
+      copyMarkdown: true,
       mcp: false,
     });
     expect(routesOptions(zudoDoc({ agentExport: true, mcp: true }))?.settings).toMatchObject({
@@ -573,6 +583,8 @@ describe("agent documentation config", () => {
 
   it.each([
     ["agentExport", "enabled"],
+    ["copyMarkdown", "false"],
+    ["copyMarkdown", null],
     ["mcp", 1],
   ])("rejects unsupported runtime value for %s", (field, value) => {
     expect(() =>

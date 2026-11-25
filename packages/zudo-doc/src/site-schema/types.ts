@@ -86,6 +86,7 @@ export interface DocPageFrontmatter {
   slug?: string;
   draft?: boolean;
   unlisted?: boolean;
+  copy_markdown?: boolean;
   standalone?: boolean;
   sidebar_position?: number;
   sidebar_label?: string;

@@ -437,6 +437,12 @@ export interface ZudoDocConfig {
    */
   agentExport?: boolean;
   /**
+   * Show Copy Markdown on document pages with an eligible Markdown export.
+   * Frontmatter `copy_markdown` can override this setting per page.
+   * @default true
+   */
+  copyMarkdown?: boolean;
+  /**
    * Enable the stateless read-only MCP endpoint. Requires `agentExport: true`.
    * @default false
    */

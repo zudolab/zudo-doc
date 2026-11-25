@@ -1874,3 +1874,23 @@ html:not([data-theme="dark"]) [data-zd-home-image="dark"] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Keep the article geometry stable when the action hydrates, including during scroll restoration. */
+[data-zd-copy-markdown][data-zd-pending] {
+  visibility: hidden;
+}
+
+@media (scripting: none) {
+  [data-zd-copy-markdown] {
+    display: none;
+  }
+}
+
+.zd-copy-markdown-dialog {
+  width: min(42rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+}
+
+.zd-copy-markdown-dialog::backdrop {
+  background: color-mix(in oklch, var(--color-overlay) 50%, transparent);
+}

@@ -1299,6 +1299,9 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     for (const token of [
       "docHistory",
       "llmsTxt",
+      "agentExport:",
+      "copyMarkdown:",
+      "mcp:",
       "docSources",
       "claudeResources",
       "codexResources",
@@ -2016,6 +2019,7 @@ describe("scaffold — generated package.json", () => {
     const files = await listFiles(project);
 
     expect(config).toContain("agentExport: true");
+    expect(config).not.toContain("copyMarkdown:");
     expect(config).not.toContain("mcp:");
     expect(config).not.toContain("adapter:");
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBeUndefined();

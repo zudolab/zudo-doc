@@ -16,6 +16,7 @@ import { assertValidCategoryListOptions, CATEGORY_LIST_OPTION_KEYS } from "../ca
 /** Structural subset of Settings used by the agent-export/MCP config guard. */
 export interface AgentDocsConsistentSubject {
   agentExport?: unknown;
+  copyMarkdown?: unknown;
   mcp?: unknown;
 }
 
@@ -29,6 +30,10 @@ export interface AgentDocsConsistentSubject {
 export function assertAgentDocsConsistent(settings: AgentDocsConsistentSubject): void {
   if (settings.agentExport !== undefined && typeof settings.agentExport !== "boolean") {
     throw new TypeError("agentExport must be a boolean.");
+  }
+
+  if (settings.copyMarkdown !== undefined && typeof settings.copyMarkdown !== "boolean") {
+    throw new TypeError("copyMarkdown must be a boolean.");
   }
 
   if (settings.mcp !== undefined && typeof settings.mcp !== "boolean") {

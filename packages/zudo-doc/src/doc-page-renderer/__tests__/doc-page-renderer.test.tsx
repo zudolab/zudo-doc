@@ -118,10 +118,12 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
 describe("createRenderDocPage — agent Markdown alternate eligibility", () => {
   it("uses the actual locale and frontmatter route override under a non-root base", () => {
     const ctx = makeFakeChromeContext({
-      settings: { agentExport: true, base: "/manual/", defaultLocale: "ja" },
+      settings: { agentExport: true, copyMarkdown: true, base: "/manual/", defaultLocale: "ja" },
       overrides: {
         withBase: (path: string) =>
           path === "/" ? "/manual/" : `/manual${path}`,
+        docsUrl: (slug, locale) => `/manual/${locale}/docs/${slug}/`,
+        absoluteUrl: (path) => `https://docs.example.com${path}`,
       },
     });
     const vnode = createRenderDocPage(ctx)(
@@ -137,6 +139,47 @@ describe("createRenderDocPage — agent Markdown alternate eligibility", () => {
         href: `/manual/agent/v1/pages/${pageKey}.md`,
       },
     ]);
+    expect(copySource(vnode)).toEqual({
+      artifactUrl: `/manual/agent/v1/pages/${pageKey}.md`,
+      pageUrl: "https://docs.example.com/manual/ja/docs/frontmatter-route/",
+    });
+  });
+
+  const copySource = (page: Description) =>
+    (page.props["contentHeaderSlot"] as Description | undefined)?.props["copyMarkdownSource"];
+
+  it.each([
+    [undefined, undefined, true],
+    [undefined, false, false],
+    [undefined, true, true],
+    [false, undefined, false],
+    [false, false, false],
+    [false, true, true],
+    [true, undefined, true],
+    [true, false, false],
+    [true, true, true],
+  ])("resolves global %s and page %s to visible %s", (copyMarkdown, pageSetting, visible) => {
+    const ctx = makeFakeChromeContext({ settings: { agentExport: true, copyMarkdown } });
+    const page = createRenderDocPage(ctx)(makeEntryProps({ copy_markdown: pageSetting }), opts) as Description;
+    const artifactUrl = `/agent/v1/pages/${agentPageKey("en", "test-page")}.md`;
+
+    expect(page.props["alternateLinks"]).toEqual([{ rel: "alternate", type: "text/markdown", href: artifactUrl }]);
+    expect(copySource(page)).toEqual(visible ? { artifactUrl, pageUrl: "/en/docs/test-page" } : undefined);
+  });
+
+  it("ignores the page opt-in without export and omits automatic index actions", () => {
+    const ctx = makeFakeChromeContext({ settings: { agentExport: false } });
+    const page = createRenderDocPage(ctx)(makeEntryProps({ copy_markdown: true }), opts) as Description;
+    expect(copySource(page)).toBeUndefined();
+    expect(page.props["alternateLinks"]).toBeUndefined();
+
+    const withExport = makeFakeChromeContext({ settings: { agentExport: true } });
+    const index = createRenderDocPage(withExport)({
+      kind: "autoIndex", autoIndex: { slug: "index", label: "Index", position: 0, hasPage: false, children: [] },
+      breadcrumbs: [], prev: null, next: null, headings: [],
+    }, opts) as Description;
+    expect(copySource(index)).toBeUndefined();
+    expect(index.props["alternateLinks"]).toBeUndefined();
   });
 
   it.each([
@@ -145,26 +188,28 @@ describe("createRenderDocPage — agent Markdown alternate eligibility", () => {
     ["search excluded", { search_exclude: true }],
     ["metadata-only category", { category_no_page: true }],
   ])("omits the alternate for %s entries", (_label, excluded) => {
-    const ctx = makeFakeChromeContext({ settings: { agentExport: true } });
+    const ctx = makeFakeChromeContext({ settings: { agentExport: true, copyMarkdown: true } });
     const vnode = createRenderDocPage(ctx)(
-      makeEntryProps(excluded as Record<string, unknown>),
+      makeEntryProps({ ...excluded, copy_markdown: true }),
       opts,
     ) as Description;
 
     expect(vnode.props["alternateLinks"]).toBeUndefined();
+    expect(copySource(vnode)).toBeUndefined();
   });
 
   it.each([
     ["fallback content", { isFallback: true }],
     ["versioned content", { version: { slug: "1.0" } }],
   ])("omits the alternate for %s", (_label, options) => {
-    const ctx = makeFakeChromeContext({ settings: { agentExport: true } });
+    const ctx = makeFakeChromeContext({ settings: { agentExport: true, copyMarkdown: true } });
     const vnode = createRenderDocPage(ctx)(
-      makeEntryProps(),
+      makeEntryProps({ copy_markdown: true }),
       { locale: "en", ...options },
     ) as Description;
 
     expect(vnode.props["alternateLinks"]).toBeUndefined();
+    expect(copySource(vnode)).toBeUndefined();
   });
 });
 
