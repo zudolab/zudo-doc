@@ -6,7 +6,9 @@ import { agentItemKey, agentPageKey } from "../../../agent-docs/identity.js";
 import { AGENT_MAX_ITEMS, AGENT_MAX_MANIFEST_BYTES, AGENT_MAX_SEARCH_INDEX_BYTES } from "../../../agent-docs/limits.js";
 import type { AgentItem, AgentManifest, AgentSearchIndex } from "../../../agent-docs/types.js";
 import { collectMdFiles, isExcluded, parseMarkdownFile, slugToUrl, stripMarkdown } from "../../../md-utils/index.js";
+import type { DirectiveVocabulary } from "../../../preset.js";
 import { loadCategoryMeta } from "../../../sidebar-tree/category-meta.js";
+import { matchesDefaultLocaleOnlyPath } from "../../../url-helpers/index.js";
 import { chunkAgentText } from "./chunk.js";
 import { createAgentComponentRenderer } from "./components.js";
 import { normalizeAgentMarkdown } from "./normalize.js";
@@ -23,6 +25,12 @@ export interface AgentExportOptions {
   locales?: Array<{ code: string; dir: string }>;
   /** Top-level category slugs left out of `<SiteTreeNav />` link lists, as in the rendered page. */
   siteTreeNavIgnore?: string[];
+  /** Category order derived from the same header navigation as the HTML tree. */
+  siteTreeNavCategoryOrder?: string[];
+  /** Default-only route prefixes used by the HTML navigation. */
+  defaultLocaleOnlyPrefixes?: string[];
+  /** Effective ZFB directives, supplied by the plugin lifecycle. */
+  directiveVocabulary?: DirectiveVocabulary;
 }
 
 const hash = (value: string | Buffer): string => createHash("sha256").update(value).digest("hex");
@@ -42,6 +50,7 @@ function artifactUrl(options: AgentExportOptions, path: string): string {
 export function projectAgentCorpus(options: AgentExportOptions): { manifest: AgentManifest; index: AgentSearchIndex; pages: Map<string, string>; items: Map<string, string> } {
   const roots = [{ code: options.defaultLocale, dir: options.defaultLocaleDir, default: true }, ...(options.locales ?? []).map(({ code, dir }) => ({ code, dir, default: false }))];
   const seen = new Set<string>();
+  const defaultLocaleOnlyPrefixes = options.defaultLocaleOnlyPrefixes ?? [];
   const parsedRoots = roots.map((root) => ({
     root,
     files: collectMdFiles(resolve(root.dir)).flatMap(({ filePath, slug: fileSlug }) => {
@@ -68,6 +77,10 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
       ...(typeof parsed.data.description === "string" ? { description: parsed.data.description } : {}),
     }])),
     ...(options.siteTreeNavIgnore ? { siteTreeNavIgnore: options.siteTreeNavIgnore } : {}),
+    ...(options.siteTreeNavCategoryOrder ? { siteTreeNavCategoryOrder: options.siteTreeNavCategoryOrder } : {}),
+    ...(!root.default && defaultLocaleOnlyPrefixes.length ? {
+      isSiteTreeNavSlugVisible: (slug: string) => !matchesDefaultLocaleOnlyPath("/docs/" + slug, defaultLocaleOnlyPrefixes),
+    } : {}),
   })]));
   const sourceUrls = new Map(sources.map(source => [source.filePath, source.url]));
   const documents = sources.map(({ root, filePath, parsed, slug, url, linkBase }) => {
@@ -84,7 +97,7 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
         const page = sourceUrls.get(fileURLToPath(source));
         return page === undefined ? undefined : page + source.search + source.hash;
       } catch { return undefined; }
-    }, renderers.get(root.code)!(slug));
+    }, renderers.get(root.code)!(slug), options.directiveVocabulary);
     const title = parsed.data.title ?? slug;
     const description = parsed.data.description ?? stripMarkdown(parsed.content).split("\n").find(Boolean) ?? "";
     const metadata = {

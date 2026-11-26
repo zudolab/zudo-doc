@@ -247,8 +247,8 @@ export interface RouteEnumeratorsAPI {
    * The same deduped route set as `enumerateAllRoutes()`, in the same order,
    * with each latest (unversioned) doc page's `lastmod` taken from the
    * doc-history manifest — the date the page's visible "Updated" label shows.
-   * Routes with no known date (site roots, tags, assets, versioned pages,
-   * pages missing from the manifest) carry no `lastmod`.
+   * Indexed asset leaves with Git history use their viewer's Updated date.
+   * Routes without a known date carry no `lastmod`.
    */
   enumerateSitemapEntries: (options?: SitemapEntriesOptions) => SitemapEntry[];
 
@@ -518,7 +518,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   // enumerateAssetRoutes
   // ---------------------------------------------------------------------------
 
-  function enumerateAssetRoutes(locale: string): string[] {
+  function collectAssetRoutes(locale: string): Map<string, string | undefined> {
     const indexing = ctx.settings.assetViewerIndexing;
     if (
       ctx.settings.assetViewer !== true ||
@@ -527,12 +527,12 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
       indexing.sitemap !== true ||
       assetManifest === null
     ) {
-      return [];
+      return new Map();
     }
 
     const routePrefix =
       assetManifest.routePrefix ?? ctx.settings.assetViewerRoutePrefix;
-    const urls: string[] = [];
+    const routes = new Map<string, string | undefined>();
     const isDefaultLocale = locale === defaultLocale;
 
     if (ctx.settings.assetViewerIndex) {
@@ -540,7 +540,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
         ? `/${routePrefix}/`
         : `/${locale}/${routePrefix}/`;
       if (isDefaultLocale || !ctx.isDefaultLocaleOnlyPath(`/${routePrefix}/`)) {
-        urls.push(withBase(indexPath));
+        routes.set(withBase(indexPath), undefined);
       }
     }
 
@@ -551,17 +551,20 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
       ) {
         continue;
       }
-      urls.push(
-        assetViewerHref({
-          base: ctx.settings.base,
-          routePrefix,
-          path: entry.path,
-          ...(isDefaultLocale ? {} : { locale }),
-        }),
-      );
+      const url = assetViewerHref({
+        base: ctx.settings.base,
+        routePrefix,
+        path: entry.path,
+        ...(isDefaultLocale ? {} : { locale }),
+      });
+      if (!routes.has(url)) routes.set(url, assetManifest.updatedDates?.[entry.path]);
     }
 
-    return [...new Set(urls)];
+    return routes;
+  }
+
+  function enumerateAssetRoutes(locale: string): string[] {
+    return [...collectAssetRoutes(locale).keys()];
   }
 
   // ---------------------------------------------------------------------------
@@ -623,7 +626,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
    * latest (unversioned) doc pages; the doc-history manifest covers the
    * latest content dirs only, so versioned pages never get one.
    */
-  type CollectedRoute = { url: string; historyKey?: string; alternates?: LocaleAlternate[] };
+  type CollectedRoute = { url: string; historyKey?: string; assetUpdatedDate?: string; alternates?: LocaleAlternate[] };
 
   function collectAllRoutes(): CollectedRoute[] {
     const seen = new Set<string>();
@@ -632,11 +635,12 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
     const versions = getVersions();
     const homeAlternates = getHomeLocaleAlternates();
 
-    function add(url: string, historyKey?: string, alternates?: LocaleAlternate[]): void {
+    function add(url: string, historyKey?: string, alternates?: LocaleAlternate[], assetUpdatedDate?: string): void {
       if (seen.has(url)) return;
       seen.add(url);
       const route: CollectedRoute = { url };
       if (historyKey !== undefined) route.historyKey = historyKey;
+      if (assetUpdatedDate !== undefined) route.assetUpdatedDate = assetUpdatedDate;
       if (alternates !== undefined && alternates.length > 0) route.alternates = alternates;
       routes.push(route);
     }
@@ -644,6 +648,12 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
     function addDocs(locale: string): void {
       for (const { url, historyKey, slug, autoIndex } of enumerateKeyedDocsRoutes(locale)) {
         add(url, historyKey, autoIndex ? undefined : getDocLocaleAlternates(slug, locale));
+      }
+    }
+
+    function addAssets(locale: string): void {
+      for (const [url, updatedDate] of collectAssetRoutes(locale)) {
+        add(url, undefined, undefined, updatedDate);
       }
     }
 
@@ -659,9 +669,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
     }
 
     // Default locale assets
-    for (const url of enumerateAssetRoutes(defaultLocale)) {
-      add(url);
-    }
+    addAssets(defaultLocale);
 
     // Non-default locales
     for (const locale of localeKeys) {
@@ -673,9 +681,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
         add(url);
       }
 
-      for (const url of enumerateAssetRoutes(locale)) {
-        add(url);
-      }
+      addAssets(locale);
     }
 
     // Versions listing pages
@@ -714,13 +720,13 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
 
   function enumerateSitemapEntries(options: SitemapEntriesOptions = {}): SitemapEntry[] {
     const meta = options.docHistoryMeta ?? {};
-    return collectAllRoutes().map(({ url, historyKey, alternates }) => {
+    return collectAllRoutes().map(({ url, historyKey, assetUpdatedDate, alternates }) => {
       const sitemapEntry: SitemapEntry = { url };
-      if (historyKey !== undefined && Object.hasOwn(meta, historyKey)) {
-        const entry = meta[historyKey] as DocHistoryDateEntry | null | undefined;
-        const lastmod = toSitemapDate(entry?.updatedDate);
-        if (lastmod !== undefined) sitemapEntry.lastmod = lastmod;
-      }
+      const docHistory = historyKey !== undefined && Object.hasOwn(meta, historyKey)
+        ? meta[historyKey] as DocHistoryDateEntry | null | undefined
+        : undefined;
+      const lastmod = toSitemapDate(docHistory?.updatedDate ?? assetUpdatedDate);
+      if (lastmod !== undefined) sitemapEntry.lastmod = lastmod;
       if (alternates !== undefined) sitemapEntry.alternates = alternates;
       return sitemapEntry;
     });

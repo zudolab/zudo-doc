@@ -76,6 +76,113 @@ describe("agent export content wrappers", () => {
     expect(render("<CodeGroup>\nbody\n</CodeGroup>")).toEqual({ text: "body", unsupportedDynamicContent: false });
   });
 
+  it("exports indented tab fences and preserves literal payloads and nested list indentation", () => {
+    const result = render([
+      "Before the tabs.",
+      "",
+      "<Tabs>",
+      '  <TabItem label="npm" value="npm" default>',
+      "    ~~~mdx",
+      "    <Tip title=\"literal\">",
+      "      [literal](relative.md)",
+      "",
+      "    :::note",
+      "    </TabItem>",
+      "    ~~~",
+      '  </TabItem>',
+      '  <TabItem label="pnpm">',
+      "    - first",
+      "      - nested",
+      "",
+      "    ~~~bash",
+      "    pnpm install",
+      "    ~~~",
+      "",
+      "    - parent",
+      "      - child",
+      "",
+      "        ~~~md",
+      "        [nested code](./leave-literal.md)",
+      "        ~~~",
+      "  </TabItem>",
+      "</Tabs>",
+    ].join("\n"));
+
+    expect(result).toEqual({
+      text: [
+        "Before the tabs.",
+        "",
+        "",
+        "**Tab: npm**",
+        "~~~mdx",
+        '<Tip title="literal">',
+        "  [literal](relative.md)",
+        "",
+        ":::note",
+        "</TabItem>",
+        "~~~",
+        "",
+        "**Tab: pnpm**",
+        "- first",
+        "  - nested",
+        "",
+        "~~~bash",
+        "pnpm install",
+        "~~~",
+        "",
+        "- parent",
+        "  - child",
+        "",
+        "    ~~~md",
+        "    [nested code](./leave-literal.md)",
+        "    ~~~",
+      ].join("\n"),
+      unsupportedDynamicContent: false,
+    });
+  });
+
+  it.each(
+    Object.entries(defaultDirectiveVocabulary)
+      .map(([name, spec]) => [name, directiveComponentName(spec)] as const)
+      .filter(([, component]) => ADMONITION_COMPONENTS.has(component)),
+  )("renders the package %s directive like its JSX equivalent", (name, component) => {
+    const body = ["- [A link](./example.mdx)", "  - nested", "", "~~~md", ":::note", ":::", "~~~"].join("\n");
+    expect(render(":::" + name + "[Heads up]\n" + body + "\n:::"))
+      .toEqual(render("<" + component + ' title="Heads up">\n' + body + "\n</" + component + ">"));
+    expect(render(":::" + name + "\n" + body + "\n:::"))
+      .toEqual(render("<" + component + ">\n" + body + "\n</" + component + ">"));
+  });
+
+  it("keeps unsupported, malformed and literal directive delimiters", () => {
+    const source = [
+      "See \x60:::note[Example]\x60.",
+      "",
+      "~~~md",
+      ":::note[Literal]",
+      "literal body",
+      ":::",
+      "~~~",
+      "",
+      ":::callout[Custom]",
+      "custom body",
+      ":::",
+      "",
+      ":::note[Malformed",
+      "malformed body",
+      ":::",
+      "",
+      ":::note[Unclosed]",
+      "unclosed body",
+    ].join("\n");
+    expect(render(source)).toEqual({ text: source, unsupportedDynamicContent: false });
+  });
+
+  it("retains raw delimiters when a package directive is configured as a custom component", () => {
+    const source = ":::note[Custom semantics]\n\nCustom content.\n\n:::";
+    expect(normalizeAgentMarkdown(source, "/docs/page", undefined, undefined, { note: "CustomNote" }))
+      .toEqual({ text: source, unsupportedDynamicContent: false });
+  });
+
   it("flags a wrapper whose title is not a literal and keeps the kind", () => {
     expect(render("<Note title={heading}>Body</Note>")).toEqual({ text: "**Note**\n\nBody", unsupportedDynamicContent: true });
   });

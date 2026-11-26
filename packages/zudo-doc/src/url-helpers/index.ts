@@ -26,6 +26,12 @@ export type UrlHelperSettings = Pick<
   "base" | "trailingSlash" | "siteUrl" | "defaultLocaleOnlyPrefixes"
 >;
 
+/** Match a route pathname with neither the base nor a locale prefix. */
+export function matchesDefaultLocaleOnlyPath(path: string, prefixes: readonly string[]): boolean {
+  const normalized = path.endsWith("/") ? path : path + "/";
+  return prefixes.some((prefix) => normalized.startsWith(prefix));
+}
+
 /** The full set of URL helpers built from `(settings, i18n)`. */
 export interface UrlHelpers {
   /** Normalized base path with no trailing slash (empty string when "/"). */
@@ -216,9 +222,7 @@ export function makeUrlHelpers(
    * disable `settings.trailingSlash` (where `docsUrl` returns slashless paths).
    */
   function isDefaultLocaleOnlyPath(path: string): boolean {
-    const stripped = stripBase(path);
-    const normalized = stripped.endsWith("/") ? stripped : `${stripped}/`;
-    return settings.defaultLocaleOnlyPrefixes.some((prefix) => normalized.startsWith(prefix));
+    return matchesDefaultLocaleOnlyPath(stripBase(path), settings.defaultLocaleOnlyPrefixes);
   }
 
   /** Build locale links for locale switcher UI components. */

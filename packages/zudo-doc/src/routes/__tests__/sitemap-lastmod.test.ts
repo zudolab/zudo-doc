@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_SETTINGS } from "../../config.js";
 import { createRouteContext } from "../../route-context/index.js";
+import type { AssetManifest } from "../../route-context-payload/types.js";
 import type { Settings } from "../../settings.js";
 
 const state = vi.hoisted(() => ({
@@ -32,7 +33,7 @@ const docs = [
 ];
 const jaDocs = [{ slug: "guides/intro", data: { title: "Intro JA" } }];
 
-function useSettings(overrides: Partial<Settings>): void {
+function useSettings(overrides: Partial<Settings>, assetManifest: AssetManifest | null = null): void {
   const settings = {
     ...DEFAULT_SETTINGS,
     base: "/",
@@ -51,7 +52,7 @@ function useSettings(overrides: Partial<Settings>): void {
       tagVocabulary: [],
       colorSchemes: null,
       themePackRegistry: null,
-      assetManifest: null,
+      assetManifest,
     },
     {
       stableDocs: (name: string) =>
@@ -120,6 +121,30 @@ describe("sitemap.xml lastmod (#4784)", () => {
       expect(block.match(/<loc>/g)).toHaveLength(1);
       expect((block.match(/<lastmod>/g) ?? []).length).toBeLessThanOrEqual(1);
     }
+  });
+
+  it("emits the asset Updated day independently of article history settings", () => {
+    useSettings({
+      docHistory: false,
+      assetViewer: true,
+      assetViewerIndex: true,
+      assetViewerIndexing: { sitemap: true },
+    }, {
+      dir: "assets",
+      routePrefix: "files",
+      entries: [
+        { path: "tracked.txt", name: "Tracked", dir: "", kind: "text", mime: "text/plain", bytes: 1 },
+        { path: "untracked.txt", name: "Untracked", dir: "", kind: "text", mime: "text/plain", bytes: 1 },
+      ],
+      excerpts: {},
+      updatedDates: { "tracked.txt": "2026-03-04T23:30:00-05:00" },
+    });
+
+    const xml = Sitemap();
+    expect(xml).toContain("<loc>https://example.com/files/tracked.txt/</loc>\n    <lastmod>2026-03-05</lastmod>");
+    expect(xml).toContain("<loc>https://example.com/files/untracked.txt/</loc>\n  </url>");
+    expect(xml).toContain("<loc>https://example.com/files/</loc>\n  </url>");
+    expect(xml.match(/<lastmod>/g)).toHaveLength(1);
   });
 });
 

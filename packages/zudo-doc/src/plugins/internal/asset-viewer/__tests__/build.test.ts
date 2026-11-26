@@ -1,13 +1,15 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { buildAssetSnapshot } from "../build.js";
+import * as gitMeta from "../git-meta.js";
 import { MAX_INLINE_BYTES } from "../highlight.js";
 
 const tempDirs: string[] = [];
 afterEach(() => {
   delete process.env.SKIP_DOC_HISTORY;
+  vi.restoreAllMocks();
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
@@ -40,6 +42,7 @@ describe("buildAssetSnapshot", () => {
     });
 
     expect(snapshot.manifest.entries).toHaveLength(500);
+    expect(snapshot.manifest).not.toHaveProperty("updatedDates");
     expect(Buffer.byteLength(JSON.stringify(snapshot.manifest))).toBeLessThan(256 * 1024);
     expect(warnings).toEqual([]);
     expect(snapshot.manifest.entries[0]).not.toHaveProperty("html");
@@ -51,6 +54,37 @@ describe("buildAssetSnapshot", () => {
     });
     expect(snapshot.records["file-0.txt"]?.html).toContain('id="L1"');
     expect(snapshot.watchFiles.every((path) => path.startsWith(assetRoot))).toBe(true);
+  });
+
+  it("projects the date from the same Git metadata as the full asset record", async () => {
+    const projectRoot = mkdtempSync(join(tmpdir(), "zudo-doc-assets-date-"));
+    tempDirs.push(projectRoot);
+    const assetRoot = join(projectRoot, "public", "assets");
+    mkdirSync(assetRoot, { recursive: true });
+    writeFileSync(join(assetRoot, "tracked.txt"), "Tracked\n");
+    writeFileSync(join(assetRoot, "untracked.txt"), "Untracked\n");
+    const updatedDate = "2026-03-04T23:30:00-05:00";
+    const history = vi.spyOn(gitMeta, "assetGitMeta").mockResolvedValue({
+      "tracked.txt": { updatedDate, createdDate: "2026-01-01", author: "Ada" },
+      "removed.txt": { updatedDate, createdDate: "2026-01-01", author: "Ada" },
+    });
+
+    const snapshot = await buildAssetSnapshot({
+      projectRoot,
+      dir: "assets",
+      routePrefix: "files",
+      exclude: [],
+      contentRoots: [],
+      base: "/",
+      trailingSlash: true,
+      logger: { warn: () => undefined },
+      highlightCode,
+    });
+
+    expect(history).toHaveBeenCalledTimes(1);
+    expect(snapshot.records["tracked.txt"]?.updatedDate).toBe(updatedDate);
+    expect(snapshot.manifest.updatedDates).toEqual({ "tracked.txt": updatedDate });
+    expect(snapshot.records["untracked.txt"]).not.toHaveProperty("updatedDate");
   });
 
   it("records fragment availability from the completed viewer body", async () => {

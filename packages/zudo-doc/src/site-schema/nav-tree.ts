@@ -144,7 +144,10 @@ export function buildNavTree(
 }
 
 /** Group "satellite" nodes (slug-prefix siblings) under their primary node. */
-export function groupSatelliteNodes(tree: DocNavNode[], prefixes: string[]): DocNavNode[] {
+export function groupSatelliteNodes<T extends { slug: string; children: T[] }>(
+  tree: T[],
+  prefixes: readonly string[],
+): T[] {
   const result = [...tree];
   for (const prefix of prefixes) {
     const primaryIdx = result.findIndex((n) => n.slug === prefix);
@@ -160,7 +163,7 @@ export function groupSatelliteNodes(tree: DocNavNode[], prefixes: string[]): Doc
       }
     }
     if (satelliteIdxs.length === 0) continue;
-    const extraChildren: DocNavNode[] = [];
+    const extraChildren: T[] = [];
     for (const idx of satelliteIdxs) {
       const node = result[idx];
       if (node) extraChildren.push(node);

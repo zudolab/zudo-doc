@@ -63,6 +63,7 @@ import {
 import { zudoDocWindPreset } from "./wind/index.js";
 import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
 import { resolveConfiguredThemePack } from "./theme-packs-registry/configured-theme-pack.js";
+import { getCategoryOrder } from "./nav-scope/index.js";
 
 // ---------------------------------------------------------------------------
 // Input contract — structurally typed so the preset is portable to every
@@ -860,6 +861,8 @@ function buildPlugins(
             defaultLocaleDir: settings.docsDir,
             locales: localeArray,
             siteTreeNavIgnore: settings.siteTreeNavIgnore ?? [],
+            siteTreeNavCategoryOrder: getCategoryOrder(settings.headerNav ?? []),
+            defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
           },
         }]
       : []),

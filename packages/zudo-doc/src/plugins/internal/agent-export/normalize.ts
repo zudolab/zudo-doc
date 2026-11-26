@@ -1,3 +1,7 @@
+import { defaultDirectiveVocabulary } from "../../../directive-vocabulary-defaults/index.js";
+import { ADMONITION_COMPONENTS, directiveComponentName, TAB_ITEM_COMPONENT } from "../../../mdx-components/vocabulary.js";
+import type { DirectiveVocabulary } from "../../../preset.js";
+
 /** Literal JSX attribute values; `true` stands for a bare boolean attribute. */
 export type AgentTagProps = Record<string, string | number | boolean | null | unknown[] | Record<string, unknown>>;
 
@@ -16,6 +20,10 @@ export type AgentComponentRenderer = (tag: AgentComponentTag) => { text: string;
 
 export function dynamicContentPlaceholder(name: string): string {
   return `[Dynamic content unavailable in text export: ${name}]`;
+}
+
+export function wrapperLabel(kind: string, title: string | undefined): string {
+  return title ? `**${kind}: ${title}**` : `**${kind}**`;
 }
 
 /** Index just past the brace that closes the `{` at `start`, skipping string and template contents. */
@@ -112,8 +120,116 @@ function replaceComponentTags(text: string, render: AgentComponentRenderer | und
   return { text: out + text.slice(offset), unsupported };
 }
 
+interface Fence {
+  delimiter: string;
+  tail: string;
+}
+
+function readFence(line: string, maxIndent: number): Fence | undefined {
+  const match = /^( *)(`{3,}|~{3,})(.*)$/.exec(line);
+  return match && match[1]!.length <= maxIndent
+    ? { delimiter: match[2]!, tail: match[3]! }
+    : undefined;
+}
+
+function closesFence(fence: Fence, candidate: Fence | undefined): boolean {
+  return candidate !== undefined &&
+    candidate.delimiter[0] === fence.delimiter[0] &&
+    candidate.delimiter.length >= fence.delimiter.length &&
+    !candidate.tail.trim();
+}
+
+/** Unwrap the presentation indent of a complete, block-level TabItem. */
+function dedentTabBodies(lines: string[]): Set<number> {
+  const tabBodyLines = new Set<number>();
+  let fence: Fence | undefined;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const candidate = readFence(line, 3);
+    if (fence) {
+      if (closesFence(fence, candidate)) fence = undefined;
+      continue;
+    }
+    if (candidate) {
+      fence = candidate;
+      continue;
+    }
+    const openingIndent = /^ *(?=<TabItem(?:[ \t]|>))/.exec(line)?.[0].length;
+    if (openingIndent === undefined) continue;
+    const opening = parseOpeningTag(line, openingIndent);
+    if (opening?.name !== TAB_ITEM_COMPONENT || opening.selfClosing || line.slice(opening.end).trim()) continue;
+
+    let bodyFence: Fence | undefined;
+    let commonIndent = Infinity;
+    for (let end = i + 1; end < lines.length; end++) {
+      const bodyLine = lines[end]!;
+      const bodyCandidate = readFence(bodyLine, Infinity);
+      if (bodyFence) {
+        if (closesFence(bodyFence, bodyCandidate)) bodyFence = undefined;
+      } else if (bodyCandidate) {
+        bodyFence = bodyCandidate;
+      } else if (bodyLine.trim() === "</TabItem>") {
+        lines[i] = line.slice(openingIndent);
+        lines[end] = "</TabItem>";
+        for (let j = i + 1; j < end; j++) {
+          lines[j] = lines[j]!.slice(commonIndent);
+          tabBodyLines.add(j);
+        }
+        i = end;
+        break;
+      } else if (/^ *<TabItem(?:[ \t]|>)/.test(bodyLine)) {
+        // A sibling opening before a close leaves the incomplete wrapper alone.
+        break;
+      }
+      if (bodyLine.trim()) commonIndent = Math.min(commonIndent, /^ */.exec(bodyLine)![0].length);
+    }
+  }
+  return tabBodyLines;
+}
+
+const admonitionDirectives = new Map(Object.entries(defaultDirectiveVocabulary)
+  .map(([name, spec]) => [name, directiveComponentName(spec)] as const)
+  .filter(([, component]) => ADMONITION_COMPONENTS.has(component)));
+
+function replaceAdmonitionDirectives(text: string, vocabulary: DirectiveVocabulary): string {
+  const lines = text.split("\n");
+  const open: Array<{ line: number; size: number; label?: string }> = [];
+  for (let i = 0; i < lines.length; i++) {
+    const start = /^( {0,3})(:{3,})([A-Za-z][\w-]*)(.*)$/.exec(lines[i]!);
+    if (start) {
+      const name = start[3]!;
+      const component = admonitionDirectives.get(name);
+      const spec = Object.hasOwn(vocabulary, name) ? vocabulary[name] : undefined;
+      const supported = component && spec && directiveComponentName(spec) === component &&
+        (typeof spec === "string" || ((spec.kind ?? "container") === "container" && spec.titleFromLabel !== false));
+      const suffix = start[4]!.trimEnd();
+      const title = /^\[([^\]]*)\]$/.exec(suffix)?.[1];
+      const label = supported && (suffix === "" || title !== undefined)
+        ? start[1]! + wrapperLabel(component, title)
+        : undefined;
+      // Unsupported and malformed openers still own their closing fence.
+      open.push({ line: i, size: start[2]!.length, label });
+      continue;
+    }
+    const end = /^ {0,3}(:{3,})[ \t]*$/.exec(lines[i]!);
+    const current = open.at(-1);
+    if (!end || !current || end[1]!.length < current.size) continue;
+    open.pop();
+    if (current.label === undefined) continue;
+    lines[current.line] = current.label;
+    lines[i] = "";
+  }
+  return lines.join("\n");
+}
+
 /** Normalize MDX for a published text corpus without evaluating its modules. */
-export function normalizeAgentMarkdown(source: string, pageUrl: string, resolveSourceLink?: (target: string) => string | undefined, renderComponent?: AgentComponentRenderer): { text: string; unsupportedDynamicContent: boolean } {
+export function normalizeAgentMarkdown(
+  source: string,
+  pageUrl: string,
+  resolveSourceLink?: (target: string) => string | undefined,
+  renderComponent?: AgentComponentRenderer,
+  directiveVocabulary: DirectiveVocabulary = defaultDirectiveVocabulary,
+): { text: string; unsupportedDynamicContent: boolean } {
   let unsupportedDynamicContent = false;
   // Shield code before processing prose: examples containing JSX, comments or
   // Markdown links must remain literal, including multi-backtick code spans.
@@ -121,21 +237,23 @@ export function normalizeAgentMarkdown(source: string, pageUrl: string, resolveS
   let marker = "\u0000agent-code:";
   while (source.includes(marker)) marker += ":";
   const shield = (value: string): string => `${marker}${literals.push(value) - 1}\u0000`;
-  let fence: string | undefined;
+  let fence: Fence | undefined;
   const fenced: string[] = [];
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
+  const tabBodyLines = dedentTabBodies(lines);
   const prose: string[] = [];
-  for (const line of lines) {
-    const match = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const candidate = readFence(line, tabBodyLines.has(i) ? Infinity : 3);
     if (fence) {
       fenced.push(line);
-      if (match && match[1]![0] === fence[0] && match[1]!.length >= fence.length && !match[2]!.trim()) {
+      if (closesFence(fence, candidate)) {
         prose.push(shield(fenced.join("\n")));
         fenced.length = 0;
         fence = undefined;
       }
-    } else if (match) {
-      fence = match[1]!;
+    } else if (candidate) {
+      fence = candidate;
       fenced.push(line);
     } else prose.push(line);
   }
@@ -155,6 +273,7 @@ export function normalizeAgentMarkdown(source: string, pageUrl: string, resolveS
     i = closingIndex;
   }
   text = protectedText + text.slice(offset);
+  text = replaceAdmonitionDirectives(text, directiveVocabulary);
   text = text.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
   text = text.replace(/^[ \t]*import[ \t]+(?:type[ \t]+)?(?:[\w$]+[ \t]*,[ \t]*)?\{[^}]*\}[ \t]*from[ \t]*["'][^"'\n]+["'][ \t]*;?[ \t]*$/gm, "");
   text = text.replace(/^\s*(?:import|export)[^\S\n]+.*$/gm, "");

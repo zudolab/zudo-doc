@@ -8,6 +8,67 @@ import { normalizeAgentMarkdown } from "../normalize.js";
 import plugin from "../../../agent-export.js";
 
 describe("agent export", () => {
+  it("groups and orders SiteTreeNav for each published locale", () => {
+    const root = mkdtempSync(join(tmpdir(), "agent-site-tree-"));
+    for (const locale of ["en", "ja"]) {
+      const write = (path: string, title: string, meta: string, body = "") => {
+        const fullPath = join(root, locale, path + ".mdx");
+        mkdirSync(join(fullPath, ".."), { recursive: true });
+        writeFileSync(fullPath, "---\ntitle: " + title + "\n" + meta + "---\n\n" + body);
+      };
+      write("tree", "Tree " + locale, "sidebar_position: 8\n", '<SiteTreeNav variant="described" />');
+      write("guides/index", "Guides " + locale, "sidebar_position: 1\n");
+      write("guide-tools/index", "Unmatched " + locale, "sidebar_position: 6\n");
+      write("registry/index", "Registry " + locale, "sidebar_position: 5\n");
+      write("registry-tools/index", "Tools " + locale, "sidebar_position: 2\ndescription: Tool descriptions\n");
+      write("registry-tools/item", "Item " + locale, "");
+      write("registry/draft", "Private draft", "draft: true\n", "private-draft-body");
+      write("registry/unlisted", "Private unlisted", "unlisted: true\n", "private-unlisted-body");
+      write("registry/excluded", "Private excluded", "search_exclude: true\n", "private-excluded-body");
+      write("ignore", "Ignored " + locale, "sidebar_position: 3\n");
+      write("local/index", "Default only " + locale, "sidebar_position: 4\n");
+    }
+    const result = projectAgentCorpus({
+      base: "/manual/",
+      siteUrl: "https://docs.example",
+      siteName: "Docs",
+      trailingSlash: true,
+      defaultLocale: "en",
+      defaultLocaleDir: join(root, "en"),
+      locales: [{ code: "ja", dir: join(root, "ja") }],
+      siteTreeNavIgnore: ["ignore"],
+      siteTreeNavCategoryOrder: ["registry", "guides", "!"],
+      defaultLocaleOnlyPrefixes: ["/docs/local/"],
+    });
+    const tree = (locale: string) => {
+      const prefix = "https://docs.example/manual" + (locale === "en" ? "" : "/ja") + "/docs/";
+      const doc = result.manifest.documents.find(({ url }) => url === prefix + "tree/");
+      expect(doc).toBeDefined();
+      return { text: result.pages.get(doc!.key)!, prefix };
+    };
+
+    for (const locale of ["en", "ja"]) {
+      const { text, prefix } = tree(locale);
+      expect(text.split("\n")).toEqual([
+        "- [Registry " + locale + "](" + prefix + "registry/)",
+        "  - [Tools " + locale + "](" + prefix + "registry-tools/): Tool descriptions",
+        "    - [Item " + locale + "](" + prefix + "registry-tools/item/)",
+        "- [Guides " + locale + "](" + prefix + "guides/)",
+        ...(locale === "en" ? ["- [Default only en](" + prefix + "local/)"] : []),
+        "- [Unmatched " + locale + "](" + prefix + "guide-tools/)",
+        "- [Tree " + locale + "](" + prefix + "tree/)",
+      ]);
+    }
+    for (const generated of [
+      JSON.stringify(result.manifest),
+      JSON.stringify(result.index),
+      ...result.pages.values(),
+      ...result.items.values(),
+    ]) {
+      expect(generated).not.toMatch(/Private (?:draft|unlisted|excluded)|private-(?:draft|unlisted|excluded)-body/);
+    }
+  });
+
   it("preserves inline code and removes multiline MDX comments from prose", () => {
     const code = '`<Widget />` and ``<span>`value`</span>`` and `[link](relative)` and `$&`';
     const result = normalizeAgentMarkdown(`${code}\n{/* private\ncomment text */}\nVisible`, "/docs/page");
@@ -222,14 +283,18 @@ describe("agent export", () => {
     let route = "";
     let handler: (req: { method: string; url: string }) => Promise<{ status: number; body: string } | undefined> = async () => undefined;
     plugin.devMiddleware!({
+      config: { markdown: { features: { directives: { note: "Note", tip: "CustomTip" } } } },
       options: { base: "/manual/", siteName: "Docs", defaultLocale: "en", defaultLocaleDir: root },
       register(path: string, callback: typeof handler) { route = path; handler = callback; },
     } as never);
     expect(route).toBe("/manual/agent/v1");
     const request = { method: "GET", url: "/manual/agent/v1/search-index.json" };
     expect((await handler(request))?.body).toContain("First version");
-    writeFileSync(page, "---\ntitle: Home\n---\nSecond version");
-    expect((await handler(request))?.body).toContain("Second version");
+    writeFileSync(page, "---\ntitle: Home\n---\nSecond version\n\n:::note[Heading]\n\nKnown body.\n\n:::\n\n:::tip[Custom]\n\nCustom body.\n\n:::");
+    const updated = (await handler(request))?.body;
+    expect(updated).toContain("Second version");
+    expect(updated).toContain("**Note: Heading**");
+    expect(updated).toContain(":::tip[Custom]");
     expect((await handler({ ...request, url: "/manual/agent/v1/items/p-0000000000000000-000001.json" }))?.status).toBe(404);
   });
 });

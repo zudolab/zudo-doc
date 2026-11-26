@@ -6,10 +6,18 @@ import { getBasePrefix } from "./plugin-utils.js";
 const plugin: ZfbPlugin = {
   name: "agent-export",
   async postBuild(ctx: ZfbBuildHookContext) {
-    emitAgentCorpus({ ...(ctx.options as unknown as AgentExportOptions), outDir: ctx.outDir, copyPublicWithBase: ctx.config.copyPublicWithBase });
+    emitAgentCorpus({
+      ...(ctx.options as unknown as AgentExportOptions),
+      directiveVocabulary: ctx.config.markdown?.features?.directives ?? {},
+      outDir: ctx.outDir,
+      copyPublicWithBase: ctx.config.copyPublicWithBase,
+    });
   },
   devMiddleware(ctx: ZfbDevMiddlewareContext) {
-    const options = ctx.options as unknown as AgentExportOptions;
+    const options: AgentExportOptions = {
+      ...(ctx.options as unknown as AgentExportOptions),
+      directiveVocabulary: ctx.config.markdown?.features?.directives ?? {},
+    };
     const route = `${getBasePrefix(options.base)}/agent/v1/`;
     const handler = async (req: { method: string; url: string }): Promise<ZfbDevMiddlewareResponse | undefined> => {
       if (!req.url.split("?")[0]?.startsWith(route)) return undefined;

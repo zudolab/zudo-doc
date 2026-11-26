@@ -134,6 +134,30 @@ describe("asset route enumeration", () => {
       "/site/files/private/secret.txt/",
     ]);
   });
+
+  it("dates only indexed asset leaves with known UTC history in each eligible locale", () => {
+    const withHistory = {
+      ...manifest,
+      updatedDates: {
+        "public/readme.txt": "2026-03-04T23:30:00-05:00",
+        "private/secret.txt": "2025-10-02T01:00:00Z",
+      },
+    };
+    const context = makeContext({ defaultLocaleOnlyPrefixes: ["/media/view/private/"] }, withHistory);
+    const assetEntries = context.enumerateSitemapEntries().filter(({ url }) => url.includes("/media/view/"));
+    expect(assetEntries).toEqual([
+      { url: "/site/media/view/" },
+      { url: "/site/media/view/public/readme.txt/", lastmod: "2026-03-05" },
+      { url: "/site/media/view/private/secret.txt/", lastmod: "2025-10-02" },
+      { url: "/site/ja/media/view/" },
+      { url: "/site/ja/media/view/public/readme.txt/", lastmod: "2026-03-05" },
+    ]);
+    const withoutHistory = makeContext({ defaultLocaleOnlyPrefixes: ["/media/view/private/"] });
+    expect(withoutHistory.enumerateSitemapEntries().filter(({ url }) => url.includes("/media/view/")))
+      .toEqual(assetEntries.map(({ url }) => ({ url })));
+    const disabled = makeContext({ assetViewerIndexing: { search: true } }, withHistory);
+    expect(disabled.enumerateSitemapEntries().some(({ url }) => url.includes("/media/view/"))).toBe(false);
+  });
 });
 
 describe("sitemap entries (#4784)", () => {
