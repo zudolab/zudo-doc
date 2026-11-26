@@ -125,6 +125,7 @@ interface Fence {
   tail: string;
   indent: number;
   quoteDepth: number;
+  listIndent?: number;
 }
 
 function readContainer(line: string): { offset: number; indent: number; quoteDepth: number } {
@@ -134,29 +135,35 @@ function readContainer(line: string): { offset: number; indent: number; quoteDep
 
 function readFence(line: string): Fence | undefined {
   const { offset, indent, quoteDepth } = readContainer(line);
-  const match = /^(`{3,}|~{3,})(.*)$/.exec(line.slice(offset));
-  return match
-    ? { delimiter: match[1]!, tail: match[2]!, indent, quoteDepth }
-    : undefined;
+  const match = /^((?:[-+*]|\d{1,9}[.)]) {1,4})?(`{3,}|~{3,})(.*)$/.exec(line.slice(offset));
+  if (!match) return undefined;
+  const listIndent = match[1] ? indent + match[1].length : undefined;
+  return { delimiter: match[2]!, tail: match[3]!, indent, quoteDepth, listIndent };
 }
 
 function closesFence(fence: Fence, candidate: Fence | undefined): boolean {
   return candidate !== undefined &&
+    candidate.listIndent === undefined &&
     candidate.quoteDepth === fence.quoteDepth &&
     candidate.delimiter[0] === fence.delimiter[0] &&
     candidate.delimiter.length >= fence.delimiter.length &&
     !candidate.tail.trim();
 }
 
+function isInFenceContainer(line: string, fence: Fence, minIndent: number): boolean {
+  const { offset, indent, quoteDepth } = readContainer(line);
+  return quoteDepth >= fence.quoteDepth && (offset === line.length || indent >= minIndent);
+}
+
 /** Fences in quote/list continuations cannot consume prose beyond their container. */
-function findContainerFenceEnd(lines: string[], start: number, fence: Fence): number | undefined {
+function containerFenceEnd(lines: string[], start: number, fence: Fence): number {
+  const minIndent = fence.listIndent ?? (fence.indent > 3 ? 4 : 0);
   for (let i = start + 1; i < lines.length; i++) {
     const line = lines[i]!;
-    if (closesFence(fence, readFence(line))) return i;
-    const { indent, quoteDepth } = readContainer(line);
-    if (fence.quoteDepth > quoteDepth || (line.trim() && fence.indent > 3 && indent < 4)) break;
+    if (!isInFenceContainer(line, fence, minIndent)) return i;
+    if (closesFence(fence, readFence(line))) return i + 1;
   }
-  return undefined;
+  return lines.length;
 }
 
 /** Unwrap the presentation indent of a complete, block-level TabItem. */
@@ -178,8 +185,8 @@ function dedentTabBodies(lines: string[]): Set<number> {
       continue;
     }
     if (candidate) {
-      if (candidate.quoteDepth || candidate.indent > 3) {
-        i = findContainerFenceEnd(lines, i, candidate) ?? i;
+      if (candidate.quoteDepth > 0 || candidate.listIndent !== undefined || candidate.indent > 3) {
+        i = containerFenceEnd(lines, i, candidate) - 1;
       } else {
         fence = candidate;
       }
@@ -199,6 +206,10 @@ function dedentTabBodies(lines: string[]): Set<number> {
     for (let end = openingEndLine + 1; end < lines.length; end++) {
       const bodyLine = lines[end]!;
       const bodyCandidate = readFence(bodyLine);
+      if (bodyFence && (bodyFence.quoteDepth > 0 || bodyFence.listIndent !== undefined) &&
+          !isInFenceContainer(bodyLine, bodyFence, bodyFence.listIndent ?? 0)) {
+        bodyFence = undefined;
+      }
       if (bodyFence) {
         if (closesFence(bodyFence, bodyCandidate)) bodyFence = undefined;
       } else if (bodyCandidate) {
@@ -317,14 +328,11 @@ export function normalizeAgentMarkdown(
         fenced.length = 0;
         fence = undefined;
       }
-    } else if (candidate && (candidate.quoteDepth > 0 || (candidate.indent > 3 && !tabBodyLines.has(i)))) {
-      const end = findContainerFenceEnd(lines, i, candidate);
-      if (end === undefined) {
-        prose.push(line);
-      } else {
-        prose.push(shield(lines.slice(i, end + 1).join("\n")));
-        i = end;
-      }
+    } else if (candidate && (candidate.quoteDepth > 0 || candidate.listIndent !== undefined ||
+        (candidate.indent > 3 && !tabBodyLines.has(i)))) {
+      const end = containerFenceEnd(lines, i, candidate);
+      prose.push(shield(lines.slice(i, end).join("\n")));
+      i = end - 1;
     } else if (candidate) {
       fence = candidate;
       fenced.push(line);

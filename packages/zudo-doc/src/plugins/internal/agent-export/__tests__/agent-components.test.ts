@@ -204,6 +204,17 @@ describe("agent export content wrappers", () => {
     });
   });
 
+  it.each([
+    "- ~~~mdx\n  <Tip>raw</Tip> and [literal](relative.md)\n  ~~~",
+    "> ~~~mdx\n> <Tip>raw</Tip> and [literal](relative.md)",
+  ])("preserves directive code in Markdown containers", (body) => {
+    const result = render(":::note[Example]\n\n" + body + "\n\n:::\n\nRemainder");
+    expect(result.text).toContain("**Note: Example**\n\n" + body);
+    expect(result.text).not.toContain("\n:::");
+    expect(result.text).toMatch(/\nRemainder$/);
+    expect(result.unsupportedDynamicContent).toBe(false);
+  });
+
   it("retains raw delimiters when a package directive is configured as a custom component", () => {
     const source = ":::note[Custom semantics]\n\nCustom content.\n\n:::";
     expect(normalizeAgentMarkdown(source, "/docs/page", undefined, undefined, { note: "CustomNote" }))
