@@ -390,7 +390,7 @@ describe("desktop sidebar scroll preservation", () => {
     cleanup();
   });
 
-  it.each(["router first", "frame before popstate"] as const)(
+  it.each(["router first", "frame before popstate", "input before swap"] as const)(
     "keeps a queued offset with its history entry: %s",
     (order) => {
       const frames = createFrameScheduler();
@@ -451,6 +451,12 @@ describe("desktop sidebar scroll preservation", () => {
         scroll(notes, 55);
         expect(frames.pendingCount()).toBe(1);
         traverse(guidesState, guidesUrl);
+        if (order === "input before swap") {
+          // The browser has selected Guides but the user is still interacting
+          // with the outgoing Notes DOM until the fetch and swap complete.
+          notes.element.dispatchEvent(new Event("wheel"));
+          frames.flush();
+        }
         notes.element.remove();
         const returnedGuides = createSidebar(0);
         markSidebar(returnedGuides, "en:guides", guidesUrl);
@@ -468,13 +474,10 @@ describe("desktop sidebar scroll preservation", () => {
         const returnedNotes = createSidebar(0);
         markSidebar(returnedNotes, "en:notes", notesUrl);
         dispatch(AFTER_NAVIGATE_EVENT);
-        ready(returnedNotes.element, frames);
-        expect(returnedNotes.getValue()).toBe(55);
-        expect(history.state).toMatchObject({
-          index: 5, scrollX: 2, scrollY: 7, extra: "notes",
-          zdSidebarScroll: { desktop: { scrollTop: 55, contextId: "en:notes" } },
-        });
-
+        // Leave Notes again before its restoration frame writes the queued
+        // offset to history. The first attempted restore must not consume it.
+        notifySidebarScrollReady(returnedNotes.element);
+        expect(frames.pendingCount()).toBe(1);
         traverse(guidesState, guidesUrl);
         returnedNotes.element.remove();
         const finalGuides = createSidebar(0);
@@ -486,6 +489,18 @@ describe("desktop sidebar scroll preservation", () => {
           index: 4, scrollX: 1, scrollY: 9, extra: "guides",
           zdSidebarScroll: { desktop: { scrollTop: 215, contextId: "en:guides" } },
         });
+
+        traverse(notesState, notesUrl);
+        finalGuides.element.remove();
+        const finalNotes = createSidebar(0);
+        markSidebar(finalNotes, "en:notes", notesUrl);
+        dispatch(AFTER_NAVIGATE_EVENT);
+        ready(finalNotes.element, frames);
+        expect(finalNotes.getValue()).toBe(55);
+        expect(history.state).toMatchObject({
+          index: 5, scrollX: 2, scrollY: 7, extra: "notes",
+          zdSidebarScroll: { desktop: { scrollTop: 55, contextId: "en:notes" } },
+        });
       } finally {
         cleanup();
         window.removeEventListener("popstate", routerPopState);
@@ -493,6 +508,45 @@ describe("desktop sidebar scroll preservation", () => {
       }
     },
   );
+
+  it("restores the latest same-page traversal when earlier restoration is queued", () => {
+    const frames = createFrameScheduler();
+    const sidebar = createSidebar(0);
+    markContext(sidebar.element, "en:guides");
+    const originalUrl = location.href;
+    const first = "/docs/guides/tag-governance/#one";
+    history.replaceState({ index: 4, extra: "first" }, "", first);
+    const cleanup = installSidebarScrollPreserve({ document, ...frames });
+    const scroll = (top: number) => {
+      sidebar.setValue(top);
+      sidebar.element.dispatchEvent(new Event("scroll"));
+      frames.flush();
+      return history.state;
+    };
+    const traverse = (state: unknown, hash: string) => {
+      history.replaceState(state, "", hash);
+      // ZFB does not dispatch preparation or swap when staying on this page.
+      window.dispatchEvent(new PopStateEvent("popstate", { state }));
+    };
+    try {
+      const firstState = scroll(150);
+      history.pushState({ index: 5, extra: "second" }, "", "#two");
+      const secondState = scroll(220);
+      history.pushState({ index: 6, extra: "third" }, "", "#three");
+      scroll(310);
+
+      traverse(secondState, "#two");
+      expect(frames.pendingCount()).toBe(1);
+      traverse(firstState, "#one");
+      frames.flush();
+
+      expect(sidebar.getValue()).toBe(150);
+      expect(history.state).toEqual(firstState);
+    } finally {
+      cleanup();
+      history.replaceState(null, "", originalUrl);
+    }
+  });
 
   it("cancels a pending restore when the reader scrolls the sidebar", () => {
     const frames = createFrameScheduler();
