@@ -81,7 +81,11 @@ describe("agent export content wrappers", () => {
       "Before the tabs.",
       "",
       "<Tabs>",
-      '  <TabItem label="npm" value="npm" default>',
+      "  <TabItem",
+      '    label="npm"',
+      '    value="npm"',
+      "    default",
+      "  >",
       "    ~~~mdx",
       "    <Tip title=\"literal\">",
       "      [literal](relative.md)",
@@ -155,7 +159,7 @@ describe("agent export content wrappers", () => {
 
   it("keeps unsupported, malformed and literal directive delimiters", () => {
     const source = [
-      "See \x60:::note[Example]\x60.",
+      "See `:::note[Example]`.",
       "",
       "~~~md",
       ":::note[Literal]",
@@ -177,10 +181,43 @@ describe("agent export content wrappers", () => {
     expect(render(source)).toEqual({ text: source, unsupportedDynamicContent: false });
   });
 
+  it("preserves quoted and list-nested code within a directive and resolves title links", () => {
+    const body = [
+      "> ~~~mdx",
+      "> <Tip>raw</Tip> and [literal](relative.md)",
+      "> :::",
+      "> ~~~",
+      "",
+      "- Parent",
+      "  - Child",
+      "",
+      "    ~~~mdx",
+      "    <Tip>raw</Tip> and [literal](relative.md)",
+      "    :::",
+      "    ~~~",
+    ].join("\n");
+    const title = "Some \\] bracket and [a link](./relative.md)";
+    const result = render(":::note[" + title + "]\n\n" + body + "\n\n:::");
+    expect(result).toEqual({
+      text: "**Note: Some \\] bracket and [a link](/docs/relative.md)**\n\n" + body,
+      unsupportedDynamicContent: false,
+    });
+  });
+
   it("retains raw delimiters when a package directive is configured as a custom component", () => {
     const source = ":::note[Custom semantics]\n\nCustom content.\n\n:::";
     expect(normalizeAgentMarkdown(source, "/docs/page", undefined, undefined, { note: "CustomNote" }))
       .toEqual({ text: source, unsupportedDynamicContent: false });
+  });
+
+  it("normalizes unambiguous nested directives without consuming ambiguous delimiter lines", () => {
+    const widths = "::::note[Outer]\n\n:::tip[Inner]\n\nBody.\n\n:::\n\n::::";
+    expect(render(widths).text).toContain("**Note: Outer**\n\n**Tip: Inner**");
+    expect(render(widths).text).not.toContain(":::");
+    const ambiguous = ":::note[Outer]\nText\n:::tip[Inner]\nInside\n:::\nAfter inner\n:::\nAfter outer";
+    expect(render(ambiguous).text).toBe(ambiguous);
+    const malformed = ":::note[Outer]\n\n:::tip [not an opener]\n\n:::";
+    expect(render(malformed).text).toBe("**Note: Outer**\n\n:::tip [not an opener]");
   });
 
   it("flags a wrapper whose title is not a literal and keeps the kind", () => {

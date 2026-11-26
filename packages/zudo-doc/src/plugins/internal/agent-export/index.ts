@@ -67,21 +67,35 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
     const linkBase = slugToUrl(slug, locale, options.base, options.siteUrl);
     return [{ root, filePath, parsed, slug, url, linkBase }];
   }));
-  const renderers = new Map(parsedRoots.map(({ root, files }) => [root.code, createAgentComponentRenderer({
-    locale: root.code,
-    entries: files.map(({ fileSlug, parsed }) => ({ slug: fileSlug, data: parsed.data })),
-    categoryMeta: loadCategoryMeta(resolve(root.dir)),
-    published: new Map(sources.filter((source) => source.root === root).map(({ slug, url, parsed }) => [slug, {
+  const pagesByLocale = new Map(roots.map(root => [
+    root.code,
+    new Map(sources.filter((source) => source.root === root).map(({ slug, url, parsed }) => [slug, {
       url,
       title: parsed.data.title ?? slug,
       ...(typeof parsed.data.description === "string" ? { description: parsed.data.description } : {}),
-    }])),
-    ...(options.siteTreeNavIgnore ? { siteTreeNavIgnore: options.siteTreeNavIgnore } : {}),
-    ...(options.siteTreeNavCategoryOrder ? { siteTreeNavCategoryOrder: options.siteTreeNavCategoryOrder } : {}),
-    ...(!root.default && defaultLocaleOnlyPrefixes.length ? {
-      isSiteTreeNavSlugVisible: (slug: string) => !matchesDefaultLocaleOnlyPath("/docs/" + slug, defaultLocaleOnlyPrefixes),
-    } : {}),
-  })]));
+    }] as const)),
+  ] as const));
+  const defaultPages = pagesByLocale.get(options.defaultLocale)!;
+  const renderers = new Map(parsedRoots.map(({ root, files }) => {
+    const published = pagesByLocale.get(root.code)!;
+    return [root.code, createAgentComponentRenderer({
+      locale: root.code,
+      entries: files.map(({ fileSlug, parsed }) => ({ slug: fileSlug, data: parsed.data })),
+      categoryMeta: loadCategoryMeta(resolve(root.dir)),
+      published,
+      ...(options.siteTreeNavIgnore ? { siteTreeNavIgnore: options.siteTreeNavIgnore } : {}),
+      ...(options.siteTreeNavCategoryOrder ? { siteTreeNavCategoryOrder: options.siteTreeNavCategoryOrder } : {}),
+      ...(!root.default && defaultLocaleOnlyPrefixes.length ? {
+        getSiteTreeNavPage: (slug: string) => {
+          const authored = published.get(slug);
+          if (!authored || !matchesDefaultLocaleOnlyPath("/docs/" + slug, defaultLocaleOnlyPrefixes)) return authored;
+          // HTML uses the default-locale canonical URL for these authored
+          // nav entries. Link only if that destination is published.
+          return defaultPages.get(slug);
+        },
+      } : {}),
+    })] as const;
+  }));
   const sourceUrls = new Map(sources.map(source => [source.filePath, source.url]));
   const documents = sources.map(({ root, filePath, parsed, slug, url, linkBase }) => {
     const id = agentPageKey(root.code, slug);

@@ -15,6 +15,12 @@ import type { CategoryMeta, SidebarFrontmatter, SidebarNode } from "../../../sid
 import { groupSatelliteNodes } from "../../../site-schema/nav-tree.js";
 import { wrapperLabel, type AgentComponentRenderer, type AgentComponentTag } from "./normalize.js";
 
+interface PublishedPage {
+  url: string;
+  title: string;
+  description?: string;
+}
+
 /** One locale's docs as the export sees them, before export exclusions. */
 export interface AgentNavLocale {
   locale: string;
@@ -22,10 +28,10 @@ export interface AgentNavLocale {
   entries: Array<{ slug: string; data: MdDocFrontmatter }>;
   categoryMeta?: Map<string, CategoryMeta>;
   /** Effective route slug → published page URL, for documents in the export only. */
-  published: Map<string, { url: string; title: string; description?: string }>;
+  published: Map<string, PublishedPage>;
   siteTreeNavIgnore?: readonly string[];
   siteTreeNavCategoryOrder?: readonly string[];
-  isSiteTreeNavSlugVisible?: (slug: string) => boolean;
+  getSiteTreeNavPage?: (slug: string) => PublishedPage | undefined;
 }
 
 /** A nav node reduced to published documents; `url` is absent for an unlinked group header. */
@@ -84,10 +90,9 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
     isNavVisible: ({ data }) => !data.draft && !data.unlisted && !data.standalone,
   });
 
-  const publish = (nodes: SidebarNode[], isVisible?: (slug: string) => boolean): PublishedNode[] => nodes.flatMap((node): PublishedNode[] => {
-    if (isVisible && !isVisible(node.id)) return [];
-    const children = publish(node.children, isVisible);
-    const page = source.published.get(node.id);
+  const publish = (nodes: SidebarNode[], getPage: (slug: string) => PublishedPage | undefined): PublishedNode[] => nodes.flatMap((node): PublishedNode[] => {
+    const children = publish(node.children, getPage);
+    const page = getPage(node.id);
     if (!page && (hidden.has(node.id) || children.length === 0)) return children;
     return [{
       slug: node.id,
@@ -100,9 +105,10 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
       children,
     }];
   });
-  const published = publish(tree);
+  const published = publish(tree, (slug) => source.published.get(slug));
+  const siteTreePages = source.getSiteTreeNavPage ? publish(tree, source.getSiteTreeNavPage) : published;
   const siteTree = orderSiteTreeNavRoots(
-    groupSatelliteNodes(source.isSiteTreeNavSlugVisible ? publish(tree, source.isSiteTreeNavSlugVisible) : published, source.siteTreeNavCategoryOrder ?? []),
+    groupSatelliteNodes(siteTreePages, source.siteTreeNavCategoryOrder ?? []),
     source.siteTreeNavCategoryOrder,
     source.siteTreeNavIgnore,
   );

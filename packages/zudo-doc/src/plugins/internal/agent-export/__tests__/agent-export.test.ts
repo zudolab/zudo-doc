@@ -26,7 +26,8 @@ describe("agent export", () => {
       write("registry/unlisted", "Private unlisted", "unlisted: true\n", "private-unlisted-body");
       write("registry/excluded", "Private excluded", "search_exclude: true\n", "private-excluded-body");
       write("ignore", "Ignored " + locale, "sidebar_position: 3\n");
-      write("local/index", "Default only " + locale, "sidebar_position: 4\n");
+      write("local/index", "Authored local " + locale, "sidebar_position: 4\n");
+      if (locale === "en") write("local/default", "Only the default locale", "");
     }
     const result = projectAgentCorpus({
       base: "/manual/",
@@ -54,11 +55,13 @@ describe("agent export", () => {
         "  - [Tools " + locale + "](" + prefix + "registry-tools/): Tool descriptions",
         "    - [Item " + locale + "](" + prefix + "registry-tools/item/)",
         "- [Guides " + locale + "](" + prefix + "guides/)",
-        ...(locale === "en" ? ["- [Default only en](" + prefix + "local/)"] : []),
+        "- [Authored local " + locale + "](https://docs.example/manual/docs/local/)",
+        ...(locale === "en" ? ["  - [Only the default locale](" + prefix + "local/default/)"] : []),
         "- [Unmatched " + locale + "](" + prefix + "guide-tools/)",
         "- [Tree " + locale + "](" + prefix + "tree/)",
       ]);
     }
+    expect(result.manifest.documents.some(({ url }) => url === "https://docs.example/manual/ja/docs/local/")).toBe(true);
     for (const generated of [
       JSON.stringify(result.manifest),
       JSON.stringify(result.index),
