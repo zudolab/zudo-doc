@@ -23,6 +23,11 @@ interface ScrollSlot {
 type ViewportKind = "desktop" | "mobile";
 type SlotMap = Partial<Record<ViewportKind, ScrollSlot>>;
 
+interface HistoryEntry {
+  key: string;
+  page: string;
+}
+
 interface Controller {
   cleanup: () => void;
   notify: (root: Element) => void;
@@ -56,9 +61,12 @@ export function installSidebarScrollPreserve({
   const view = document.defaultView;
   let epoch = 0;
   let shortRetries = 0;
-  let traverse = false;
+  let renderedEntry = readHistoryEntry(view);
+  let traversingTo: string | undefined;
   let awaiting = false;
   let restoreFrame: number | undefined;
+  let historyFrame: number | undefined;
+  const unpublished = new Map<string, SlotMap>();
   let didInitial = false;
   let writing = false;
   let observer: { disconnect: () => void } | undefined;
@@ -75,6 +83,12 @@ export function installSidebarScrollPreserve({
     cancelAnimationFrame(restoreFrame);
     restoreFrame = undefined;
   };
+  const cancelHistoryFrame = () => {
+    if (historyFrame === undefined) return;
+    cancelAnimationFrame(historyFrame);
+    historyFrame = undefined;
+  };
+
   const disconnectObserver = () => {
     observer?.disconnect();
     observer = undefined;
@@ -99,12 +113,18 @@ export function installSidebarScrollPreserve({
     return next;
   };
 
-  const writeHistory = (slots: SlotMap) => {
-    if (!view || traverse) return;
+  const writeHistory = (slots: SlotMap, entry = renderedEntry) => {
+    // Both normal navigation and traversal can change the URL and history
+    // before ZFB replaces the DOM. A write belongs to the entry we captured.
+    if (!view || !entry || entry.key !== renderedEntry?.key || entry.key !== readHistoryEntry(view)?.key) return;
     const state = view.history.state;
-    if (!state || typeof state !== "object") return;
-    if (JSON.stringify((state as { zdSidebarScroll?: unknown }).zdSidebarScroll) === JSON.stringify(slots)) return;
-    try { view.history.replaceState({ ...state, [HISTORY_KEY]: slots }, ""); } catch { /* Optional persistence. */ }
+    if (!isRecord(state)) return;
+    try {
+      if (JSON.stringify(state[HISTORY_KEY]) !== JSON.stringify(slots)) {
+        view.history.replaceState({ ...state, [HISTORY_KEY]: slots }, "");
+      }
+      unpublished.delete(entry.key);
+    } catch { /* Optional persistence. */ }
   };
 
   const schedule = () => {
@@ -162,7 +182,12 @@ export function installSidebarScrollPreserve({
     if (restored && !awaiting) writeHistory(memory);
   };
 
+  // During preparation the browser has selected the destination, but user
+  // input and readiness notifications can still come from the outgoing DOM.
+  const canRestore = () => traversingTo === undefined && renderedEntry?.key === readHistoryEntry(view)?.key;
+
   const apply = () => {
+    if (!canRestore()) return;
     if (!pending) {
       if (Object.keys(held).length) applyHeld();
       if (!didInitial) {
@@ -176,16 +201,21 @@ export function installSidebarScrollPreserve({
     }
     let waiting = false;
     for (const kind of VIEWPORTS) {
+      if (skipped.has(kind) || applied.has(kind)) continue;
       const slot = pending[kind];
-      if (!slot || skipped.has(kind) || applied.has(kind)) continue;
       const element = findViewport(document, kind);
+      if (!slot) {
+        if (element && measurable(element)) revealCurrent(element, writeScroll);
+        continue;
+      }
       if (!element || !measurable(element)) {
-        // A closed drawer stays in the DOM. Park the snapshot for the next
-        // open, and keep it in memory so settling this cycle cannot delete it
-        // from the history entry. An absent viewport is not a saved zero.
+        // A closed drawer stays in the DOM. Park the snapshot for its next
+        // open, but only persist it to the entry if its context is compatible.
         if (element) {
           held[kind] = slot;
-          memory[kind] = slot;
+          const context = readContext(element);
+          if (!context || !slot.contextId || context === slot.contextId) memory[kind] = slot;
+          else delete memory[kind];
         }
         applied.add(kind);
         continue;
@@ -257,6 +287,7 @@ export function installSidebarScrollPreserve({
   const begin = (slots: SlotMap) => {
     epoch += 1;
     cancelFrame();
+    cancelHistoryFrame();
     disconnectObserver();
     observed.clear();
     skipped.clear();
@@ -268,26 +299,63 @@ export function installSidebarScrollPreserve({
     shortRetries = 0;
   };
 
-  const onBefore = () => {
-    if (traverse) {
-      traverse = false;
+  const beginTraversal = (entry: HistoryEntry) => {
+    if (!awaiting && renderedEntry && renderedEntry.key !== entry.key) {
+      // The source history entry is already inaccessible. Remember a queued
+      // scroll, including one whose DOM scroll event has not fired yet.
+      const previous = memory;
+      const slots = capture();
+      if (unpublished.has(renderedEntry.key) || JSON.stringify(previous) !== JSON.stringify(slots)) {
+        unpublished.set(renderedEntry.key, slots);
+      }
+    }
+    memory = {};
+    begin(unpublished.get(entry.key) ?? readHistory(view) ?? {});
+  };
+
+  const adoptSamePageEntry = (entry: HistoryEntry) => {
+    if (pending || entry.key === renderedEntry?.key || entry.page !== renderedEntry?.page) return;
+    // Fragment pushes can change the active history entry without a swap.
+    renderedEntry = entry;
+    unpublished.delete(entry.key);
+    cancelHistoryFrame();
+  };
+
+  const onBefore = (event: Event) => {
+    const active = readHistoryEntry(view);
+    // ZFB can dispatch this synchronously from its own popstate listener.
+    if ("navigationType" in event && event.navigationType === "traverse") {
+      traversingTo = active?.key;
+      if (active) beginTraversal(active);
       return;
     }
-    const slots = capture();
+    traversingTo = undefined;
+    if (active) adoptSamePageEntry(active);
+    const slots = active?.key === renderedEntry?.key ? capture() : {};
     begin(slots);
     awaiting = false;
     writeHistory(slots);
   };
 
   const onAfter = () => {
+    renderedEntry = readHistoryEntry(view);
+    // A fresh push can reuse an index/URL after branching from an older entry.
+    // A traversal must keep its pending snapshot until it actually persists.
+    if (renderedEntry && renderedEntry.key !== traversingTo) unpublished.delete(renderedEntry.key);
+    traversingTo = undefined;
     try { view?.sessionStorage.removeItem(PENDING_KEY); } catch { /* Optional persistence. */ }
     if (!pending) return;
     awaiting = true;
   };
 
   const onPopState = () => {
-    traverse = true;
-    begin(readHistory(view) ?? {});
+    const entry = readHistoryEntry(view);
+    // Same-page traversal can skip the ZFB swap lifecycle entirely.
+    if (!entry || entry.key === traversingTo || entry.key === renderedEntry?.key || entry.page !== renderedEntry?.page) return;
+    traversingTo = undefined;
+    beginTraversal(entry);
+    renderedEntry = entry;
+    schedule();
   };
 
   const onClick = (event: Event) => {
@@ -308,7 +376,7 @@ export function installSidebarScrollPreserve({
   };
 
   const onUserScroll = (event: Event) => {
-    if (writing) return;
+    if (writing || !canRestore()) return;
     const kind = viewportKind(event.target);
     if (!kind || skipped.has(kind)) return;
     if (!awaiting && !held[kind]) return;
@@ -324,18 +392,17 @@ export function installSidebarScrollPreserve({
   };
 
   const onScroll = (event: Event) => {
-    if (writing || traverse || awaiting) return;
-    if (!viewportKind(event.target)) return;
-    capture();
-    scheduleHistory();
-  };
-
-  let historyFrame: number | undefined;
-  const scheduleHistory = () => {
+    if (writing || awaiting || !viewportKind(event.target)) return;
+    const entry = readHistoryEntry(view);
+    if (!entry) return;
+    adoptSamePageEntry(entry);
+    if (entry.key !== renderedEntry?.key) return;
+    unpublished.set(entry.key, capture());
     if (historyFrame !== undefined) return;
     historyFrame = requestAnimationFrame(() => {
       historyFrame = undefined;
-      writeHistory(memory);
+      const slots = unpublished.get(entry.key);
+      if (slots) writeHistory(slots, entry);
     });
   };
 
@@ -387,7 +454,7 @@ export function installSidebarScrollPreserve({
     document.removeEventListener("scroll", onScroll, true);
     view?.removeEventListener("popstate", onPopState);
     cancelFrame();
-    if (historyFrame !== undefined) cancelAnimationFrame(historyFrame);
+    cancelHistoryFrame();
     disconnectObserver();
     pending = undefined;
     awaiting = false;
@@ -538,4 +605,14 @@ function readHistory(view: Window | null): SlotMap | undefined {
   const state = view?.history.state;
   if (!isRecord(state)) return undefined;
   return sanitizeSlots(state[HISTORY_KEY]);
+}
+
+function readHistoryEntry(view: Window | null): HistoryEntry | undefined {
+  if (!view) return;
+  const { href, pathname, search } = view.location;
+  const state = view.history.state;
+  // ZFB 7.2 uses a finite index to distinguish its entries, including repeat
+  // visits to the same URL. Unindexed entries still carry a browser URL.
+  const index = isRecord(state) && Number.isFinite(state.index) ? state.index : "";
+  return { key: `${index}:${href}`, page: `${canonicalPath(pathname)}${search}` };
 }

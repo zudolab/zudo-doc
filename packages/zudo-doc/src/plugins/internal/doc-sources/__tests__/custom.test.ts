@@ -84,6 +84,8 @@ describe("custom sources", () => {
         "[spaced](my%20notes/a%20file.md?x=1#top)",
         "[angle](<my notes/a file.md>)",
         "![logo](img/logo.png)",
+        "![wrapped",
+        "logo](img/logo.png)",
         "[ref link][other]",
         "[missing](nowhere.md)",
         "[external](https://example.com/a.md)",
@@ -123,6 +125,7 @@ describe("custom sources", () => {
     expect(body).toContain("[spaced](./my-notes/a-file.mdx?x=1#top)");
     expect(body).toContain("[angle](./my-notes/a-file.mdx)");
     expect(body).toContain("![logo](/doc-sources/kb/img/logo.png)");
+    expect(body).toContain("![wrapped\nlogo](/doc-sources/kb/img/logo.png)");
     expect(body).toContain("[other]: ./other.mdx#part");
     expect(body).toContain("https://example.com/a.md");
     expect(body).toContain("[anchor](#local)");
@@ -136,6 +139,85 @@ describe("custom sources", () => {
     const warns = result.diagnostics.filter((d) => d.level === "warn").map((d) => d.message);
     expect(warns).toHaveLength(1);
     expect(warns[0]).toContain("nowhere.md");
+  });
+
+  it.each(["LF", "CRLF"])("rewrites wrapped inline link labels with %s line endings", (lineEnding) => {
+    const project = makeProject();
+    const src = path.join(project.root, "kb");
+    write(path.join(src, "target.md"), "# Target\n");
+    write(path.join(src, "index.md"), [
+      "# KB", "",
+      '[single line](target.md?x=1#details "Title")',
+      '[wrapped [nested',
+      'label]](target.md?x=1#details "Title")',
+      "[missing", "page](unpublished.md)", "",
+      "[literal `code", "span`](target.md)", "",
+      "`[wrapped", "literal](target.md)`", "",
+      "~~~md", "[wrapped", "fenced](target.md)", "~~~", "",
+      "- Nested", "  - list", "", "    ~~~md", "    [wrapped", "    nested fence](target.md)", "    ~~~", "",
+      "> ~~~md", ">[wrapped", "> quoted fence](target.md)", ">~~~", "",
+      "[this is a different paragraph", " \t", "not a link](unmatched.md)", "",
+      "[before `code", "", "after`](unmatched.md)", "",
+      "[before a heading", "## not a link](unmatched.md)", "",
+      "[before a list", "- not a link](unmatched.md)", "",
+      "[before a fence", "~~~md", "literal", "~~~", "not a link](unmatched.md)", "",
+      "> [before quote gap", ">", "> not a link](unmatched.md)", "",
+      "> [before quote heading", "> ## not a link](unmatched.md)", "",
+      "[before quote", "> not a link](unmatched.md)", "",
+      "[before setext", "=", "not a link](unmatched.md)", "",
+      "1. [before the next item", "2. not a link](unmatched.md)", "",
+      "[before [inner](target.md)", "not an outer link](unmatched.md)", "",
+      "\\[escaped opening", "not a link](unmatched.md)", "",
+      "[escaped \\] inside", "label](target.md)", "",
+      "\\![escaped bang", "label](target.md)", "",
+      "> [quoted and", "> wrapped](target.md)", "",
+      "[adjacent]", "[actual", "link](target.md)", "",
+      "[external", "link](https://example.com/target.md)",
+      "[site", "relative](/docs/target.md)",
+      "[local", "anchor](#details)",
+      "", "- ~~~md", "  [literal](target.md)", "", "Outside the list [target](target.md).",
+    ].join(lineEnding === "LF" ? "\n" : "\r\n"));
+
+    const result = run(project, {
+      sources: [{
+        id: "kb",
+        title: "KB",
+        mappings: [{ id: "pages", root: "kb", include: ["*.md"], format: "markdown" }],
+      }],
+    });
+
+    const body = read(path.join(docsOf(project.root), "kb/index.mdx")).replaceAll("\r\n", "\n");
+    expect(body).toContain('[single line](./target.mdx?x=1#details "Title")');
+    expect(body).toContain('[wrapped [nested\nlabel]](./target.mdx?x=1#details "Title")');
+    expect(body).toContain("missing\npage (`unpublished.md`)");
+    expect(body).toContain("[literal `code\nspan`](./target.mdx)");
+    expect(body).toContain("`[wrapped\nliteral](target.md)`");
+    expect(body).toContain("~~~md\n[wrapped\nfenced](target.md)\n~~~");
+    expect(body).toContain("    ~~~md\n    [wrapped\n    nested fence](target.md)\n    ~~~");
+    expect(body).toContain("> ~~~md\n>[wrapped\n> quoted fence](target.md)\n>~~~");
+    expect(body).toMatch(/\[this is a different paragraph\n[ \t]*\nnot a link\]\(unmatched\.md\)/);
+    expect(body).toContain("[before `code\n\nafter`](unmatched.md)");
+    expect(body).toContain("[before a heading\n## not a link](unmatched.md)");
+    expect(body).toContain("[before a list\n- not a link](unmatched.md)");
+    expect(body).toContain("[before a fence\n~~~md\nliteral\n~~~\nnot a link](unmatched.md)");
+    expect(body).toContain("> [before quote gap\n>\n> not a link](unmatched.md)");
+    expect(body).toContain("> [before quote heading\n> ## not a link](unmatched.md)");
+    expect(body).toContain("[before quote\n> not a link](unmatched.md)");
+    expect(body).toContain("[before setext\n=\nnot a link](unmatched.md)");
+    expect(body).toContain("1. [before the next item\n2. not a link](unmatched.md)");
+    expect(body).toContain("[before [inner](./target.mdx)\nnot an outer link](unmatched.md)");
+    expect(body).toContain("\\[escaped opening\nnot a link](unmatched.md)");
+    expect(body).toContain("[escaped \\] inside\nlabel](./target.mdx)");
+    expect(body).toContain("\\![escaped bang\nlabel](./target.mdx)");
+    expect(body).toContain("> [quoted and\n> wrapped](./target.mdx)");
+    expect(body).toContain("[adjacent]\n[actual\nlink](./target.mdx)");
+    expect(body).toContain("[external\nlink](https://example.com/target.md)");
+    expect(body).toContain("[site\nrelative](/docs/target.md)");
+    expect(body).toContain("[local\nanchor](#details)");
+    expect(body).toContain("- ~~~md\n  [literal](target.md)\n\nOutside the list [target](./target.mdx).");
+    expect(result.diagnostics.filter((d) => d.level === "warn").map((d) => d.message)).toEqual([
+      'source "kb" mapping "pages" file "index.md": unpublished link target(s) kept as text: unpublished.md',
+    ]);
   });
 
   it("reports route collisions without writing anything", () => {

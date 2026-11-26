@@ -213,6 +213,138 @@ test("full document load, reload, and Back/Forward keep the sidebar offset", asy
   assertNoConsoleErrors();
 });
 
+type SidebarHistorySlot = {
+  scrollTop: number;
+  contextId: string;
+  viewKey: string;
+  anchorId: string;
+  anchorOffset: number;
+};
+
+async function readSidebarEntry(page: Page) {
+  return desktopSidebar(page).evaluate((element) => {
+    const state = history.state as {
+      index: number;
+      scrollX: number;
+      scrollY: number;
+      entryMarker?: string;
+      zdSidebarScroll?: { desktop?: SidebarHistorySlot };
+    };
+    const slot = state.zdSidebarScroll?.desktop;
+    const anchor = slot && [...element.querySelectorAll<HTMLElement>("[data-sidebar-focus-scope], a[href]")]
+      .find((row) => (row.dataset.sidebarFocusScope || row.getAttribute("href")) === slot.anchorId);
+    return {
+      index: state.index,
+      scrollX: state.scrollX,
+      scrollY: state.scrollY,
+      entryMarker: state.entryMarker,
+      context: element.querySelector("nav")?.dataset.sidebarContext,
+      liveOffset: element.scrollTop,
+      liveAnchorOffset: anchor ? anchor.getBoundingClientRect().top - element.getBoundingClientRect().top : null,
+      slot,
+    };
+  });
+}
+
+async function markSidebarEntry(page: Page, entryMarker: string) {
+  await page.evaluate((marker) => history.replaceState({ ...history.state, entryMarker: marker }, ""), entryMarker);
+}
+
+async function traverseSidebarEntry(page: Page, direction: "back" | "forward", nextOffset?: number) {
+  await desktopSidebar(page).evaluate((element, { direction, nextOffset }) => {
+    return new Promise<void>((resolve) => {
+      document.addEventListener("zfb:after-swap", () => resolve(), { once: true });
+      if (nextOffset !== undefined) {
+        element.scrollTop = nextOffset;
+        // Queue the sidebar's persistence in the same task that starts browser traversal.
+        element.dispatchEvent(new Event("scroll"));
+      }
+      history[direction]();
+    });
+  }, { direction, nextOffset });
+}
+
+test("same-document Back and Forward keep each sidebar context's own history", async ({ page, assertNoConsoleErrors }) => {
+  await page.setViewportSize({ width: 1280, height: 255 });
+  const documents: string[] = [];
+  page.on("request", (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents.push(request.url());
+  });
+  await page.goto(`${DEEP_PAGE}/`);
+  await waitForSidebarHydration(page);
+  const withinGuides = await placeGuidesLink(page, 36);
+  expect(withinGuides.scrollTop).toBeGreaterThan(100);
+  expect(withinGuides.href).toBeTruthy();
+  expect(await spaClickSelector(page, linkSelector(withinGuides.href!))).toBe(true);
+  await waitForSidebarHydration(page);
+  await expectPreservedRow(page, withinGuides);
+  await markSidebarEntry(page, "guides");
+  const guides = await readSidebarEntry(page);
+  expect(guides.slot).toMatchObject({
+    scrollTop: guides.liveOffset,
+    contextId: guides.context,
+    viewKey: expect.any(String),
+    anchorId: expect.any(String),
+    anchorOffset: guides.liveAnchorOffset,
+  });
+  const guidesPath = new URL(page.url()).pathname;
+
+  expect(await spaClickSelector(page, 'header a[href="/docs/notes"], header a[href="/docs/notes/"]')).toBe(true);
+  await expect(desktopSidebar(page).getByRole("link", { name: /First Note/ })).toBeVisible();
+  await markSidebarEntry(page, "notes");
+  const notesOffset = await scrollDesktop(page, 25);
+  expect(notesOffset).toBeGreaterThan(10);
+  expect(notesOffset).toBeLessThan(guides.liveOffset - 30);
+  await expect.poll(async () => (await readSidebarEntry(page)).slot?.scrollTop).toBe(notesOffset);
+  const notes = await readSidebarEntry(page);
+  expect(notes.context).not.toBe(guides.context);
+  expect(notes.slot).toMatchObject({
+    contextId: notes.context,
+    viewKey: expect.any(String),
+    anchorId: expect.any(String),
+    anchorOffset: notes.liveAnchorOffset,
+  });
+  expect(notes.slot?.viewKey).not.toBe(guides.slot?.viewKey);
+  expect(notes.index).not.toBe(guides.index);
+
+  await traverseSidebarEntry(page, "back");
+  await expect.poll(() => readSidebarEntry(page)).toEqual(guides);
+  await traverseSidebarEntry(page, "forward");
+  await expect.poll(() => readSidebarEntry(page)).toEqual(notes);
+
+  await traverseSidebarEntry(page, "back", notesOffset - 5);
+  await expect.poll(() => readSidebarEntry(page)).toEqual(guides);
+  await traverseSidebarEntry(page, "forward", guides.liveOffset - 12);
+  await expect.poll(() => readSidebarEntry(page)).toMatchObject({
+    index: notes.index,
+    scrollX: notes.scrollX,
+    scrollY: notes.scrollY,
+    entryMarker: "notes",
+    context: notes.context,
+    liveOffset: notesOffset - 5,
+    slot: { contextId: notes.context, viewKey: notes.slot?.viewKey, scrollTop: notesOffset - 5 },
+  });
+  await traverseSidebarEntry(page, "back");
+  await expect.poll(() => readSidebarEntry(page)).toMatchObject({
+    index: guides.index,
+    scrollX: guides.scrollX,
+    scrollY: guides.scrollY,
+    entryMarker: "guides",
+    context: guides.context,
+    liveOffset: guides.liveOffset - 12,
+    slot: { contextId: guides.context, viewKey: guides.slot?.viewKey, scrollTop: guides.liveOffset - 12 },
+  });
+  expect(documents).toHaveLength(1);
+
+  const beforeReload = await readSidebarEntry(page);
+  expect(new URL(page.url()).pathname).toBe(guidesPath);
+  await page.reload();
+  await waitForSidebarHydration(page);
+  await expect.poll(() => readSidebarEntry(page)).toEqual(beforeReload);
+  expect(documents).toHaveLength(2);
+  assertNoConsoleErrors();
+});
+
 test("desktop and mobile offsets stay independent across navigation", async ({ page, assertNoConsoleErrors }) => {
   await page.setViewportSize({ width: 390, height: 700 });
   await page.goto(DEEP_PAGE);
