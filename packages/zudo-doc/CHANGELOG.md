@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 - Added **Copy Markdown** to article headers with an existing Markdown export, with site and page overrides and a manual-copy fallback.
 - Anchored the mobile sidebar to the viewport bottom so the menu scrolls within the area below the header.
+- Fixed `docSources` links with labels that span lines. Mapped links resolve to the generated page, and unmapped references stay readable and emit a build warning.
 
 ## [14.0.0] - 2026-11-24
 

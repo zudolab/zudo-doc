@@ -20,19 +20,74 @@ export function isRelativeReference(url: string): boolean {
   return true;
 }
 
-const PLACEHOLDER = "\u0000DSCODE_";
+const FENCE_PLACEHOLDER = "\u0000DSFENCE_";
+const SPAN_PLACEHOLDER = "\u0000DSCODE_";
+const BLOCK_BREAK = String.raw`[ \t]*(?:(?:>[ \t]*)*\r?\n|\u0000DSFENCE_|#{1,6}(?:[ \t]|\r?$)|(?:[-+*]|1[.)])[ \t]|(?:=+|-+|\*{3,}|_{3,})[ \t]*\r?$)`;
+const BLOCK_START = new RegExp(`^${BLOCK_BREAK}`);
+
+function quotePrefix(line: string, limit = Infinity): { depth: number; rest: string } {
+  let depth = 0;
+  while (depth < limit) {
+    const prefix = /^ {0,3}>[ \t]?/.exec(line);
+    if (!prefix) break;
+    line = line.slice(prefix[0].length);
+    depth += 1;
+  }
+  return { depth, rest: line };
+}
+
+function protectFences(content: string, keep: (match: string) => string): string {
+  const lines = content.split(/(?<=\n)/);
+  const parts: string[] = [];
+  let fence: { start: number; depth: number; indent: number; inList: boolean; delimiter: string } | undefined;
+  const finish = (end: number) => {
+    if (!fence) return;
+    const body = lines.slice(fence.start, end).join("");
+    const ending = /\r?\n$/.exec(body)?.[0] ?? "";
+    parts.push(keep(body.slice(0, body.length - ending.length)), ending);
+    fence = undefined;
+  };
+
+  for (const [index, line] of lines.entries()) {
+    if (fence) {
+      const quote = quotePrefix(line, fence.depth);
+      const indent = /^[ \t]*/.exec(quote.rest)![0].length;
+      const dedented = (fence.inList || fence.indent > 3) && indent < fence.indent && quote.rest.trim();
+      if (quote.depth < fence.depth || dedented) {
+        finish(index);
+      } else {
+        const closing = /^[ \t]*(`{3,}|~{3,})[ \t]*\r?\n?$/.exec(quote.rest)?.[1];
+        const closingIndent = fence.inList || fence.indent > 3 ? fence.indent + 3 : 3;
+        if (closing?.startsWith(fence.delimiter) && indent <= closingIndent) finish(index + 1);
+        continue;
+      }
+    }
+
+    const { depth, rest } = quotePrefix(line);
+    const open = /^([ \t]*)((?:[-+*]|\d{1,9}[.)])[ \t]+)?(`{3,}|~{3,})([^\r\n]*)/.exec(rest);
+    if (open && (open[3]![0] === "~" || !open[4]!.includes("`"))) {
+      fence = { start: index, depth, indent: open[1]!.length + (open[2]?.length ?? 0), inList: !!open[2], delimiter: open[3]! };
+    } else {
+      parts.push(line);
+    }
+  }
+  finish(lines.length);
+  return parts.join("");
+}
 
 function protectCode(content: string): { text: string; restore: (s: string) => string } {
   const saved: string[] = [];
-  const keep = (match: string) => {
+  const keep = (prefix: string) => (match: string) => {
     saved.push(match);
-    return `${PLACEHOLDER}${saved.length - 1}\u0000`;
+    return `${prefix}${saved.length - 1}\u0000`;
   };
-  let text = content.replace(/^( {0,3})(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:\n {0,3}\2[`~]*[ \t]*(?=\n|(?![\s\S]))|(?![\s\S]))/gm, keep);
-  text = text.replace(/(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g, keep);
+  const text = protectFences(content, keep(FENCE_PLACEHOLDER)).replace(
+    new RegExp(String.raw`(\x60+)(?!\x60)((?:(?!\r?\n${BLOCK_BREAK}|\u0000DSFENCE_)[\s\S])*?[^\x60])\1(?!\x60)`, "gm"),
+    keep(SPAN_PLACEHOLDER),
+  );
   return {
     text,
-    restore: (s) => s.replace(new RegExp(`${PLACEHOLDER}(\\d+)\u0000`, "g"), (_, i: string) => saved[Number(i)] ?? ""),
+    restore: (s) => s.replace(/\u0000DS(?:CODE|FENCE)_(\d+)\u0000/g, (_, i: string) => saved[Number(i)] ?? ""),
   };
 }
 
@@ -58,10 +113,32 @@ function formatDestination(url: string): string {
   return url.replace(/[\s()<>]/g, (char) => encodeURIComponent(char));
 }
 
+// A wrapped label can contain line breaks but must stay within one block.
+const LABEL_BREAK = String.raw`\r?\n(?!${BLOCK_BREAK})`;
+const LABEL_BACKSLASH = String.raw`\\(?:[^\r\n]|(?=\r?\n))`;
+const NESTED_LABEL = String.raw`\[(?:[^\]\\\r\n]|${LABEL_BACKSLASH}|${LABEL_BREAK})*\]`;
 const INLINE_LINK =
-  /(!?)\[((?:[^[\]\n]|\[[^\]\n]*\])*)\]\(\s*(<[^>\n]*>|[^\s()]+(?:\([^\s()]*\)[^\s()]*)*)(\s+(?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?\s*\)/g;
+  new RegExp(String.raw`(!?)\[((?:[^[\]\\\r\n]|${LABEL_BACKSLASH}|${LABEL_BREAK}|(?<=!)${NESTED_LABEL}|(?<!!)${NESTED_LABEL}(?!\())*)\]\(\s*(<[^>\n]*>|[^\s()]+(?:\([^\s()]*\)[^\s()]*)*)(\s+(?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?\s*\)`, "gm");
 const REFERENCE_DEFINITION = /^( {0,3})\[([^\]\n]+)\]:[ \t]*(<[^>\n]*>|\S+)([^\n]*)$/gm;
 const HTML_ATTRIBUTE = /(<(?:a|img|source)\b[^>]*?\s)(href|src)=("([^"]*)"|'([^']*)')/gi;
+
+function crossesContainerBoundary(label: string, openingLine: string): boolean {
+  const container = quotePrefix(openingLine);
+  const ordered = /^([ \t]*)\d{1,9}[.)][ \t]/.exec(container.rest);
+  return label.split(/\r?\n/).slice(1).some((line, index, lines) => {
+    // The last label line is followed by the closing bracket in the source.
+    const quote = quotePrefix(index === lines.length - 1 ? `${line}]` : line);
+    if (quote.depth > container.depth || (quote.depth > 0 && (!quote.rest.trim() || BLOCK_START.test(quote.rest)))) return true;
+    const item = /^([ \t]*)\d{1,9}[.)][ \t]/.exec(quote.rest);
+    return !!(ordered && item && item[1]!.length <= ordered[1]!.length);
+  });
+}
+
+function isEscaped(input: string, offset: number): boolean {
+  let start = offset;
+  while (input[start - 1] === "\\") start -= 1;
+  return (offset - start) % 2 === 1;
+}
 
 export interface RewriteResult {
   content: string;
@@ -99,13 +176,19 @@ export function rewriteLinks(content: string, resolve: LinkResolver): RewriteRes
     });
   }
 
-  out = out.replace(INLINE_LINK, (match, _bang: string, label: string, rawDest: string, title: string | undefined) => {
+  out = out.replace(INLINE_LINK, (match, bang: string, label: string, rawDest: string, title: string | undefined, offset: number, input: string) => {
+    if (label.includes("\n")) {
+      const openingLine = input.slice(input.lastIndexOf("\n", offset - 1) + 1, offset);
+      if (isEscaped(input, offset + bang.length) || crossesContainerBoundary(label, openingLine)) return match;
+    }
     const url = unwrapDestination(rawDest);
     const resolution = resolveDestination(url);
     if (resolution.kind === "keep") return match;
-    if (resolution.kind === "unmapped") return readableReference(label, url);
-    const prefix = match.slice(0, match.indexOf("](") + 2);
-    return `${prefix}${formatDestination(resolution.url)}${title ?? ""})`;
+    if (resolution.kind === "unmapped") {
+      const literalBang = bang && isEscaped(input, offset) ? bang : "";
+      return `${literalBang}${readableReference(label, url)}`;
+    }
+    return `${bang}[${label}](${formatDestination(resolution.url)}${title ?? ""})`;
   });
 
   out = out.replace(HTML_ATTRIBUTE, (match, head: string, attr: string, _quoted: string, dq: string | undefined, sq: string | undefined) => {
