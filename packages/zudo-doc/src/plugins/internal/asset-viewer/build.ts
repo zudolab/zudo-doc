@@ -68,6 +68,7 @@ export async function buildAssetSnapshot({
 
   const entries: AssetIndexEntry[] = [];
   const records: AssetRecords = {};
+  const updatedDates = new Map<string, string>();
   const sourceByPath = new Map<string, string>();
 
   for (const path of paths) {
@@ -116,6 +117,7 @@ export async function buildAssetSnapshot({
       ...(plain === undefined || body?.previewable !== true ? {} : { plain }),
     };
     records[path] = record;
+    if (record.updatedDate !== undefined) updatedDates.set(path, record.updatedDate);
   }
 
   const excerpts: AssetManifest["excerpts"] = {};
@@ -141,7 +143,13 @@ export async function buildAssetSnapshot({
     };
   }
 
-  const manifest: AssetManifest = { dir, routePrefix, entries, excerpts };
+  const manifest: AssetManifest = {
+    dir,
+    routePrefix,
+    entries,
+    excerpts,
+    ...(updatedDates.size > 0 ? { updatedDates: Object.fromEntries(updatedDates) } : {}),
+  };
   const manifestBytes = Buffer.byteLength(JSON.stringify(manifest));
   if (manifestBytes > MANIFEST_WARNING_BYTES) {
     logger.warn(

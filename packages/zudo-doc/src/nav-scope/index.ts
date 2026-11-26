@@ -38,6 +38,27 @@ export function getCategoryOrder(headerNav: NavScopeHeaderNavItem[]): string[] {
   });
 }
 
+/** Apply SiteTreeNav's top-level ignore list and header category order. */
+export function orderSiteTreeNavRoots<T extends { slug: string }>(
+  tree: T[],
+  order?: readonly string[],
+  ignore?: readonly string[],
+): T[] {
+  const ignored = new Set(ignore);
+  const visible = ignore ? tree.filter((node) => !ignored.has(node.slug)) : tree;
+  if (!order) return visible;
+
+  const remaining = new Map(visible.map((node) => [node.slug, node]));
+  const ordered: T[] = [];
+  for (const slug of order) {
+    const node = remaining.get(slug);
+    if (!node) continue;
+    ordered.push(node);
+    remaining.delete(slug);
+  }
+  return [...ordered, ...remaining.values()];
+}
+
 /**
  * Resolve which explicit categoryMatch owns a slug's top-level category.
  *

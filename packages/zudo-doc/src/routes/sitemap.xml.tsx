@@ -6,9 +6,9 @@
 // drift from the actual routes the page entrypoints build. Dormant unless
 // `settings.packageOwnedRoutes` is on (Decision 6 precedence still applies).
 //
-// `lastmod` comes from the same doc-history manifest the visible "Updated"
-// label reads (`chromeBindings.docHistoryMeta`, #4784); a route with no known
-// date omits `<lastmod>` rather than claiming the build date.
+// `lastmod` comes from the same history data the visible "Updated" labels
+// read: chrome bindings for articles and the asset snapshot for file pages.
+// Routes without history omit `<lastmod>`.
 
 import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 import { settings, enumerateSitemapEntries } from "./_context.js";

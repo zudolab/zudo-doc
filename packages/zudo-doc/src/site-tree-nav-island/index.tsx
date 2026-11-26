@@ -20,6 +20,7 @@ import {
   rankWidth,
 } from "../note-tray-model/index.js";
 import { formatMonthDay } from "../format-date/index.js";
+import { orderSiteTreeNavRoots } from "../nav-scope/index.js";
 import { initialCategoryOpenState, toggleCategoryOpenState } from "./state.js";
 import { countCategoryDocuments } from "./count.js";
 
@@ -45,23 +46,6 @@ const DEFAULT_COUNT_LABELS: SiteTreeNavCountLabels = {
 };
 
 export type SiteTreeNavVariant = "default" | "described";
-
-function reorderTree(tree: SidebarNavNode[], order: string[]): SidebarNavNode[] {
-  const map = new Map(tree.map((node) => [node.slug, node]));
-  const ordered: SidebarNavNode[] = [];
-  for (const slug of order) {
-    const node = map.get(slug);
-    if (node) {
-      ordered.push(node);
-      map.delete(slug);
-    }
-  }
-  // append unmatched nodes at end
-  for (const node of map.values()) {
-    ordered.push(node);
-  }
-  return ordered;
-}
 
 /** DOM-id-safe, deterministic encoding of a nav slug. */
 function slugToId(slug: string): string {
@@ -136,14 +120,7 @@ export function SiteTreeNav({
   countLabels = DEFAULT_COUNT_LABELS,
   idPrefix = "zd-site-tree",
 }: SiteTreeNavProps) {
-  let processedTree = tree;
-  if (categoryIgnore) {
-    const ignoreSet = new Set(categoryIgnore);
-    processedTree = processedTree.filter((node) => !ignoreSet.has(node.slug));
-  }
-  if (categoryOrder) {
-    processedTree = reorderTree(processedTree, categoryOrder);
-  }
+  const processedTree = orderSiteTreeNavRoots(tree, categoryOrder, categoryIgnore);
 
   const described = variant === "described";
   // Every value used to seed the tree is part of the JSON-serializable island

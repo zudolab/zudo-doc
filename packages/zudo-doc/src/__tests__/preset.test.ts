@@ -600,6 +600,26 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     }
   });
 
+  it("projects the HTML SiteTreeNav ordering and locale rules into agent export", () => {
+    const result = zudoDocPreset({
+      settings: {
+        ...fixtureSettings,
+        agentExport: true,
+        headerNav: [{ categoryMatch: "manual", children: [{ categoryMatch: "reference" }] }, { categoryMatch: "!" }],
+        siteTreeNavIgnore: ["ignored"],
+        defaultLocaleOnlyPrefixes: ["/docs/default-only/"],
+      },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const descriptor = result.plugins.find(({ name }) => name === "@takazudo/zudo-doc/plugins/agent-export");
+    expect(descriptor?.options).toMatchObject({
+      siteTreeNavCategoryOrder: ["manual", "reference", "!"],
+      siteTreeNavIgnore: ["ignored"],
+      defaultLocaleOnlyPrefixes: ["/docs/default-only/"],
+    });
+  });
+
   it("shares the serialized asset-scan projection with search and llms", () => {
     const byName = Object.fromEntries(preset().plugins.map((p) => [p.name, p.options]));
     const search = byName["@takazudo/zudo-doc/plugins/search-index"]?.["assetScan"];

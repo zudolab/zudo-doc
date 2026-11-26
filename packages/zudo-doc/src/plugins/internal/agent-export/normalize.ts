@@ -1,3 +1,7 @@
+import { defaultDirectiveVocabulary } from "../../../directive-vocabulary-defaults/index.js";
+import { ADMONITION_COMPONENTS, directiveComponentName, TAB_ITEM_COMPONENT } from "../../../mdx-components/vocabulary.js";
+import type { DirectiveVocabulary } from "../../../preset.js";
+
 /** Literal JSX attribute values; `true` stands for a bare boolean attribute. */
 export type AgentTagProps = Record<string, string | number | boolean | null | unknown[] | Record<string, unknown>>;
 
@@ -16,6 +20,10 @@ export type AgentComponentRenderer = (tag: AgentComponentTag) => { text: string;
 
 export function dynamicContentPlaceholder(name: string): string {
   return `[Dynamic content unavailable in text export: ${name}]`;
+}
+
+export function wrapperLabel(kind: string, title: string | undefined): string {
+  return title ? `**${kind}: ${title}**` : `**${kind}**`;
 }
 
 /** Index just past the brace that closes the `{` at `start`, skipping string and template contents. */
@@ -112,8 +120,191 @@ function replaceComponentTags(text: string, render: AgentComponentRenderer | und
   return { text: out + text.slice(offset), unsupported };
 }
 
+interface Fence {
+  delimiter: string;
+  tail: string;
+  indent: number;
+  quoteDepth: number;
+  listIndent?: number;
+}
+
+function readContainer(line: string): { offset: number; indent: number; quoteDepth: number } {
+  const match = /^((?: *> ?)*)( *)/.exec(line)!;
+  return { offset: match[0].length, indent: match[2]!.length, quoteDepth: match[1]!.split(">").length - 1 };
+}
+
+function readFence(line: string): Fence | undefined {
+  const { offset, indent, quoteDepth } = readContainer(line);
+  const match = /^((?:[-+*]|\d{1,9}[.)]) {1,4})?(`{3,}|~{3,})(.*)$/.exec(line.slice(offset));
+  if (!match) return undefined;
+  const listIndent = match[1] ? indent + match[1].length : undefined;
+  return { delimiter: match[2]!, tail: match[3]!, indent, quoteDepth, listIndent };
+}
+
+function closesFence(fence: Fence, candidate: Fence | undefined): boolean {
+  return candidate !== undefined &&
+    candidate.listIndent === undefined &&
+    candidate.quoteDepth === fence.quoteDepth &&
+    candidate.delimiter[0] === fence.delimiter[0] &&
+    candidate.delimiter.length >= fence.delimiter.length &&
+    !candidate.tail.trim();
+}
+
+function isInFenceContainer(line: string, fence: Fence, minIndent: number): boolean {
+  const { offset, indent, quoteDepth } = readContainer(line);
+  return quoteDepth >= fence.quoteDepth && (offset === line.length || indent >= minIndent);
+}
+
+/** Fences in quote/list continuations cannot consume prose beyond their container. */
+function containerFenceEnd(lines: string[], start: number, fence: Fence): number {
+  const minIndent = fence.listIndent ?? (fence.indent > 3 ? 4 : 0);
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (!isInFenceContainer(line, fence, minIndent)) return i;
+    if (closesFence(fence, readFence(line))) return i + 1;
+  }
+  return lines.length;
+}
+
+/** Unwrap the presentation indent of a complete, block-level TabItem. */
+function dedentTabBodies(lines: string[]): Set<number> {
+  const tabBodyLines = new Set<number>();
+  const source = lines.join("\n");
+  let offset = 0;
+  const lineOffsets = lines.map((line) => {
+    const start = offset;
+    offset += line.length + 1;
+    return start;
+  });
+  let fence: Fence | undefined;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const candidate = readFence(line);
+    if (fence) {
+      if (candidate && candidate.indent <= 3 && closesFence(fence, candidate)) fence = undefined;
+      continue;
+    }
+    if (candidate) {
+      if (candidate.quoteDepth > 0 || candidate.listIndent !== undefined || candidate.indent > 3) {
+        i = containerFenceEnd(lines, i, candidate) - 1;
+      } else {
+        fence = candidate;
+      }
+      continue;
+    }
+    const openingIndent = /^ *(?=<TabItem(?:[ \t>]|$))/.exec(line)?.[0].length;
+    if (openingIndent === undefined) continue;
+    const opening = parseOpeningTag(source, lineOffsets[i]! + openingIndent);
+    if (opening?.name !== TAB_ITEM_COMPONENT || opening.selfClosing) continue;
+    let openingEndLine = i;
+    while (openingEndLine + 1 < lines.length && lineOffsets[openingEndLine + 1]! < opening.end) openingEndLine++;
+    const lineEnd = lineOffsets[openingEndLine]! + lines[openingEndLine]!.length;
+    if (source.slice(opening.end, lineEnd).trim()) continue;
+
+    let bodyFence: Fence | undefined;
+    let commonIndent = Infinity;
+    for (let end = openingEndLine + 1; end < lines.length; end++) {
+      const bodyLine = lines[end]!;
+      const bodyCandidate = readFence(bodyLine);
+      if (bodyFence && (bodyFence.quoteDepth > 0 || bodyFence.listIndent !== undefined) &&
+          !isInFenceContainer(bodyLine, bodyFence, bodyFence.listIndent ?? 0)) {
+        bodyFence = undefined;
+      }
+      if (bodyFence) {
+        if (closesFence(bodyFence, bodyCandidate)) bodyFence = undefined;
+      } else if (bodyCandidate) {
+        bodyFence = bodyCandidate;
+      } else if (bodyLine.trim() === "</TabItem>") {
+        lines[i] = line.slice(openingIndent);
+        lines[end] = "</TabItem>";
+        for (let j = openingEndLine + 1; j < end; j++) {
+          lines[j] = lines[j]!.slice(commonIndent);
+          tabBodyLines.add(j);
+        }
+        i = end;
+        break;
+      } else if (/^ *<TabItem(?:[ \t>]|$)/.test(bodyLine)) {
+        // A sibling opening before a close leaves the incomplete wrapper alone.
+        break;
+      }
+      if (bodyLine.trim()) commonIndent = Math.min(commonIndent, /^ */.exec(bodyLine)![0].length);
+    }
+  }
+  return tabBodyLines;
+}
+
+const admonitionDirectives = new Map(Object.entries(defaultDirectiveVocabulary)
+  .map(([name, spec]) => [name, directiveComponentName(spec)] as const)
+  .filter(([, component]) => ADMONITION_COMPONENTS.has(component)));
+
+function readDirectiveSuffix(suffix: string): { title?: string; hasAttributes?: boolean } | undefined {
+  let title: string | undefined;
+  if (suffix.startsWith("[")) {
+    let depth = 1;
+    for (let i = 1; i < suffix.length; i++) {
+      const char = suffix[i];
+      if (char === "\\") i++;
+      else if (char === "[") depth++;
+      else if (char === "]" && --depth === 0) {
+        title = suffix.slice(1, i);
+        suffix = suffix.slice(i + 1);
+        break;
+      }
+    }
+    if (title === undefined) return undefined;
+  }
+  if (suffix === "") return { title };
+  if (/^\{[^}]*\}$/.test(suffix)) return { title, hasAttributes: true };
+  return undefined;
+}
+
+function replaceAdmonitionDirectives(text: string, vocabulary: DirectiveVocabulary): string {
+  const lines = text.split("\n");
+  const open: Array<{ line: number; size: number; label?: string }> = [];
+  for (let i = 0; i < lines.length; i++) {
+    const start = /^( {0,3})(:{3,})([A-Za-z][\w-]*)(.*)$/.exec(lines[i]!);
+    if (start) {
+      const suffix = readDirectiveSuffix(start[4]!.trimEnd());
+      if (!suffix) continue;
+      const size = start[2]!.length;
+      const parent = open.at(-1);
+      if (parent && size >= parent.size) {
+        // Same-width and longer directives are ambiguous inside this container.
+        // Keep their raw delimiters instead of deleting a literal closing line.
+        parent.label = undefined;
+        continue;
+      }
+      const name = start[3]!;
+      const component = admonitionDirectives.get(name);
+      const spec = Object.hasOwn(vocabulary, name) ? vocabulary[name] : undefined;
+      const supported = component && spec && directiveComponentName(spec) === component &&
+        (typeof spec === "string" || ((spec.kind ?? "container") === "container" && spec.titleFromLabel !== false));
+      const label = supported && !suffix.hasAttributes
+        ? start[1]! + wrapperLabel(component, suffix.title)
+        : undefined;
+      // Valid custom and unsupported settings still own their closing fence.
+      open.push({ line: i, size, label });
+      continue;
+    }
+    const end = /^ {0,3}(:{3,})[ \t]*$/.exec(lines[i]!);
+    const current = open.at(-1);
+    if (!end || !current || end[1]!.length < current.size) continue;
+    open.pop();
+    if (current.label === undefined) continue;
+    lines[current.line] = current.label;
+    lines[i] = "";
+  }
+  return lines.join("\n");
+}
+
 /** Normalize MDX for a published text corpus without evaluating its modules. */
-export function normalizeAgentMarkdown(source: string, pageUrl: string, resolveSourceLink?: (target: string) => string | undefined, renderComponent?: AgentComponentRenderer): { text: string; unsupportedDynamicContent: boolean } {
+export function normalizeAgentMarkdown(
+  source: string,
+  pageUrl: string,
+  resolveSourceLink?: (target: string) => string | undefined,
+  renderComponent?: AgentComponentRenderer,
+  directiveVocabulary: DirectiveVocabulary = defaultDirectiveVocabulary,
+): { text: string; unsupportedDynamicContent: boolean } {
   let unsupportedDynamicContent = false;
   // Shield code before processing prose: examples containing JSX, comments or
   // Markdown links must remain literal, including multi-backtick code spans.
@@ -121,21 +312,29 @@ export function normalizeAgentMarkdown(source: string, pageUrl: string, resolveS
   let marker = "\u0000agent-code:";
   while (source.includes(marker)) marker += ":";
   const shield = (value: string): string => `${marker}${literals.push(value) - 1}\u0000`;
-  let fence: string | undefined;
+  let fence: Fence | undefined;
   const fenced: string[] = [];
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
+  const tabBodyLines = dedentTabBodies(lines);
   const prose: string[] = [];
-  for (const line of lines) {
-    const match = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const candidate = readFence(line);
     if (fence) {
       fenced.push(line);
-      if (match && match[1]![0] === fence[0] && match[1]!.length >= fence.length && !match[2]!.trim()) {
+      const maxIndent = tabBodyLines.has(i) ? Infinity : 3;
+      if (candidate && candidate.indent <= maxIndent && closesFence(fence, candidate)) {
         prose.push(shield(fenced.join("\n")));
         fenced.length = 0;
         fence = undefined;
       }
-    } else if (match) {
-      fence = match[1]!;
+    } else if (candidate && (candidate.quoteDepth > 0 || candidate.listIndent !== undefined ||
+        (candidate.indent > 3 && !tabBodyLines.has(i)))) {
+      const end = containerFenceEnd(lines, i, candidate);
+      prose.push(shield(lines.slice(i, end).join("\n")));
+      i = end - 1;
+    } else if (candidate) {
+      fence = candidate;
       fenced.push(line);
     } else prose.push(line);
   }
@@ -155,6 +354,7 @@ export function normalizeAgentMarkdown(source: string, pageUrl: string, resolveS
     i = closingIndex;
   }
   text = protectedText + text.slice(offset);
+  text = replaceAdmonitionDirectives(text, directiveVocabulary);
   text = text.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
   text = text.replace(/^[ \t]*import[ \t]+(?:type[ \t]+)?(?:[\w$]+[ \t]*,[ \t]*)?\{[^}]*\}[ \t]*from[ \t]*["'][^"'\n]+["'][ \t]*;?[ \t]*$/gm, "");
   text = text.replace(/^\s*(?:import|export)[^\S\n]+.*$/gm, "");

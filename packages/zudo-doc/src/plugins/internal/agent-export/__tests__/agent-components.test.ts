@@ -76,6 +76,161 @@ describe("agent export content wrappers", () => {
     expect(render("<CodeGroup>\nbody\n</CodeGroup>")).toEqual({ text: "body", unsupportedDynamicContent: false });
   });
 
+  it("exports indented tab fences and preserves literal payloads and nested list indentation", () => {
+    const result = render([
+      "Before the tabs.",
+      "",
+      "<Tabs>",
+      "  <TabItem",
+      '    label="npm"',
+      '    value="npm"',
+      "    default",
+      "  >",
+      "    ~~~mdx",
+      "    <Tip title=\"literal\">",
+      "      [literal](relative.md)",
+      "",
+      "    :::note",
+      "    </TabItem>",
+      "    ~~~",
+      '  </TabItem>',
+      '  <TabItem label="pnpm">',
+      "    - first",
+      "      - nested",
+      "",
+      "    ~~~bash",
+      "    pnpm install",
+      "    ~~~",
+      "",
+      "    - parent",
+      "      - child",
+      "",
+      "        ~~~md",
+      "        [nested code](./leave-literal.md)",
+      "        ~~~",
+      "  </TabItem>",
+      "</Tabs>",
+    ].join("\n"));
+
+    expect(result).toEqual({
+      text: [
+        "Before the tabs.",
+        "",
+        "",
+        "**Tab: npm**",
+        "~~~mdx",
+        '<Tip title="literal">',
+        "  [literal](relative.md)",
+        "",
+        ":::note",
+        "</TabItem>",
+        "~~~",
+        "",
+        "**Tab: pnpm**",
+        "- first",
+        "  - nested",
+        "",
+        "~~~bash",
+        "pnpm install",
+        "~~~",
+        "",
+        "- parent",
+        "  - child",
+        "",
+        "    ~~~md",
+        "    [nested code](./leave-literal.md)",
+        "    ~~~",
+      ].join("\n"),
+      unsupportedDynamicContent: false,
+    });
+  });
+
+  it.each(
+    Object.entries(defaultDirectiveVocabulary)
+      .map(([name, spec]) => [name, directiveComponentName(spec)] as const)
+      .filter(([, component]) => ADMONITION_COMPONENTS.has(component)),
+  )("renders the package %s directive like its JSX equivalent", (name, component) => {
+    const body = ["- [A link](./example.mdx)", "  - nested", "", "~~~md", ":::note", ":::", "~~~"].join("\n");
+    expect(render(":::" + name + "[Heads up]\n" + body + "\n:::"))
+      .toEqual(render("<" + component + ' title="Heads up">\n' + body + "\n</" + component + ">"));
+    expect(render(":::" + name + "\n" + body + "\n:::"))
+      .toEqual(render("<" + component + ">\n" + body + "\n</" + component + ">"));
+  });
+
+  it("keeps unsupported, malformed and literal directive delimiters", () => {
+    const source = [
+      "See `:::note[Example]`.",
+      "",
+      "~~~md",
+      ":::note[Literal]",
+      "literal body",
+      ":::",
+      "~~~",
+      "",
+      ":::callout[Custom]",
+      "custom body",
+      ":::",
+      "",
+      ":::note[Malformed",
+      "malformed body",
+      ":::",
+      "",
+      ":::note[Unclosed]",
+      "unclosed body",
+    ].join("\n");
+    expect(render(source)).toEqual({ text: source, unsupportedDynamicContent: false });
+  });
+
+  it("preserves quoted and list-nested code within a directive and resolves title links", () => {
+    const body = [
+      "> ~~~mdx",
+      "> <Tip>raw</Tip> and [literal](relative.md)",
+      "> :::",
+      "> ~~~",
+      "",
+      "- Parent",
+      "  - Child",
+      "",
+      "    ~~~mdx",
+      "    <Tip>raw</Tip> and [literal](relative.md)",
+      "    :::",
+      "    ~~~",
+    ].join("\n");
+    const title = "Some \\] bracket and [a link](./relative.md)";
+    const result = render(":::note[" + title + "]\n\n" + body + "\n\n:::");
+    expect(result).toEqual({
+      text: "**Note: Some \\] bracket and [a link](/docs/relative.md)**\n\n" + body,
+      unsupportedDynamicContent: false,
+    });
+  });
+
+  it.each([
+    "- ~~~mdx\n  <Tip>raw</Tip> and [literal](relative.md)\n  ~~~",
+    "> ~~~mdx\n> <Tip>raw</Tip> and [literal](relative.md)",
+  ])("preserves directive code in Markdown containers", (body) => {
+    const result = render(":::note[Example]\n\n" + body + "\n\n:::\n\nRemainder");
+    expect(result.text).toContain("**Note: Example**\n\n" + body);
+    expect(result.text).not.toContain("\n:::");
+    expect(result.text).toMatch(/\nRemainder$/);
+    expect(result.unsupportedDynamicContent).toBe(false);
+  });
+
+  it("retains raw delimiters when a package directive is configured as a custom component", () => {
+    const source = ":::note[Custom semantics]\n\nCustom content.\n\n:::";
+    expect(normalizeAgentMarkdown(source, "/docs/page", undefined, undefined, { note: "CustomNote" }))
+      .toEqual({ text: source, unsupportedDynamicContent: false });
+  });
+
+  it("normalizes unambiguous nested directives without consuming ambiguous delimiter lines", () => {
+    const widths = "::::note[Outer]\n\n:::tip[Inner]\n\nBody.\n\n:::\n\n::::";
+    expect(render(widths).text).toContain("**Note: Outer**\n\n**Tip: Inner**");
+    expect(render(widths).text).not.toContain(":::");
+    const ambiguous = ":::note[Outer]\nText\n:::tip[Inner]\nInside\n:::\nAfter inner\n:::\nAfter outer";
+    expect(render(ambiguous).text).toBe(ambiguous);
+    const malformed = ":::note[Outer]\n\n:::tip [not an opener]\n\n:::";
+    expect(render(malformed).text).toBe("**Note: Outer**\n\n:::tip [not an opener]");
+  });
+
   it("flags a wrapper whose title is not a literal and keeps the kind", () => {
     expect(render("<Note title={heading}>Body</Note>")).toEqual({ text: "**Note**\n\nBody", unsupportedDynamicContent: true });
   });

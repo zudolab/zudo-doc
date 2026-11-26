@@ -176,6 +176,8 @@ export interface AssetManifest {
   routePrefix: string;
   entries: AssetIndexEntry[];
   excerpts: Record<string, AssetExcerpt>;
+  /** Git-derived Updated timestamps for the asset paths with known history. */
+  updatedDates?: Record<string, string>;
 }
 
 /**

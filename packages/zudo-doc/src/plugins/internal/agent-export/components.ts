@@ -8,10 +8,18 @@ import {
   TAB_ITEM_COMPONENT,
 } from "../../../mdx-components/vocabulary.js";
 import type { MdDocFrontmatter } from "../../../md-utils/index.js";
+import { orderSiteTreeNavRoots } from "../../../nav-scope/index.js";
 import { findContainingNoteTray, findNoteTray, getNoteTrayItems } from "../../../note-tray-model/index.js";
 import { buildSidebarTree, findSidebarNode } from "../../../sidebar-tree/build-tree.js";
 import type { CategoryMeta, SidebarFrontmatter, SidebarNode } from "../../../sidebar-tree/types.js";
-import type { AgentComponentRenderer, AgentComponentTag } from "./normalize.js";
+import { groupSatelliteNodes } from "../../../site-schema/nav-tree.js";
+import { wrapperLabel, type AgentComponentRenderer, type AgentComponentTag } from "./normalize.js";
+
+interface PublishedPage {
+  url: string;
+  title: string;
+  description?: string;
+}
 
 /** One locale's docs as the export sees them, before export exclusions. */
 export interface AgentNavLocale {
@@ -20,8 +28,10 @@ export interface AgentNavLocale {
   entries: Array<{ slug: string; data: MdDocFrontmatter }>;
   categoryMeta?: Map<string, CategoryMeta>;
   /** Effective route slug → published page URL, for documents in the export only. */
-  published: Map<string, { url: string; title: string; description?: string }>;
+  published: Map<string, PublishedPage>;
   siteTreeNavIgnore?: readonly string[];
+  siteTreeNavCategoryOrder?: readonly string[];
+  getSiteTreeNavPage?: (slug: string) => PublishedPage | undefined;
 }
 
 /** A nav node reduced to published documents; `url` is absent for an unlinked group header. */
@@ -53,9 +63,11 @@ function nestedList(nodes: PublishedNode[], withDescription: boolean, depth = 0)
 
 const asString = (value: unknown): string | undefined => typeof value === "string" ? value : undefined;
 
-function wrapperLabel(kind: string, title: unknown, props: AgentComponentTag["props"]): { text: string; unsupported?: boolean } {
-  if (props === undefined || (title !== undefined && typeof title !== "string")) return { text: `**${kind}**`, unsupported: true };
-  return { text: title ? `**${kind}: ${title}**` : `**${kind}**` };
+function renderWrapperLabel(kind: string, title: unknown, props: AgentComponentTag["props"]): { text: string; unsupported?: boolean } {
+  if (props === undefined || (title !== undefined && typeof title !== "string")) {
+    return { text: wrapperLabel(kind, undefined), unsupported: true };
+  }
+  return { text: wrapperLabel(kind, title) };
 }
 
 /**
@@ -78,9 +90,9 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
     isNavVisible: ({ data }) => !data.draft && !data.unlisted && !data.standalone,
   });
 
-  const publish = (nodes: SidebarNode[]): PublishedNode[] => nodes.flatMap((node): PublishedNode[] => {
-    const children = publish(node.children);
-    const page = source.published.get(node.id);
+  const publish = (nodes: SidebarNode[], getPage: (slug: string) => PublishedPage | undefined): PublishedNode[] => nodes.flatMap((node): PublishedNode[] => {
+    const children = publish(node.children, getPage);
+    const page = getPage(node.id);
     if (!page && (hidden.has(node.id) || children.length === 0)) return children;
     return [{
       slug: node.id,
@@ -93,7 +105,13 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
       children,
     }];
   });
-  const published = publish(tree);
+  const published = publish(tree, (slug) => source.published.get(slug));
+  const siteTreePages = source.getSiteTreeNavPage ? publish(tree, source.getSiteTreeNavPage) : published;
+  const siteTree = orderSiteTreeNavRoots(
+    groupSatelliteNodes(siteTreePages, source.siteTreeNavCategoryOrder ?? []),
+    source.siteTreeNavCategoryOrder,
+    source.siteTreeNavIgnore,
+  );
   const findPublished = (nodes: PublishedNode[], slug: string): PublishedNode | undefined => {
     for (const node of nodes) {
       if (node.slug === slug) return node;
@@ -151,8 +169,7 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
       case "SiteTreeNav":
       case "SiteTreeNavDemo": {
         if (props.variant !== undefined && props.variant !== "default" && props.variant !== "described") return undefined;
-        const ignore = new Set(source.siteTreeNavIgnore ?? []);
-        return list(nestedList(published.filter((node) => !ignore.has(node.slug)), props.variant === "described"));
+        return list(nestedList(siteTree, props.variant === "described"));
       }
       case "NoteTrayIndex": {
         if (props.category !== undefined && typeof props.category !== "string") return undefined;
@@ -211,9 +228,9 @@ export function createAgentComponentRenderer(source: AgentNavLocale): (currentSl
 
   return (currentSlug) => (tag) => {
     const variant = ADMONITION_COMPONENTS.get(tag.name);
-    if (variant) return wrapperLabel(admonitionComponentName(variant), tag.props?.title, tag.props);
-    if (tag.name === DETAILS_COMPONENT) return wrapperLabel(DETAILS_COMPONENT, tag.props?.title, tag.props);
-    if (tag.name === TAB_ITEM_COMPONENT) return wrapperLabel("Tab", tag.props?.label, tag.props);
+    if (variant) return renderWrapperLabel(admonitionComponentName(variant), tag.props?.title, tag.props);
+    if (tag.name === DETAILS_COMPONENT) return renderWrapperLabel(DETAILS_COMPONENT, tag.props?.title, tag.props);
+    if (tag.name === TAB_ITEM_COMPONENT) return renderWrapperLabel("Tab", tag.props?.label, tag.props);
     if ((TAB_GROUP_COMPONENTS as readonly string[]).includes(tag.name)) return { text: "" };
     if (!tag.props) return undefined;
     const text = nav(tag.name, tag.props, currentSlug);
