@@ -390,23 +390,109 @@ describe("desktop sidebar scroll preservation", () => {
     cleanup();
   });
 
-  it("restores Back/Forward from the destination entry instead of the leaving sidebar", () => {
-    const frames = createFrameScheduler();
-    const sidebar = createSidebar(150);
-    history.replaceState({ index: 4, scrollX: 0, scrollY: 9 }, "");
-    const cleanup = installSidebarScrollPreserve({ document, ...frames });
+  it.each(["router first", "frame before popstate"] as const)(
+    "keeps a queued offset with its history entry: %s",
+    (order) => {
+      const frames = createFrameScheduler();
+      const guidesUrl = "/docs/guides/tag-governance/";
+      const notesUrl = "/docs/notes/first-note/";
+      const originalUrl = location.href;
+      const markSidebar = (sidebar: ControlledScrollTop, context: string, href: string) => {
+        markContext(sidebar.element, context);
+        const row = sidebar.element.querySelector("a")!;
+        row.href = href;
+        row.dataset.sidebarFocusScope = context;
+      };
+      const scroll = (sidebar: ControlledScrollTop, offset: number) => {
+        sidebar.setValue(offset);
+        sidebar.element.dispatchEvent(new Event("scroll"));
+      };
 
-    dispatch(BEFORE_NAVIGATE_EVENT);
-    sidebar.setValue(12);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-    dispatch(BEFORE_NAVIGATE_EVENT);
-    dispatch(AFTER_NAVIGATE_EVENT);
-    ready(sidebar.element, frames);
+      const guides = createSidebar(0);
+      markSidebar(guides, "en:guides", guidesUrl);
+      history.replaceState({ index: 4, scrollX: 1, scrollY: 9, extra: "guides" }, "", guidesUrl);
 
-    expect(sidebar.getValue()).toBe(150);
-    expect(history.state).toMatchObject({ index: 4, scrollY: 9 });
-    cleanup();
-  });
+      // ZFB 7.2.0 handles popstate with a window listener and dispatches
+      // preparation synchronously. The typed fields live on the event itself.
+      const routerPopState = () => {
+        document.dispatchEvent(Object.assign(new Event(BEFORE_NAVIGATE_EVENT), {
+          navigationType: "traverse" as const,
+          to: new URL(location.href),
+        }));
+      };
+      window.addEventListener("popstate", routerPopState);
+      const cleanup = installSidebarScrollPreserve({ document, ...frames });
+      try {
+        scroll(guides, 150);
+        frames.flush();
+        const guidesState = history.state;
+
+        dispatch(BEFORE_NAVIGATE_EVENT);
+        history.pushState({ index: 5, scrollX: 2, scrollY: 7, extra: "notes" }, "", notesUrl);
+        guides.element.remove();
+        const notes = createSidebar(0);
+        markSidebar(notes, "en:notes", notesUrl);
+        dispatch(AFTER_NAVIGATE_EVENT);
+        ready(notes.element, frames);
+        scroll(notes, 32);
+        frames.flush();
+        const notesState = history.state;
+
+        const traverse = (state: unknown, href: string) => {
+          // By the time either window listener runs, the browser has already
+          // changed the active history entry. Also exercise a queued callback
+          // reaching that boundary before sidebar navigation callbacks.
+          history.replaceState(state, "", href);
+          if (order === "frame before popstate") frames.flush();
+          window.dispatchEvent(new PopStateEvent("popstate", { state }));
+          expect(history.state).toEqual(state);
+        };
+
+        scroll(notes, 55);
+        expect(frames.pendingCount()).toBe(1);
+        traverse(guidesState, guidesUrl);
+        notes.element.remove();
+        const returnedGuides = createSidebar(0);
+        markSidebar(returnedGuides, "en:guides", guidesUrl);
+        dispatch(AFTER_NAVIGATE_EVENT);
+        ready(returnedGuides.element, frames);
+        expect(returnedGuides.getValue()).toBe(150);
+        expect(history.state).toMatchObject({
+          index: 4, scrollX: 1, scrollY: 9, extra: "guides",
+          zdSidebarScroll: { desktop: { scrollTop: 150, contextId: "en:guides" } },
+        });
+
+        scroll(returnedGuides, 215);
+        traverse(notesState, notesUrl);
+        returnedGuides.element.remove();
+        const returnedNotes = createSidebar(0);
+        markSidebar(returnedNotes, "en:notes", notesUrl);
+        dispatch(AFTER_NAVIGATE_EVENT);
+        ready(returnedNotes.element, frames);
+        expect(returnedNotes.getValue()).toBe(55);
+        expect(history.state).toMatchObject({
+          index: 5, scrollX: 2, scrollY: 7, extra: "notes",
+          zdSidebarScroll: { desktop: { scrollTop: 55, contextId: "en:notes" } },
+        });
+
+        traverse(guidesState, guidesUrl);
+        returnedNotes.element.remove();
+        const finalGuides = createSidebar(0);
+        markSidebar(finalGuides, "en:guides", guidesUrl);
+        dispatch(AFTER_NAVIGATE_EVENT);
+        ready(finalGuides.element, frames);
+        expect(finalGuides.getValue()).toBe(215);
+        expect(history.state).toMatchObject({
+          index: 4, scrollX: 1, scrollY: 9, extra: "guides",
+          zdSidebarScroll: { desktop: { scrollTop: 215, contextId: "en:guides" } },
+        });
+      } finally {
+        cleanup();
+        window.removeEventListener("popstate", routerPopState);
+        history.replaceState(null, "", originalUrl);
+      }
+    },
+  );
 
   it("cancels a pending restore when the reader scrolls the sidebar", () => {
     const frames = createFrameScheduler();
