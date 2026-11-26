@@ -6,6 +6,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+- Fixed sidebar scroll restoration when going Back or Forward between different sections. Each history entry keeps its own position.
 - Added **Copy Markdown** to article headers with an existing Markdown export, with site and page overrides and a manual-copy fallback.
 - Anchored the mobile sidebar to the viewport bottom so the menu scrolls within the area below the header.
 
