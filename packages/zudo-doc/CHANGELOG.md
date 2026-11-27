@@ -11,6 +11,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 - Agent Markdown preserves code in indented tabs, renders standard admonitions, and follows SiteTreeNav grouping, order, and locale rules. The sitemap lists Git-derived update dates for indexed asset viewer pages when history is available.
 - Anchored the mobile sidebar to the viewport bottom so the menu scrolls within the area below the header.
 - Fixed `docSources` links with labels that span lines. Mapped links resolve to the generated page, and unmapped references stay readable and emit a build warning.
+- Gave default SiteTreeNav category cards the same padding as the described variant, including the smaller padding in narrow containers.
 
 ## [14.0.0] - 2026-11-24
 
