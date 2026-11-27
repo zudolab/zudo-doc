@@ -1521,16 +1521,12 @@ html:not([data-theme="dark"]) [data-zd-home-image="dark"] {
 }
 
 .zd-site-tree-card {
-  --zd-stn-card-pad: var(--spacing-hsp-sm);
+  --zd-stn-card-pad: var(--spacing-hsp-xl);
   padding: var(--zd-stn-card-pad);
 }
 
-.zd-site-tree-card[data-described] {
-  --zd-stn-card-pad: var(--spacing-hsp-xl);
-}
-
 @container zd-site-tree (max-width: 38.75rem) {
-  .zd-site-tree-card[data-described] {
+  .zd-site-tree-card {
     --zd-stn-card-pad: var(--spacing-hsp-lg);
   }
 }
