@@ -62,11 +62,12 @@
 //      — such a file still reaches the bootstrap through `routes/_chrome.tsx`).
 //      See the guard case inline, next to #3 above.
 //
-//   4. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
+//   4. injectRoute(pattern, entrypoint[, opts]) — the route catalog
 //      (Decision 3), patterns derived from `options.settings.locales` /
 //      `options.settings.versions`. Dynamic `[locale]` / `[version]` patterns
 //      are injected ONCE; the entrypoint's `paths()` enumerates the concrete
-//      values (same as the kept `pages/*.tsx` stubs).
+//      values (same as the kept `pages/*.tsx` stubs). Each entrypoint is the
+//      package's compiled `dist/routes/*.js`, injected directly (#4838).
 //
 // zfb 2.13.1 renders injected static and dynamic routes in both build and dev.
 // A package route colliding with a kept user `pages/` route is
@@ -79,8 +80,8 @@
 import { prepareHomeIntros, type HomeIntroSettings } from "../home-intro/prepare.js";
 import { MCP_ENDPOINT_PATH, MCP_SERVER_CARD_PATH } from "../mcp/constants.js";
 import { createRequire } from "node:module";
-import { existsSync, statSync, readFileSync, cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, basename, join } from "node:path";
+import { existsSync, statSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 import { loadThemePackRegistry } from "../theme-packs-registry/load-registry.js";
 import { resolveEnabledPacks } from "../theme-packs-registry/index.js";
@@ -852,83 +853,36 @@ const plugin = definePlugin({
       }
     }
 
-    // (4) Inject the derived route catalog (Decision 3). zfb 2.13.1 renders
-    // injected dynamic routes in dev and build; precedence still drops
+    // (4) Inject the derived route catalog (Decision 3). zfb renders injected
+    // static and dynamic routes in dev and build; precedence still drops
     // collisions with kept user `pages/` routes (Decision 6).
     //
-    // zfb 0.1.0-next.62 resolves the `entrypoint` argument as a filesystem
-    // path from the project root — it does NOT resolve bare npm package
-    // specifiers (e.g. `@takazudo/zudo-doc/routes/foo`) through node_modules.
-    // Use `createRequire` to resolve each entry specifier to its absolute
-    // filesystem path so zfb can find the compiled entrypoint in dist/.
-    // (The `createRequire` call is valid here: the routes plugin is loaded by
-    // the zfb plugin-host under Node.js, NOT by the preset's node-free config
-    // eval — so `node:module` is safe to use in this file's top-level import.)
+    // zfb resolves the `entrypoint` argument as a filesystem path, not as a
+    // bare npm specifier, so each package subpath is resolved to its absolute
+    // compiled module (`dist/routes/X.js`) through this module's own
+    // `createRequire` — the package's `exports` map, self-referenced, so the
+    // same path is reached from a workspace link, an extracted tarball or a
+    // pnpm store symlink. (`node:module` is safe here: the zfb plugin-host
+    // loads this plugin under Node.js, not the preset's node-free config eval.)
     //
-    // zfb (0.1.0-next.65) extracts `paths()` via static AST analysis on the
-    // `.tsx` SOURCE file — it CANNOT extract `paths()` from a compiled `.js`
-    // (SPIKE-verified in S1 #2370: pointing injectRoute at dist/routes/*.js
-    // fails the build with "no top-level `paths` export found"). So every route
-    // — static AND dynamic — must inject a `.tsx` SOURCE entrypoint. We resolve
-    // the source for each route from one of two locations, probed in order:
-    //
-    //   1. PUBLISHED consumers — the package ships the route sources (with
-    //      parent-relative imports rewritten to bare `@takazudo/zudo-doc/*`
-    //      specifiers) under `routes-src/`. The published tree has NO `src/`,
-    //      so this is the ONLY source available there. Derive it from the
-    //      compiled path: `…/dist/routes/X.js` → `…/routes-src/X.tsx`.
-    //   2. IN-REPO (workspace) — the package is consumed via `workspace:*`,
-    //      so the original `src/routes/X.tsx` is on disk next to `dist/`.
-    //      Derive it: `…/dist/routes/X.js` → `…/src/routes/X.tsx`.
-    //
-    // zfb creates a build shadow and rewrites injected entrypoints as relative
-    // imports from its generated pages. Stage published route sources under the
-    // consumer's project root so the shadow copies them beside those pages.
-    // A nested workspace consumer still needs its declared package-local
-    // zudo-doc dependency link for bare imports inside the staged sources.
+    // That compiled ESM is injected AS-IS. zfb >= 7.2.0 accepts a compiled
+    // `.js` entrypoint — including tsup's `export { X as default, paths }`
+    // list form — and reads `paths()` / `frontmatter` / `default` from it, so
+    // no route source is reverse-mapped, copied into the consumer
+    // (`.zudo-doc/routes-src`, removed here — zudolab/zudo-doc#4838) or read
+    // from the in-repo `src/`. Every route module and its imports therefore
+    // share the one `dist/` module graph the rest of the package uses, which
+    // keeps island and `"use client"` identity aligned with `bundle:false`.
+    // The published `routes-src/` tree stays a public compatibility export
+    // (#4837); this plugin no longer reads it.
     const require = createRequire(import.meta.url);
-    let stagedRoutesDir: string | undefined;
-    const stageRoutes = (routesSrcDir: string): string => {
-      if (stagedRoutesDir) return stagedRoutesDir;
-      const dest = join(ctx.projectRoot, ".zudo-doc", "routes-src");
-      rmSync(dest, { recursive: true, force: true });
-      mkdirSync(dirname(dest), { recursive: true });
-      cpSync(routesSrcDir, dest, { recursive: true });
-      stagedRoutesDir = dest;
-      return dest;
-    };
-
     for (const route of derivedRoutes) {
       let resolvedEntrypoint: string;
       try {
-        const compiledPath = require.resolve(route.entrypoint);
-        const tsxName = basename(compiledPath).replace(/\.js$/, ".tsx");
-        // (1) Published `routes-src/X.tsx` — probed FIRST.
-        const routesSrcDir = dirname(compiledPath).replace(
-          /dist[\\/]routes$/,
-          "routes-src",
-        );
-        const routesSrcPath = join(routesSrcDir, tsxName);
-        // (2) In-repo `src/routes/X.tsx` — fallback for workspace consumers.
-        const srcPath = compiledPath
-          .replace(/[\\/]dist[\\/]/, "/src/")
-          .replace(/\.js$/, ".tsx");
-
-        if (existsSync(routesSrcPath)) {
-          resolvedEntrypoint = /[\\/]node_modules[\\/]/.test(routesSrcPath)
-            ? join(stageRoutes(routesSrcDir), tsxName)
-            : routesSrcPath;
-        } else if (existsSync(srcPath)) {
-          // Workspace source (realpath already outside node_modules).
-          resolvedEntrypoint = srcPath;
-        } else {
-          // No source on disk — fall back to the compiled `.js` so zfb surfaces
-          // the loud missing-`paths()` / virtual-module error.
-          resolvedEntrypoint = compiledPath;
-        }
+        resolvedEntrypoint = require.resolve(route.entrypoint);
       } catch {
-        // If the package isn't installed (e.g. in tests without node_modules),
-        // fall back to the bare specifier so the error surfaces from zfb.
+        // Package not resolvable (e.g. unit tests without node_modules): pass
+        // the bare specifier through so zfb reports the unresolved entrypoint.
         resolvedEntrypoint = route.entrypoint;
       }
       ctx.injectRoute(route.pattern, resolvedEntrypoint, route.opts);

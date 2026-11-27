@@ -16,11 +16,11 @@ import { createChrome } from "../chrome/index.js";
 import { DocHistoryBoundary as DocHistory } from "../doc-history-area/index.js";
 import type { DocNavNode } from "../site-schema/types.js";
 // Imported via the BARE published subpath rather than a relative
-// `../chrome-bindings.js`. This file is copied into consumer projects by the
-// routes-src mechanism (`scripts/copy-routes-src.mjs`), which rewrites relative
-// `../` imports to `@takazudo/zudo-doc/*` specifiers so the copy resolves
-// against this package's `dist/`. Writing the bare specifier here directly
-// keeps the source identical to that rewritten output.
+// `../chrome-bindings.js`. The compatibility `routes-src/` copy
+// (`scripts/copy-routes-src.mjs`) rewrites relative `../` imports to
+// `@takazudo/zudo-doc/*` specifiers so it resolves against this package's
+// `dist/`. Writing the bare specifier here directly keeps the source identical
+// to that rewritten output.
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 // Host-callables channel (#2501): re-exports `settings.chromeBindingsModule`
 // when the host configured one, else `{}` — see

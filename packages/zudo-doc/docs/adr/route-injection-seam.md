@@ -233,16 +233,27 @@ scanner-safe. Every other host slot remains intact.
   run before `preBuild` writes the manifest (#4708). Setting present but the resolved file
   missing → the plugin **throws at setup**, naming the resolved absolute path
   and the setting name (never a silent empty fallback).
-- **Published route sources are staged.** zfb's virtual-module aliases resolve
-  imports from `routes-src/` in `node_modules`, but its generated route shims
-  use relative imports in a build shadow. In a nested workspace package whose
-  own `node_modules` lacks `@takazudo/zudo-doc`, those relative imports fail
-  even though Node can find the package through an ancestor. The plugin copies
-  the published source tree to `<projectRoot>/.zudo-doc/routes-src/` and injects
-  those first-party paths. Workspace source outside `node_modules` uses its
-  original path. This restores the path-provenance benefit lost in #4224 while
-  retaining zfb's virtual-module alias support; see #4267.
-  Validation history: zfb 2.17.0 + zudo-doc 5.25.0 green (#4226); zfb 2.18.0 +
+- **Compiled route modules are injected directly (#4838).** The plugin resolves
+  each `@takazudo/zudo-doc/routes/*` subpath through the package `exports` map
+  (`createRequire` from the plugin module) and passes that compiled
+  `dist/routes/*.js` path to `injectRoute` unchanged. zfb 7.2.0 documents a
+  compiled ESM `.js` entrypoint as a supported injected route — including
+  tsup's `export { Page as default, frontmatter, paths }` list form — so
+  nothing reverse-maps a compiled path to TSX, reads the in-repo `src/`, or
+  copies sources into the consumer. Route modules and their imports share the
+  one `bundle:false` `dist/` graph, so island and `"use client"` identity is the
+  same module a host `pages/` re-export reaches. Verified on extracted tarballs,
+  a real pnpm symlink install in a nested workspace, and an isolated package
+  with `src/` and `routes-src/` both removed (no `.zudo-doc/` is written).
+  `routes-src/` and the `./routes-src/*` export remain shipped as a public
+  compatibility surface; their retirement is a separate decision (#4837).
+  Superseded history: from #4267 to #4838 the plugin copied published
+  `routes-src/` into `<projectRoot>/.zudo-doc/routes-src/` and injected those
+  `.tsx` copies, because older zfb could not read `paths()` from compiled `.js`
+  and its build shadow rewrote injected sources as relative imports. Existing
+  consumer `.zudo-doc/` directories are left in place; current builds neither
+  write nor read them.
+  Validation history of that staging shape: zfb 2.17.0 + zudo-doc 5.25.0 green (#4226); zfb 2.18.0 +
   zudo-doc 5.25.0 green across 11 consumer topologies (ten fully green; the
   eleventh resolved every shim and then failed at render for an unrelated
   duplicate-preact reason) in the wave-1 probe for
@@ -319,8 +330,9 @@ the same `setup(ctx)` hook.
   `routes/_design-token-panel-bootstrap.tsx`:
   - the wrapper is the only module in the package importing the virtual
     specifier, and it lives in the routes graph, which zfb always bundles with
-    the plugin active (`routes-src/` copy is automatic — the copier takes every
-    non-test file in `src/routes/`);
+    the plugin active (the routes plugin injects the compiled
+    `dist/routes/*` modules, and the compatibility `routes-src/` copier still
+    takes every non-test file in `src/routes/`);
   - `routes/_chrome.tsx` threads it through the existing
     `hostBindings.DesignTokenPanelBootstrap` slot, spread BEFORE
     `...chromeBindings` so a host's own slot value still wins;

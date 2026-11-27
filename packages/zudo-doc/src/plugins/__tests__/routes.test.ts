@@ -104,7 +104,7 @@ describe("MCP route injection", () => {
     const root = makeCtx(makeProjectRoot(), { base: "/", mcp: true }, { packageOwnedRoutes: false });
     await routesPlugin.setup!(root.ctx as never);
     // zfb leaves pages under a dot-directory out of the bundle, so the catalog uses a parameter segment.
-    for (const [pattern, entrypoint] of [["/mcp", /mcp(\.tsx)?$/], ["/mcp/server-card", /mcp-server-card(\.tsx)?$/], ["/[wellKnown]/ai-catalog.json", /ai-catalog(\.tsx)?$/]] as const) {
+    for (const [pattern, entrypoint] of [["/mcp", /\/dist\/routes\/mcp\.js$/], ["/mcp/server-card", /\/dist\/routes\/mcp-server-card\.js$/], ["/[wellKnown]/ai-catalog.json", /\/dist\/routes\/ai-catalog\.js$/]] as const) {
       expect(root.injectedRoutes).toContainEqual({ pattern, entrypoint: expect.stringMatching(entrypoint), opts: { prerender: false } });
     }
     expect(root.injectedRoutes.some(route => route.pattern.split("/").some(segment => segment.startsWith(".")))).toBe(false);
@@ -926,5 +926,39 @@ describe("home introduction preparation in the virtual loader", () => {
     });
     await routesPlugin.setup!(ctx as never);
     await expect(virtualModules.get("virtual:zudo-doc-route-context")!()).rejects.toThrow("unsupported html");
+  });
+});
+
+// #4838: zfb >= 7.2.0 accepts compiled ESM route modules, so every catalog
+// entry is injected as the package's own `dist/routes/*.js` — no route source
+// is reverse-mapped or staged into the consumer's `.zudo-doc/routes-src`.
+describe("compiled route entrypoints (#4838)", () => {
+  const FULL_SETTINGS = {
+    base: "/",
+    mcp: true,
+    sitemap: true,
+    docTags: true,
+    aiAssistant: true,
+    locales: { ja: { dir: "src/content/docs-ja" } },
+    versions: [{ slug: "1.0", docsDir: "src/content/docs-v1" }],
+  };
+  const SSR_PATTERNS = ["/mcp", "/mcp/server-card", "/[wellKnown]/ai-catalog.json", "/api/ai-chat"];
+
+  it("injects all 20 catalog entries as existing compiled dist/routes/*.js modules and stages nothing", async () => {
+    const projectRoot = makeProjectRoot();
+    mkdirSync(join(projectRoot, "public", "assets"), { recursive: true });
+    const { ctx, injectedRoutes } = makeCtx(projectRoot, FULL_SETTINGS, { assetViewer: true });
+    await routesPlugin.setup!(ctx as never);
+
+    expect(injectedRoutes).toHaveLength(20);
+    expect(new Set(injectedRoutes.map((route) => route.pattern)).size).toBe(20);
+    const distRoutes = resolve(dirname(fileURLToPath(import.meta.url)), "../../../dist/routes");
+    for (const route of injectedRoutes) {
+      expect(route.entrypoint, route.pattern).toMatch(/[\\/]dist[\\/]routes[\\/][^\\/]+\.js$/);
+      expect(dirname(route.entrypoint), route.pattern).toBe(distRoutes);
+      expect(readdirSync(distRoutes)).toContain(route.entrypoint.slice(distRoutes.length + 1));
+      expect(route.opts, route.pattern).toEqual(SSR_PATTERNS.includes(route.pattern) ? { prerender: false } : undefined);
+    }
+    expect(readdirSync(projectRoot)).not.toContain(".zudo-doc");
   });
 });

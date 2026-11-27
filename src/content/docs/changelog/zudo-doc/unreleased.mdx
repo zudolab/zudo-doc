@@ -10,3 +10,4 @@ sidebar_position: 1163
 - Anchored the mobile sidebar to the viewport bottom so the menu scrolls within the area below the header.
 - Fixed `docSources` links with labels that span lines. Mapped links resolve to the generated page, and unmapped references stay readable and emit a build warning.
 - Gave default SiteTreeNav category cards the same padding as the described variant, including the smaller padding in narrow containers.
+- Package-owned routes now load the package's compiled route modules directly. Builds no longer copy route sources into a project's `.zudo-doc/routes-src/` directory. An existing `.zudo-doc/` directory is left in place and can be deleted. The `./routes-src/*` export is still published.

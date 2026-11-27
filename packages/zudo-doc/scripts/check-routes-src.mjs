@@ -4,13 +4,14 @@
 // Presence + import-hygiene guard for the published `routes-src/` tree (S1 #2370).
 // Run as part of the `prepack` hook so a build that skipped the
 // `copy-routes-src.mjs` step — or left a parent-relative import unrewritten —
-// fails loudly instead of publishing a package whose injected dynamic routes
-// would dangle in a consumer's node_modules.
+// fails loudly instead of publishing a `./routes-src/*` export whose files
+// would dangle in a consumer's node_modules. The routes plugin injects the
+// compiled `dist/routes/*.js` modules since #4838; `routes-src/` stays a public
+// compatibility export until its retirement is decided (#4837).
 //
 // Two checks:
 //   1. PRESENCE  — routes-src/ exists, is non-empty, and contains the known
-//                  entrypoint set (the resolver in plugins/routes.ts points at
-//                  these by basename).
+//                  entrypoint set (the shipped compatibility surface).
 //   2. HYGIENE   — NO residual parent-relative import remains. The scan is
 //                  SEMANTIC (matches import/export specifier syntax), NOT a
 //                  broad `../` text grep — so comments and string literals
@@ -98,8 +99,8 @@ if (files.length === 0) {
 for (const ep of REQUIRED_ENTRYPOINTS) {
   if (!files.includes(ep)) {
     process.stderr.write(
-      `\n[check-routes-src] ERROR: routes-src/${ep} is missing — the resolver\n` +
-        `  in plugins/routes.ts injects it. Re-run the package build.\n\n`,
+      `\n[check-routes-src] ERROR: routes-src/${ep} is missing — the public\n` +
+        `  ./routes-src/* compatibility export ships it. Re-run the package build.\n\n`,
     );
     ok = false;
   }

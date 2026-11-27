@@ -2,9 +2,9 @@
 //
 // Identical to the `route-injection` fixture EXCEPT it configures ONE non-default
 // locale (`ja`). That turns on the locale-prefixed injected routes
-// (`/[locale]/docs/[[...slug]]`, …) in deriveRoutes(), so the no-src test can
-// prove the resolver picks `routes-src/locale-docs-slug.tsx` when the published
-// package has no `src/`.
+// (`/[locale]/docs/[[...slug]]`, …) in deriveRoutes(), so the no-src tests can
+// prove the compiled `dist/routes/locale-docs-slug.js` renders when the
+// published package has no `src/` (and, in COMPILED-ONLY, no `routes-src/`).
 
 import type { Settings } from "@takazudo/zudo-doc/settings";
 

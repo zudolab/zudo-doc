@@ -5,15 +5,14 @@
 // into a published `routes-src/` tree, REWRITING their parent-relative imports
 // to bare `@takazudo/zudo-doc/*` specifiers (S1 #2370).
 //
-// WHY this exists (the load-bearing reason — recoverable only from the issue):
-//   zfb (0.1.0-next.65) extracts a dynamic route's `paths()` via STATIC AST
-//   analysis on the `.tsx` SOURCE — it CANNOT read `paths()` from a compiled
-//   `.js` (SPIKE-verified in #2370: pointing injectRoute at dist/routes/*.js
-//   fails the build with "no top-level `paths` export found"). The published
-//   package ships `files: ["dist","bin","eject","routes-src","README.md"]` —
-//   NO `src/` — so a published consumer enabling `settings.packageOwnedRoutes`
-//   needs the route `.tsx` SOURCES on disk for the routes plugin's resolver to
-//   point injectRoute at. This script produces those sources.
+// WHY this exists:
+//   It produced the route `.tsx` sources the routes plugin used to inject:
+//   zfb 0.1.0-next.65 could not read `paths()` from a compiled `.js` (#2370).
+//   zfb 7.2.0 accepts compiled ESM route modules, so since #4838 the plugin
+//   injects `dist/routes/*.js` directly and no longer reads this tree. The
+//   published package still ships `routes-src/` and the `./routes-src/*`
+//   export as a public compatibility surface; whether to retire it is a
+//   separate decision (#4837). Until then this script keeps producing it.
 //
 // WHY the import rewrite is REQUIRED (not a verbatim copy):
 //   Every `src/routes/*.tsx` imports siblings via parent-relative paths

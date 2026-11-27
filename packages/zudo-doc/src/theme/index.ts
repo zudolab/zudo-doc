@@ -20,9 +20,9 @@ export type {
 // ONLY theme-pack symbol on this subpath: `copy-routes-src.mjs` rewrites a
 // route's `../theme/<file>` import to the bare `@takazudo/zudo-doc/theme`
 // specifier, so anything `src/routes/**` imports from this directory has to be
-// reachable from this barrel or the site build fails with "No matching export"
-// (the in-package relative import typechecks fine, so only a real build catches
-// it). `src/routes/404.tsx` is the sole such importer today.
+// reachable from this barrel or the shipped `routes-src/` compatibility copy
+// (#4837) fails with "No matching export" when built (the in-package relative
+// import typechecks fine, so only a real build of that copy catches it). `src/routes/404.tsx` is the sole such importer today.
 //
 // The rest of `theme-pack-provider.js` (the ThemePackProvider component,
 // themePackVersionMap, buildThemePackBootstrap) stays OFF this public subpath —
