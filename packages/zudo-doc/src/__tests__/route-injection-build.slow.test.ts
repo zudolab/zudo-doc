@@ -3372,15 +3372,11 @@ describe("OPT-KATEX-MATH math-on-no-katex: math: true with the optional katex pe
 // released in zfb 2.7.1 and adopted here (zudolab/zudo-doc#3433).
 // The setup test of "TM build+check+css" now asserts the warning is absent.
 //
-// The fix dedupes by resolved component identity, and reaches THIS case via a
-// byte-identity branch: the compiled `dist/` graph's component is compared
-// against the SAME published file the injected route resolves to at
-// `node_modules/@takazudo/zudo-doc/routes-src/` — since #4224 removed the
-// `.zudo-doc/routes-src` staging copy, the injected entrypoint IS that
-// published file directly (no intermediate copy to keep byte-preserving).
-// So the invariant collapses to "the compiled `dist/routes/*.js` graph and the
-// `routes-src/*.tsx` source it was compiled from describe the same component" —
-// true by construction, not by a copy step.
+// The fix dedupes by resolved component identity. Since #4838 the injected
+// route IS the compiled `node_modules/@takazudo/zudo-doc/dist/routes/*.js`
+// module, so the re-export stub and the injected route reach the same `dist/`
+// files and there is no second (routes-src) copy of the component to dedupe.
+// The collision-free assertion below still guards that single identity.
 //
 // Accepted upstream trade-off: two GENUINELY DIFFERENT components shipped by
 // the SAME package under one marker name are now silently deduped too. Only a
@@ -3641,13 +3637,13 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
     // nothing. runZfbBuild merges stdout+stderr, so a successful build is
     // never silent.
     expect(buildOutput.length).toBeGreaterThan(0);
-    // This fixture double-scans the same components (dist graph + the
-    // published routes-src/ file the injected route resolves to), which zfb
-    // ≤2.7.0 reported as a marker-name collision on every build. zfb 2.7.1
-    // dedupes by resolved component identity, so a collision-free build is
-    // now assertable — and this assertion is the only end-to-end proof of
-    // that fix anywhere: zfb's own coverage stops at the classifier and never
-    // runs a real build. If it fails, report upstream
+    // Before #4838 this fixture double-scanned the same components (dist graph
+    // + the routes-src/ source the injected route then resolved to), which zfb
+    // ≤2.7.0 reported as a marker-name collision on every build. Both paths
+    // now reach the same compiled dist/ module, and zfb 2.7.1+ dedupes by
+    // resolved component identity, so a collision-free build is asserted —
+    // the only end-to-end proof of that identity anywhere: zfb's own coverage
+    // stops at the classifier and never runs a real build. If it fails, report upstream
     // (zudolab/zudo-doc#3433, Takazudo/zudo-front-builder#2441) rather than
     // relaxing it — a genuine collision between two DIFFERENT components must
     // still warn.
@@ -3946,16 +3942,14 @@ describe("TM group 2b: designTokenPanelConfigModule — the stub mounts no panel
     // saw neither that nor a double-hydration.
     expect(buildOutput).not.toMatch(/has no matching registry entry/i);
     expect(buildOutput).not.toMatch(/cannot hydrate both components/i);
-    // Deliberately NOT asserted here: `island marker name collision`. Every
-    // target-manifest build emits one for `ConfiguredDesignTokenPanelBootstrap`,
-    // with or without this setting and on every variant — the fixture's
-    // `pages/index.tsx` re-exports `@takazudo/zudo-doc/routes/index`, so the
-    // COMPILED `dist/routes/_chrome.js` graph is scanned alongside the
-    // published `node_modules/@takazudo/zudo-doc/routes-src/` file the
-    // injected route resolves to, and the same component reaches the scanner
-    // from two files. zfb dedupes by resolved component identity; the two
-    // share a name, so the surviving registry entry still matches every
-    // emitted marker. Pre-existing and unrelated to #3414 — the emptyPages
+    // Deliberately NOT asserted here: `island marker name collision`. Before
+    // #4838 the fixture's `pages/index.tsx` re-export of
+    // `@takazudo/zudo-doc/routes/index` reached the COMPILED
+    // `dist/routes/_chrome.js` graph while the injected route resolved to the
+    // published `routes-src/` source, so the same component reached the
+    // scanner from two files (deduped by resolved identity, same name, so the
+    // surviving registry entry still matched every emitted marker). Injected
+    // routes now use the compiled dist/ module too. Unrelated to #3414 — the emptyPages
     // route-injection fixture, which has no such re-export stub, is where that
     // assertion belongs (and it is asserted there).
   });

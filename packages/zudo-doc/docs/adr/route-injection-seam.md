@@ -238,7 +238,8 @@ scanner-safe. Every other host slot remains intact.
   (`createRequire` from the plugin module) and passes that compiled
   `dist/routes/*.js` path to `injectRoute` unchanged. zfb 7.2.0 documents a
   compiled ESM `.js` entrypoint as a supported injected route — including
-  tsup's `export { Page as default, frontmatter, paths }` list form — so
+  tsup's `export { Page as default, frontmatter, paths }` list form, reading
+  its default export and `paths()` — so
   nothing reverse-maps a compiled path to TSX, reads the in-repo `src/`, or
   copies sources into the consumer. Route modules and their imports share the
   one `bundle:false` `dist/` graph, so island and `"use client"` identity is the

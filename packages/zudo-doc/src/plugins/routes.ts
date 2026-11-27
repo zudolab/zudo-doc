@@ -867,7 +867,7 @@ const plugin = definePlugin({
     //
     // That compiled ESM is injected AS-IS. zfb >= 7.2.0 accepts a compiled
     // `.js` entrypoint — including tsup's `export { X as default, paths }`
-    // list form — and reads `paths()` / `frontmatter` / `default` from it, so
+    // list form — and reads the default export and `paths()` from it, so
     // no route source is reverse-mapped, copied into the consumer
     // (`.zudo-doc/routes-src`, removed here — zudolab/zudo-doc#4838) or read
     // from the in-repo `src/`. Every route module and its imports therefore

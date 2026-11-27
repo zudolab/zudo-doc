@@ -104,7 +104,7 @@ describe("MCP route injection", () => {
     const root = makeCtx(makeProjectRoot(), { base: "/", mcp: true }, { packageOwnedRoutes: false });
     await routesPlugin.setup!(root.ctx as never);
     // zfb leaves pages under a dot-directory out of the bundle, so the catalog uses a parameter segment.
-    for (const [pattern, entrypoint] of [["/mcp", /\/dist\/routes\/mcp\.js$/], ["/mcp/server-card", /\/dist\/routes\/mcp-server-card\.js$/], ["/[wellKnown]/ai-catalog.json", /\/dist\/routes\/ai-catalog\.js$/]] as const) {
+    for (const [pattern, entrypoint] of [["/mcp", /[\\/]dist[\\/]routes[\\/]mcp\.js$/], ["/mcp/server-card", /[\\/]dist[\\/]routes[\\/]mcp-server-card\.js$/], ["/[wellKnown]/ai-catalog.json", /[\\/]dist[\\/]routes[\\/]ai-catalog\.js$/]] as const) {
       expect(root.injectedRoutes).toContainEqual({ pattern, entrypoint: expect.stringMatching(entrypoint), opts: { prerender: false } });
     }
     expect(root.injectedRoutes.some(route => route.pattern.split("/").some(segment => segment.startsWith(".")))).toBe(false);
