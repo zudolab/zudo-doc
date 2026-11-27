@@ -1481,7 +1481,7 @@ describe("scaffold — .gitignore base blocks", () => {
     }
   });
 
-  it("ignores the generated route-source staging directory", async () => {
+  it("keeps ignoring the legacy route-source staging directory (written before #4838)", async () => {
     await scaffold(baseChoices);
     const gitignore = await fs.readFile(projectPath("test-doc", ".gitignore"), "utf-8");
     // Exact-line check, not a substring — `.zudo-doc.json` (the committed

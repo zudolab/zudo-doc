@@ -1,8 +1,8 @@
 // zfb config for the no-src route-injection build proof — i18n variant (S1 #2370).
 // Same preset wiring as the `route-injection` fixture, but its settings declare
 // a `ja` locale so the locale-prefixed injected routes are emitted. Used by the
-// no-src test variant to prove the resolver picks `routes-src/*.tsx` (NOT a
-// missing `src/`) for BOTH plain and `/[locale]/...` dynamic routes.
+// no-src test variants to prove the compiled `dist/routes/*.js` entrypoints
+// render BOTH plain and `/[locale]/...` dynamic routes from a packed package.
 
 import { defineConfig } from "zfb/config";
 import { zudoDocPreset } from "@takazudo/zudo-doc/preset";

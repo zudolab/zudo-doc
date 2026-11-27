@@ -37,6 +37,7 @@ import { execSync, spawn, type ExecSyncOptions, type ChildProcess } from "node:c
 import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync, renameSync, readlinkSync, realpathSync, lstatSync } from "node:fs";
 import { join, resolve, dirname, relative } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { parse, type DefaultTreeAdapterMap } from "parse5";
 import { ZDTP_DISABLED_MESSAGE_PREFIX } from "../plugins/zdtp-loader";
 
@@ -2594,8 +2595,9 @@ describe("A2 precedence: pages/ stub wins over injected route when both claim th
 // published file set: includes `routes-src/`, EXCLUDES `src/`), and symlinks
 // every OTHER workspace dep (incl. `@takazudo/zfb*`) so the build resolves.
 // It asserts BOTH a plain dynamic route AND a `/[locale]/...` dynamic route
-// render — the latter exercises the `locale-docs-slug` routes-src path,
-// staged from `node_modules/@takazudo/zudo-doc/routes-src/` into the project.
+// render. Since #4838 the routes plugin injects the packed compiled
+// `dist/routes/*.js` modules directly; the shipped `routes-src/` tree remains a
+// public compatibility export (#4837) and is never staged into the project.
 // ---------------------------------------------------------------------------
 
 /** `npm pack` the package → return the absolute tarball path (in a fresh temp
@@ -2726,7 +2728,7 @@ function sidebarIslandProps(html: string): Record<string, SerializedSidebar> {
   return result;
 }
 
-describe("S1 no-src: published package (routes-src/, no src/) renders injected routes", () => {
+describe("S1 no-src: published package (no src/) renders injected routes from compiled dist/routes", () => {
   let tarballPath: string;
   let pkgDest: string;
   let fixtureDir: string;
@@ -2762,11 +2764,19 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     runZfbBuild(fixtureDir);
   });
 
-  it("stages published route sources inside the project", () => {
-    expect(existsSync(join(fixtureDir, ".zudo-doc/routes-src/404.tsx"))).toBe(true);
+  it("stages no route sources inside the project (compiled dist/routes injected directly, #4838)", () => {
+    expect(existsSync(join(fixtureDir, ".zudo-doc"))).toBe(false);
   });
 
-  it("dynamic: plain /docs/getting-started/ renders from routes-src/docs-slug.tsx", () => {
+  it("compat: the packed ./routes-src/* export still resolves from the consumer (#4837)", () => {
+    const resolved = execSync(
+      `node --input-type=module -e "console.log(import.meta.resolve('@takazudo/zudo-doc/routes-src/docs-slug.tsx'))"`,
+      { cwd: fixtureDir, encoding: "utf-8" },
+    ).trim();
+    expect(realpathSync(fileURLToPath(resolved))).toBe(realpathSync(join(pkgDest, "routes-src/docs-slug.tsx")));
+  });
+
+  it("dynamic: plain /docs/getting-started/ renders from dist/routes/docs-slug.js", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expect(html).toContain("Getting Started");
     expect(html).toContain("injected-route-render-proof");
@@ -2803,11 +2813,10 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     expectHtmlAttr(html, "data-zfb-island", "HtmlPreviewWrapperInner");
   });
 
-  it("dynamic: locale /ja/docs/getting-started/ renders from routes-src/locale-docs-slug.tsx", () => {
+  it("dynamic: locale /ja/docs/getting-started/ renders from dist/routes/locale-docs-slug.js", () => {
     // The /[locale]/docs/[[...slug]] injected route — only emitted because the
-    // i18n fixture configures a `ja` locale. Proves the locale-index routes-src
-    // path resolves its `virtual:*` imports directly from
-    // the published routes-src tree staged into the project.
+    // i18n fixture configures a `ja` locale. Proves the compiled locale route
+    // resolves its `virtual:*` imports from the packed dist/ tree.
     const html = readBuiltHtml(fixtureDir, "ja/docs/getting-started/index.html");
     expect(html).toContain("はじめに");
     expect(html).toContain("locale-injected-route-render-proof");
@@ -2949,7 +2958,7 @@ it("builds injected routes from a nested workspace package with pnpm-style packa
   // A real pnpm workspace consumer declares zudo-doc itself and receives a
   // package-local symlink into the workspace store (#4267). Keep that link:
   // ancestor-only lookup is a different topology and failed in CI when the
-  // staged route sources imported public @takazudo/zudo-doc subpaths.
+  // then-staged route sources imported public @takazudo/zudo-doc subpaths.
   const projectNm = join(project, "node_modules");
   mkdirSync(projectNm, { recursive: true });
   linkFixtureNodeModules(projectNm);
@@ -2978,7 +2987,107 @@ it("builds injected routes from a nested workspace package with pnpm-style packa
   expect(readBuiltHtml(project, "404.html")).toContain("Page Not Found");
   expect(readBuiltHtml(project, "docs/getting-started/index.html")).toContain("Getting Started");
   expect(readBuiltHtml(project, "ja/docs/getting-started/index.html")).toContain("はじめに");
-  expect(existsSync(join(project, ".zudo-doc/routes-src/docs-slug.tsx"))).toBe(true);
+  // #4838: the compiled store-linked dist/routes modules are injected directly.
+  expect(existsSync(join(project, ".zudo-doc"))).toBe(false);
+});
+
+// ---------------------------------------------------------------------------
+// Case COMPILED-ONLY (#4838) — the packed package with BOTH `src/` and
+// `routes-src/` removed. Only this isolated copy drops `routes-src/`; the normal
+// tarball keeps it as a public compatibility export (#4837, asserted in S1).
+// Proves the routes plugin needs nothing but the compiled `dist/routes/*.js`
+// graph and never writes a consumer staging directory, both as an extracted
+// real directory and behind a pnpm-style store symlink in a nested workspace.
+// The fixture turns on the sitemap (and indexing) so the XML and robots text
+// endpoints are exercised with real content too.
+// ---------------------------------------------------------------------------
+
+function removeRouteSources(pkgDir: string): void {
+  rmSync(join(pkgDir, "routes-src"), { recursive: true, force: true });
+  expect(existsSync(join(pkgDir, "routes-src"))).toBe(false);
+  expect(existsSync(join(pkgDir, "src"))).toBe(false);
+  expect(existsSync(join(pkgDir, "dist/routes/docs-slug.js"))).toBe(true);
+}
+
+function enableSitemap(projectDir: string): void {
+  const settingsPath = join(projectDir, "src/config/settings.ts");
+  const source = readFileSync(settingsPath, "utf-8");
+  const next = source
+    .replace(/sitemap:\s*false,/, "sitemap: true,")
+    .replace(/siteUrl:\s*"",/, 'siteUrl: "https://example.com",')
+    .replace(/noindex:\s*true,/, "noindex: false,");
+  expect(next).not.toBe(source);
+  writeFileSync(settingsPath, next);
+}
+
+function expectCompiledOnlyOutput(project: string): void {
+  expect(readBuiltHtml(project, "404.html")).toContain("Page Not Found");
+  const docs = readBuiltHtml(project, "docs/getting-started/index.html");
+  expect(docs).toContain("Getting Started");
+  expect(docs).toContain("injected-route-render-proof");
+  expect(docs).toContain("DETAILS-BODY-MARKER: details-render-proof");
+  expectHtmlAttr(docs, "data-zfb-island", "HtmlPreviewWrapperInner");
+  const ja = readBuiltHtml(project, "ja/docs/getting-started/index.html");
+  expect(ja).toContain("はじめに");
+  expect(ja).toContain("locale-injected-route-render-proof");
+  const sitemap = readFileSync(join(project, "dist/sitemap.xml"), "utf-8");
+  expect(sitemap).toMatch(/^<\?xml/);
+  expect(sitemap).toContain("<loc>https://example.com/docs/getting-started/</loc>");
+  expect(sitemap).toContain("<loc>https://example.com/ja/docs/getting-started/</loc>");
+  const robots = readFileSync(join(project, "dist/robots.txt"), "utf-8");
+  expect(robots).toMatch(/^User-agent: \*/m);
+  expect(robots).not.toMatch(/^Disallow: \/$/m);
+  expect(robots).toContain("Sitemap: https://example.com/sitemap.xml");
+  expect(existsSync(join(project, ".zudo-doc"))).toBe(false);
+}
+
+describe("COMPILED-ONLY: packed package without src/ or routes-src/ (#4838)", () => {
+  it("builds from an extracted real directory with no consumer staging", { timeout: 180_000 }, () => {
+    const tarballPath = packPackage();
+    const fixtureDir = setupNoSrcFixture(FIXTURE_I18N_SRC, tarballPath);
+    removeRouteSources(join(fixtureDir, "node_modules/@takazudo/zudo-doc"));
+    enableSitemap(fixtureDir);
+    runZfbBuild(fixtureDir);
+    expectCompiledOnlyOutput(fixtureDir);
+  });
+
+  it("builds from a nested workspace behind a pnpm-style store symlink with no consumer staging", { timeout: 180_000 }, () => {
+    const tarballPath = packPackage();
+    const root = setupNoSrcFixture(FIXTURE_I18N_SRC, tarballPath);
+    const rootNm = join(root, "node_modules");
+    const packageLink = join(rootNm, "@takazudo/zudo-doc");
+    const storePackage = join(rootNm, ".fixture-pnpm/zudo-doc/node_modules/@takazudo/zudo-doc");
+    mkdirSync(dirname(storePackage), { recursive: true });
+    renameSync(packageLink, storePackage);
+    removeRouteSources(storePackage);
+    symlinkSync(storePackage, packageLink);
+
+    const project = join(root, "packages/catalog");
+    mkdirSync(project, { recursive: true });
+    for (const entry of readdirSync(root)) {
+      if (entry === "node_modules" || entry === "packages") continue;
+      renameSync(join(root, entry), join(project, entry));
+    }
+    const projectNm = join(project, "node_modules");
+    mkdirSync(join(projectNm, "@takazudo"), { recursive: true });
+    linkFixtureNodeModules(projectNm);
+    for (const entry of readdirSync(join(rootNm, "@takazudo"))) {
+      if (entry === "zudo-doc") continue;
+      symlinkSync(join(rootNm, "@takazudo", entry), join(projectNm, "@takazudo", entry));
+    }
+    const projectPackageLink = join(projectNm, "@takazudo/zudo-doc");
+    symlinkSync(relative(dirname(projectPackageLink), storePackage), projectPackageLink);
+    writeFileSync(join(project, "package.json"), JSON.stringify({
+      name: "@fixture/catalog",
+      private: true,
+      dependencies: { "@takazudo/zudo-doc": `file:${tarballPath}` },
+    }));
+    expect(lstatSync(projectPackageLink).isSymbolicLink()).toBe(true);
+    expect(realpathSync(projectPackageLink)).toBe(realpathSync(storePackage));
+    enableSitemap(project);
+    runZfbBuild(project, "dist", join(rootNm, "@takazudo/zfb/bin/zfb.mjs"), true);
+    expectCompiledOnlyOutput(project);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -3263,15 +3372,11 @@ describe("OPT-KATEX-MATH math-on-no-katex: math: true with the optional katex pe
 // released in zfb 2.7.1 and adopted here (zudolab/zudo-doc#3433).
 // The setup test of "TM build+check+css" now asserts the warning is absent.
 //
-// The fix dedupes by resolved component identity, and reaches THIS case via a
-// byte-identity branch: the compiled `dist/` graph's component is compared
-// against the SAME published file the injected route resolves to at
-// `node_modules/@takazudo/zudo-doc/routes-src/` — since #4224 removed the
-// `.zudo-doc/routes-src` staging copy, the injected entrypoint IS that
-// published file directly (no intermediate copy to keep byte-preserving).
-// So the invariant collapses to "the compiled `dist/routes/*.js` graph and the
-// `routes-src/*.tsx` source it was compiled from describe the same component" —
-// true by construction, not by a copy step.
+// The fix dedupes by resolved component identity. Since #4838 the injected
+// route IS the compiled `node_modules/@takazudo/zudo-doc/dist/routes/*.js`
+// module, so the re-export stub and the injected route reach the same `dist/`
+// files and there is no second (routes-src) copy of the component to dedupe.
+// The collision-free assertion below still guards that single identity.
 //
 // Accepted upstream trade-off: two GENUINELY DIFFERENT components shipped by
 // the SAME package under one marker name are now silently deduped too. Only a
@@ -3532,18 +3637,18 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
     // nothing. runZfbBuild merges stdout+stderr, so a successful build is
     // never silent.
     expect(buildOutput.length).toBeGreaterThan(0);
-    // This fixture double-scans the same components (dist graph + the
-    // published routes-src/ file the injected route resolves to), which zfb
-    // ≤2.7.0 reported as a marker-name collision on every build. zfb 2.7.1
-    // dedupes by resolved component identity, so a collision-free build is
-    // now assertable — and this assertion is the only end-to-end proof of
-    // that fix anywhere: zfb's own coverage stops at the classifier and never
-    // runs a real build. If it fails, report upstream
+    // Before #4838 this fixture double-scanned the same components (dist graph
+    // + the routes-src/ source the injected route then resolved to), which zfb
+    // ≤2.7.0 reported as a marker-name collision on every build. Both paths
+    // now reach the same compiled dist/ module, and zfb 2.7.1+ dedupes by
+    // resolved component identity, so a collision-free build is asserted —
+    // the only end-to-end proof of that identity anywhere: zfb's own coverage
+    // stops at the classifier and never runs a real build. If it fails, report upstream
     // (zudolab/zudo-doc#3433, Takazudo/zudo-front-builder#2441) rather than
     // relaxing it — a genuine collision between two DIFFERENT components must
     // still warn.
     expect(buildOutput).not.toMatch(/island marker name collision/i);
-    expect(existsSync(join(fixtureDir, ".zudo-doc/routes-src/404.tsx"))).toBe(true);
+    expect(existsSync(join(fixtureDir, ".zudo-doc"))).toBe(false);
   });
 
   // ---- Group 1 ----
@@ -3837,16 +3942,14 @@ describe("TM group 2b: designTokenPanelConfigModule — the stub mounts no panel
     // saw neither that nor a double-hydration.
     expect(buildOutput).not.toMatch(/has no matching registry entry/i);
     expect(buildOutput).not.toMatch(/cannot hydrate both components/i);
-    // Deliberately NOT asserted here: `island marker name collision`. Every
-    // target-manifest build emits one for `ConfiguredDesignTokenPanelBootstrap`,
-    // with or without this setting and on every variant — the fixture's
-    // `pages/index.tsx` re-exports `@takazudo/zudo-doc/routes/index`, so the
-    // COMPILED `dist/routes/_chrome.js` graph is scanned alongside the
-    // published `node_modules/@takazudo/zudo-doc/routes-src/` file the
-    // injected route resolves to, and the same component reaches the scanner
-    // from two files. zfb dedupes by resolved component identity; the two
-    // share a name, so the surviving registry entry still matches every
-    // emitted marker. Pre-existing and unrelated to #3414 — the emptyPages
+    // Deliberately NOT asserted here: `island marker name collision`. Before
+    // #4838 the fixture's `pages/index.tsx` re-export of
+    // `@takazudo/zudo-doc/routes/index` reached the COMPILED
+    // `dist/routes/_chrome.js` graph while the injected route resolved to the
+    // published `routes-src/` source, so the same component reached the
+    // scanner from two files (deduped by resolved identity, same name, so the
+    // surviving registry entry still matched every emitted marker). Injected
+    // routes now use the compiled dist/ module too. Unrelated to #3414 — the emptyPages
     // route-injection fixture, which has no such re-export stub, is where that
     // assertion belongs (and it is asserted there).
   });

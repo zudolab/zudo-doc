@@ -155,17 +155,26 @@ by S2 (#2325) is:
   plugin wrappers) append at the marked `ENTRY APPEND POINT` in
   `tsup.config.ts#entry`, or copy via the `onSuccess` chain.
 
-### `"./routes-src/*"` must stay in the map (zfb ≥ 0.1.0-next.97)
+### Package routes inject compiled `dist/routes/*.js`; `"./routes-src/*"` stays as compatibility
 
-`exports` carries `"./routes-src/*": "./routes-src/*"` even though nothing
-imports that subpath by name. zfb next.97 added a bundler **stage-escape audit**
-that rejects any metafile input reached inside a workspace package at a location
-the package does not declare — and the routes plugin injects the raw
-`routes-src/*.tsx` entrypoints by absolute path (it must: zfb extracts `paths()`
-by AST from the `.tsx` source, never from compiled `.js`). Without the wildcard
-entry, `zfb build` fails with `SSR work-mirror stage-escape audit failed` naming
-every `routes-src/*.tsx` and `_context.ts`. Shipping them via `files[]` alone is
-not enough — the audit reads `exports`.
+The routes plugin (`src/plugins/routes.ts`) resolves each
+`@takazudo/zudo-doc/routes/*` subpath through the `exports` map and passes the
+compiled `dist/routes/*.js` path to `injectRoute` directly (#4838). ZFB 7.2.0
+supports compiled ESM route modules, including tsup's export-list form
+(`export { Page as default, frontmatter, paths }`), so there is no TSX
+reverse-mapping, no in-repo `src/` lookup and no consumer `.zudo-doc/routes-src`
+staging. Keep `bundle:false`: route modules must share the package's one `dist/`
+graph so island identity and `"use client"` boundaries match what host `pages/`
+re-exports reach. The old claim that zfb cannot read `paths()` from compiled
+`.js` (#2370, zfb 0.1.0-next.65) is historical.
+
+`exports` still carries `"./routes-src/*": "./routes-src/*"`, `files[]` still
+ships `routes-src/`, and `copy-routes-src.mjs` / `check-routes-src.mjs` still run
+in the build and prepack contract. They are a published compatibility surface
+now, not an internal dependency; retiring them is the separate decision #4837.
+Do not remove them as a side effect of route-resolver work. The slow suite's
+COMPILED-ONLY case proves the plugin works with `src/` and `routes-src/` both
+removed, while S1 proves the packed `./routes-src/*` export still resolves.
 
 ## Factory context type + foundation primitives (epic #2344, S1a)
 
